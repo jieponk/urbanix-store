@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: urbanix_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-urbanix_db}
+      POSTGRES_USER: ${POSTGRES_USER:-urbanix_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-urbanix_secure_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-urbanix_user} -d ${POSTGRES_DB:-urbanix_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: urbanix_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: urbanix_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./apps/backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=urbanix-dev-secret-key
+      - POSTGRES_DB=urbanix_db
+      - POSTGRES_USER=urbanix_user
+      - POSTGRES_PASSWORD=urbanix_secure_password
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - MIDTRANS_SERVER_KEY=SB-Mid-server-demo
+      - MIDTRANS_CLIENT_KEY=SB-Mid-client-demo
+      - MIDTRANS_IS_PRODUCTION=False
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  storefront:
+    build:
+      context: ./apps/storefront
+      dockerfile: Dockerfile
+    container_name: urbanix_storefront
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
