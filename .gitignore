@@ -1,0 +1,14 @@
+# Python & Virtual Environment
+venv/
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Node.js & Next.js
+node_modules/
+.next/
+out/
+
+# Windows & VS Code
+.vscode/
+*.log
