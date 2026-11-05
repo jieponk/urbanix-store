@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
 
+from store.category_map import clean_category
 from store.models import Category, Product, ProductVariation
 
 
@@ -72,8 +73,8 @@ class Command(BaseCommand):
                 variation_skipped += len(variations)
                 continue
 
-            category_name = (item.get("category") or "Umum").strip()
-            category_slug = slugify(category_name) or "umum"
+            category_name = clean_category(item.get("category"))
+            category_slug = slugify(category_name) or "lainnya"
 
             category, _ = Category.objects.get_or_create(
                 slug=category_slug,
