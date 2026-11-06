@@ -79,20 +79,15 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 /**
- * Produk untuk beranda: hanya halaman pertama dari API (tidak mengambil
- * seluruh katalog), lalu dipilih yang aktif, ada stok, dan punya gambar.
+ * Produk untuk beranda: semua produk yang aktif, ada stok, dan punya gambar.
+ * Dicache 60 detik agar beranda tidak memanggil API di setiap kunjungan.
  */
-export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
-  const response = await fetch(`${API}/products/`, { cache: 'no-store' });
+export async function getActiveProducts(): Promise<Product[]> {
+  const all = await fetchAll<Product>('products', {
+    next: { revalidate: 60 },
+  } as RequestInit);
 
-  if (!response.ok) {
-    throw new Error(`API products gagal: HTTP ${response.status}`);
-  }
-
-  const data: ApiPage<Product> | Product[] = await response.json();
-  const list = Array.isArray(data) ? data : data.results;
-
-  return list
-    .filter((p) => p.is_active !== false && p.stock > 0 && p.image_url)
-    .slice(0, limit);
+  return all.filter(
+    (p) => p.is_active !== false && p.stock > 0 && p.image_url
+  );
 }

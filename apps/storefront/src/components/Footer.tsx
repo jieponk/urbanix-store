@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 
 export default function Footer() {
@@ -6,6 +7,11 @@ export default function Footer() {
   const whatsappLink = contact.whatsappNumber
     ? `https://wa.me/${contact.whatsappNumber}`
     : null;
+
+  const payments = paymentMethods.map((method) => ({
+    ...method,
+    src: findPublicImage('payments', method.logo),
+  }));
 
   return (
     <footer className="border-t border-slate-800 bg-brand-dark text-slate-400">
@@ -60,13 +66,28 @@ export default function Footer() {
           <h3 className="text-sm font-bold uppercase tracking-wider text-white">
             Pembayaran tersedia
           </h3>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {paymentMethods.map((method) => (
-              <li
-                key={method}
-                className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200"
-              >
-                {method}
+          <ul className="mt-3 flex flex-wrap items-center gap-2">
+            {payments.map((method) => (
+              <li key={method.name}>
+                {method.src ? (
+                  <span className="flex h-10 items-center gap-2 rounded-lg bg-white px-3">
+                    <img
+                      src={method.src}
+                      alt={method.showName ? '' : method.name}
+                      loading="lazy"
+                      className="h-6 w-auto max-w-[84px] object-contain"
+                    />
+                    {method.showName && (
+                      <span className="text-xs font-bold text-slate-800">
+                        {method.name}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="flex h-10 items-center rounded-lg border border-slate-700 bg-slate-800 px-3 text-xs font-semibold text-slate-200">
+                    {method.name}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
