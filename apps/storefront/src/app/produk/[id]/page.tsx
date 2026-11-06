@@ -133,7 +133,7 @@ export default async function ProductPage({
 
   if (!product) {
   return (
-    <main className="min-h-screen p-8">
+    <div className="p-8">
       <h1 className="text-2xl font-bold">
         Halaman detail berhasil dibuka
       </h1>
@@ -154,7 +154,7 @@ export default async function ProductPage({
       >
         Periksa API detail produk
       </a>
-    </main>
+    </div>
   );
 }
 
@@ -171,10 +171,10 @@ export default async function ProductPage({
   const stock = Number(product.stock) || 0;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <div className="bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <Link
-          href="/#katalog"
+          href="/produk"
           className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-orange-600"
         >
           <span className="mr-2">←</span>
@@ -263,6 +263,6 @@ export default async function ProductPage({
           </section>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
