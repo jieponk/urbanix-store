@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Product, Cart, CartItem, Order, OrderItem, PaymentEvent
+from .models import Category, Product, ProductVariation, Cart, CartItem, Order, OrderItem, PaymentEvent
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,8 +12,14 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+class ProductVariationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariation
+        fields = ('variation_id', 'name', 'sku', 'price', 'stock')
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    variations = ProductVariationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product

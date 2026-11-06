@@ -14,7 +14,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
+    queryset = (
+        Product.objects.filter(is_active=True)
+        .select_related('category')
+        .prefetch_related('variations')
+    )
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
 

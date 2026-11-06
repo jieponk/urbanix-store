@@ -1,4 +1,13 @@
+export type Variation = {
+  variation_id: string;
+  name: string;
+  sku: string;
+  price: string | number;
+  stock: number;
+};
+
 export type Product = {
+  variations?: Variation[];
   id: number;
   name: string;
   slug: string;
