@@ -88,6 +88,11 @@ export default async function HomePage({
   const requestedPage = parseInt(params?.hal || '1', 10) || 1;
   const page = Math.min(totalPages, Math.max(1, requestedPage));
   const products = allProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  // Produk yang sedang promo "Potong harga" (diskon terbesar dulu), maks. 8.
+  const promoProducts = allProducts
+    .filter((p) => (p.discount_percent ?? 0) > 0)
+    .sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0))
+    .slice(0, 8);
 
   const slides = loadBannerSlides();
   const { features, featuresTitle, highlights } = siteConfig;
@@ -133,6 +138,27 @@ export default async function HomePage({
                   Lihat pilihan kami
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Sedang promo: hanya muncul bila ada promo "Potong harga" yang berjalan */}
+      {promoProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+          <div className="rounded-3xl bg-gradient-to-br from-red-50 via-orange-50 to-white p-4 ring-1 ring-red-100 sm:p-6">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-600 sm:text-xs">
+                  Potong harga
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold tracking-tight sm:text-2xl">Sedang promo</h2>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              {promoProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
           </div>
         </section>

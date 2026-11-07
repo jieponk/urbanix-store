@@ -3,7 +3,9 @@ import { money, type Product } from '@/lib/api';
 
 export default function ProductCard({ product }: { product: Product }) {
   const originalPrice = Number(product.price) || 0;
-  const discountedPrice = Number(product.discount_price) || 0;
+  // final_price sudah termasuk promo "Potong harga" (dihitung di backend).
+  const discountedPrice =
+    Number(product.final_price ?? product.discount_price) || 0;
 
   const hasDiscount =
     discountedPrice > 0 && discountedPrice < originalPrice;
@@ -11,7 +13,8 @@ export default function ProductCard({ product }: { product: Product }) {
   const finalPrice = hasDiscount ? discountedPrice : originalPrice;
 
   const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
+    ? product.discount_percent ||
+      Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
     : 0;
 
   return (
@@ -34,8 +37,15 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {hasDiscount && (
-          <span className="absolute left-2 top-2 rounded-md bg-red-600 px-2 py-1 text-[10px] font-extrabold text-white sm:left-3 sm:top-3">
-            -{discountPercent}%
+          <span className="absolute left-2 top-2 flex flex-col items-start gap-1 sm:left-3 sm:top-3">
+            <span className="rounded-md bg-red-600 px-2 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
+              -{discountPercent}%
+            </span>
+            {product.promo_name && (
+              <span className="max-w-[7.5rem] truncate rounded-md bg-orange-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
+                {product.promo_name}
+              </span>
+            )}
           </span>
         )}
 

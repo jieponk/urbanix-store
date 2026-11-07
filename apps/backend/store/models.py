@@ -35,7 +35,15 @@ class Product(models.Model):
     )
     stock = models.PositiveIntegerField(default=0)
     image_url = models.URLField(
+        "Gambar utama",
+        max_length=500,
         default="https://via.placeholder.com/400x400?text=URBANIX+Product"
+    )
+    images = models.JSONField(
+        "Gambar lainnya",
+        default=list,
+        blank=True,
+        help_text="Daftar link gambar tambahan (maks. 8, urutan sesuai slide Shopee).",
     )
     is_active = models.BooleanField(default=True)
     shopee_url = models.URLField(
@@ -127,9 +135,14 @@ class ProductVariation(models.Model):
     sku = models.CharField(max_length=100, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
+    image_url = models.URLField("Gambar varian", max_length=500, blank=True)
+
+    class Meta:
+        verbose_name = "Varian"
+        verbose_name_plural = "Varian"
 
     def __str__(self):
-        return f"{self.product.name} - {self.name}"
+        return f"{self.product.name} - {self.name}" if self.name else self.product.name
 
 
 class Cart(models.Model):
@@ -291,3 +304,90 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=100)
     details = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class PriceCut(models.Model):
+    """Promo potong harga (menu "Potong harga" di admin)."""
+
+    name = models.CharField("Nama promo", max_length=120, help_text="Contoh: Promo 11.11, Flash Sale Akhir Bulan")
+    starts_at = models.DateTimeField("Mulai", null=True, blank=True, help_text="Kosongkan = langsung berlaku.")
+    ends_at = models.DateTimeField("Selesai", null=True, blank=True, help_text="Kosongkan = berlaku sampai dimatikan.")
+    is_active = models.BooleanField("Aktif", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Potong harga"
+        verbose_name_plural = "Potong harga"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+    def is_running(self, now=None):
+        from django.utils import timezone
+
+        now = now or timezone.now()
+        return (
+            self.is_active
+            and (self.starts_at is None or self.starts_at <= now)
+            and (self.ends_at is None or self.ends_at >= now)
+        )
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({"ends_at": "Waktu selesai harus setelah waktu mulai."})
+
+
+class PriceCutItem(models.Model):
+    """Satu produk/varian di dalam promo. Isi harga promo ATAU persen potongan."""
+
+    price_cut = models.ForeignKey(PriceCut, related_name="items", on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, related_name="price_cut_items", on_delete=models.CASCADE, verbose_name="Produk"
+    )
+    variation = models.ForeignKey(
+        ProductVariation,
+        related_name="price_cut_items",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Varian",
+        help_text="Kosongkan = berlaku untuk produk (semua varian bila memakai persen).",
+    )
+    promo_price = models.DecimalField(
+        "Harga promo", max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    discount_percent = models.DecimalField(
+        "Potongan (%)", max_digits=5, decimal_places=2, null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Produk promo"
+        verbose_name_plural = "Produk promo"
+
+    def __str__(self):
+        target = self.variation or self.product
+        return f"{target} ({self.price_cut})"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if (self.promo_price is None) == (self.discount_percent is None):
+            raise ValidationError("Isi salah satu: Harga promo ATAU Potongan (%).")
+        if self.discount_percent is not None and not (0 < self.discount_percent < 100):
+            raise ValidationError({"discount_percent": "Potongan harus antara 0 dan 100%."})
+        if self.variation_id and self.product_id and self.variation.product_id != self.product_id:
+            raise ValidationError({"variation": "Varian ini bukan milik produk yang dipilih."})
+        if self.promo_price is not None:
+            if self.promo_price <= 0:
+                raise ValidationError({"promo_price": "Harga promo harus lebih dari 0."})
+            if self.product_id and not self.variation_id and self.product.buyable_variations():
+                raise ValidationError(
+                    {"variation": "Produk ini punya varian: pilih variannya, atau pakai Potongan (%) untuk semua varian."}
+                )
+            normal = self.variation.price if self.variation_id else (self.product.price if self.product_id else None)
+            if normal is not None and self.promo_price >= normal:
+                raise ValidationError({"promo_price": f"Harga promo harus di bawah harga normal ({normal:,.0f})."})
+

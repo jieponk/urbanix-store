@@ -3,7 +3,11 @@ export type Variation = {
   name: string;
   sku: string;
   price: string | number;
+  /** Harga setelah promo "Potong harga" (sama dengan price bila tidak ada promo). */
+  final_price?: string | number;
+  discount_percent?: number;
   stock: number;
+  image_url?: string;
 };
 
 export type Product = {
@@ -19,6 +23,13 @@ export type Product = {
   discount_price: string | number | null;
   stock: number;
   image_url: string;
+  /** Gambar lainnya (tanpa gambar utama), urutan sesuai slide Shopee. */
+  images?: string[];
+  /** Harga dibayar (untuk produk bervarian: varian termurah setelah promo). */
+  final_price?: string | number;
+  discount_percent?: number;
+  promo_name?: string;
+  promo_ends_at?: string | null;
   is_active: boolean;
 };
 

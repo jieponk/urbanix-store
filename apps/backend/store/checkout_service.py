@@ -22,6 +22,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
+from .pricing import prefetch_running_promos, price_info
 from .models import (
     AuditLog,
     Order,
@@ -81,7 +82,8 @@ class QuoteLine:
 
     @property
     def unit_price(self) -> Decimal:
-        return self.variation.price if self.variation else self.product.final_price
+        # Termasuk promo "Potong harga" yang sedang berjalan.
+        return price_info(self.product, self.variation).final
 
     @property
     def stock(self) -> int:
@@ -120,7 +122,7 @@ def build_lines(raw_items) -> list[QuoteLine]:
 
     products = (
         Product.objects.filter(id__in={pid for pid, _ in quantities}, is_active=True)
-        .prefetch_related("variations")
+        .prefetch_related("variations", prefetch_running_promos())
         .in_bulk()
     )
     if any(pid not in products for pid, _ in quantities):

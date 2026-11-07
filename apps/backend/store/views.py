@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.shortcuts import get_object_or_404
 from .models import Category, Product, Cart, CartItem, Order
 from .serializers import CategorySerializer, ProductSerializer, CartSerializer, OrderSerializer
+from .pricing import prefetch_running_promos
 from .services import OrderService
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -16,7 +17,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
         Product.objects.filter(is_active=True)
         .select_related('category')
-        .prefetch_related('variations')
+        .prefetch_related('variations', prefetch_running_promos())
     )
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]

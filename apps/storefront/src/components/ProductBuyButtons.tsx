@@ -15,6 +15,9 @@ type Props = {
   stock: number;
   /** Varian yang wajib dipilih (kosong = produk biasa). */
   variations: Variation[];
+  /** Varian yang sedang dipilih (dikendalikan oleh ProductHero). */
+  variationId: string | null;
+  onVariationChange: (variationId: string) => void;
   /** Nomor WhatsApp toko dari Pengaturan toko; kosong = tombol chat disembunyikan. */
   whatsappNumber: string;
 };
@@ -27,29 +30,27 @@ export default function ProductBuyButtons({
   imageUrl,
   stock,
   variations,
+  variationId,
+  onVariationChange,
   whatsappNumber,
 }: Props) {
   const router = useRouter();
   const hasVariants = variations.length > 0;
 
-  // Pilih otomatis bila hanya ada satu varian yang masih ada stoknya.
-  const [variationId, setVariationId] = useState<string | null>(() => {
-    const available = variations.filter((v) => v.stock > 0);
-    return available.length === 1 ? available[0].variation_id : null;
-  });
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
   const [needVariant, setNeedVariant] = useState(false);
 
   const selected = variations.find((v) => v.variation_id === variationId) ?? null;
-  const currentPrice = selected ? Number(selected.price) || 0 : price;
+  // Harga yang masuk keranjang = harga akhir (termasuk promo). Server tetap menghitung ulang saat checkout.
+  const currentPrice = selected ? Number(selected.final_price ?? selected.price) || 0 : price;
   const currentStock = hasVariants ? (selected ? selected.stock : 0) : stock;
   const currentSku = selected?.sku || sku;
   const canBuy = hasVariants ? Boolean(selected) && currentStock > 0 : stock > 0;
 
   function choose(variation: Variation) {
     if (variation.stock < 1) return;
-    setVariationId(variation.variation_id);
+    onVariationChange(variation.variation_id);
     setQuantity((q) => Math.min(Math.max(1, q), variation.stock));
     setNeedVariant(false);
     setMessage('');
@@ -135,7 +136,14 @@ export default function ProductBuyButtons({
                     {variation.name.trim() || 'Standar'}
                   </span>
                   <span className="mt-0.5 block text-xs text-slate-500">
-                    {money(variation.price)} · {soldOut ? 'Habis' : `Stok ${variation.stock}`}
+                    {(variation.discount_percent ?? 0) > 0 && (
+                      <span className="mr-1 text-slate-400 line-through">{money(variation.price)}</span>
+                    )}
+                    <span className={(variation.discount_percent ?? 0) > 0 ? 'font-semibold text-red-600' : ''}>
+                      {money(variation.final_price ?? variation.price)}
+                    </span>
+                    {' · '}
+                    {soldOut ? 'Habis' : `Stok ${variation.stock}`}
                   </span>
                 </button>
               );
@@ -144,15 +152,6 @@ export default function ProductBuyButtons({
         </div>
       )}
 
-      {hasVariants && selected && (
-        <div className="rounded-xl bg-slate-100 px-4 py-3">
-          <p className="text-xl font-black text-slate-950">{money(currentPrice)}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {selected.name.trim() || 'Standar'}
-            {currentSku && <> · SKU: {currentSku}</>}
-          </p>
-        </div>
-      )}
 
       <div className="flex items-center gap-4">
         <span className="text-sm font-semibold text-slate-700">Jumlah</span>

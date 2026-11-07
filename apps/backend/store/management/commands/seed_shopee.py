@@ -9,6 +9,7 @@ from django.utils.text import slugify
 
 from store.category_map import clean_category
 from store.models import Category, Product, ProductVariation
+from store.migrations_helpers import gallery_from_item
 
 
 class Command(BaseCommand):
@@ -114,6 +115,7 @@ class Command(BaseCommand):
                             0, int(first_variation.get("stock", 0) or 0)
                         ),
                         "image_url": image_url,
+                        "images": gallery_from_item(item),
                         "is_active": True,
                     }
 

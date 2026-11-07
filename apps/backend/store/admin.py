@@ -5,6 +5,8 @@ from .models import (
     Order,
     OrderItem,
     PaymentEvent,
+    PriceCut,
+    PriceCutItem,
     Product,
     ProductVariation,
     StoreSettings,
@@ -20,7 +22,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class ProductVariationInline(admin.TabularInline):
     model = ProductVariation
     extra = 0
-    fields = ("name", "sku", "price", "stock", "variation_id")
+    fields = ("name", "sku", "price", "stock", "image_url", "variation_id")
     readonly_fields = ("variation_id",)
     verbose_name = "Varian"
     verbose_name_plural = "Varian (stok induk = jumlah stok semua varian, dihitung otomatis)"
@@ -132,3 +134,48 @@ class StoreSettingsAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ProductVariation)
+class ProductVariationAdmin(admin.ModelAdmin):
+    """Dipakai untuk pencarian varian di menu Potong harga."""
+
+    list_display = ("__str__", "sku", "price", "stock")
+    search_fields = ("name", "sku", "product__name", "product__sku")
+    list_select_related = ("product",)
+
+    def has_module_permission(self, request):
+        return False  # tidak tampil di menu; varian diedit dari halaman produk
+
+
+class PriceCutItemInline(admin.TabularInline):
+    model = PriceCutItem
+    extra = 1
+    autocomplete_fields = ("product", "variation")
+    fields = ("product", "variation", "normal_price", "promo_price", "discount_percent")
+    readonly_fields = ("normal_price",)
+
+    @admin.display(description="Harga normal")
+    def normal_price(self, obj):
+        if not obj or not obj.product_id:
+            return "-"
+        price = obj.variation.price if obj.variation_id else obj.product.price
+        return f"Rp{price:,.0f}".replace(",", ".")
+
+
+@admin.register(PriceCut)
+class PriceCutAdmin(admin.ModelAdmin):
+    list_display = ("name", "status", "starts_at", "ends_at", "item_count")
+    list_filter = ("is_active",)
+    search_fields = ("name", "items__product__name", "items__variation__sku")
+    inlines = [PriceCutItemInline]
+
+    @admin.display(description="Status")
+    def status(self, obj):
+        if not obj.is_active:
+            return "Nonaktif"
+        return "Berjalan" if obj.is_running() else "Terjadwal / selesai"
+
+    @admin.display(description="Jumlah produk")
+    def item_count(self, obj):
+        return obj.items.count()
