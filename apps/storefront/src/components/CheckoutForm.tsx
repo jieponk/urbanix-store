@@ -20,6 +20,7 @@ type QuoteItem = {
   subtotal: string;
   stock: number;
   in_stock: boolean;
+  is_promo?: boolean;
   shopee_url: string;
 };
 
@@ -28,6 +29,7 @@ type Quote = {
   subtotal: string;
   shipping_note: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+  whatsapp_discount?: { percent: string; amount: string; applies_to_promo: boolean; note: string };
 };
 
 type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
@@ -41,7 +43,7 @@ const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; 
   WHATSAPP: {
     key: 'whatsapp',
     title: 'Pesan via WhatsApp',
-    text: 'Pesanan dikirim ke admin. Total + ongkir dan cara bayar dikonfirmasi lewat chat.',
+    text: 'Pesanan dikirim ke admin. Ongkir dan cara bayar dikonfirmasi lewat chat.',
   },
   SHOPEE: {
     key: 'shopee',
@@ -340,6 +342,10 @@ export default function CheckoutForm() {
     (m) => quote.methods[METHOD_INFO[m].key]
   );
   const blocked = method !== 'SHOPEE' && outOfStock.length > 0;
+  const waDiscount = method === 'WHATSAPP' ? Number(quote.whatsapp_discount?.amount) || 0 : 0;
+  const waPercent = Number(quote.whatsapp_discount?.percent) || 0;
+  const hasPromoItems = quote.items.some((i) => i.is_promo);
+  const total = Number(quote.subtotal) - waDiscount;
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
@@ -463,10 +469,24 @@ export default function CheckoutForm() {
             <dt className="text-slate-500">Ongkos kirim</dt>
             <dd className="text-right text-slate-500">Dikonfirmasi penjual</dd>
           </div>
+          {waDiscount > 0 && (
+            <div className="flex justify-between gap-4 text-emerald-700">
+              <dt>Diskon pesan via WhatsApp {waPercent}%</dt>
+              <dd className="font-semibold">-{money(waDiscount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
             <dt className="font-bold">Total produk</dt>
-            <dd className="font-black text-slate-900">{money(quote.subtotal)}</dd>
+            <dd className="font-black text-slate-900">{money(total)}</dd>
           </div>
+          {method === 'WHATSAPP' && waPercent > 0 && hasPromoItems && !quote.whatsapp_discount?.applies_to_promo && (
+            <p className="text-xs text-slate-500">Diskon WhatsApp tidak berlaku untuk produk yang sedang promo.</p>
+          )}
+          {method !== 'WHATSAPP' && waPercent > 0 && quote.methods.whatsapp && (
+            <p className="rounded-lg bg-sun-100 px-3 py-2 text-xs font-semibold text-cobalt-900">
+              Pilih Pesan via WhatsApp untuk potongan {waPercent}%.
+            </p>
+          )}
         </dl>
 
         {blocked && (

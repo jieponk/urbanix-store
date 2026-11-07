@@ -11,7 +11,7 @@ export const metadata = {
   title: 'Semua Produk - URBANIX STORE',
 };
 
-type SearchParams = { category?: string; q?: string };
+type SearchParams = { category?: string; q?: string; promo?: string };
 
 export default async function CatalogPage({
   searchParams,
@@ -21,6 +21,7 @@ export default async function CatalogPage({
   const params = await searchParams;
   const selectedCategory = params?.category || '';
   const searchQuery = (params?.q || '').trim().toLowerCase();
+  const promoOnly = params?.promo === '1';
 
   const [productResult, categories] = await Promise.all([
     fetchAll<Product>('products').then(
@@ -44,27 +45,32 @@ export default async function CatalogPage({
       (product.sku || '').toLowerCase().includes(searchQuery) ||
       (product.category_name || '').toLowerCase().includes(searchQuery);
 
-    return matchesCategory && matchesSearch;
+    const matchesPromo = !promoOnly || (product.discount_percent ?? 0) > 0;
+
+    return matchesCategory && matchesSearch && matchesPromo;
   });
+
+  if (promoOnly) {
+    filteredProducts.sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
+  }
 
   const selectedCategoryName = categories.find(
     (category) => String(category.id) === selectedCategory
   )?.name;
 
-  const title = selectedCategory
+  const title = promoOnly
+    ? 'Produk promo'
+    : selectedCategory
     ? selectedCategoryName || 'Produk kategori'
     : searchQuery
       ? 'Hasil pencarian'
       : 'Semua produk';
 
   return (
-    <div className="bg-white text-slate-900">
+    <div className="text-ink">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-600 sm:text-xs">
-              Katalog
-            </p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
               {title}
             </h1>
@@ -82,6 +88,7 @@ export default async function CatalogPage({
           {selectedCategory && (
             <input type="hidden" name="category" value={selectedCategory} />
           )}
+          {promoOnly && <input type="hidden" name="promo" value="1" />}
 
           <input
             type="search"
@@ -94,16 +101,16 @@ export default async function CatalogPage({
 
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-orange-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-orange-700 sm:px-6 sm:text-sm"
+            className="shrink-0 rounded-xl bg-brand-500 px-4 py-3 text-xs font-bold text-white transition hover:bg-brand-600 sm:px-6 sm:text-sm"
           >
             Cari
           </button>
         </form>
 
-        {(selectedCategory || searchQuery) && (
+        {(selectedCategory || searchQuery || promoOnly) && (
           <Link
             href="/produk"
-            className="mt-3 inline-block text-sm font-semibold text-orange-600 hover:text-orange-700"
+            className="mt-3 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700"
           >
             ← Tampilkan semua produk
           </Link>

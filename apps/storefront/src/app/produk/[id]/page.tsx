@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { ReviewsSection } from '@/components/HomeSections';
 import ProductHero from '@/components/ProductHero';
 import ProductInfoSections from '@/components/ProductInfoSections';
 import {
   API,
   buyableVariations,
   fetchAll,
+  getReviews,
   getStoreSettings,
   type Product,
 } from '@/lib/api';
@@ -71,9 +73,10 @@ export default async function ProductPage({
   }
 
   const variants = buyableVariations(product);
+  const reviews = await getReviews({ product: product.id, limit: 6 });
 
   return (
-    <div className="bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <div className="px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/produk"
@@ -104,6 +107,12 @@ export default async function ProductPage({
             variations={product.variations}
           />
         </div>
+
+        {reviews.length > 0 && (
+          <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+            <ReviewsSection reviews={reviews} settings={storeSettings} title="Ulasan produk ini" />
+          </div>
+        )}
       </div>
     </div>
   );

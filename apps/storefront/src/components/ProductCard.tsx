@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/produk/${product.id}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-slate-200/60"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-1 hover:border-brand-100 hover:shadow-xl hover:shadow-slate-200/60"
     >
       <div className="relative aspect-square overflow-hidden bg-[#f7f7f7] p-3 sm:p-5">
         {product.image_url ? (
@@ -38,14 +38,20 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {hasDiscount && (
           <span className="absolute left-2 top-2 flex flex-col items-start gap-1 sm:left-3 sm:top-3">
-            <span className="rounded-md bg-red-600 px-2 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
+            <span className="rounded-md bg-sale-600 px-2 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
               -{discountPercent}%
             </span>
             {product.promo_name && (
-              <span className="max-w-[7.5rem] truncate rounded-md bg-orange-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
+              <span className="max-w-[7.5rem] truncate rounded-md bg-cobalt-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
                 {product.promo_name}
               </span>
             )}
+          </span>
+        )}
+
+        {product.stock > 0 && product.stock <= 3 && (
+          <span className="absolute right-2 top-2 rounded-md bg-sun-400 px-1.5 py-0.5 text-[10px] font-bold text-cobalt-900 sm:right-3 sm:top-3">
+            Sisa {product.stock}
           </span>
         )}
 
@@ -61,7 +67,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.category_name || 'Produk'}
         </p>
 
-        <h3 className="mt-1 line-clamp-2 min-h-10 text-xs font-bold leading-5 text-slate-800 transition group-hover:text-orange-700 sm:text-sm">
+        <h3 className="mt-1 line-clamp-2 min-h-10 text-xs font-bold leading-5 text-slate-800 transition group-hover:text-brand-700 sm:text-sm">
           {product.name}
         </h3>
 
@@ -72,7 +78,7 @@ export default function ProductCard({ product }: { product: Product }) {
             </p>
           )}
 
-          <p className="break-words text-sm font-extrabold leading-5 tracking-tight text-slate-950 sm:text-base">
+          <p className={`break-words text-sm font-extrabold leading-5 tracking-tight sm:text-base ${hasDiscount ? 'text-sale-600' : 'text-ink'}`}>
             {money(finalPrice)}
           </p>
         </div>
@@ -81,11 +87,11 @@ export default function ProductCard({ product }: { product: Product }) {
           <span
             className={`block rounded-lg py-2.5 text-center text-[10px] font-bold transition sm:text-xs ${
               product.stock > 0
-                ? 'bg-orange-50 text-orange-700 group-hover:bg-orange-600 group-hover:text-white'
+                ? 'bg-brand-50 text-brand-700 group-hover:bg-brand-500 group-hover:text-white'
                 : 'bg-slate-100 text-slate-500'
             }`}
           >
-            {product.stock > 0 ? 'Lihat produk →' : 'Lihat detail'}
+            {product.stock > 0 ? 'Lihat produk' : 'Lihat detail'}
           </span>
         </div>
       </div>

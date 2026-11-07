@@ -38,7 +38,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-slate-100"
+      className="relative h-full overflow-hidden rounded-[28px] bg-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -47,7 +47,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
       aria-roledescription="carousel"
       aria-label="Banner promo"
     >
-      <div className="relative aspect-[16/9] sm:aspect-[21/9]">
+      <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[360px]">
         {slides.map((slide, i) => {
           const image = (
             <img

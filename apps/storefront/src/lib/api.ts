@@ -128,7 +128,56 @@ export type StoreSettings = {
   whatsapp_number: string;
   shopee_store_url: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+  whatsapp_discount_percent: string;
+  whatsapp_discount_on_promo: boolean;
+  show_whatsapp_popup: boolean;
+  shopee_rating: string | null;
+  shopee_rating_count: number | null;
+  shopee_reviews_url: string;
+  review_count: number;
 };
+
+export type Review = {
+  id: number;
+  name: string;
+  rating: number;
+  text: string;
+  product_id: number | null;
+  product_name: string;
+  variation_name: string;
+  date: string | null;
+  source: string;
+};
+
+/** Ulasan asli pembeli yang ditandai "Tampilkan di website" di admin. */
+export async function getReviews(params: { product?: number; limit?: number } = {}): Promise<Review[]> {
+  const query = new URLSearchParams();
+  if (params.product) query.set('product', String(params.product));
+  if (params.limit) query.set('limit', String(params.limit));
+  try {
+    const response = await fetch(`${API}/reviews/?${query}`, { next: { revalidate: 120 } } as RequestInit);
+    return response.ok ? ((await response.json()) as Review[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Ringkasan promo yang sedang berjalan, dihitung dari data produk. */
+export function promoSummary(products: Product[]) {
+  const promo = products.filter((p) => (p.discount_percent ?? 0) > 0);
+  if (promo.length === 0) return null;
+  const ends = promo
+    .map((p) => p.promo_ends_at)
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  const names = Array.from(new Set(promo.map((p) => p.promo_name).filter(Boolean)));
+  return {
+    name: names[0] || 'Promo',
+    count: promo.length,
+    maxDiscount: Math.max(...promo.map((p) => p.discount_percent ?? 0)),
+    endsAt: ends.length ? ends[ends.length - 1] : null,
+  };
+}
 
 /** Pengaturan toko dari admin Django (nomor WhatsApp, dll.). Dicache 60 detik. */
 export async function getStoreSettings(): Promise<StoreSettings | null> {

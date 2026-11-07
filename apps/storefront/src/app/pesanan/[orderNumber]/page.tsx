@@ -12,6 +12,8 @@ type OrderDetail = {
   payment_status: 'UNPAID' | 'PAID' | 'FAILED' | 'EXPIRED';
   status: string;
   total_amount: string;
+  discount_amount?: string;
+  discount_note?: string;
   shipping_note: string;
   payment_url: string;
   whatsapp_url: string;
@@ -167,6 +169,12 @@ export default async function OrderPage({
               </li>
             ))}
           </ul>
+          {Number(order.discount_amount) > 0 && (
+            <div className="mt-2 flex justify-between border-t border-slate-200 pt-3 text-sm text-emerald-700">
+              <span>{order.discount_note || 'Potongan'}</span>
+              <span className="font-semibold">-{money(order.discount_amount || 0)}</span>
+            </div>
+          )}
           <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
             <span className="font-bold">Total produk</span>
             <span className="font-black">{money(order.total_amount)}</span>
