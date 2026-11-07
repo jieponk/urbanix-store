@@ -14,14 +14,14 @@ export const siteConfig = {
   // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
   motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
 
-  // Contact person. GANTI nilai contoh di bawah dengan data toko yang asli.
+  // Kontak toko (tampil di footer). Nomor WhatsApp di Pengaturan toko (admin) diutamakan bila diisi.
   contact: {
     person: 'Admin Urbanix',
     // Nomor WhatsApp format internasional tanpa + atau spasi, contoh: '6281234567890'.
     // Kalau dikosongkan, nomor tampil sebagai teks biasa (bukan tautan WhatsApp).
-    whatsappNumber: '',
-    whatsappDisplay: '0812-XXXX-XXXX',
-    email: 'cs@urbanix-store.example',
+    whatsappNumber: '628212990180',
+    whatsappDisplay: '0821-2990-180',
+    email: 'urbanixstore@gmail.com',
     hours: 'Senin–Sabtu, 09.00–17.00 WIB',
   },
 
