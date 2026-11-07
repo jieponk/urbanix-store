@@ -210,7 +210,10 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ("customer_name", "text", "product__name")
     autocomplete_fields = ("product",)
     date_hierarchy = "review_date"
-    fields = ("customer_name", "rating", "text", "product", "variation_name", "review_date", "source", "is_published")
+    fields = (
+        "customer_name", "rating", "text", "product", "product_name", "variation_name",
+        "review_date", "source", "is_published",
+    )
 
     @admin.display(description="Ulasan")
     def short_text(self, obj):

@@ -438,6 +438,10 @@ class Review(models.Model):
         Product, related_name="reviews", on_delete=models.SET_NULL, null=True, blank=True,
         verbose_name="Produk",
     )
+    product_name = models.CharField(
+        "Nama produk (dari Shopee)", max_length=255, blank=True,
+        help_text="Dipakai bila produk tidak ditemukan di katalog.",
+    )
     variation_name = models.CharField("Varian", max_length=255, blank=True)
     review_date = models.DateField("Tanggal ulasan", null=True, blank=True)
     source = models.CharField("Sumber", max_length=10, choices=SOURCE_CHOICES, default="SHOPEE")

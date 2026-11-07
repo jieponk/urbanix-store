@@ -61,3 +61,16 @@ class ImportShopeeTests(TestCase):
         from django.core.management.base import CommandError
         with self.assertRaises(CommandError):
             call_command("seed_shopee", stdout=StringIO())
+
+
+@skipUnless((FOLDER / "ulasan_shopee.json").exists(), "file ulasan tidak ada")
+class ImportUlasanTests(TestCase):
+    def test_import_reviews_idempotent(self):
+        from store.models import Review, StoreSettings
+        call_command("import_shopee", stdout=StringIO())
+        call_command("import_ulasan", stdout=StringIO())
+        call_command("import_ulasan", stdout=StringIO())
+        self.assertEqual(Review.objects.count(), 52)
+        self.assertGreaterEqual(Review.objects.filter(product__isnull=False).count(), 50)
+        self.assertEqual(str(StoreSettings.load().shopee_rating), "5.0")
+        self.assertEqual(set(Review.objects.values_list("rating", flat=True)), {4, 5})

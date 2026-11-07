@@ -1,6 +1,7 @@
 """Endpoint checkout tamu. Tidak memakai autentikasi/CSRF karena dipanggil dari proxy Next.js."""
 from decimal import Decimal
 
+from django.db.models import Case, IntegerField, Value, When
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import (
@@ -50,7 +51,13 @@ def store_settings(request):
 @_public
 def review_list(request):
     """Ulasan yang ditampilkan. ?product=<id> untuk satu produk, ?limit=<n> (maks. 50)."""
-    qs = Review.objects.filter(is_published=True).select_related("product")
+    # Ulasan yang ada komentarnya tampil lebih dulu, lalu yang terbaru.
+    qs = (
+        Review.objects.filter(is_published=True)
+        .select_related("product")
+        .annotate(has_text=Case(When(text="", then=Value(0)), default=Value(1), output_field=IntegerField()))
+        .order_by("-has_text", "-review_date", "-id")
+    )
     product = request.query_params.get("product")
     if product and product.isdigit():
         qs = qs.filter(product_id=int(product))
@@ -66,7 +73,7 @@ def review_list(request):
                 "rating": r.rating,
                 "text": r.text,
                 "product_id": r.product_id,
-                "product_name": r.product.name if r.product else "",
+                "product_name": r.product.name if r.product else r.product_name,
                 "variation_name": r.variation_name,
                 "date": r.review_date,
                 "source": r.get_source_display(),
