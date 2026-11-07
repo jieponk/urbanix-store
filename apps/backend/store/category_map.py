@@ -37,11 +37,20 @@ RULES = [
 ]
 
 
+CLEAN_NAMES = {clean for _, clean in RULES} | {DEFAULT_CATEGORY}
+
+
 def clean_category(raw_name):
-    """Ubah nama kategori mentah menjadi nama kategori utama yang bersih."""
+    """Ubah nama kategori mentah menjadi nama kategori utama yang bersih.
+
+    Nama yang sudah bersih (misalnya "Kamera") dikembalikan apa adanya, sehingga
+    aman dijalankan berulang kali.
+    """
     raw = (raw_name or "").strip()
     if not raw:
         return DEFAULT_CATEGORY
+    if raw in CLEAN_NAMES:
+        return raw
 
     for needle, clean in RULES:
         if needle in raw:

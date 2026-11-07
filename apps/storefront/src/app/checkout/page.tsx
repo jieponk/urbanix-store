@@ -1,11 +1,13 @@
+import CheckoutForm from '@/components/CheckoutForm';
+
+export const metadata = { title: 'Checkout - URBANIX STORE' };
+
 export default function CheckoutPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Checkout Pesanan</h1>
-      
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <h2 className="font-bold text-slate-800 mb-4">Alamat Pengiriman & Pembayaran</h2>
-        <p className="text-slate-500 text-sm mb-4">Lengkapi data diri dan pilih metode pembayaran otomatis (QRIS / Virtual Account).</p>
+    <div className="bg-slate-50 px-4 py-8 sm:py-10">
+      <div className="mx-auto max-w-6xl">
+        <h1 className="mb-6 text-2xl font-black text-slate-900">Checkout</h1>
+        <CheckoutForm />
       </div>
     </div>
   );
