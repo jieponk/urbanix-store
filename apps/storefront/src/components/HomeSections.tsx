@@ -3,13 +3,28 @@ import { money, type Category, type Product, type Review, type StoreSettings } f
 
 /* ------------------------------------------------------------ Kategori */
 
+const CATEGORY_ART = new Set([
+  'kamera', 'action-cam', 'drone', 'audio-mic', 'tas-case', 'lensa-filter', 'stabilizer-tripod',
+  'lighting-studio', 'streaming-video', 'memory-gadget', 'aksesori-kamera', 'cctv-keamanan',
+  'webcam-komputer', 'lainnya',
+]);
+
+/** "Audio & Mic" -> "audio-mic" (sama dengan slug kategori di backend). */
+function categorySlug(category: Category) {
+  const slug =
+    category.slug ||
+    category.name.toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return CATEGORY_ART.has(slug) ? slug : 'lainnya';
+}
+
 export function CategoryStrip({ categories, products }: { categories: Category[]; products: Product[] }) {
-  // Foto kategori = foto produk pertama di kategori itu (data asli, tanpa ikon buatan).
+  // Sampul kategori = ilustrasi di public/categories/<slug>.svg
   const tiles = categories
-    .map((category) => {
-      const items = products.filter((p) => p.category === category.id);
-      return { ...category, count: items.length, image: items[0]?.image_url };
-    })
+    .map((category) => ({
+      ...category,
+      count: products.filter((p) => p.category === category.id).length,
+      art: `/categories/${categorySlug(category)}.svg`,
+    }))
     .filter((tile) => tile.count > 0)
     .sort((a, b) => b.count - a.count);
 
@@ -20,19 +35,24 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
       <h2 id="judul-kategori" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
         Belanja per kategori
       </h2>
-      <ul className="scroll-row -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7">
+      <ul className="scroll-row -mx-4 mt-5 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible sm:px-0 lg:grid-cols-7">
         {tiles.map((tile) => (
-          <li key={tile.id} className="w-28 shrink-0 sm:w-auto">
+          <li key={tile.id} className="w-[88px] shrink-0 sm:w-auto">
             <Link
               href={`/produk?category=${tile.id}`}
-              className="group flex h-full flex-col items-center rounded-2xl bg-surface p-3 text-center ring-1 ring-slate-200 transition hover:ring-2 hover:ring-slate-900"
+              className="group flex flex-col items-center rounded-2xl px-1 py-2 text-center"
             >
-              <span className="flex aspect-square w-full items-center justify-center rounded-xl bg-white p-2">
-                {tile.image && (
-                  <img src={tile.image} alt="" loading="lazy" className="h-full w-full object-contain mix-blend-multiply" />
-                )}
+              <img
+                src={tile.art}
+                alt=""
+                width={96}
+                height={96}
+                loading="lazy"
+                className="h-[72px] w-[72px] transition-transform duration-200 group-hover:-translate-y-1 sm:h-24 sm:w-24"
+              />
+              <span className="mt-2 text-[13px] font-bold leading-tight text-ink group-hover:underline sm:text-sm">
+                {tile.name}
               </span>
-              <span className="mt-2 text-[13px] font-bold leading-tight text-ink">{tile.name}</span>
               <span className="mt-0.5 text-[11px] text-slate-500">{tile.count} produk</span>
             </Link>
           </li>
