@@ -43,7 +43,7 @@ export default function CartPage() {
   return (
     <div className="bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-4xl">
-        <Link href="/" className="text-sm text-slate-500 hover:text-orange-600">
+        <Link href="/" className="text-sm text-slate-500 hover:text-slate-900">
           ← Kembali ke toko
         </Link>
 
@@ -52,20 +52,20 @@ export default function CartPage() {
         </h1>
 
         {items.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+          <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center">
             <p className="mb-4 text-slate-500">
               Keranjang belanja kamu masih kosong.
             </p>
             <Link
               href="/produk"
-              className="inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
+              className="inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
             >
               Mulai Belanja
             </Link>
           </div>
         ) : (
           <div className="space-y-5">
-            <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5">
+            <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-surface px-5">
               {items.map((item) => (
                 <div
                   key={item.id}
@@ -94,7 +94,7 @@ export default function CartPage() {
                         {item.sku && <>SKU: {item.sku}</>}
                       </p>
                     )}
-                    <p className="mt-1 text-sm font-semibold text-orange-600">
+                    <p className="mt-1 text-sm font-semibold text-ink">
                       {money(item.price)}
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
@@ -146,7 +146,7 @@ export default function CartPage() {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+            <div className="rounded-2xl border border-slate-200 bg-surface p-6">
               <div className="flex items-center justify-between gap-4">
                 <span className="font-semibold text-slate-600">
                   Total Belanja
@@ -158,7 +158,7 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="mt-5 block rounded-xl bg-orange-600 px-5 py-4 text-center font-bold text-white hover:bg-orange-700"
+                className="mt-5 block rounded-xl bg-brand-500 px-5 py-4 text-center font-bold text-white hover:bg-brand-600"
               >
                 Lanjut ke Checkout
               </Link>

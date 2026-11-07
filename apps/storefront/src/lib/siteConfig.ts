@@ -8,8 +8,11 @@ import type { FeatureIconName } from '@/components/FeatureIcon';
 export const siteConfig = {
   name: 'URBANIX STORE',
 
-  // Moto toko (ditampilkan di footer dan deskripsi situs)
-  motto: 'Inovasi Teknologi & Gaya Perkotaan Modern',
+  // Tagline resmi (sama dengan logo)
+  tagline: 'Capture Your Style',
+
+  // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
+  motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
 
   // Contact person. GANTI nilai contoh di bawah dengan data toko yang asli.
   contact: {

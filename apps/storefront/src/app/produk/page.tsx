@@ -8,7 +8,7 @@ import {
 } from '@/lib/api';
 
 export const metadata = {
-  title: 'Semua Produk - URBANIX STORE',
+  title: 'Semua Produk',
 };
 
 type SearchParams = { category?: string; q?: string; promo?: string };
@@ -83,7 +83,7 @@ export default async function CatalogPage({
         <form
           action="/produk"
           method="GET"
-          className="mt-5 flex max-w-2xl gap-2 rounded-2xl border border-slate-200 bg-white p-2"
+          className="mt-5 flex max-w-2xl gap-2 rounded-2xl border border-slate-200 bg-surface p-2"
         >
           {selectedCategory && (
             <input type="hidden" name="category" value={selectedCategory} />
@@ -101,7 +101,7 @@ export default async function CatalogPage({
 
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-brand-500 px-4 py-3 text-xs font-bold text-white transition hover:bg-brand-600 sm:px-6 sm:text-sm"
+            className="shrink-0 rounded-xl bg-ink px-4 py-3 text-xs font-bold text-surface transition hover:bg-slate-800 sm:px-6 sm:text-sm"
           >
             Cari
           </button>
@@ -110,7 +110,7 @@ export default async function CatalogPage({
         {(selectedCategory || searchQuery || promoOnly) && (
           <Link
             href="/produk"
-            className="mt-3 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700"
+            className="mt-3 inline-block text-sm font-semibold text-ink hover:text-slate-900"
           >
             ← Tampilkan semua produk
           </Link>

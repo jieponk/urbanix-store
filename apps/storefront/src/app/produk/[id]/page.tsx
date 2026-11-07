@@ -53,7 +53,7 @@ export default async function ProductPage({
   if (!product) {
     return (
       <div className="bg-slate-50 px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
           <h1 className="text-xl font-black text-slate-900">
             Produk tidak ditemukan
           </h1>
@@ -63,7 +63,7 @@ export default async function ProductPage({
           </p>
           <Link
             href="/produk"
-            className="mt-6 inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
+            className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
           >
             Lihat semua produk
           </Link>
@@ -80,7 +80,7 @@ export default async function ProductPage({
       <div className="mx-auto max-w-6xl">
         <Link
           href="/produk"
-          className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-orange-600"
+          className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-900"
         >
           <span className="mr-2">←</span>
           Kembali ke katalog

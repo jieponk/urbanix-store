@@ -128,7 +128,7 @@ export default function ProductBuyButtons({
                   onClick={() => choose(variation)}
                   className={`rounded-xl border-2 px-3 py-2.5 text-left text-sm transition ${
                     active
-                      ? 'border-orange-600 bg-orange-50'
+                      ? 'border-ink bg-mist'
                       : 'border-slate-200 hover:border-slate-300'
                   } disabled:cursor-not-allowed disabled:opacity-45`}
                 >
@@ -188,7 +188,7 @@ export default function ProductBuyButtons({
           type="button"
           onClick={addProduct}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl border-2 border-orange-600 px-5 py-3.5 text-sm font-bold text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
         >
           + Tambah ke Keranjang
         </button>
@@ -196,7 +196,7 @@ export default function ProductBuyButtons({
           type="button"
           onClick={buyNow}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl bg-orange-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-brand-500 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Beli Sekarang
         </button>
@@ -230,8 +230,8 @@ export default function ProductBuyButtons({
             className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
           >
             <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-surface opacity-60" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-surface" />
             </span>
             <ChatIcon />
             <span className="hidden sm:inline">Chat Admin</span>

@@ -2,6 +2,7 @@ import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
 import SiteHeader from '@/components/SiteHeader';
+import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
 
@@ -13,7 +14,10 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: 'URBANIX STORE - Kamera, Lensa & Gear Kreator',
+  title: {
+    default: `URBANIX STORE | ${siteConfig.tagline}`,
+    template: '%s | URBANIX STORE',
+  },
   description: siteConfig.motto,
 };
 
@@ -26,7 +30,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const promo = promoSummary(products);
 
   return (
-    <html lang="id" className={jakarta.variable}>
+    <html lang="id" className={jakarta.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="flex min-h-screen flex-col font-sans">
         <SiteHeader
           categories={categories}

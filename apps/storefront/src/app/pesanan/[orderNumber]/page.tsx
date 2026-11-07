@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { API, money } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Status Pesanan - URBANIX STORE' };
+export const metadata = { title: 'Status Pesanan' };
 
 type OrderDetail = {
   order_number: string;
@@ -88,12 +88,12 @@ export default async function OrderPage({
   if (!order) {
     return (
       <div className="bg-slate-50 px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
           <h1 className="text-xl font-black text-slate-900">Pesanan tidak ditemukan</h1>
           <p className="mt-2 text-sm text-slate-500">
             Periksa kembali nomor pesanan, atau server toko sedang tidak dapat diakses.
           </p>
-          <Link href="/" className="mt-6 inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700">
+          <Link href="/" className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800">
             Kembali ke beranda
           </Link>
         </div>
@@ -134,21 +134,21 @@ export default async function OrderPage({
           {order.payment_method === 'MIDTRANS' && order.payment_url && order.payment_status === 'UNPAID' && (
             <a
               href={order.payment_url}
-              className="mt-4 block rounded-xl bg-orange-600 px-5 py-4 text-center font-bold text-white hover:bg-orange-700"
+              className="mt-4 block rounded-xl bg-brand-500 px-5 py-4 text-center font-bold text-white hover:bg-brand-600"
             >
               Lanjutkan Pembayaran
             </a>
           )}
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-5">
           <h2 className="font-black text-slate-900">Rincian</h2>
           <ul className="mt-3 divide-y divide-slate-100">
             {order.items.map((item, i) => (
               <li key={i} className="flex justify-between gap-4 py-3 text-sm">
                 <span className="min-w-0">
                   {item.product_id ? (
-                    <Link href={`/produk/${item.product_id}`} className="text-slate-800 hover:text-orange-600">
+                    <Link href={`/produk/${item.product_id}`} className="text-slate-800 hover:text-slate-900">
                       {item.name}
                     </Link>
                   ) : (
@@ -185,7 +185,7 @@ export default async function OrderPage({
         <p className="text-center text-xs text-slate-500">
           Simpan nomor pesanan ini. Halaman ini bisa dibuka lagi lewat alamat yang sama.
         </p>
-        <Link href="/produk" className="block text-center text-sm font-semibold text-orange-600 hover:underline">
+        <Link href="/produk" className="block text-center text-sm font-semibold text-ink hover:underline">
           Lanjut belanja
         </Link>
       </div>

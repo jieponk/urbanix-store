@@ -67,14 +67,14 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
         aria-modal="true"
         aria-labelledby="wa-popup-title"
         onClick={(e) => e.stopPropagation()}
-        className="popup-in relative w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl"
+        className="popup-in relative w-full max-w-md overflow-hidden rounded-[28px] bg-surface shadow-2xl"
       >
         <button
           ref={closeButton}
           type="button"
           onClick={close}
           aria-label="Tutup"
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-xl text-ink hover:bg-white"
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-xl text-ink hover:bg-surface"
         >
           ×
         </button>
@@ -93,15 +93,15 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
           </h2>
           <ol className="mt-4 space-y-2.5 text-sm text-slate-600">
             <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cobalt-800 text-xs font-bold text-white">1</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">1</span>
               Masukkan produk ke keranjang.
             </li>
             <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cobalt-800 text-xs font-bold text-white">2</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">2</span>
               Di halaman checkout, pilih <b className="text-ink">Pesan via WhatsApp</b>.
             </li>
             <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cobalt-800 text-xs font-bold text-white">3</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">3</span>
               Kirim chat pesanan ke admin. Totalnya sudah dipotong {percent}%.
             </li>
           </ol>
@@ -113,7 +113,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
             <button
               type="button"
               onClick={startShopping}
-              className="rounded-full bg-brand-500 px-5 py-3 text-sm font-bold text-white hover:bg-brand-600"
+              className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
             >
               Mulai belanja
             </button>
@@ -122,7 +122,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
               target="_blank"
               rel="noopener noreferrer"
               onClick={close}
-              className="rounded-full border-2 border-cobalt-800 px-5 py-2.5 text-center text-sm font-bold text-cobalt-800 hover:bg-mist"
+              className="rounded-full border-2 border-ink px-5 py-2.5 text-center text-sm font-bold text-ink hover:bg-mist"
             >
               Tanya admin dulu
             </a>

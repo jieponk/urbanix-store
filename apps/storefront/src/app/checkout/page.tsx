@@ -1,6 +1,6 @@
 import CheckoutForm from '@/components/CheckoutForm';
 
-export const metadata = { title: 'Checkout - URBANIX STORE' };
+export const metadata = { title: 'Checkout' };
 
 export default function CheckoutPage() {
   return (

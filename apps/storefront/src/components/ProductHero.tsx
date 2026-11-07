@@ -70,7 +70,7 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
       />
 
       <section className="min-w-0 py-1 sm:py-3">
-        <p className="text-xs font-semibold text-orange-600 sm:text-sm">{product.category_name || 'Produk'}</p>
+        <p className="text-xs font-semibold text-ink sm:text-sm">{product.category_name || 'Produk'}</p>
 
         <h1 className="mt-3 break-words text-2xl font-black leading-tight tracking-tight sm:text-3xl">
           {product.name}

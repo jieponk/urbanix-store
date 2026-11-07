@@ -46,7 +46,7 @@ function PageLink({
     <Link
       href={`/?hal=${page}#produk-pilihan`}
       scroll={false}
-      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700"
+      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-surface px-5 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-900 hover:bg-mist hover:text-slate-900"
     >
       {!isNext && (
         <svg
@@ -131,11 +131,11 @@ export default async function HomePage({
           {slides.length > 0 ? (
             <BannerSlider slides={slides} />
           ) : (
-            <div className="flex flex-col justify-center rounded-[28px] bg-white p-8 ring-1 ring-slate-200 sm:p-12">
+            <div className="flex flex-col justify-center rounded-[28px] bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
               <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">
                 Kamera, lensa, dan gear kreator dalam satu toko.
               </h1>
-              <Link href="/produk" className="mt-6 w-fit rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600">
+              <Link href="/produk" className="mt-6 w-fit rounded-full bg-ink px-6 py-3 text-sm font-bold text-surface hover:bg-slate-800">
                 Belanja sekarang
               </Link>
             </div>
@@ -159,7 +159,7 @@ export default async function HomePage({
       <section id="produk-pilihan" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-3">
           <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Produk pilihan</h2>
-          <Link href="/produk" className="shrink-0 text-sm font-bold text-brand-600 hover:text-brand-700">
+          <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:text-slate-900">
             Lihat semua produk
           </Link>
         </div>
@@ -207,7 +207,7 @@ export default async function HomePage({
         <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <li key={feature.title} className="flex gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-ink">
                 <FeatureIcon name={feature.icon} size={22} />
               </span>
               <span>

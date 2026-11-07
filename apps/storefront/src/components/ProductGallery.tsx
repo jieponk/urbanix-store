@@ -35,7 +35,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
 
   if (count === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-white">
+      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-surface">
         <p className="text-sm text-slate-400">Gambar produk tidak tersedia</p>
       </div>
     );
@@ -72,7 +72,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
               type="button"
               onClick={() => go(-1)}
               aria-label="Gambar sebelumnya"
-              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-slate-700 shadow hover:bg-white"
+              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-lg font-bold text-slate-700 shadow hover:bg-surface"
             >
               ‹
             </button>
@@ -80,11 +80,11 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
               type="button"
               onClick={() => go(1)}
               aria-label="Gambar berikutnya"
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-slate-700 shadow hover:bg-white"
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-lg font-bold text-slate-700 shadow hover:bg-surface"
             >
               ›
             </button>
-            <span className="absolute bottom-3 right-3 rounded-full bg-slate-900/70 px-2.5 py-0.5 text-xs font-semibold text-white">
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-semibold text-white">
               {index + 1}/{count}
             </span>
           </>
@@ -101,7 +101,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
               aria-label={`Lihat gambar ${i + 1}`}
               aria-current={i === index}
               className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white p-1 transition sm:h-20 sm:w-20 ${
-                i === index ? 'border-orange-600' : 'border-slate-200 opacity-70 hover:opacity-100'
+                i === index ? 'border-ink' : 'border-slate-200 opacity-70 hover:opacity-100'
               }`}
             >
               <img src={src} alt="" loading="lazy" className="h-full w-full object-contain" />

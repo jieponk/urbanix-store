@@ -25,9 +25,9 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
           <li key={tile.id} className="w-28 shrink-0 sm:w-auto">
             <Link
               href={`/produk?category=${tile.id}`}
-              className="group flex h-full flex-col items-center rounded-2xl bg-white p-3 text-center ring-1 ring-slate-200 transition hover:ring-2 hover:ring-brand-500"
+              className="group flex h-full flex-col items-center rounded-2xl bg-surface p-3 text-center ring-1 ring-slate-200 transition hover:ring-2 hover:ring-slate-900"
             >
-              <span className="flex aspect-square w-full items-center justify-center rounded-xl bg-mist p-2">
+              <span className="flex aspect-square w-full items-center justify-center rounded-xl bg-white p-2">
                 {tile.image && (
                   <img src={tile.image} alt="" loading="lazy" className="h-full w-full object-contain mix-blend-multiply" />
                 )}
@@ -73,7 +73,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
               <li key={product.id} className="w-[46%] shrink-0 sm:w-56">
                 <Link
                   href={`/produk/${product.id}`}
-                  className="flex h-full flex-col overflow-hidden rounded-2xl bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
                   <span className="relative block aspect-square bg-white p-3">
                     <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-contain" />
@@ -122,7 +122,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600"
+            className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-sun-100"
           >
             Chat admin sekarang
           </a>
@@ -190,7 +190,7 @@ export function ReviewsSection({
           )}
         </div>
         {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-600 hover:underline">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-ink hover:underline">
             Baca semua ulasan di Shopee
           </a>
         )}
@@ -199,7 +199,7 @@ export function ReviewsSection({
       {reviews.length > 0 && (
         <ul className="scroll-row -mx-4 mt-5 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
           {reviews.map((review) => (
-            <li key={review.id} className="w-[82%] shrink-0 rounded-2xl bg-white p-5 ring-1 ring-slate-200 sm:w-auto">
+            <li key={review.id} className="w-[82%] shrink-0 rounded-2xl bg-surface p-5 ring-1 ring-slate-200 sm:w-auto">
               <div className="flex items-center justify-between gap-3">
                 <Stars value={review.rating} />
                 <span className="text-xs text-slate-400">via {review.source}</span>
@@ -209,7 +209,7 @@ export function ReviewsSection({
               {review.product_name && (
                 <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
                   {review.product_id ? (
-                    <Link href={`/produk/${review.product_id}`} className="hover:text-brand-600">
+                    <Link href={`/produk/${review.product_id}`} className="hover:text-slate-900">
                       {review.product_name.replace(/^URBANIX\s*-\s*/i, '')}
                     </Link>
                   ) : (

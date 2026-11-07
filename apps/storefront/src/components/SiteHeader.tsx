@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import CartLink from '@/components/CartLink';
+import ThemeToggle from '@/components/ThemeToggle';
 import type { Category } from '@/lib/api';
 
 type Props = {
@@ -41,19 +43,14 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         </div>
       )}
 
-      <div className="border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="border-b border-slate-200 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-6 lg:px-8">
-          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Urbanix Store, ke beranda">
-            <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
-              <rect width="32" height="32" rx="9" fill="#ff5b14" />
-              <circle cx="16" cy="16" r="8.5" fill="none" stroke="#fff" strokeWidth="2.5" />
-              <circle cx="16" cy="16" r="3.2" fill="#ffc93c" />
-            </svg>
-            <span className="text-lg font-extrabold tracking-tight text-ink sm:text-xl">URBANIX</span>
+          <Link href="/" className="shrink-0" aria-label="Urbanix Store, ke beranda">
+            <BrandLogo />
           </Link>
 
           <form action="/produk" method="GET" className="hidden flex-1 md:block" role="search">
-            <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-mist px-4 py-2.5 focus-within:border-brand-500 focus-within:bg-white">
+            <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-mist px-4 py-2.5 focus-within:border-slate-900 focus-within:bg-surface">
               <SearchIcon />
               <input
                 type="search"
@@ -84,6 +81,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
                 Chat admin
               </a>
             )}
+            <ThemeToggle />
             <CartLink />
           </nav>
         </div>
@@ -103,7 +101,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
                 </li>
               )}
               <li>
-                <Link href="/produk" className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-ink hover:bg-brand-100">
+                <Link href="/produk" className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-ink hover:bg-slate-200">
                   Semua produk
                 </Link>
               </li>
@@ -111,7 +109,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
                 <li key={category.id}>
                   <Link
                     href={`/produk?category=${category.id}`}
-                    className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-slate-700 hover:bg-brand-100 hover:text-ink"
+                    className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-slate-700 hover:bg-slate-200 hover:text-ink"
                   >
                     {category.name}
                   </Link>

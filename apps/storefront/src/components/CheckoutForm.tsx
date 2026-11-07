@@ -266,11 +266,11 @@ export default function CheckoutForm() {
 
   if (cart.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center">
         <p className="mb-4 text-slate-500">Keranjang belanja kamu masih kosong.</p>
         <Link
           href="/produk"
-          className="inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
+          className="inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
         >
           Mulai Belanja
         </Link>
@@ -295,7 +295,7 @@ export default function CheckoutForm() {
 
   if (shopeeLinks) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-6">
         <h2 className="text-lg font-black text-slate-900">Lanjut beli di Shopee</h2>
         <p className="mt-1 text-sm text-slate-500">
           Shopee hanya bisa membuka satu produk per klik. Buka setiap produk di bawah ini, lalu
@@ -317,7 +317,7 @@ export default function CheckoutForm() {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                  className="shrink-0 rounded-lg bg-ink px-4 py-2 text-xs font-bold text-surface hover:bg-slate-800"
                 >
                   Buka di Shopee
                 </a>
@@ -362,7 +362,7 @@ export default function CheckoutForm() {
                 <label
                   key={m}
                   className={`flex cursor-pointer gap-3 rounded-xl border-2 p-4 transition ${
-                    method === m ? 'border-orange-600 bg-orange-50' : 'border-slate-200 hover:border-slate-300'
+                    method === m ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <input
@@ -374,7 +374,7 @@ export default function CheckoutForm() {
                       setMethod(m);
                       setSubmitError('');
                     }}
-                    className="mt-1 accent-orange-600"
+                    className="mt-1 accent-slate-900"
                   />
                   <span>
                     <span className="block font-bold text-slate-900">{METHOD_INFO[m].title}</span>
@@ -429,7 +429,7 @@ export default function CheckoutForm() {
       </div>
 
       {/* Ringkasan */}
-      <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 lg:sticky lg:top-24">
+      <aside className="h-fit rounded-2xl border border-slate-200 bg-surface p-5 lg:sticky lg:top-24">
         <h2 className="font-black text-slate-900">Ringkasan pesanan</h2>
         <ul className="mt-4 divide-y divide-slate-100">
           {quote.items.map((item) => (
@@ -483,7 +483,7 @@ export default function CheckoutForm() {
             <p className="text-xs text-slate-500">Diskon WhatsApp tidak berlaku untuk produk yang sedang promo.</p>
           )}
           {method !== 'WHATSAPP' && waPercent > 0 && quote.methods.whatsapp && (
-            <p className="rounded-lg bg-sun-100 px-3 py-2 text-xs font-semibold text-cobalt-900">
+            <p className="rounded-lg bg-sun-100 px-3 py-2 text-xs font-semibold text-ink">
               Pilih Pesan via WhatsApp untuk potongan {waPercent}%.
             </p>
           )}
@@ -504,7 +504,7 @@ export default function CheckoutForm() {
         <button
           type="submit"
           disabled={!method || submitting || blocked}
-          className="mt-5 w-full rounded-xl bg-orange-600 px-5 py-4 font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 w-full rounded-xl bg-brand-500 px-5 py-4 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? 'Memproses…'
@@ -516,7 +516,7 @@ export default function CheckoutForm() {
                   ? 'Lanjut ke Shopee'
                   : 'Pilih metode pembayaran'}
         </button>
-        <Link href="/cart" className="mt-3 block text-center text-sm text-slate-500 hover:text-orange-600">
+        <Link href="/cart" className="mt-3 block text-center text-sm text-slate-500 hover:text-slate-900">
           ← Ubah keranjang
         </Link>
       </aside>
@@ -528,13 +528,13 @@ function inputCls(error?: string) {
   return `w-full rounded-xl border px-3.5 py-2.5 text-base outline-none transition focus:ring-2 sm:text-sm ${
     error
       ? 'border-red-400 focus:ring-red-200'
-      : 'border-slate-300 focus:border-orange-500 focus:ring-orange-100'
+      : 'border-slate-300 focus:border-slate-900 focus:ring-slate-200'
   }`;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <h2 className="mb-4 font-black text-slate-900">{title}</h2>
       {children}
     </section>

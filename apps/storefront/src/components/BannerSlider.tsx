@@ -38,7 +38,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
 
   return (
     <div
-      className="relative h-full overflow-hidden rounded-[28px] bg-white"
+      className="relative h-full overflow-hidden rounded-[28px] bg-surface"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -131,7 +131,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 aria-label={`Tampilkan banner ${i + 1}`}
                 aria-current={i === index}
                 className={`h-2 rounded-full transition-all ${
-                  i === index ? 'w-6 bg-white' : 'w-2 bg-white/50'
+                  i === index ? 'w-6 bg-surface' : 'w-2 bg-surface/50'
                 }`}
               />
             ))}
