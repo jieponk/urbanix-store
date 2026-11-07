@@ -38,10 +38,63 @@ class Product(models.Model):
         default="https://via.placeholder.com/400x400?text=URBANIX+Product"
     )
     is_active = models.BooleanField(default=True)
+    shopee_url = models.URLField(
+        "Link Shopee",
+        max_length=500,
+        blank=True,
+        help_text="Link produk ini di Shopee. Kosongkan untuk memakai link toko di Pengaturan toko.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def final_price(self):
+        """Harga yang dibayar pembeli: harga diskon bila valid, kalau tidak harga normal."""
+        if self.discount_price and 0 < self.discount_price < self.price:
+            return self.discount_price
+        return self.price
+
+
+class StoreSettings(models.Model):
+    """Pengaturan toko (hanya satu baris). Diubah lewat admin Django."""
+
+    whatsapp_number = models.CharField(
+        "Nomor WhatsApp toko",
+        max_length=20,
+        blank=True,
+        help_text="Format internasional tanpa + atau spasi, contoh: 6281234567890.",
+    )
+    shopee_store_url = models.URLField(
+        "Link toko Shopee",
+        max_length=500,
+        blank=True,
+        help_text="Dipakai bila produk belum punya link Shopee sendiri.",
+    )
+    enable_midtrans = models.BooleanField(
+        "Aktifkan bayar di web (Midtrans)",
+        default=True,
+        help_text="Tetap nonaktif selama MIDTRANS_SERVER_KEY belum diisi.",
+    )
+    enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
+    enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
+
+    class Meta:
+        verbose_name = "Pengaturan toko"
+        verbose_name_plural = "Pengaturan toko"
+
+    def __str__(self):
+        return "Pengaturan toko"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
 
 
 class ProductVariation(models.Model):
@@ -108,10 +161,36 @@ class Order(models.Model):
         unique=True,
         default=uuid.uuid4,
     )
+    PAYMENT_METHOD_CHOICES = (
+        ("MIDTRANS", "Bayar di web (Midtrans)"),
+        ("WHATSAPP", "Via WhatsApp"),
+    )
+
     user = models.ForeignKey(
         User,
         related_name="orders",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    customer_name = models.CharField("Nama pembeli", max_length=120, blank=True)
+    customer_phone = models.CharField("No. HP pembeli", max_length=20, blank=True)
+    customer_email = models.EmailField("Email pembeli", blank=True)
+    shipping_city = models.CharField("Kota/Kabupaten", max_length=100, blank=True)
+    shipping_province = models.CharField("Provinsi", max_length=100, blank=True)
+    shipping_postal_code = models.CharField("Kode pos", max_length=10, blank=True)
+    notes = models.TextField("Catatan untuk penjual", blank=True)
+    payment_method = models.CharField(
+        "Metode pembayaran",
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        blank=True,
+    )
+    payment_url = models.URLField("Link pembayaran", max_length=500, blank=True)
+    stock_reserved = models.BooleanField(
+        "Stok sudah dikurangi",
+        default=False,
+        help_text="True bila stok pesanan ini sedang dipotong (dikembalikan otomatis saat gagal/kedaluwarsa).",
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     shipping_address = models.TextField()

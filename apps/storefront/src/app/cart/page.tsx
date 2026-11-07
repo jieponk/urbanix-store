@@ -41,7 +41,7 @@ export default function CartPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-4xl">
         <Link href="/" className="text-sm text-slate-500 hover:text-orange-600">
           ← Kembali ke toko
@@ -57,7 +57,7 @@ export default function CartPage() {
               Keranjang belanja kamu masih kosong.
             </p>
             <Link
-              href="/"
+              href="/produk"
               className="inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
             >
               Mulai Belanja
@@ -159,6 +159,6 @@ export default function CartPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

@@ -39,6 +39,10 @@ export function addToCart(item: CartItem) {
   saveCart(cart);
 }
 
+export function clearCart() {
+  saveCart([]);
+}
+
 export function removeFromCart(id: string) {
   saveCart(getCart().filter((item) => item.id !== id));
 }

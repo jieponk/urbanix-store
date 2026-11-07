@@ -1,20 +1,23 @@
 from rest_framework import viewsets, status, permissions
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.shortcuts import get_object_or_404
-from .models import Category, Product, Cart, CartItem, Order, AuditLog, PaymentEvent
+from .models import Category, Product, Cart, CartItem, Order
 from .serializers import CategorySerializer, ProductSerializer, CartSerializer, OrderSerializer
-from .services import OrderService, MidtransService
-from django.conf import settings
+from .services import OrderService
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
 
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = (
+        Product.objects.filter(is_active=True)
+        .select_related('category')
+        .prefetch_related('variations')
+    )
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
 
@@ -69,43 +72,4 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def midtrans_webhook(request):
-    payload = request.data
-    order_number = payload.get('order_id')
-    status_code = payload.get('status_code')
-    gross_amount = payload.get('gross_amount')
-    signature_key = payload.get('signature_key')
-    transaction_status = payload.get('transaction_status')
-
-    # Verify signature
-    calculated_sig = MidtransService.generate_signature(
-        order_number, status_code, gross_amount, settings.MIDTRANS_SERVER_KEY
-    )
-
-    order = Order.objects.filter(order_number=order_number).first()
-    if not order:
-        return Response({'status': 'order not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    # If signature key matches or in dev test mode
-    if signature_key and signature_key != calculated_sig:
-        return Response({'status': 'invalid signature'}, status=status.HTTP_403_FORBIDDEN)
-
-    # Handle Payment States Idempotently
-    PaymentEvent.objects.create(
-        order=order,
-        transaction_id=payload.get('transaction_id', 'N/A'),
-        event_type=transaction_status,
-        raw_payload=payload
-    )
-
-    if transaction_status in ['capture', 'settlement']:
-        order.payment_status = 'PAID'
-        order.status = 'PROCESSING'
-    elif transaction_status in ['cancel', 'deny', 'expire']:
-        order.payment_status = 'FAILED'
-        order.status = 'CANCELLED'
-
-    order.save()
-    return Response({'status': 'success'})
+# Webhook Midtrans dipindah ke checkout_views.midtrans_webhook (tanda tangan wajib valid).

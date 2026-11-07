@@ -1,0 +1,22 @@
+FOLDER IKON PEMBAYARAN (FOOTER)
+===============================
+
+Isi bawaan: qris.svg, transfer-bank.svg, e-wallet.svg (ikon generik buatan
+sendiri, bukan logo merek).
+
+Nama file harus sama dengan kolom `logo` di `paymentMethods` pada
+src/lib/siteConfig.ts. Kalau file untuk satu metode tidak ada, footer
+menampilkan namanya sebagai teks biasa.
+
+MEMAKAI LOGO RESMI (misalnya QRIS, BCA, DANA)
+  1. Unduh logo dari halaman brand / press kit masing-masing dan ikuti
+     aturan penggunaannya.
+  2. Simpan di folder ini, misalnya bca.png atau dana.svg
+     (format .svg, .png, .webp, .jpg).
+  3. Di siteConfig.ts ubah/tambah barisnya, contoh:
+       { name: 'BCA', logo: 'bca' },
+     dan hapus `showName: true` supaya nama tidak tampil dobel di samping logo.
+     Untuk mengganti ikon generik dengan logo resmi, cukup beri nama file yang
+     sama (misal qris.png) dan hapus qris.svg.
+
+PENTING: tampilkan hanya metode yang benar-benar bisa dipakai di checkout.

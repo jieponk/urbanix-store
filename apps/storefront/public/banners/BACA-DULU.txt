@@ -1,0 +1,27 @@
+FOLDER BANNER BERANDA
+=====================
+
+Taruh gambar banner di folder ini (format .jpg, .png, .webp). Semua gambar
+akan tampil otomatis di beranda sebagai slideshow, urut berdasarkan nama file.
+
+Contoh penamaan supaya urutannya rapi:
+  1-promo-kamera.jpg
+  2-diskon-lensa.jpg
+  3-brand-baru.webp
+
+Ukuran yang disarankan : 1600 x 686 piksel (rasio 21:9), ukuran file < 500 KB.
+Di HP gambar dipotong menjadi rasio 16:9, jadi letakkan tulisan dan produk
+penting di bagian TENGAH gambar.
+
+Mengganti banner : hapus gambar lama, taruh gambar baru di sini, lalu refresh.
+Kalau tidak ada gambar sama sekali, beranda menampilkan banner teks bawaan.
+
+Banner yang bisa diklik: atur `bannerLinks` di src/lib/siteConfig.ts (nama file harus sama),
+contoh: '1-promo-kamera.jpg': '/produk?category=3'
+
+Catatan: gunakan gambar yang kamu punya hak pakainya (buatan sendiri atau
+materi promosi resmi dari brand).
+
+3 banner bawaan (1-gear-terbaik, 2-fast-service, 3-produk-pilihan) adalah contoh.
+Ganti/hapus kapan saja. Kalau kamu menghapus atau mengganti nama file, ubah juga
+barisnya di `bannerLinks`.
