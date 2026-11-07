@@ -12,3 +12,6 @@ out/
 # Windows & VS Code
 .vscode/
 *.log
+# Environment (berisi kunci rahasia, jangan di-commit)
+.env
+.env*.local
