@@ -19,6 +19,9 @@ export const metadata = {
     template: '%s | URBANIX STORE',
   },
   description: siteConfig.motto,
+  // Safari iPhone otomatis mengubah nomor telepon jadi tautan, yang membuat
+  // tampilan HP berbeda dari server ("Hydration failed"). Matikan deteksi otomatis itu.
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

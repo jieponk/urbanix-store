@@ -91,7 +91,7 @@ class StoreSettings(models.Model):
         "Nomor WhatsApp toko",
         max_length=20,
         blank=True,
-        help_text="Format internasional tanpa + atau spasi, contoh: 6281234567890.",
+        help_text="Contoh: 6281234567890. Boleh diketik 0812..., +62 812..., atau dengan spasi; dirapikan otomatis saat disimpan.",
     )
     shopee_store_url = models.URLField(
         "Link toko Shopee",
@@ -140,8 +140,17 @@ class StoreSettings(models.Model):
     def __str__(self):
         return "Pengaturan toko"
 
+    @staticmethod
+    def normalize_whatsapp(number):
+        """'+62 812-3456-7890' / '0812...' -> '628123456789...' (format wa.me)."""
+        digits = "".join(ch for ch in (number or "") if ch.isdigit())
+        if digits.startswith("0"):
+            digits = "62" + digits[1:]
+        return digits
+
     def save(self, *args, **kwargs):
         self.pk = 1
+        self.whatsapp_number = self.normalize_whatsapp(self.whatsapp_number)
         super().save(*args, **kwargs)
 
     @classmethod

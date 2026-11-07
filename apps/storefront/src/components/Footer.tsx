@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/siteConfig';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
-  const local = number.replace(/^62/, '0');
+  const local = number.replace(/\D/g, '').replace(/^62/, '0');
   return local.replace(/(\d{4})(\d{4})(\d+)/, '$1-$2-$3');
 }
 
@@ -18,7 +18,7 @@ export default function Footer({
   settings: StoreSettings | null;
 }) {
   const { contact, paymentMethods, motto, name } = siteConfig;
-  const whatsapp = settings?.whatsapp_number || contact.whatsappNumber;
+  const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -85,7 +85,13 @@ export default function Footer({
           <h2 className="text-sm font-bold text-white">Kontak</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li className="text-white">{contact.person}</li>
-            {whatsapp && <li>WhatsApp {displayPhone(whatsapp)}</li>}
+            {whatsapp && (
+              <li>
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
+                  WhatsApp {displayPhone(whatsapp)}
+                </a>
+              </li>
+            )}
             <li>
               <a href={`mailto:${contact.email}`} className="hover:text-sun-400">{contact.email}</a>
             </li>

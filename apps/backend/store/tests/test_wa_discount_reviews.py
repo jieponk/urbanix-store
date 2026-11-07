@@ -78,3 +78,10 @@ class ReviewTests(TestCase):
         self.assertEqual((data[0]["name"], data[0]["product_name"]), ("b***n", "Kamera"))
         self.assertEqual(len(self.api.get(f"/api/v1/reviews/?product={self.p.id + 1}").data), 0)
         self.assertEqual(self.api.get("/api/v1/store-settings/").data["review_count"], 1)
+
+
+class WhatsappNumberTests(TestCase):
+    def test_number_normalized_on_save(self):
+        for raw, expected in [("+62 821-2990-180", "628212990180"), ("0812 3456 7890", "6281234567890"), ("6281234567890", "6281234567890")]:
+            s = StoreSettings.load(); s.whatsapp_number = raw; s.save()
+            self.assertEqual(StoreSettings.load().whatsapp_number, expected)
