@@ -88,6 +88,8 @@ def order_detail(request, order_number):
                 {
                     "product_id": item.product_id,
                     "name": item.product_name,
+                    "variation_name": item.variation_name,
+                    "sku": item.sku,
                     "unit_price": str(item.price_snapshot),
                     "quantity": item.quantity,
                     "subtotal": str(item.price_snapshot * item.quantity),

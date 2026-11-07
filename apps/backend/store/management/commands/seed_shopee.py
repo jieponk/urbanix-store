@@ -206,6 +206,10 @@ class Command(BaseCommand):
                     f"(ID {product_id}): {exc}"
                 ) from exc
 
+        # Stok induk = jumlah stok semua varian (sebelumnya hanya varian pertama).
+        for product in Product.objects.filter(variations__isnull=False).distinct():
+            product.sync_stock_from_variations()
+
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("IMPOR SELESAI"))
         self.stdout.write(

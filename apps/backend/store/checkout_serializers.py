@@ -7,6 +7,7 @@ PHONE_RE = re.compile(r"^(\+62|62|0)8[0-9]{7,12}$")
 
 class CheckoutItemSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(min_value=1)
+    variation_id = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
     quantity = serializers.IntegerField(min_value=1, max_value=99)
 
 

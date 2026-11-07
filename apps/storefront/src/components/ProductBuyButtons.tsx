@@ -2,71 +2,160 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { addToCart, getCart, saveCart } from '@/lib/cart';
+import { money, type Variation } from '@/lib/api';
+import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
 
 type Props = {
   id: string;
   name: string;
+  /** SKU induk; dipakai bila produk tidak punya varian (atau varian tanpa SKU). */
+  sku: string;
   price: number;
   imageUrl: string | null;
   stock: number;
+  /** Varian yang wajib dipilih (kosong = produk biasa). */
+  variations: Variation[];
+  /** Nomor WhatsApp toko dari Pengaturan toko; kosong = tombol chat disembunyikan. */
+  whatsappNumber: string;
 };
 
 export default function ProductBuyButtons({
   id,
   name,
+  sku,
   price,
   imageUrl,
   stock,
+  variations,
+  whatsappNumber,
 }: Props) {
   const router = useRouter();
+  const hasVariants = variations.length > 0;
+
+  // Pilih otomatis bila hanya ada satu varian yang masih ada stoknya.
+  const [variationId, setVariationId] = useState<string | null>(() => {
+    const available = variations.filter((v) => v.stock > 0);
+    return available.length === 1 ? available[0].variation_id : null;
+  });
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
+  const [needVariant, setNeedVariant] = useState(false);
+
+  const selected = variations.find((v) => v.variation_id === variationId) ?? null;
+  const currentPrice = selected ? Number(selected.price) || 0 : price;
+  const currentStock = hasVariants ? (selected ? selected.stock : 0) : stock;
+  const currentSku = selected?.sku || sku;
+  const canBuy = hasVariants ? Boolean(selected) && currentStock > 0 : stock > 0;
+
+  function choose(variation: Variation) {
+    if (variation.stock < 1) return;
+    setVariationId(variation.variation_id);
+    setQuantity((q) => Math.min(Math.max(1, q), variation.stock));
+    setNeedVariant(false);
+    setMessage('');
+  }
+
+  function buildItem(): CartItem | null {
+    if (hasVariants && !selected) {
+      setNeedVariant(true);
+      return null;
+    }
+    if (!canBuy) return null;
+    return {
+      id: cartLineId(id, selected?.variation_id),
+      productId: id,
+      variationId: selected?.variation_id,
+      variationName: selected?.name.trim() || undefined,
+      sku: currentSku || undefined,
+      name,
+      price: currentPrice,
+      image_url: imageUrl,
+      quantity: Math.min(quantity, currentStock),
+      stock: currentStock,
+    };
+  }
 
   function addProduct() {
-    if (stock < 1) return;
-
-    addToCart({
-      id,
-      name,
-      price,
-      image_url: imageUrl,
-      quantity,
-      stock,
-    });
-
+    const item = buildItem();
+    if (!item) return;
+    addToCart(item);
     setMessage('Produk berhasil ditambahkan ke keranjang.');
   }
 
   function buyNow() {
-    if (stock < 1) return;
-
-    const cart = getCart();
-    const existing = cart.find((item) => item.id === id);
-
-    if (existing) {
-      existing.quantity = Math.min(stock, existing.quantity + quantity);
-      saveCart(cart);
-    } else {
-      addToCart({
-        id,
-        name,
-        price,
-        image_url: imageUrl,
-        quantity,
-        stock,
-      });
-    }
-
+    const item = buildItem();
+    if (!item) return;
+    addToCart(item);
     router.push('/checkout');
   }
 
+  function chatUrl() {
+    const lines = ['Halo admin URBANIX, saya mau tanya tentang produk ini:', name];
+    if (selected?.name.trim()) lines.push(`Varian: ${selected.name.trim()}`);
+    if (currentSku) lines.push(`SKU: ${currentSku}`);
+    lines.push(window.location.href, '', 'Pertanyaan saya: ');
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
+  }
+
+  function openChat() {
+    window.open(chatUrl(), '_blank', 'noopener,noreferrer');
+  }
+
   return (
-    <div className="mt-8 space-y-4">
+    <div className="mt-6 space-y-5">
+      {hasVariants && (
+        <div>
+          <p className={`mb-2 text-sm font-semibold ${needVariant ? 'text-red-600' : 'text-slate-700'}`}>
+            {needVariant ? 'Pilih varian dulu ya' : 'Pilih varian'}
+            <span className="font-normal text-slate-400"> ({variations.length} pilihan)</span>
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Pilih varian"
+            className={`grid gap-2 sm:grid-cols-2 ${needVariant ? 'rounded-xl ring-2 ring-red-300 ring-offset-2' : ''}`}
+          >
+            {variations.map((variation) => {
+              const active = variation.variation_id === variationId;
+              const soldOut = variation.stock < 1;
+              return (
+                <button
+                  key={variation.variation_id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  disabled={soldOut}
+                  onClick={() => choose(variation)}
+                  className={`rounded-xl border-2 px-3 py-2.5 text-left text-sm transition ${
+                    active
+                      ? 'border-orange-600 bg-orange-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  <span className="block font-semibold text-slate-900">
+                    {variation.name.trim() || 'Standar'}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-500">
+                    {money(variation.price)} · {soldOut ? 'Habis' : `Stok ${variation.stock}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {hasVariants && selected && (
+        <div className="rounded-xl bg-slate-100 px-4 py-3">
+          <p className="text-xl font-black text-slate-950">{money(currentPrice)}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {selected.name.trim() || 'Standar'}
+            {currentSku && <> · SKU: {currentSku}</>}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center gap-4">
-        <span className="text-sm font-semibold text-slate-700">
-          Jumlah
-        </span>
+        <span className="text-sm font-semibold text-slate-700">Jumlah</span>
 
         <div className="flex items-center rounded-xl border border-slate-300">
           <button
@@ -78,15 +167,11 @@ export default function ProductBuyButtons({
           >
             −
           </button>
-
-          <span className="min-w-8 text-center font-semibold">
-            {quantity}
-          </span>
-
+          <span className="min-w-8 text-center font-semibold">{quantity}</span>
           <button
             type="button"
-            onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
-            disabled={quantity >= stock}
+            onClick={() => setQuantity((q) => Math.min(Math.max(1, currentStock), q + 1))}
+            disabled={quantity >= currentStock}
             className="px-4 py-2 text-lg disabled:opacity-30"
             aria-label="Tambah jumlah"
           >
@@ -95,7 +180,7 @@ export default function ProductBuyButtons({
         </div>
 
         <span className="text-xs text-slate-500">
-          Stok: {stock}
+          {hasVariants && !selected ? 'Pilih varian untuk melihat stok' : `Stok: ${currentStock}`}
         </span>
       </div>
 
@@ -103,16 +188,15 @@ export default function ProductBuyButtons({
         <button
           type="button"
           onClick={addProduct}
-          disabled={stock < 1}
+          disabled={!hasVariants && !canBuy}
           className="rounded-xl border-2 border-orange-600 px-5 py-3.5 text-sm font-bold text-orange-600 transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           + Tambah ke Keranjang
         </button>
-
         <button
           type="button"
           onClick={buyNow}
-          disabled={stock < 1}
+          disabled={!hasVariants && !canBuy}
           className="rounded-xl bg-orange-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Beli Sekarang
@@ -122,15 +206,48 @@ export default function ProductBuyButtons({
       {message && (
         <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
           {message}{' '}
-          <button
-            type="button"
-            onClick={() => router.push('/cart')}
-            className="font-bold underline"
-          >
+          <button type="button" onClick={() => router.push('/cart')} className="font-bold underline">
             Lihat Keranjang
           </button>
         </div>
       )}
+
+      {whatsappNumber && (
+        <>
+          <button
+            type="button"
+            onClick={openChat}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600 px-5 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            <ChatIcon />
+            Tanya produk ini ke admin (WhatsApp)
+          </button>
+
+          {/* Tombol chat melayang: selalu terlihat saat pembeli menggulir deskripsi */}
+          <button
+            type="button"
+            onClick={openChat}
+            aria-label="Chat admin lewat WhatsApp"
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+            </span>
+            <ChatIcon />
+            <span className="hidden sm:inline">Chat Admin</span>
+          </button>
+        </>
+      )}
     </div>
+  );
+}
+
+/** Ikon gelembung chat generik (bukan logo merek). */
+function ChatIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
+    </svg>
   );
 }

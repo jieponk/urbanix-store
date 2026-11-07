@@ -49,6 +49,25 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def buyable_variations(self):
+        """Varian yang harus dipilih pembeli.
+
+        Produk dengan satu varian tanpa nama dianggap produk biasa (tidak perlu memilih).
+        """
+        variations = list(self.variations.all())
+        if len(variations) > 1 or (variations and variations[0].name.strip()):
+            return variations
+        return []
+
+    def sync_stock_from_variations(self, save=True):
+        """Stok induk = jumlah stok semua varian (bila produk punya varian)."""
+        total = self.variations.aggregate(total=models.Sum("stock"))["total"]
+        if total is not None and total != self.stock:
+            self.stock = total
+            if save:
+                Product.objects.filter(pk=self.pk).update(stock=total)
+        return self.stock
+
     @property
     def final_price(self):
         """Harga yang dibayar pembeli: harga diskon bila valid, kalau tidak harga normal."""
@@ -232,7 +251,15 @@ class OrderItem(models.Model):
         on_delete=models.SET_NULL,
         null=True,
     )
+    variation = models.ForeignKey(
+        "ProductVariation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     product_name = models.CharField(max_length=255)
+    variation_name = models.CharField("Varian", max_length=255, blank=True)
+    sku = models.CharField("SKU", max_length=100, blank=True)
     price_snapshot = models.DecimalField(max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField()
 

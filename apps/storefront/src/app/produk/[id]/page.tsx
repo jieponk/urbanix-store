@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import ProductBuyButtons from '@/components/ProductBuyButtons';
 import ProductInfoSections from '@/components/ProductInfoSections';
-import { API, fetchAll, money, type Product } from '@/lib/api';
+import {
+  API,
+  buyableVariations,
+  fetchAll,
+  getStoreSettings,
+  money,
+  type Product,
+} from '@/lib/api';
 
 async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
@@ -37,7 +44,10 @@ export default async function ProductPage({
   params: Promise<{ id: string }> | { id: string };
 }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const [product, storeSettings] = await Promise.all([
+    getProduct(id),
+    getStoreSettings(),
+  ]);
 
   if (!product) {
     return (
@@ -68,8 +78,15 @@ export default async function ProductPage({
   const discountPercent = hasDiscount
     ? Math.round(((price - discountPrice) / price) * 100)
     : 0;
-  const stock = Number(product.stock) || 0;
-  const variationCount = product.variations?.length ?? 0;
+  const variants = buyableVariations(product);
+  const hasVariants = variants.length > 0;
+  const variantPrices = variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
+  const minVariantPrice = variantPrices.length ? Math.min(...variantPrices) : finalPrice;
+  const maxVariantPrice = variantPrices.length ? Math.max(...variantPrices) : finalPrice;
+  // Produk bervarian: stok = jumlah stok semua varian.
+  const stock = hasVariants
+    ? variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+    : Number(product.stock) || 0;
 
   return (
     <div className="bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -108,12 +125,12 @@ export default async function ProductPage({
               {product.name}
             </h1>
 
-            {product.sku && (
+            {product.sku && !hasVariants && (
               <p className="mt-3 text-xs text-slate-400">SKU: {product.sku}</p>
             )}
 
             <div className="mt-6 border-y border-slate-200 py-5">
-              {hasDiscount && (
+              {hasDiscount && !hasVariants && (
                 <p className="flex items-center gap-2 text-sm text-slate-400">
                   <span className="line-through">{money(price)}</span>
                   <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
@@ -123,7 +140,14 @@ export default async function ProductPage({
               )}
 
               <p className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
-                {money(finalPrice)}
+                {hasVariants && minVariantPrice !== maxVariantPrice ? (
+                  <>
+                    <span className="mr-1.5 text-sm font-semibold text-slate-500">Mulai</span>
+                    {money(minVariantPrice)}
+                  </>
+                ) : (
+                  money(hasVariants ? minVariantPrice : finalPrice)
+                )}
               </p>
 
               <p
@@ -136,26 +160,17 @@ export default async function ProductPage({
                   : 'Stok tercatat habis'}
               </p>
 
-              {variationCount > 1 && (
-                <p className="mt-2 text-xs text-slate-500">
-                  Produk ini punya {variationCount} varian dengan harga bisa
-                  berbeda.{' '}
-                  <a
-                    href="#info-produk"
-                    className="font-semibold text-orange-600 hover:underline"
-                  >
-                    Lihat daftar varian
-                  </a>
-                </p>
-              )}
             </div>
 
             <ProductBuyButtons
               id={String(product.id)}
               name={product.name}
+              sku={product.sku}
               price={finalPrice}
               imageUrl={product.image_url ?? null}
               stock={stock}
+              variations={variants}
+              whatsappNumber={storeSettings?.whatsapp_number ?? ''}
             />
 
             <Link

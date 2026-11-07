@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { money } from '@/lib/api';
-import { CartItem, clearCart, getCart, saveCart } from '@/lib/cart';
+import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
 type QuoteItem = {
   product_id: number;
+  variation_id: string;
+  variation_name: string;
+  sku: string;
   name: string;
   image_url: string | null;
   unit_price: string;
@@ -27,7 +30,7 @@ type Quote = {
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
 };
 
-type ShopeeLink = { name: string; quantity: number; url: string };
+type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
 
 const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; text: string }> = {
   MIDTRANS: {
@@ -119,7 +122,11 @@ export default function CheckoutForm() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: items.map((i) => ({ product_id: Number(i.id), quantity: i.quantity })),
+        items: items.map((i) => ({
+          product_id: Number(cartProductId(i)),
+          variation_id: i.variationId ?? '',
+          quantity: i.quantity,
+        })),
       }),
     })
       .then(async (res) => {
@@ -129,12 +136,20 @@ export default function CheckoutForm() {
         setQuote(q);
 
         // Samakan harga & stok di keranjang dengan data server.
-        const byId = new Map(q.items.map((i) => [String(i.product_id), i]));
+        const byLine = new Map(
+          q.items.map((i) => [cartLineId(String(i.product_id), i.variation_id || undefined), i])
+        );
         saveCart(
           items.map((item) => {
-            const fresh = byId.get(item.id);
+            const fresh = byLine.get(cartLineId(cartProductId(item), item.variationId));
             return fresh
-              ? { ...item, price: Number(fresh.unit_price), stock: fresh.stock }
+              ? {
+                  ...item,
+                  price: Number(fresh.unit_price),
+                  stock: fresh.stock,
+                  sku: fresh.sku || item.sku,
+                  variationName: fresh.variation_name || item.variationName,
+                }
               : item;
           })
         );
@@ -187,7 +202,11 @@ export default function CheckoutForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payment_method: method,
-          items: quote.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+          items: quote.items.map((i) => ({
+            product_id: i.product_id,
+            variation_id: i.variation_id,
+            quantity: i.quantity,
+          })),
           ...(needsForm && {
             customer: { name: form.name, phone: form.phone, email: form.email },
             shipping: {
@@ -282,9 +301,14 @@ export default function CheckoutForm() {
         </p>
         <ul className="mt-5 divide-y divide-slate-100">
           {shopeeLinks.map((link) => (
-            <li key={link.name} className="flex items-center justify-between gap-4 py-3">
+            <li key={`${link.name}-${link.variation_name}`} className="flex items-center justify-between gap-4 py-3">
               <span className="min-w-0 text-sm text-slate-800">
                 {link.name} <span className="text-slate-400">×{link.quantity}</span>
+                {link.variation_name && (
+                  <span className="block text-xs text-slate-500">
+                    Pilih varian di Shopee: <b>{link.variation_name}</b>
+                  </span>
+                )}
               </span>
               {link.url ? (
                 <a
@@ -403,12 +427,19 @@ export default function CheckoutForm() {
         <h2 className="font-black text-slate-900">Ringkasan pesanan</h2>
         <ul className="mt-4 divide-y divide-slate-100">
           {quote.items.map((item) => (
-            <li key={item.product_id} className="flex gap-3 py-3">
+            <li key={`${item.product_id}:${item.variation_id}`} className="flex gap-3 py-3">
               {item.image_url && (
                 <img src={item.image_url} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
               )}
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm text-slate-800">{item.name}</p>
+                {(item.variation_name || item.sku) && (
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {item.variation_name}
+                    {item.variation_name && item.sku && ' · '}
+                    {item.sku && `SKU ${item.sku}`}
+                  </p>
+                )}
                 <p className="mt-0.5 text-xs text-slate-500">
                   {item.quantity} × {money(item.unit_price)}
                 </p>

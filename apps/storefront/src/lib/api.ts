@@ -100,3 +100,33 @@ export async function getActiveProducts(): Promise<Product[]> {
     (p) => p.is_active !== false && p.stock > 0 && p.image_url
   );
 }
+
+/**
+ * Varian yang harus dipilih pembeli (sama dengan aturan backend):
+ * produk dengan satu varian tanpa nama dianggap produk biasa.
+ */
+export function buyableVariations(product: Product): Variation[] {
+  const variations = product.variations ?? [];
+  if (variations.length > 1 || (variations.length === 1 && variations[0].name.trim())) {
+    return variations;
+  }
+  return [];
+}
+
+export type StoreSettings = {
+  whatsapp_number: string;
+  shopee_store_url: string;
+  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+};
+
+/** Pengaturan toko dari admin Django (nomor WhatsApp, dll.). Dicache 60 detik. */
+export async function getStoreSettings(): Promise<StoreSettings | null> {
+  try {
+    const response = await fetch(`${API}/store-settings/`, {
+      next: { revalidate: 60 },
+    } as RequestInit);
+    return response.ok ? ((await response.json()) as StoreSettings) : null;
+  } catch {
+    return null;
+  }
+}

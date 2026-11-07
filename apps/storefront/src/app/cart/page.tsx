@@ -87,6 +87,13 @@ export default function CartPage() {
                     <h2 className="font-bold text-slate-900">
                       {item.name}
                     </h2>
+                    {(item.variationName || item.sku) && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {item.variationName && <>Varian: <span className="font-semibold text-slate-700">{item.variationName}</span></>}
+                        {item.variationName && item.sku && ' · '}
+                        {item.sku && <>SKU: {item.sku}</>}
+                      </p>
+                    )}
                     <p className="mt-1 text-sm font-semibold text-orange-600">
                       {money(item.price)}
                     </p>

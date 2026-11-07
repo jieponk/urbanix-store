@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from store import checkout_service as svc
-from store.models import Category, Order, Product, StoreSettings
+from store.models import Category, Order, Product, ProductVariation, StoreSettings
 
 SERVER_KEY = "SB-Mid-server-TESTKEY"
 
@@ -103,7 +103,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(self.cam.stock, 5)
         text = unquote(r.data["whatsapp_url"])
         self.assertTrue(r.data["whatsapp_url"].startswith("https://wa.me/6281234567890?text="))
-        for part in [order.order_number, "Kamera A x2", "Rp1.800.000", "Budi",
+        for part in [order.order_number, "Kamera A", "2 x Rp900.000", "Rp1.800.000", "Budi",
                      "Jl. Mawar 1, Bandung", "Tolong bubble wrap", "ongkir"]:
             self.assertIn(part, text)
 
@@ -256,3 +256,125 @@ class CheckoutTests(TestCase):
             for i in range(11)
         ]
         self.assertEqual(codes[-1], 429)
+
+
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, FRONTEND_URL="http://toko.test")
+class VariationCheckoutTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.api = APIClient()
+        cat = Category.objects.create(name="Kamera", slug="kamera")
+        self.sony = Product.objects.create(
+            category=cat, name="Sony RX100 VII", slug="sony", sku="SON-INDUK",
+            description="-", price=Decimal("20999000"), stock=7,
+        )
+        self.cam_only = ProductVariation.objects.create(
+            product=self.sony, variation_id="v1", name="Camera Only",
+            sku="SON-BLK", price=Decimal("20999000"), stock=2,
+        )
+        self.sd64 = ProductVariation.objects.create(
+            product=self.sony, variation_id="v2", name="+ SDXC 64GB",
+            sku="SON-BLK-64", price=Decimal("24999000"), stock=7,
+        )
+        # Satu varian tanpa nama = produk biasa
+        self.dji = Product.objects.create(
+            category=cat, name="DJI Osmo", slug="dji", sku="DJI-1",
+            description="-", price=Decimal("1499000"), stock=3,
+        )
+        ProductVariation.objects.create(
+            product=self.dji, variation_id="d1", name="", sku="", price=Decimal("1499000"), stock=3,
+        )
+        store = StoreSettings.load()
+        store.whatsapp_number = "6281234567890"
+        store.save()
+
+    def order(self, method, items):
+        return self.api.post("/api/v1/checkout/", {
+            "payment_method": method, "items": items,
+            "customer": {"name": "Budi", "phone": "081234567890"},
+            "shipping": {"address": "Jl. Mawar 1 RT 02", "city": "Bandung"},
+        }, format="json")
+
+    def test_variant_required_for_multi_variant_product(self):
+        r = self.api.post("/api/v1/checkout/quote/", {"items": [
+            {"product_id": self.sony.id, "quantity": 1}]}, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("Pilih varian", r.data["error"])
+
+    def test_quote_uses_variant_price_stock_sku(self):
+        r = self.api.post("/api/v1/checkout/quote/", {"items": [
+            {"product_id": self.sony.id, "variation_id": "v2", "quantity": 2}]}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        item = r.data["items"][0]
+        self.assertEqual(Decimal(item["unit_price"]), Decimal("24999000"))
+        self.assertEqual((item["sku"], item["variation_name"], item["stock"]),
+                         ("SON-BLK-64", "+ SDXC 64GB", 7))
+
+    def test_variant_of_other_product_rejected(self):
+        r = self.api.post("/api/v1/checkout/quote/", {"items": [
+            {"product_id": self.dji.id, "variation_id": "v2", "quantity": 1}]}, format="json")
+        self.assertEqual(r.status_code, 400)
+
+    def test_variant_stock_checked_not_parent(self):
+        # Stok induk 7, tapi varian "Camera Only" hanya 2
+        r = self.order("WHATSAPP", [{"product_id": self.sony.id, "variation_id": "v1", "quantity": 3}])
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("Camera Only", r.data["error"])
+
+    def test_single_unnamed_variation_buyable_without_choice(self):
+        r = self.order("WHATSAPP", [{"product_id": self.dji.id, "quantity": 1}])
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(Order.objects.get().items.get().sku, "DJI-1")
+
+    def test_whatsapp_message_has_variant_sku(self):
+        r = self.order("WHATSAPP", [
+            {"product_id": self.sony.id, "variation_id": "v1", "quantity": 1},
+            {"product_id": self.sony.id, "variation_id": "v2", "quantity": 1},
+        ])
+        self.assertEqual(r.status_code, 201, r.content)
+        text = unquote(r.data["whatsapp_url"])
+        for part in ["Varian: Camera Only", "SKU: SON-BLK", "Varian: + SDXC 64GB",
+                     "SKU: SON-BLK-64", "Rp45.998.000"]:
+            self.assertIn(part, text)
+        self.assertNotIn("SON-INDUK", text)
+        order = Order.objects.get()
+        self.assertEqual(order.total_amount, Decimal("45998000"))
+        d = self.api.get(f"/api/v1/checkout/orders/{order.order_number}/")
+        self.assertEqual({i["sku"] for i in d.data["items"]}, {"SON-BLK", "SON-BLK-64"})
+
+    def test_midtrans_reserves_variant_stock_and_syncs_parent(self):
+        fake = mock.Mock(status_code=201)
+        fake.json.return_value = {"token": "t", "redirect_url": "https://app.sandbox.midtrans.com/x"}
+        with mock.patch("store.checkout_service.requests.post", return_value=fake) as post:
+            r = self.order("MIDTRANS", [{"product_id": self.sony.id, "variation_id": "v2", "quantity": 3}])
+        self.assertEqual(r.status_code, 201, r.content)
+        item = post.call_args.kwargs["json"]["item_details"][0]
+        self.assertEqual(item["id"], "SON-BLK-64")
+        self.assertLessEqual(len(item["name"]), 50)
+        self.sd64.refresh_from_db(); self.sony.refresh_from_db(); self.cam_only.refresh_from_db()
+        self.assertEqual((self.sd64.stock, self.cam_only.stock, self.sony.stock), (4, 2, 6))
+
+        order = Order.objects.get()
+        payload = signed(order.order_number, "407", "74997000.00", transaction_status="expire")
+        self.assertEqual(self.api.post("/api/v1/payments/midtrans-webhook/", payload,
+                                       format="json").status_code, 200)
+        self.sd64.refresh_from_db(); self.sony.refresh_from_db()
+        self.assertEqual((self.sd64.stock, self.sony.stock), (7, 9))
+
+    def test_isi_stok_command(self):
+        from django.core.management import call_command
+        Product.objects.create(category=self.sony.category, name="Tanpa varian", slug="x",
+                               sku="X", description="-", price=1, stock=0)
+        call_command("isi_stok", jumlah=5, stdout=__import__("io").StringIO())
+        self.assertEqual(set(ProductVariation.objects.values_list("stock", flat=True)), {5})
+        self.sony.refresh_from_db()
+        self.assertEqual(self.sony.stock, 10)  # 2 varian x 5
+        self.assertEqual(Product.objects.get(sku="X").stock, 5)
+
+    def test_isi_stok_only_empty(self):
+        from django.core.management import call_command
+        self.cam_only.stock = 0
+        self.cam_only.save()
+        call_command("isi_stok", jumlah=4, hanya_kosong=True, stdout=__import__("io").StringIO())
+        self.cam_only.refresh_from_db(); self.sd64.refresh_from_db()
+        self.assertEqual((self.cam_only.stock, self.sd64.stock), (4, 7))

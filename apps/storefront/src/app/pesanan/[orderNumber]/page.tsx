@@ -15,7 +15,15 @@ type OrderDetail = {
   shipping_note: string;
   payment_url: string;
   whatsapp_url: string;
-  items: { product_id: number | null; name: string; unit_price: string; quantity: number; subtotal: string }[];
+  items: {
+    product_id: number | null;
+    name: string;
+    variation_name: string;
+    sku: string;
+    unit_price: string;
+    quantity: number;
+    subtotal: string;
+  }[];
 };
 
 async function getOrder(orderNumber: string): Promise<OrderDetail | null> {
@@ -143,6 +151,13 @@ export default async function OrderPage({
                     </Link>
                   ) : (
                     item.name
+                  )}
+                  {(item.variation_name || item.sku) && (
+                    <span className="block text-xs text-slate-500">
+                      {item.variation_name}
+                      {item.variation_name && item.sku && ' · '}
+                      {item.sku && `SKU ${item.sku}`}
+                    </span>
                   )}
                   <span className="block text-xs text-slate-500">
                     {item.quantity} × {money(item.unit_price)}

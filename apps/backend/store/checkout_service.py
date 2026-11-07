@@ -22,7 +22,15 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from .models import AuditLog, Order, OrderItem, PaymentEvent, Product, StoreSettings
+from .models import (
+    AuditLog,
+    Order,
+    OrderItem,
+    PaymentEvent,
+    Product,
+    ProductVariation,
+    StoreSettings,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +77,29 @@ def frontend_url(path: str) -> str:
 class QuoteLine:
     product: Product
     quantity: int
+    variation: ProductVariation | None = None
 
     @property
     def unit_price(self) -> Decimal:
-        return self.product.final_price
+        return self.variation.price if self.variation else self.product.final_price
+
+    @property
+    def stock(self) -> int:
+        return self.variation.stock if self.variation else self.product.stock
+
+    @property
+    def sku(self) -> str:
+        if self.variation and self.variation.sku:
+            return self.variation.sku
+        return self.product.sku
+
+    @property
+    def variation_name(self) -> str:
+        return self.variation.name.strip() if self.variation else ""
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.product.name} - {self.variation_name}" if self.variation_name else self.product.name
 
     @property
     def subtotal(self) -> Decimal:
@@ -80,29 +107,49 @@ class QuoteLine:
 
 
 def build_lines(raw_items) -> list[QuoteLine]:
-    """Gabungkan item duplikat, validasi produk dan jumlah. Harga SELALU dari database."""
+    """Gabungkan item duplikat, validasi produk/varian dan jumlah. Harga SELALU dari database."""
     if not raw_items:
         raise CheckoutError("Keranjang kosong.")
     if len(raw_items) > MAX_ITEMS:
         raise CheckoutError(f"Maksimal {MAX_ITEMS} jenis produk per pesanan.")
 
-    quantities: dict[int, int] = {}
+    quantities: dict[tuple[int, str], int] = {}
     for item in raw_items:
-        pid, qty = int(item["product_id"]), int(item["quantity"])
-        quantities[pid] = quantities.get(pid, 0) + qty
+        key = (int(item["product_id"]), str(item.get("variation_id") or ""))
+        quantities[key] = quantities.get(key, 0) + int(item["quantity"])
 
-    products = Product.objects.filter(id__in=quantities, is_active=True).in_bulk()
-    missing = [pid for pid in quantities if pid not in products]
-    if missing:
+    products = (
+        Product.objects.filter(id__in={pid for pid, _ in quantities}, is_active=True)
+        .prefetch_related("variations")
+        .in_bulk()
+    )
+    if any(pid not in products for pid, _ in quantities):
         raise CheckoutError(
             "Ada produk di keranjang yang sudah tidak tersedia. Hapus produk itu lalu coba lagi."
         )
 
     lines = []
-    for pid, qty in quantities.items():
+    for (pid, variation_id), qty in quantities.items():
+        product = products[pid]
         if qty < 1 or qty > MAX_QTY_PER_ITEM:
             raise CheckoutError(f"Jumlah produk harus antara 1 dan {MAX_QTY_PER_ITEM}.")
-        lines.append(QuoteLine(product=products[pid], quantity=qty))
+
+        variation = None
+        if variation_id:
+            variation = next(
+                (v for v in product.variations.all() if v.variation_id == variation_id), None
+            )
+            if variation is None:
+                raise CheckoutError(
+                    f"Varian {product.name} di keranjang sudah tidak tersedia. "
+                    "Hapus produk itu lalu pilih ulang variannya."
+                )
+        elif product.buyable_variations():
+            raise CheckoutError(
+                f"Pilih varian untuk {product.name} dulu. Hapus produk itu dari keranjang, "
+                "lalu tambahkan lagi dari halaman produk."
+            )
+        lines.append(QuoteLine(product=product, quantity=qty, variation=variation))
     return lines
 
 
@@ -113,13 +160,16 @@ def quote(raw_items) -> dict:
         "items": [
             {
                 "product_id": line.product.id,
+                "variation_id": line.variation.variation_id if line.variation else "",
+                "variation_name": line.variation_name,
+                "sku": line.sku,
                 "name": line.product.name,
                 "image_url": line.product.image_url,
                 "unit_price": str(line.unit_price),
                 "quantity": line.quantity,
                 "subtotal": str(line.subtotal),
-                "stock": line.product.stock,
-                "in_stock": line.product.stock >= line.quantity,
+                "stock": line.stock,
+                "in_stock": line.stock >= line.quantity,
                 "shopee_url": line.product.shopee_url or store.shopee_store_url,
             }
             for line in lines
@@ -134,22 +184,39 @@ def quote(raw_items) -> dict:
 def reserve_stock(lines: list[QuoteLine]) -> None:
     """Kurangi stok secara atomik; gagal bila stok tidak cukup (aman dari pesanan bersamaan)."""
     for line in lines:
-        updated = Product.objects.filter(
-            id=line.product.id, stock__gte=line.quantity
-        ).update(stock=F("stock") - line.quantity)
+        if line.variation:
+            updated = ProductVariation.objects.filter(
+                pk=line.variation.pk, stock__gte=line.quantity
+            ).update(stock=F("stock") - line.quantity)
+        else:
+            updated = Product.objects.filter(
+                id=line.product.id, stock__gte=line.quantity
+            ).update(stock=F("stock") - line.quantity)
         if not updated:
-            current = Product.objects.get(id=line.product.id).stock
-            raise CheckoutError(
-                f"Stok {line.product.name} tidak mencukupi (tersedia: {current})."
+            current = (
+                ProductVariation.objects.get(pk=line.variation.pk).stock
+                if line.variation
+                else Product.objects.get(id=line.product.id).stock
             )
+            raise CheckoutError(
+                f"Stok {line.display_name} tidak mencukupi (tersedia: {current})."
+            )
+        if line.variation:
+            line.product.sync_stock_from_variations()
 
 
 def release_stock(order: Order) -> None:
     """Kembalikan stok pesanan. Hanya berjalan sekali per pesanan."""
     if not order.stock_reserved:
         return
-    for item in order.items.all():
-        if item.product_id:
+    for item in order.items.select_related("product", "variation"):
+        if item.variation_id:
+            ProductVariation.objects.filter(pk=item.variation_id).update(
+                stock=F("stock") + item.quantity
+            )
+            if item.product:
+                item.product.sync_stock_from_variations()
+        elif item.product_id:
             Product.objects.filter(id=item.product_id).update(
                 stock=F("stock") + item.quantity
             )
@@ -164,8 +231,13 @@ def whatsapp_message(order: Order) -> str:
         "",
     ]
     for i, item in enumerate(order.items.all(), 1):
+        lines.append(f"{i}. {item.product_name}")
+        if item.variation_name:
+            lines.append(f"   Varian: {item.variation_name}")
+        if item.sku:
+            lines.append(f"   SKU: {item.sku}")
         lines.append(
-            f"{i}. {item.product_name} x{item.quantity} = "
+            f"   {item.quantity} x {money_text(item.price_snapshot)} = "
             f"{money_text(item.price_snapshot * item.quantity)}"
         )
     lines += [
@@ -213,10 +285,15 @@ def midtrans_base_url() -> str:
 def create_snap_transaction(order: Order) -> dict:
     item_details = [
         {
-            "id": str(item.product_id or item.id),
+            "id": (item.sku or str(item.product_id or item.id))[:50],
             "price": int(item.price_snapshot),
             "quantity": item.quantity,
-            "name": item.product_name[:50],  # batas Midtrans 50 karakter
+            # batas Midtrans 50 karakter
+            "name": (
+                f"{item.product_name[:30]} - {item.variation_name}"
+                if item.variation_name
+                else item.product_name
+            )[:50],
         }
         for item in order.items.all()
     ]
@@ -276,7 +353,12 @@ def place_order(data: dict) -> dict:
         return {
             "payment_method": "SHOPEE",
             "shopee_links": [
-                {"name": i["name"], "quantity": i["quantity"], "url": i["shopee_url"]}
+                {
+                    "name": i["name"],
+                    "variation_name": i["variation_name"],
+                    "quantity": i["quantity"],
+                    "url": i["shopee_url"],
+                }
                 for i in result["items"]
             ],
         }
@@ -327,9 +409,9 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Orde
         reserve_stock(lines)
     else:
         for line in lines:
-            if line.product.stock < line.quantity:
+            if line.stock < line.quantity:
                 raise CheckoutError(
-                    f"Stok {line.product.name} tidak mencukupi (tersedia: {line.product.stock})."
+                    f"Stok {line.display_name} tidak mencukupi (tersedia: {line.stock})."
                 )
     order = Order.objects.create(
         order_number=generate_order_number(),
@@ -350,7 +432,10 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Orde
         OrderItem(
             order=order,
             product=line.product,
+            variation=line.variation,
             product_name=line.product.name,
+            variation_name=line.variation_name,
+            sku=line.sku,
             price_snapshot=line.unit_price,
             quantity=line.quantity,
         )
