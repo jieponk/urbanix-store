@@ -13,6 +13,7 @@ router.register(r'orders', OrderViewSet, basename='orders')
 urlpatterns = [
     path('', include(router.urls)),
     path('store-settings/', checkout_views.store_settings, name='store_settings'),
+    path('reviews/', checkout_views.review_list, name='review_list'),
     path('checkout/quote/', checkout_views.checkout_quote, name='checkout_quote'),
     path('checkout/', checkout_views.checkout, name='checkout'),
     path('checkout/orders/<str:order_number>/', checkout_views.order_detail, name='checkout_order_detail'),

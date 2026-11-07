@@ -41,6 +41,7 @@ class CheckoutTests(TestCase):
         )
         store = StoreSettings.load()
         store.whatsapp_number = "6281234567890"
+        store.whatsapp_discount_percent = 0  # diskon WA diuji terpisah di test_wa_discount_reviews
         store.shopee_store_url = "https://shopee.co.id/urbanix"
         store.save()
 
@@ -286,6 +287,7 @@ class VariationCheckoutTests(TestCase):
         )
         store = StoreSettings.load()
         store.whatsapp_number = "6281234567890"
+        store.whatsapp_discount_percent = 0  # diskon WA diuji terpisah di test_wa_discount_reviews
         store.save()
 
     def order(self, method, items):

@@ -107,6 +107,11 @@ class QuoteLine:
     def subtotal(self) -> Decimal:
         return self.unit_price * self.quantity
 
+    @property
+    def is_promo(self) -> bool:
+        info = price_info(self.product, self.variation)
+        return info.final < info.normal
+
 
 def build_lines(raw_items) -> list[QuoteLine]:
     """Gabungkan item duplikat, validasi produk/varian dan jumlah. Harga SELALU dari database."""
@@ -155,6 +160,22 @@ def build_lines(raw_items) -> list[QuoteLine]:
     return lines
 
 
+def whatsapp_discount(lines: list[QuoteLine], store: StoreSettings) -> dict:
+    """Diskon pesan via WhatsApp. Default tidak berlaku untuk produk yang sedang promo."""
+    percent = Decimal(str(store.whatsapp_discount_percent or 0))
+    eligible = [l for l in lines if store.whatsapp_discount_on_promo or not l.is_promo]
+    base = sum((l.subtotal for l in eligible), Decimal("0"))
+    amount = (base * percent / Decimal(100)).quantize(Decimal("1")) if percent > 0 else Decimal("0")
+    note = f"Diskon pesan via WhatsApp {percent.normalize():f}%" if amount > 0 else ""
+    return {
+        "percent": str(percent.normalize()),
+        "amount": str(amount),
+        "eligible_subtotal": str(base),
+        "applies_to_promo": store.whatsapp_discount_on_promo,
+        "note": note,
+    }
+
+
 def quote(raw_items) -> dict:
     store = StoreSettings.load()
     lines = build_lines(raw_items)
@@ -172,6 +193,7 @@ def quote(raw_items) -> dict:
                 "subtotal": str(line.subtotal),
                 "stock": line.stock,
                 "in_stock": line.stock >= line.quantity,
+                "is_promo": line.is_promo,
                 "shopee_url": line.product.shopee_url or store.shopee_store_url,
             }
             for line in lines
@@ -179,6 +201,7 @@ def quote(raw_items) -> dict:
         "subtotal": str(sum((l.subtotal for l in lines), Decimal("0"))),
         "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
         "methods": available_methods(store),
+        "whatsapp_discount": whatsapp_discount(lines, store),
     }
 
 
@@ -242,9 +265,14 @@ def whatsapp_message(order: Order) -> str:
             f"   {item.quantity} x {money_text(item.price_snapshot)} = "
             f"{money_text(item.price_snapshot * item.quantity)}"
         )
+    lines.append("")
+    if order.discount_amount:
+        lines += [
+            f"Subtotal: {money_text(order.total_amount + order.discount_amount)}",
+            f"{order.discount_note}: -{money_text(order.discount_amount)}",
+        ]
     lines += [
-        "",
-        f"Subtotal: {money_text(order.total_amount)} (belum termasuk ongkir)",
+        f"Total: {money_text(order.total_amount)} (belum termasuk ongkir)",
         "",
         f"Nama: {order.customer_name}",
         f"No. HP: {order.customer_phone}",
@@ -406,6 +434,10 @@ def place_order(data: dict) -> dict:
 
 @transaction.atomic
 def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Order:
+    subtotal = sum((l.subtotal for l in lines), Decimal("0"))
+    discount = {"amount": "0", "note": ""}
+    if method == "WHATSAPP":
+        discount = whatsapp_discount(lines, StoreSettings.load())
     customer, shipping = data["customer"], data["shipping"]
     if method == "MIDTRANS":
         reserve_stock(lines)
@@ -427,7 +459,9 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Orde
         notes=data.get("notes", ""),
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),
-        total_amount=sum((l.subtotal for l in lines), Decimal("0")),
+        total_amount=subtotal - Decimal(discount["amount"]),
+        discount_amount=Decimal(discount["amount"]),
+        discount_note=discount["note"],
         idempotency_key=idem,
     )
     OrderItem.objects.bulk_create(

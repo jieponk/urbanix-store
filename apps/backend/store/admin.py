@@ -9,6 +9,7 @@ from .models import (
     PriceCutItem,
     Product,
     ProductVariation,
+    Review,
     StoreSettings,
 )
 
@@ -100,10 +101,15 @@ class OrderAdmin(admin.ModelAdmin):
         "snap_token",
         "stock_reserved",
         "total_amount",
+        "discount_amount",
+        "discount_note",
         "idempotency_key",
     )
     fieldsets = (
-        ("Pesanan", {"fields": ("order_number", "created_at", "status", "total_amount", "notes")}),
+        (
+            "Pesanan",
+            {"fields": ("order_number", "created_at", "status", "total_amount", "discount_amount", "discount_note", "notes")},
+        ),
         ("Pembeli", {"fields": ("customer_name", "customer_phone", "customer_email", "user")}),
         (
             "Pengiriman",
@@ -128,6 +134,21 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(StoreSettings)
 class StoreSettingsAdmin(admin.ModelAdmin):
     list_display = ("__str__", "whatsapp_number", "enable_midtrans", "enable_whatsapp", "enable_shopee")
+    fieldsets = (
+        ("Kontak & marketplace", {"fields": ("whatsapp_number", "shopee_store_url")}),
+        ("Metode pembayaran", {"fields": ("enable_midtrans", "enable_whatsapp", "enable_shopee")}),
+        (
+            "Diskon pesan via WhatsApp",
+            {"fields": ("whatsapp_discount_percent", "whatsapp_discount_on_promo", "show_whatsapp_popup")},
+        ),
+        (
+            "Rating toko di Shopee",
+            {
+                "fields": ("shopee_rating", "shopee_rating_count", "shopee_reviews_url"),
+                "description": "Salin angka rating dan jumlah penilaian dari halaman penilaian toko di Shopee.",
+            },
+        ),
+    )
 
     def has_add_permission(self, request):
         return not StoreSettings.objects.exists()
@@ -179,3 +200,18 @@ class PriceCutAdmin(admin.ModelAdmin):
     @admin.display(description="Jumlah produk")
     def item_count(self, obj):
         return obj.items.count()
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ("customer_name", "rating", "short_text", "product", "review_date", "source", "is_published")
+    list_editable = ("is_published",)
+    list_filter = ("is_published", "rating", "source")
+    search_fields = ("customer_name", "text", "product__name")
+    autocomplete_fields = ("product",)
+    date_hierarchy = "review_date"
+    fields = ("customer_name", "rating", "text", "product", "variation_name", "review_date", "source", "is_published")
+
+    @admin.display(description="Ulasan")
+    def short_text(self, obj):
+        return (obj.text[:70] + "…") if len(obj.text) > 70 else obj.text

@@ -107,6 +107,32 @@ class StoreSettings(models.Model):
     enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
+    # Diskon tambahan untuk pesanan via WhatsApp (ditampilkan juga sebagai popup di beranda)
+    whatsapp_discount_percent = models.DecimalField(
+        "Diskon pesan via WhatsApp (%)",
+        max_digits=4,
+        decimal_places=1,
+        default=5,
+        help_text="Isi 0 untuk mematikan diskon WhatsApp.",
+    )
+    whatsapp_discount_on_promo = models.BooleanField(
+        "Diskon WhatsApp juga untuk produk yang sedang promo",
+        default=False,
+        help_text="Biarkan mati agar diskon tidak bertumpuk dengan Potong harga (menjaga margin).",
+    )
+    show_whatsapp_popup = models.BooleanField("Tampilkan popup diskon WhatsApp di beranda", default=True)
+
+    # Ringkasan rating toko di Shopee (diisi manual, dilihat di halaman penilaian toko Shopee)
+    shopee_rating = models.DecimalField(
+        "Rating toko di Shopee", max_digits=2, decimal_places=1, null=True, blank=True,
+        help_text="Contoh: 4.9",
+    )
+    shopee_rating_count = models.PositiveIntegerField("Jumlah penilaian di Shopee", null=True, blank=True)
+    shopee_reviews_url = models.URLField(
+        "Link halaman penilaian Shopee", max_length=500, blank=True,
+        help_text="Tombol \"Baca semua ulasan\" mengarah ke sini.",
+    )
+
     class Meta:
         verbose_name = "Pengaturan toko"
         verbose_name_plural = "Pengaturan toko"
@@ -120,7 +146,10 @@ class StoreSettings(models.Model):
 
     @classmethod
     def load(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
+        obj, _ = cls.objects.get_or_create(
+            pk=1,
+            defaults={"shopee_reviews_url": "https://shopee.co.id/buyer/4752546503/rating?shop_id=1735329821"},
+        )
         return obj
 
 
@@ -219,6 +248,8 @@ class Order(models.Model):
         blank=True,
     )
     payment_url = models.URLField("Link pembayaran", max_length=500, blank=True)
+    discount_amount = models.DecimalField("Potongan", max_digits=12, decimal_places=2, default=0)
+    discount_note = models.CharField("Keterangan potongan", max_length=120, blank=True)
     stock_reserved = models.BooleanField(
         "Stok sudah dikurangi",
         default=False,
@@ -390,4 +421,47 @@ class PriceCutItem(models.Model):
             normal = self.variation.price if self.variation_id else (self.product.price if self.product_id else None)
             if normal is not None and self.promo_price >= normal:
                 raise ValidationError({"promo_price": f"Harga promo harus di bawah harga normal ({normal:,.0f})."})
+
+
+class Review(models.Model):
+    """Ulasan asli pembeli (disalin dari halaman penilaian Shopee atau dari pembeli langsung)."""
+
+    SOURCE_CHOICES = (("SHOPEE", "Shopee"), ("WEBSITE", "Website / WhatsApp"))
+
+    customer_name = models.CharField(
+        "Nama pembeli", max_length=80,
+        help_text="Ditampilkan tersamar otomatis, contoh: b***i.",
+    )
+    rating = models.PositiveSmallIntegerField("Bintang (1-5)", default=5)
+    text = models.TextField("Isi ulasan", blank=True)
+    product = models.ForeignKey(
+        Product, related_name="reviews", on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name="Produk",
+    )
+    variation_name = models.CharField("Varian", max_length=255, blank=True)
+    review_date = models.DateField("Tanggal ulasan", null=True, blank=True)
+    source = models.CharField("Sumber", max_length=10, choices=SOURCE_CHOICES, default="SHOPEE")
+    is_published = models.BooleanField("Tampilkan di website", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Ulasan"
+        verbose_name_plural = "Ulasan"
+        ordering = ["-review_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.rating}★ {self.customer_name}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if not 1 <= self.rating <= 5:
+            raise ValidationError({"rating": "Bintang harus 1 sampai 5."})
+
+    @property
+    def masked_name(self):
+        name = self.customer_name.strip()
+        if len(name) <= 2:
+            return name[:1] + "*"
+        return f"{name[0]}***{name[-1]}"
 
