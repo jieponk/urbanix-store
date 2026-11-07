@@ -61,7 +61,7 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
   const promoEnds = promoEndText(product.promo_ends_at);
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10 lg:gap-14">
+    <div className="mt-4 grid grid-cols-1 gap-5 sm:mt-6 md:grid-cols-2 md:gap-10 lg:gap-14">
       <ProductGallery
         images={images}
         alt={product.name}
@@ -72,7 +72,7 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
       <section className="min-w-0 py-1 sm:py-3">
         <p className="text-xs font-semibold text-ink sm:text-sm">{product.category_name || 'Produk'}</p>
 
-        <h1 className="mt-3 break-words text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+        <h1 className="mt-2 break-words text-xl font-extrabold leading-snug tracking-tight sm:mt-3 sm:text-3xl sm:leading-tight">
           {product.name}
         </h1>
 
@@ -83,7 +83,7 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
           </p>
         )}
 
-        <div className="mt-6 border-y border-slate-200 py-5">
+        <div className="mt-4 border-y border-slate-200 py-4 sm:mt-6 sm:py-5">
           {product.promo_name && maxDiscount > 0 && (
             <p className="mb-2 inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
               {product.promo_name}

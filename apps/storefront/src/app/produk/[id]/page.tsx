@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/Icons';
 import { ReviewsSection } from '@/components/HomeSections';
 import ProductHero from '@/components/ProductHero';
 import ProductInfoSections from '@/components/ProductInfoSections';
@@ -76,15 +77,9 @@ export default async function ProductPage({
   const reviews = await getReviews({ product: product.id, limit: 6 });
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <Link
-          href="/produk"
-          className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-slate-900"
-        >
-          <span className="mr-2">←</span>
-          Kembali ke katalog
-        </Link>
+        <BackLink href="/produk">Kembali ke katalog</BackLink>
 
         <ProductHero
           product={product}

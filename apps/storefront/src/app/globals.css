@@ -125,3 +125,10 @@ body {
     animation: none;
   }
 }
+
+/* HP: beri ruang di bawah footer saat bar beli halaman produk tampil */
+@media (max-width: 639px) {
+  body:has(#bar-beli) footer {
+    padding-bottom: 5.5rem;
+  }
+}

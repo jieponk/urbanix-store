@@ -207,7 +207,7 @@ export default async function HomePage({
         <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
             <li key={feature.title} className="flex gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-ink">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink ring-1 ring-slate-200">
                 <FeatureIcon name={feature.icon} size={22} />
               </span>
               <span>

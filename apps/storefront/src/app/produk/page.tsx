@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
 import {
   API,
@@ -108,12 +109,9 @@ export default async function CatalogPage({
         </form>
 
         {(selectedCategory || searchQuery || promoOnly) && (
-          <Link
-            href="/produk"
-            className="mt-3 inline-block text-sm font-semibold text-ink hover:text-slate-900"
-          >
-            ← Tampilkan semua produk
-          </Link>
+          <div className="mt-3">
+            <BackLink href="/produk">Tampilkan semua produk</BackLink>
+          </div>
         )}
 
         {!productResult.ok ? (

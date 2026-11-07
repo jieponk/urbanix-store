@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { money } from '@/lib/api';
 import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
+import { ArrowLeftIcon } from '@/components/Icons';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -330,9 +331,10 @@ export default function CheckoutForm() {
         <button
           type="button"
           onClick={() => setShopeeLinks(null)}
-          className="mt-5 text-sm font-semibold text-slate-600 underline"
+          className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-ink"
         >
-          ← Pilih metode lain
+          <ArrowLeftIcon size={16} />
+          Pilih metode lain
         </button>
       </div>
     );
@@ -516,8 +518,9 @@ export default function CheckoutForm() {
                   ? 'Lanjut ke Shopee'
                   : 'Pilih metode pembayaran'}
         </button>
-        <Link href="/cart" className="mt-3 block text-center text-sm text-slate-500 hover:text-slate-900">
-          ← Ubah keranjang
+        <Link href="/cart" className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500 hover:text-ink">
+          <ArrowLeftIcon size={15} />
+          Ubah keranjang
         </Link>
       </aside>
     </form>

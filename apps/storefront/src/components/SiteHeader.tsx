@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import CartLink from '@/components/CartLink';
+import CategoryMenu from '@/components/CategoryMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import type { Category } from '@/lib/api';
 
@@ -19,15 +20,33 @@ function endDate(iso: string | null) {
     : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', timeZone: 'Asia/Jakarta' });
 }
 
+function SearchForm({ className }: { className: string }) {
+  return (
+    <form action="/produk" method="GET" role="search" className={className}>
+      <label className="flex w-full items-center gap-2 rounded-full border border-slate-200 bg-mist px-3.5 py-2 focus-within:border-slate-900 focus-within:bg-surface md:px-4 md:py-2.5">
+        <SearchIcon />
+        <input
+          type="search"
+          name="q"
+          placeholder="Cari kamera, lensa, mic…"
+          aria-label="Cari produk"
+          className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 md:text-sm"
+        />
+      </label>
+    </form>
+  );
+}
+
 export default function SiteHeader({ categories, promo, whatsappNumber, whatsappDiscount }: Props) {
   const ends = endDate(promo?.endsAt ?? null);
+  const menuItems = categories.map(({ id, name }) => ({ id, name }));
 
   return (
     <header className="sticky top-0 z-50">
       {/* Pita pengumuman: isi diambil dari promo yang sedang berjalan */}
       {(promo || whatsappDiscount > 0) && (
         <div className="bg-cobalt-800 text-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-xs sm:text-[13px]">
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-center text-xs leading-snug sm:text-[13px]">
             {promo && (
               <Link href="/produk?promo=1" className="font-semibold hover:underline">
                 <span className="text-sun-400">{promo.name}</span>: hemat sampai {promo.maxDiscount}%
@@ -43,39 +62,34 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         </div>
       )}
 
-      <div className="border-b border-slate-200 bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-6 lg:px-8">
+      <div className="relative border-b border-slate-200 bg-surface/95 backdrop-blur">
+        {/* Baris utama */}
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2.5 sm:px-6 md:gap-3 lg:px-8">
           <Link href="/" className="shrink-0" aria-label="Urbanix Store, ke beranda">
             <BrandLogo />
           </Link>
 
-          <form action="/produk" method="GET" className="hidden flex-1 md:block" role="search">
-            <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-mist px-4 py-2.5 focus-within:border-slate-900 focus-within:bg-surface">
-              <SearchIcon />
-              <input
-                type="search"
-                name="q"
-                placeholder="Cari kamera, lensa, mic, drone…"
-                aria-label="Cari produk"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-              />
-            </label>
-          </form>
+          {/* Desktop: kategori, promo, pencarian */}
+          <div className="ml-4 hidden items-center gap-2 md:flex">
+            <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
+            {promo && (
+              <Link
+                href="/produk?promo=1"
+                className="flex h-10 items-center rounded-full px-3.5 text-sm font-bold text-sale-600 hover:bg-sale-50"
+              >
+                Promo
+              </Link>
+            )}
+          </div>
+          <SearchForm className="hidden flex-1 md:flex" />
 
-          <nav className="ml-auto flex items-center gap-1 sm:gap-2">
-            <Link
-              href="/produk"
-              aria-label="Cari produk"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-mist md:hidden"
-            >
-              <SearchIcon />
-            </Link>
+          <nav className="ml-auto flex items-center gap-0.5 sm:gap-1 md:ml-0">
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-ink hover:bg-mist sm:flex"
+                className="hidden h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-ink hover:bg-mist lg:flex"
               >
                 <ChatIcon />
                 Chat admin
@@ -86,38 +100,11 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           </nav>
         </div>
 
-        {/* Kategori: satu baris, geser di HP */}
-        {categories.length > 0 && (
-          <nav aria-label="Kategori" className="mx-auto max-w-7xl px-4 pb-2.5 sm:px-6 lg:px-8">
-            <ul className="scroll-row flex gap-2 overflow-x-auto text-[13px] font-semibold">
-              {promo && (
-                <li>
-                  <Link
-                    href="/produk?promo=1"
-                    className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-sale-600 px-3.5 py-1.5 text-white hover:bg-sale-700"
-                  >
-                    <span aria-hidden="true">%</span> Promo
-                  </Link>
-                </li>
-              )}
-              <li>
-                <Link href="/produk" className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-ink hover:bg-slate-200">
-                  Semua produk
-                </Link>
-              </li>
-              {categories.map((category) => (
-                <li key={category.id}>
-                  <Link
-                    href={`/produk?category=${category.id}`}
-                    className="block whitespace-nowrap rounded-full bg-mist px-3.5 py-1.5 text-slate-700 hover:bg-slate-200 hover:text-ink"
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
+        {/* HP: kategori + pencarian di baris kedua */}
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 pb-2.5 sm:px-6 md:hidden">
+          <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
+          <SearchForm className="flex min-w-0 flex-1" />
+        </div>
       </div>
     </header>
   );

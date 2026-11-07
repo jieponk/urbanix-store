@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { money, type Variation } from '@/lib/api';
 import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
+import { CartIcon } from '@/components/Icons';
 
 type Props = {
   id: string;
@@ -59,6 +60,7 @@ export default function ProductBuyButtons({
   function buildItem(): CartItem | null {
     if (hasVariants && !selected) {
       setNeedVariant(true);
+      document.getElementById('pilih-varian')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return null;
     }
     if (!canBuy) return null;
@@ -113,7 +115,8 @@ export default function ProductBuyButtons({
           <div
             role="radiogroup"
             aria-label="Pilih varian"
-            className={`grid gap-2 sm:grid-cols-2 ${needVariant ? 'rounded-xl ring-2 ring-red-300 ring-offset-2' : ''}`}
+            id="pilih-varian"
+            className={`grid grid-cols-2 gap-2 ${needVariant ? 'rounded-xl ring-2 ring-red-300 ring-offset-2' : ''}`}
           >
             {variations.map((variation) => {
               const active = variation.variation_id === variationId;
@@ -126,7 +129,7 @@ export default function ProductBuyButtons({
                   aria-checked={active}
                   disabled={soldOut}
                   onClick={() => choose(variation)}
-                  className={`rounded-xl border-2 px-3 py-2.5 text-left text-sm transition ${
+                  className={`min-w-0 break-words rounded-xl border-2 px-3 py-2.5 text-left text-sm transition ${
                     active
                       ? 'border-ink bg-mist'
                       : 'border-slate-200 hover:border-slate-300'
@@ -227,17 +230,64 @@ export default function ProductBuyButtons({
             type="button"
             onClick={openChat}
             aria-label="Chat admin lewat WhatsApp"
-            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
+            className="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-emerald-600 sm:flex px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
           >
             <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-surface opacity-60" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-surface" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
             </span>
             <ChatIcon />
-            <span className="hidden sm:inline">Chat Admin</span>
+            <span>Chat Admin</span>
           </button>
         </>
       )}
+
+      {/* HP: bar beli menempel di bawah layar */}
+      <div id="bar-beli" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-surface/95 px-3 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:hidden">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] text-slate-500">
+              {hasVariants ? (selected ? selected.name.trim() || 'Standar' : 'Pilih varian dulu') : 'Harga'}
+            </p>
+            <p className="truncate text-base font-extrabold text-ink">{money(currentPrice)}</p>
+          </div>
+          {whatsappNumber && (
+            <button
+              type="button"
+              onClick={openChat}
+              aria-label="Tanya admin lewat WhatsApp"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-600 text-emerald-700"
+            >
+              <ChatIcon />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={addProduct}
+            disabled={!hasVariants && !canBuy}
+            aria-label="Tambah ke keranjang"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-ink text-ink disabled:opacity-40"
+          >
+            <CartIcon size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={buyNow}
+            disabled={!hasVariants && !canBuy}
+            className="h-11 shrink-0 rounded-xl bg-brand-500 px-4 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {!hasVariants && !canBuy ? 'Stok habis' : 'Beli Sekarang'}
+          </button>
+        </div>
+        {message && (
+          <p className="mt-1.5 text-center text-xs font-semibold text-emerald-700">
+            Masuk keranjang.{' '}
+            <button type="button" onClick={() => router.push('/cart')} className="underline">
+              Lihat
+            </button>
+          </p>
+        )}
+      </div>
     </div>
   );
 }

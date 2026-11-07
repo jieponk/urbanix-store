@@ -109,7 +109,7 @@ export default async function OrderPage({
   });
 
   return (
-    <div className="bg-slate-50 px-4 py-8 sm:py-10">
+    <div className="px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-2xl space-y-5">
         <div>
           <p className="text-sm text-slate-500">Nomor pesanan</p>

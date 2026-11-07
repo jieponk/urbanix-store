@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 
 type Props = {
   images: string[];
@@ -72,17 +73,17 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
               type="button"
               onClick={() => go(-1)}
               aria-label="Gambar sebelumnya"
-              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-lg font-bold text-slate-700 shadow hover:bg-surface"
+              className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#1c2030] shadow-md ring-1 ring-black/5 hover:bg-white"
             >
-              ‹
+              <ChevronLeftIcon size={20} />
             </button>
             <button
               type="button"
               onClick={() => go(1)}
               aria-label="Gambar berikutnya"
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-lg font-bold text-slate-700 shadow hover:bg-surface"
+              className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#1c2030] shadow-md ring-1 ring-black/5 hover:bg-white"
             >
-              ›
+              <ChevronRightIcon size={20} />
             </button>
             <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-semibold text-white">
               {index + 1}/{count}
