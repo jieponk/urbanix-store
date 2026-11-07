@@ -1,3 +1,4 @@
+from pathlib import Path
 
 import json
 import os
@@ -5,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.conf import settings
 from django.utils.text import slugify
 
 from store.category_map import clean_category
@@ -13,9 +15,26 @@ from store.migrations_helpers import gallery_from_item
 
 
 class Command(BaseCommand):
-    help = "Impor produk dan variasi Shopee dari products_full.json"
+    help = (
+        "LAMA: impor dari products_full.json (data lama). "
+        "Gunakan 'python manage.py import_shopee' untuk file Shopee terbaru."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--paksa",
+            action="store_true",
+            help="Tetap jalankan walaupun data Shopee terbaru (data/shopee/) tersedia.",
+        )
 
     def handle(self, *args, **kwargs):
+        newer = Path(settings.BASE_DIR) / "data" / "shopee"
+        if not kwargs.get("paksa") and any(newer.glob("*.xlsx")):
+            raise CommandError(
+                "Data Shopee terbaru ada di data/shopee/. Jalankan 'python manage.py import_shopee'. "
+                "Perintah ini memakai data LAMA dan akan menimpa stok/harga terbaru "
+                "(pakai --paksa bila memang sengaja)."
+            )
         base_dir = os.path.dirname(
             os.path.dirname(
                 os.path.dirname(
