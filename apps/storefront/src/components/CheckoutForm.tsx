@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { money } from '@/lib/api';
 import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
 import { ArrowLeftIcon } from '@/components/Icons';
+import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -30,7 +31,15 @@ type Quote = {
   subtotal: string;
   shipping_note: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
-  whatsapp_discount?: { percent: string; amount: string; applies_to_promo: boolean; note: string };
+  vouchers: {
+    discount_amount: string;
+    shipping_discount_max: string;
+    applied: { code: string; title: string; kind: 'discount' | 'shipping'; amount: string; label: string }[];
+    rejected: { code: string; message: string }[];
+  };
+  total: string;
+  tax_note: string;
+  available_vouchers: VoucherInfo[];
 };
 
 type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
@@ -115,29 +124,38 @@ export default function CheckoutForm() {
   const [shopeeLinks, setShopeeLinks] = useState<ShopeeLink[] | null>(null);
   const [idemKey] = useState(makeKey);
 
-  // 1. Baca keranjang, 2. minta harga & stok terbaru dari server.
-  useEffect(() => {
-    const items = getCart();
-    setCart(items);
+  const [codes, setCodes] = useState<string[]>([]);
+  const [codeInput, setCodeInput] = useState('');
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const itemsRef = useRef<CartItem[]>([]);
+  const firstLoad = useRef(true);
+
+  const loadQuote = useCallback(async (voucherCodes: string[], paymentMethod: Method | null) => {
+    const items = itemsRef.current ?? [];
     if (items.length === 0) return;
+    setQuoteLoading(true);
+    try {
+      const res = await fetch('/api/checkout/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            product_id: Number(cartProductId(i)),
+            variation_id: i.variationId ?? '',
+            quantity: i.quantity,
+          })),
+          voucher_codes: voucherCodes,
+          payment_method: paymentMethod,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(parseErrors(data).general || 'Gagal memuat ringkasan.');
+      const q = data as Quote;
+      setQuote(q);
+      setQuoteError('');
 
-    fetch('/api/checkout/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: items.map((i) => ({
-          product_id: Number(cartProductId(i)),
-          variation_id: i.variationId ?? '',
-          quantity: i.quantity,
-        })),
-      }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(parseErrors(data).general || 'Gagal memuat ringkasan.');
-        const q = data as Quote;
-        setQuote(q);
-
+      if (firstLoad.current) {
+        firstLoad.current = false;
         // Samakan harga & stok di keranjang dengan data server.
         const byLine = new Map(
           q.items.map((i) => [cartLineId(String(i.product_id), i.variation_id || undefined), i])
@@ -156,14 +174,56 @@ export default function CheckoutForm() {
               : item;
           })
         );
-
-        const first = (Object.keys(METHOD_INFO) as Method[]).find(
-          (m) => q.methods[METHOD_INFO[m].key]
-        );
+        const first = (Object.keys(METHOD_INFO) as Method[]).find((m) => q.methods[METHOD_INFO[m].key]);
         setMethod(first ?? null);
-      })
-      .catch((err: Error) => setQuoteError(err.message));
+      }
+    } catch (err) {
+      if (firstLoad.current) setQuoteError((err as Error).message);
+    } finally {
+      setQuoteLoading(false);
+    }
   }, []);
+
+  // 1. Baca keranjang + voucher yang sudah diklaim, 2. minta harga, stok & potongan dari server.
+  useEffect(() => {
+    const items = getCart();
+    itemsRef.current = items;
+    setCart(items);
+    if (items.length === 0) return;
+    const claimed = getClaimed();
+    setCodes(claimed.slice(0, 2));
+    loadQuote(claimed.slice(0, 2), null);
+  }, [loadQuote]);
+
+  // Hitung ulang potongan saat voucher atau metode bayar berubah.
+  useEffect(() => {
+    if (firstLoad.current) return;
+    loadQuote(method === 'SHOPEE' ? [] : codes, method);
+  }, [codes, method, loadQuote]);
+
+  const appliedCodes = quote?.vouchers.applied.map((a) => a.code) ?? [];
+
+  function toggleVoucher(voucher: VoucherInfo) {
+    setCodes((current) => {
+      if (current.includes(voucher.code)) return current.filter((c) => c !== voucher.code);
+      // Maks. 1 voucher per jenis: ganti voucher sejenis yang sedang dipakai.
+      const isShipping = voucher.type === 'FREE_SHIPPING';
+      const known = quote?.available_vouchers ?? [];
+      const kept = current.filter((c) => {
+        const info = known.find((v) => v.code === c);
+        return !info || (info.type === 'FREE_SHIPPING') !== isShipping;
+      });
+      return [...kept, voucher.code].slice(-2);
+    });
+  }
+
+  function addCode(event?: FormEvent) {
+    event?.preventDefault();
+    const code = codeInput.replace(/\s+/g, '').toUpperCase();
+    if (!code) return;
+    setCodes((current) => (current.includes(code) ? current : [...current, code].slice(-2)));
+    setCodeInput('');
+  }
 
   const outOfStock = useMemo(() => quote?.items.filter((i) => !i.in_stock) ?? [], [quote]);
   const needsForm = method !== null && method !== 'SHOPEE';
@@ -219,7 +279,8 @@ export default function CheckoutForm() {
               postal_code: form.postal_code,
             },
             notes: form.notes,
-            idempotency_key: `${idemKey}-${method}`,
+            voucher_codes: appliedCodes,
+            idempotency_key: `${idemKey}-${method}-${appliedCodes.join('.')}`,
           }),
         }),
       });
@@ -344,10 +405,10 @@ export default function CheckoutForm() {
     (m) => quote.methods[METHOD_INFO[m].key]
   );
   const blocked = method !== 'SHOPEE' && outOfStock.length > 0;
-  const waDiscount = method === 'WHATSAPP' ? Number(quote.whatsapp_discount?.amount) || 0 : 0;
-  const waPercent = Number(quote.whatsapp_discount?.percent) || 0;
-  const hasPromoItems = quote.items.some((i) => i.is_promo);
-  const total = Number(quote.subtotal) - waDiscount;
+  const voucherDiscount = Number(quote.vouchers.discount_amount) || 0;
+  const shippingDiscount = Number(quote.vouchers.shipping_discount_max) || 0;
+  const total = Number(quote.total);
+  const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
@@ -389,8 +450,98 @@ export default function CheckoutForm() {
         </Section>
 
         {needsForm && (
+          <Section title="2. Voucher">
+            {quote.available_vouchers.length > 0 && (
+              <ul className="grid gap-2">
+                {quote.available_vouchers.map((v) => {
+                  const selected = codes.includes(v.code);
+                  const applied = appliedCodes.includes(v.code);
+                  const problem = quote.vouchers.rejected.find((r) => r.code === v.code);
+                  const usable = method === 'WHATSAPP' ? v.for_whatsapp : method === 'MIDTRANS' ? v.for_midtrans : true;
+                  return (
+                    <li key={v.code}>
+                      <button
+                        type="button"
+                        onClick={() => toggleVoucher(v)}
+                        disabled={!usable && !selected}
+                        aria-pressed={selected}
+                        className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition disabled:opacity-45 ${
+                          applied ? 'border-emerald-600 bg-emerald-50' : selected ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold text-white ${
+                            v.type === 'FREE_SHIPPING' ? 'bg-emerald-600' : 'bg-sale-600'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {v.type === 'FREE_SHIPPING' ? 'ONGKIR' : '%'}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold text-ink">{v.headline}</span>
+                          <span className="block truncate text-xs text-slate-500">
+                            {problem && selected ? problem.message : !usable ? 'Tidak berlaku untuk metode ini' : v.terms[0]}
+                          </span>
+                        </span>
+                        <span
+                          className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                            applied ? 'bg-emerald-600 text-white' : selected ? 'bg-ink text-surface' : 'bg-mist text-ink'
+                          }`}
+                        >
+                          {applied ? 'Terpakai' : selected ? 'Dipilih' : 'Pakai'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="mt-3 flex gap-2">
+              <input
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e: { key: string; preventDefault(): void }) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCode();
+                  }
+                }}
+                placeholder="Punya kode voucher lain?"
+                aria-label="Kode voucher"
+                autoCapitalize="characters"
+                className={inputCls() + ' uppercase'}
+              />
+              <button
+                type="button"
+                onClick={() => addCode()}
+                className="shrink-0 rounded-xl bg-ink px-4 text-sm font-bold text-surface hover:bg-slate-800"
+              >
+                Pakai
+              </button>
+            </div>
+
+            {rejected
+              .filter((r) => !quote.available_vouchers.some((v) => v.code === r.code))
+              .map((r) => (
+                <p key={r.code} className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <span>
+                    <b>{r.code}</b>: {r.message}
+                  </span>
+                  <button type="button" onClick={() => setCodes((c) => c.filter((x) => x !== r.code))} className="font-bold underline">
+                    Hapus
+                  </button>
+                </p>
+              ))}
+            <p className="mt-3 text-xs text-slate-500">
+              Maks. 1 voucher diskon + 1 voucher gratis ongkir per pesanan. Voucher yang sudah diklaim di beranda otomatis dipilih.
+            </p>
+          </Section>
+        )}
+
+        {needsForm && (
           <>
-            <Section title="2. Data pembeli">
+            <Section title="3. Data pembeli">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Nama lengkap" required error={errors.name} className="sm:col-span-2">
                   <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} className={inputCls(errors.name)} />
@@ -404,7 +555,7 @@ export default function CheckoutForm() {
               </div>
             </Section>
 
-            <Section title="3. Alamat pengiriman">
+            <Section title="4. Alamat pengiriman">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Alamat lengkap" required error={errors.address} className="sm:col-span-2">
                   <textarea value={form.address} onChange={(e) => update('address', e.target.value)} rows={3} autoComplete="street-address" maxLength={500} placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan" className={inputCls(errors.address)} />
@@ -421,7 +572,7 @@ export default function CheckoutForm() {
               </div>
             </Section>
 
-            <Section title="4. Catatan untuk penjual (opsional)">
+            <Section title="5. Catatan untuk penjual (opsional)">
               <Field label="Catatan" error={errors.notes}>
                 <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} rows={3} maxLength={1000} placeholder="Contoh: warna hitam, tolong dibungkus bubble wrap tebal" className={inputCls(errors.notes)} />
               </Field>
@@ -471,24 +622,31 @@ export default function CheckoutForm() {
             <dt className="text-slate-500">Ongkos kirim</dt>
             <dd className="text-right text-slate-500">Dikonfirmasi penjual</dd>
           </div>
-          {waDiscount > 0 && (
+          {quote.vouchers.applied
+            .filter((a) => a.kind === 'discount')
+            .map((a) => (
+              <div key={a.code} className="flex justify-between gap-4 text-emerald-700">
+                <dt>Voucher {a.code}</dt>
+                <dd className="font-semibold">-{money(a.amount)}</dd>
+              </div>
+            ))}
+          {shippingDiscount > 0 && (
             <div className="flex justify-between gap-4 text-emerald-700">
-              <dt>Diskon pesan via WhatsApp {waPercent}%</dt>
-              <dd className="font-semibold">-{money(waDiscount)}</dd>
+              <dt>Potongan ongkir</dt>
+              <dd className="text-right font-semibold">s/d {money(shippingDiscount)}</dd>
             </div>
           )}
           <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
             <dt className="font-bold">Total produk</dt>
-            <dd className="font-black text-slate-900">{money(total)}</dd>
+            <dd className={`font-black text-slate-900 transition-opacity ${quoteLoading ? 'opacity-50' : ''}`}>
+              {money(total)}
+            </dd>
           </div>
-          {method === 'WHATSAPP' && waPercent > 0 && hasPromoItems && !quote.whatsapp_discount?.applies_to_promo && (
-            <p className="text-xs text-slate-500">Diskon WhatsApp tidak berlaku untuk produk yang sedang promo.</p>
-          )}
-          {method !== 'WHATSAPP' && waPercent > 0 && quote.methods.whatsapp && (
-            <p className="rounded-lg bg-sun-100 px-3 py-2 text-xs font-semibold text-ink">
-              Pilih Pesan via WhatsApp untuk potongan {waPercent}%.
-            </p>
-          )}
+          <p className="text-xs text-slate-500">
+            {quote.tax_note}
+            {shippingDiscount > 0 && ' Potongan ongkir dipotong saat admin mengonfirmasi ongkir.'}
+            {voucherDiscount === 0 && shippingDiscount === 0 && ' Belum ada voucher terpakai.'}
+          </p>
         </dl>
 
         {blocked && (

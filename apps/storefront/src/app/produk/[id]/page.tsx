@@ -9,6 +9,7 @@ import {
   fetchAll,
   getReviews,
   getStoreSettings,
+  getVouchers,
   type Product,
 } from '@/lib/api';
 
@@ -74,7 +75,10 @@ export default async function ProductPage({
   }
 
   const variants = buyableVariations(product);
-  const reviews = await getReviews({ product: product.id, limit: 6 });
+  const [reviews, vouchers] = await Promise.all([
+    getReviews({ product: product.id, limit: 6 }),
+    getVouchers(),
+  ]);
 
   return (
     <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
@@ -85,6 +89,7 @@ export default async function ProductPage({
           product={product}
           variants={variants}
           whatsappNumber={storeSettings?.whatsapp_number ?? ''}
+          vouchers={vouchers}
         />
 
         <Link

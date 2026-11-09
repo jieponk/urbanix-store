@@ -4,6 +4,7 @@ import FeatureIcon from '@/components/FeatureIcon';
 import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
 import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
+import { VoucherStrip } from '@/components/VoucherCard';
 import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
 import {
   API,
@@ -11,6 +12,7 @@ import {
   getCategories,
   getReviews,
   getStoreSettings,
+  getVouchers,
   promoSummary,
   type Product,
 } from '@/lib/api';
@@ -95,10 +97,11 @@ export default async function HomePage({
     productError = true;
   }
 
-  const [categories, settings, reviews] = await Promise.all([
+  const [categories, settings, reviews, vouchers] = await Promise.all([
     getCategories(),
     getStoreSettings(),
     getReviews({ limit: 6 }),
+    getVouchers(),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(allProducts.length / PER_PAGE));
@@ -122,7 +125,12 @@ export default async function HomePage({
   return (
     <div className="pb-4">
       {settings?.show_whatsapp_popup && waNumber && (
-        <WhatsappPromoPopup percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
+        <WhatsappPromoPopup
+          percent={waPercent}
+          whatsappNumber={waNumber}
+          appliesToPromo={waOnPromo}
+          voucher={settings.popup_voucher ?? null}
+        />
       )}
 
       {/* 1. Banner + panel promo */}
@@ -145,6 +153,19 @@ export default async function HomePage({
           )}
         </div>
       </section>
+
+      {/* Voucher yang bisa diklaim */}
+      {vouchers.length > 0 && (
+        <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+          <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            Voucher toko
+          </h2>
+          <VoucherStrip vouchers={vouchers} />
+          <p className="mt-2 text-xs text-slate-500">
+            Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.
+          </p>
+        </section>
+      )}
 
       {/* 2. Kategori bergambar */}
       <CategoryStrip categories={categories} products={allProducts} />

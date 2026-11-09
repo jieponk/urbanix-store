@@ -135,6 +135,7 @@ export type StoreSettings = {
   shopee_rating_count: number | null;
   shopee_reviews_url: string;
   review_count: number;
+  popup_voucher?: import('./vouchers').VoucherInfo | null;
 };
 
 export type Review = {
@@ -188,5 +189,15 @@ export async function getStoreSettings(): Promise<StoreSettings | null> {
     return response.ok ? ((await response.json()) as StoreSettings) : null;
   } catch {
     return null;
+  }
+}
+
+/** Voucher publik yang sedang berlaku (untuk diklaim). */
+export async function getVouchers(): Promise<import('./vouchers').VoucherInfo[]> {
+  try {
+    const response = await fetch(`${API}/vouchers/`, { next: { revalidate: 60 } } as RequestInit);
+    return response.ok ? await response.json() : [];
+  } catch {
+    return [];
   }
 }

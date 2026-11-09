@@ -3,13 +3,16 @@
 import { useMemo, useState } from 'react';
 import ProductBuyButtons from '@/components/ProductBuyButtons';
 import ProductGallery from '@/components/ProductGallery';
+import { VoucherStrip } from '@/components/VoucherCard';
 import { money, type Product, type Variation } from '@/lib/api';
+import type { VoucherInfo } from '@/lib/vouchers';
 
 type Props = {
   product: Product;
   /** Varian yang wajib dipilih (kosong = produk biasa). */
   variants: Variation[];
   whatsappNumber: string;
+  vouchers?: VoucherInfo[];
 };
 
 function promoEndText(iso: string | null | undefined) {
@@ -26,7 +29,7 @@ function promoEndText(iso: string | null | undefined) {
 }
 
 /** Bagian atas halaman detail: galeri + judul + harga headline + pilihan varian + tombol beli. */
-export default function ProductHero({ product, variants, whatsappNumber }: Props) {
+export default function ProductHero({ product, variants, whatsappNumber, vouchers = [] }: Props) {
   const hasVariants = variants.length > 0;
   const [variationId, setVariationId] = useState<string | null>(() => {
     const available = variants.filter((v) => v.stock > 0);
@@ -105,6 +108,8 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
             {money(priceVaries ? Math.min(...finals) : finalPrice)}
           </p>
 
+          <p className="mt-1 text-xs text-slate-500">Harga sudah termasuk PPN</p>
+
           <p className={`mt-3 text-sm font-semibold ${stock > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
             {stock > 0
               ? `Stok ${selected ? 'varian ini' : 'tercatat'} tersedia (${stock})`
@@ -113,6 +118,12 @@ export default function ProductHero({ product, variants, whatsappNumber }: Props
                 : 'Stok tercatat habis'}
           </p>
         </div>
+
+        {vouchers.length > 0 && (
+          <div className="mt-4">
+            <VoucherStrip vouchers={vouchers} title="Voucher toko" stacked />
+          </div>
+        )}
 
         <ProductBuyButtons
           id={String(product.id)}

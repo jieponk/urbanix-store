@@ -14,6 +14,9 @@ type OrderDetail = {
   total_amount: string;
   discount_amount?: string;
   discount_note?: string;
+  voucher_codes?: string;
+  shipping_discount_max?: string;
+  tax_note?: string;
   shipping_note: string;
   payment_url: string;
   whatsapp_url: string;
@@ -175,11 +178,23 @@ export default async function OrderPage({
               <span className="font-semibold">-{money(order.discount_amount || 0)}</span>
             </div>
           )}
+          {Number(order.shipping_discount_max) > 0 && (
+            <div className="mt-2 flex justify-between text-sm text-emerald-700">
+              <span>Potongan ongkir</span>
+              <span className="font-semibold">s/d {money(order.shipping_discount_max || 0)}</span>
+            </div>
+          )}
+          {order.voucher_codes && (
+            <p className="mt-1 text-xs text-slate-500">Voucher: {order.voucher_codes.split(',').join(', ')}</p>
+          )}
           <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
             <span className="font-bold">Total produk</span>
             <span className="font-black">{money(order.total_amount)}</span>
           </div>
-          <p className="mt-1 text-right text-xs text-slate-500">{order.shipping_note}</p>
+          <p className="mt-1 text-right text-xs text-slate-500">
+            {order.tax_note || 'Harga sudah termasuk PPN.'} {order.shipping_note}
+            {Number(order.shipping_discount_max) > 0 && ' Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.'}
+          </p>
         </section>
 
         <p className="text-center text-xs text-slate-500">
