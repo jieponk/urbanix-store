@@ -617,6 +617,7 @@ class NewsArticle(models.Model):
     url = models.URLField("Link artikel asli", max_length=1000)
     original_title = models.CharField("Judul asli", max_length=300)
     original_summary = models.TextField("Cuplikan asli", blank=True)
+    image_url = models.URLField("Gambar sampul (dari RSS)", max_length=1000, blank=True)
     title = models.CharField("Judul (Indonesia)", max_length=300)
     summary = models.TextField("Cuplikan (Indonesia)", blank=True)
     is_translated = models.BooleanField("Sudah diterjemahkan", default=False)

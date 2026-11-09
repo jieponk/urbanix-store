@@ -7,15 +7,18 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from store import news
-from store.models import NewsArticle, NewsSource
+from decimal import Decimal
+
+from store.models import Category, NewsArticle, NewsSource, Product
 
 RSS = b"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/"><channel>
 <title>PetaPixel</title>
 <item>
   <title>Sony Announces the A7 V &amp; a New 24-70mm Lens</title>
   <link>https://petapixel.com/2026/11/08/sony-a7-v/</link>
   <guid>https://petapixel.com/?p=1</guid>
+  <media:content url="https://petapixel.com/img/a7v.jpg" medium="image"/>
   <pubDate>Sun, 08 Nov 2026 10:00:00 +0000</pubDate>
   <description><![CDATA[<p>Sony has <b>finally</b> revealed its new full-frame camera with a 33MP sensor and improved autofocus. The post Sony A7 V appeared first on PetaPixel.</p>]]></description>
 </item>
@@ -23,7 +26,7 @@ RSS = b"""<?xml version="1.0" encoding="UTF-8"?>
   <title>Older story</title>
   <link>https://petapixel.com/old/</link>
   <pubDate>Sat, 07 Nov 2026 10:00:00 +0000</pubDate>
-  <description>Short.</description>
+  <description><![CDATA[<img src="https://petapixel.com/img/old.jpg" /> Short.]]></description>
 </item>
 <item><title></title><link>https://petapixel.com/no-title/</link></item>
 </channel></rss>"""
@@ -54,6 +57,8 @@ class FeedParsingTests(TestCase):
         self.assertNotIn("<b>", items[0].summary)
         self.assertNotIn("appeared first", items[0].summary)
         self.assertEqual(items[0].published_at.year, 2026)
+        self.assertEqual(items[0].image, "https://petapixel.com/img/a7v.jpg")
+        self.assertEqual(items[1].image, "https://petapixel.com/img/old.jpg")
 
     def test_atom(self):
         [item] = news.parse_feed(ATOM)
@@ -157,3 +162,41 @@ class NewsApiTests(TestCase):
         with mock.patch("store.news.threading.Thread") as thread:
             self.api.get("/api/v1/news/")
         thread.assert_not_called()
+
+
+class NewsDetailTests(TestCase):
+    def setUp(self):
+        NewsSource.objects.all().delete()
+        self.api = APIClient()
+        src = NewsSource.objects.create(name="PetaPixel", feed_url="https://p.test/feed", last_fetched_at=timezone.now())
+        cat = Category.objects.create(name="Kamera", slug="kamera")
+        self.sony = Product.objects.create(category=cat, name="Sony A7 IV Body", slug="sony", sku="S1",
+                                           description="-", price=Decimal("30000000"), stock=2)
+        Product.objects.create(category=cat, name="Canon R50", slug="canon", sku="C1",
+                               description="-", price=Decimal("12000000"), stock=2)
+        self.art = NewsArticle.objects.create(
+            source=src, guid="x", url="https://p.test/x", original_title="Sony Announces the A7 V",
+            title="Sony Umumkan A7 V", summary="Ringkasan", image_url="https://p.test/a.jpg",
+            published_at=timezone.now(), is_translated=True)
+        NewsArticle.objects.create(source=src, guid="y", url="https://p.test/y", original_title="Other",
+                                   title="Lainnya", published_at=timezone.now())
+
+    def test_detail_with_brand_products(self):
+        r = self.api.get(f"/api/v1/news/{self.art.id}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["image_url"], "https://p.test/a.jpg")
+        self.assertEqual(r.data["related_brand"], "Sony")
+        self.assertEqual([p["name"] for p in r.data["related_products"]], ["Sony A7 IV Body"])
+        self.assertEqual([m["title"] for m in r.data["more"]], ["Lainnya"])
+
+    def test_no_brand_falls_back_to_latest(self):
+        self.art.original_title = self.art.title = "Tips memotret senja"
+        self.art.save()
+        r = self.api.get(f"/api/v1/news/{self.art.id}/")
+        self.assertEqual(r.data["related_brand"], "")
+        self.assertEqual(len(r.data["related_products"]), 2)
+
+    def test_hidden_is_404(self):
+        self.art.is_visible = False
+        self.art.save()
+        self.assertEqual(self.api.get(f"/api/v1/news/{self.art.id}/").status_code, 404)

@@ -296,9 +296,9 @@ class NewsArticleAdmin(admin.ModelAdmin):
     list_filter = ("source", "is_translated", "is_visible", "is_pinned")
     search_fields = ("title", "original_title")
     date_hierarchy = "published_at"
-    readonly_fields = ("original_title", "original_summary", "link", "created_at")
+    readonly_fields = ("original_title", "original_summary", "link", "preview", "created_at")
     fields = (
-        "source", "link", "published_at", "original_title", "original_summary",
+        "source", "link", "published_at", "image_url", "preview", "original_title", "original_summary",
         "title", "summary", "is_translated", "is_visible", "is_pinned", "created_at",
     )
     actions = ("translate_selected",)
@@ -306,6 +306,12 @@ class NewsArticleAdmin(admin.ModelAdmin):
     @admin.display(description="Artikel asli")
     def link(self, obj):
         return format_html('<a href="{}" target="_blank" rel="noopener">{}</a>', obj.url, obj.url) if obj.url else "-"
+
+    @admin.display(description="Pratinjau gambar")
+    def preview(self, obj):
+        if not obj.image_url:
+            return "-"
+        return format_html('<img src="{}" referrerpolicy="no-referrer" style="max-width:240px;border-radius:8px">', obj.image_url)
 
     @admin.action(description="Terjemahkan ulang ke Bahasa Indonesia")
     def translate_selected(self, request, queryset):

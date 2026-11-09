@@ -1,4 +1,5 @@
 """Endpoint checkout tamu. Tidak memakai autentikasi/CSRF karena dipanggil dari proxy Next.js."""
+import re
 from decimal import Decimal
 
 from django.db.models import Case, IntegerField, Value, When
@@ -184,6 +185,7 @@ def _article(a):
         "title": a.title,
         "summary": a.summary,
         "url": a.url,
+        "image_url": a.image_url,
         "source": a.source.name,
         "source_id": a.source_id,
         "published_at": a.published_at,
@@ -215,4 +217,58 @@ def news_list(request):
         "pages": max(1, -(-total // limit)),
         "results": [_article(a) for a in qs[start:start + limit]],
         "sources": [{"id": s.id, "name": s.name, "site_url": s.site_url} for s in sources],
+    })
+
+
+BRANDS = [
+    "Sony", "Canon", "Nikon", "Fujifilm", "Fuji", "Panasonic", "Lumix", "DJI", "GoPro", "Insta360",
+    "Godox", "Rode", "RØDE", "Sigma", "Tamron", "Zhiyun", "Leica", "OM System", "Olympus", "Hasselblad",
+    "Ricoh", "Pentax", "Blackmagic", "Saramonic", "Boya", "Ulanzi", "SmallRig", "Viltrox", "Yongnuo",
+    "Samyang", "Laowa", "Aputure", "Nanlite", "Hollyland", "Sandisk", "Lexar", "Peak Design", "K&F",
+]
+
+
+def related_products(article, limit=4):
+    """Produk toko yang mereknya disebut di judul berita; kalau tidak ada, produk promo/terbaru."""
+    from .models import Product
+    from .pricing import prefetch_running_promos
+    from .serializers import ProductSerializer
+
+    text = f"{article.original_title} {article.title}".lower()
+    base = Product.objects.filter(is_active=True).select_related("category").prefetch_related(
+        "variations", prefetch_running_promos()
+    )
+    found, brand = [], ""
+    for name in BRANDS:
+        if re.search(rf"(?<![a-z]){re.escape(name.lower())}(?![a-z])", text):
+            found = list(base.filter(name__icontains=name).order_by("-stock", "-id")[:limit])
+            if found:
+                brand = name
+                break
+    if not found:
+        found = list(base.filter(price_cut_items__isnull=False).distinct().order_by("-id")[:limit]) or list(
+            base.order_by("-id")[:limit]
+        )
+    return brand, ProductSerializer(found, many=True).data
+
+
+@api_view(["GET"])
+@_public
+def news_detail(request, pk):
+    article = get_object_or_404(
+        NewsArticle.objects.select_related("source"), pk=pk, is_visible=True, source__is_active=True
+    )
+    brand, products = related_products(article)
+    more = (
+        NewsArticle.objects.filter(is_visible=True, source__is_active=True)
+        .exclude(pk=article.pk)
+        .select_related("source")[:3]
+    )
+    return Response({
+        **_article(article),
+        "source_site": article.source.site_url,
+        "original_title": article.original_title,
+        "related_brand": brand,
+        "related_products": products,
+        "more": [_article(a) for a in more],
     })

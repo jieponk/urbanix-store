@@ -106,8 +106,8 @@ export default async function NewsPage({
       )}
 
       <p className="mt-10 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
-        Judul dan cuplikan diterjemahkan otomatis dari media aslinya. Artikel lengkap dan hak ciptanya milik masing-masing media;
-        klik berita untuk membaca di situs sumbernya.
+        Judul dan ringkasan diterjemahkan otomatis dari media aslinya; sumber selalu dicantumkan di tiap berita.
+        Artikel lengkap, foto, dan hak ciptanya milik masing-masing media.
       </p>
     </div>
   );

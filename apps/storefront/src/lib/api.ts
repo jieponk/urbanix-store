@@ -207,6 +207,7 @@ export type NewsArticle = {
   title: string;
   summary: string;
   url: string;
+  image_url: string;
   source: string;
   source_id: number;
   published_at: string;
@@ -230,6 +231,24 @@ export async function getNews(params: { page?: number; limit?: number; source?: 
   if (params.source) query.set('source', params.source);
   try {
     const response = await fetch(`${API}/news/?${query}`, { next: { revalidate: 300 } } as RequestInit);
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+export type NewsDetail = NewsArticle & {
+  source_site: string;
+  original_title: string;
+  related_brand: string;
+  related_products: Product[];
+  more: NewsArticle[];
+};
+
+export async function getNewsDetail(id: string): Promise<NewsDetail | null> {
+  if (!/^\d+$/.test(id)) return null;
+  try {
+    const response = await fetch(`${API}/news/${id}/`, { next: { revalidate: 300 } } as RequestInit);
     return response.ok ? await response.json() : null;
   } catch {
     return null;
