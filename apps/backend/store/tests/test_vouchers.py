@@ -49,9 +49,10 @@ class VoucherTests(TestCase):
     def test_default_vouchers_created_by_migration(self):
         wa = Voucher.objects.get(code="WAHEMAT5")
         self.assertEqual((wa.value, wa.min_purchase, wa.max_discount), (Decimal("5"), 1000000, 500000))
-        self.assertTrue(wa.for_whatsapp and not wa.for_midtrans and wa.exclude_promo and wa.show_in_popup)
+        self.assertTrue(wa.for_whatsapp and not wa.for_midtrans and not wa.exclude_promo and wa.show_in_popup)
         ong = Voucher.objects.get(code="ONGKIR40")
-        self.assertEqual((ong.voucher_type, ong.value), ("FREE_SHIPPING", Decimal("40000")))
+        self.assertEqual((ong.voucher_type, ong.value, ong.min_purchase), ("FREE_SHIPPING", Decimal("40000"), 0))
+        self.assertEqual(StoreSettings.load().voucher_combo_min_purchase, 0)
         codes = [v["code"] for v in self.api.get("/api/v1/vouchers/").data]
         self.assertEqual(codes, ["WAHEMAT5", "ONGKIR40"])
         st = self.api.get("/api/v1/store-settings/").data
@@ -79,7 +80,19 @@ class VoucherTests(TestCase):
         q = self.quote(["WAHEMAT5"], cam=4)  # 5% x 12 jt = 600rb -> maks 500rb
         self.assertEqual(q["vouchers"]["discount_amount"], "500000")
 
+    def test_promo_items_included_by_default(self):
+        cut = PriceCut.objects.create(name="Diskon November")
+        PriceCutItem.objects.create(price_cut=cut, product=self.cam, promo_price=Decimal("2700000"))
+        q = self.quote(["WAHEMAT5"], cam=1, mic=1)  # 2,7 jt + 400rb = 3,1 jt -> 5% = 155rb
+        self.assertEqual(q["vouchers"]["discount_amount"], "155000")
+
+    def test_free_shipping_without_min_purchase(self):
+        q = self.quote(["ONGKIR40", "WAHEMAT5"], cam=0, mic=1)  # Rp400.000
+        self.assertEqual(q["vouchers"]["shipping_discount_max"], "40000")
+        self.assertEqual([a["code"] for a in q["vouchers"]["applied"]], ["ONGKIR40"])  # WA 5% tetap min 1 jt
+
     def test_promo_items_excluded(self):
+        Voucher.objects.filter(code="WAHEMAT5").update(exclude_promo=True)
         cut = PriceCut.objects.create(name="Diskon November")
         PriceCutItem.objects.create(price_cut=cut, product=self.cam, promo_price=Decimal("2700000"))
         q = self.quote(["WAHEMAT5"], cam=1, mic=1)  # subtotal 3,1 jt; dasar diskon hanya mic 400rb

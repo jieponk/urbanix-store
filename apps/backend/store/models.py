@@ -116,8 +116,8 @@ class StoreSettings(models.Model):
         "Min. belanja untuk menggabung 2 voucher (Rp)",
         max_digits=12,
         decimal_places=0,
-        default=2000000,
-        help_text="Voucher diskon + voucher gratis ongkir hanya bisa dipakai bersamaan mulai nilai belanja ini.",
+        default=0,
+        help_text="Voucher diskon + voucher gratis ongkir hanya bisa dipakai bersamaan mulai nilai belanja ini. 0 = selalu bisa digabung.",
     )
 
     # Ringkasan rating toko di Shopee (diisi manual, dilihat di halaman penilaian toko Shopee)
