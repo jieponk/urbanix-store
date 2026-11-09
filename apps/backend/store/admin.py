@@ -1,7 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils.html import format_html
 
 from .models import (
     Category,
+    NewsArticle,
+    NewsSource,
     Order,
     OrderItem,
     PaymentEvent,
@@ -253,3 +256,66 @@ class VoucherAdmin(admin.ModelAdmin):
     @admin.display(description="Terpakai")
     def used(self, obj):
         return obj.used_count()
+
+
+@admin.register(NewsSource)
+class NewsSourceAdmin(admin.ModelAdmin):
+    list_display = ("name", "language", "is_active", "article_count", "last_fetched_at", "status")
+    list_editable = ("is_active",)
+    readonly_fields = ("last_fetched_at", "last_error")
+    actions = ("fetch_now",)
+
+    @admin.display(description="Jumlah berita")
+    def article_count(self, obj):
+        return obj.articles.count()
+
+    @admin.display(description="Status")
+    def status(self, obj):
+        if obj.last_error:
+            return format_html('<span style="color:#c00">{}</span>', obj.last_error[:80])
+        return "OK" if obj.last_fetched_at else "Belum diambil"
+
+    @admin.action(description="Ambil berita sekarang")
+    def fetch_now(self, request, queryset):
+        from . import news
+
+        total = sum(news.fetch_source(s) for s in queryset)
+        self.message_user(request, f"{total} berita baru diambil.", messages.SUCCESS)
+        if not news.deepl_key():
+            self.message_user(
+                request,
+                "DEEPL_API_KEY belum diisi di .env, jadi berita bahasa Inggris belum diterjemahkan.",
+                messages.WARNING,
+            )
+
+
+@admin.register(NewsArticle)
+class NewsArticleAdmin(admin.ModelAdmin):
+    list_display = ("title", "source", "published_at", "is_translated", "is_visible", "is_pinned")
+    list_editable = ("is_visible", "is_pinned")
+    list_filter = ("source", "is_translated", "is_visible", "is_pinned")
+    search_fields = ("title", "original_title")
+    date_hierarchy = "published_at"
+    readonly_fields = ("original_title", "original_summary", "link", "created_at")
+    fields = (
+        "source", "link", "published_at", "original_title", "original_summary",
+        "title", "summary", "is_translated", "is_visible", "is_pinned", "created_at",
+    )
+    actions = ("translate_selected",)
+
+    @admin.display(description="Artikel asli")
+    def link(self, obj):
+        return format_html('<a href="{}" target="_blank" rel="noopener">{}</a>', obj.url, obj.url) if obj.url else "-"
+
+    @admin.action(description="Terjemahkan ulang ke Bahasa Indonesia")
+    def translate_selected(self, request, queryset):
+        from . import news
+
+        if not news.deepl_key():
+            self.message_user(request, "Isi DEEPL_API_KEY di .env dulu.", messages.ERROR)
+            return
+        items = list(queryset)
+        for a in items:
+            a.is_translated = False
+        done = news.translate_articles(items)
+        self.message_user(request, f"{done} berita diterjemahkan.", messages.SUCCESS)

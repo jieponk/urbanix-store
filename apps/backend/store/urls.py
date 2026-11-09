@@ -14,6 +14,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('store-settings/', checkout_views.store_settings, name='store_settings'),
     path('reviews/', checkout_views.review_list, name='review_list'),
+    path('news/', checkout_views.news_list, name='news_list'),
     path('vouchers/', checkout_views.voucher_list, name='voucher_list'),
     path('checkout/quote/', checkout_views.checkout_quote, name='checkout_quote'),
     path('checkout/', checkout_views.checkout, name='checkout'),

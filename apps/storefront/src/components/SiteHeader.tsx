@@ -3,6 +3,7 @@ import BrandLogo from '@/components/BrandLogo';
 import CartLink from '@/components/CartLink';
 import CategoryMenu from '@/components/CategoryMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 
 type Props = {
@@ -80,6 +81,13 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
                 Promo
               </Link>
             )}
+            <Link
+              href="/berita"
+              className="flex h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold text-ink hover:bg-mist"
+            >
+              <NewsIcon size={17} />
+              Berita
+            </Link>
           </div>
           <SearchForm className="hidden flex-1 md:flex" />
 
@@ -95,6 +103,13 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
                 Chat admin
               </a>
             )}
+            <Link
+              href="/berita"
+              aria-label="Berita kamera"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-mist md:hidden"
+            >
+              <NewsIcon size={20} />
+            </Link>
             <ThemeToggle />
             <CartLink />
           </nav>

@@ -583,3 +583,52 @@ class Voucher(models.Model):
             qs = qs.filter(customer_phone__in={phone, digits, local, intl, "+" + intl})
         return qs.count()
 
+
+
+class NewsSource(models.Model):
+    """Feed RSS/Atom situs berita fotografi. Berita diambil otomatis & diterjemahkan ke Bahasa Indonesia."""
+
+    LANGUAGE_CHOICES = [("en", "Inggris (diterjemahkan)"), ("id", "Indonesia")]
+
+    name = models.CharField("Nama sumber", max_length=80)
+    site_url = models.URLField("Alamat situs", blank=True)
+    feed_url = models.URLField("Alamat RSS", unique=True)
+    language = models.CharField("Bahasa", max_length=2, choices=LANGUAGE_CHOICES, default="en")
+    is_active = models.BooleanField("Aktif", default=True)
+    max_items = models.PositiveSmallIntegerField("Maks. berita per ambil", default=10)
+    sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
+    last_fetched_at = models.DateTimeField("Terakhir diambil", null=True, blank=True)
+    last_error = models.CharField("Error terakhir", max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "Sumber berita"
+        verbose_name_plural = "Sumber berita"
+
+    def __str__(self):
+        return self.name
+
+
+class NewsArticle(models.Model):
+    """Ringkasan berita (judul + cuplikan pendek + link). Isi artikel tetap dibaca di situs sumber."""
+
+    source = models.ForeignKey(NewsSource, on_delete=models.CASCADE, related_name="articles", verbose_name="Sumber")
+    guid = models.CharField(max_length=500, unique=True)
+    url = models.URLField("Link artikel asli", max_length=1000)
+    original_title = models.CharField("Judul asli", max_length=300)
+    original_summary = models.TextField("Cuplikan asli", blank=True)
+    title = models.CharField("Judul (Indonesia)", max_length=300)
+    summary = models.TextField("Cuplikan (Indonesia)", blank=True)
+    is_translated = models.BooleanField("Sudah diterjemahkan", default=False)
+    published_at = models.DateTimeField("Tanggal terbit", db_index=True)
+    is_visible = models.BooleanField("Tampil", default=True)
+    is_pinned = models.BooleanField("Sematkan di atas", default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-is_pinned", "-published_at"]
+        verbose_name = "Berita"
+        verbose_name_plural = "Berita"
+
+    def __str__(self):
+        return self.title

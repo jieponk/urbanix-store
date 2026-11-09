@@ -2,6 +2,7 @@ import Link from 'next/link';
 import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
 import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
+import NewsCard from '@/components/NewsCard';
 import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
 import { VoucherStrip } from '@/components/VoucherCard';
@@ -10,6 +11,7 @@ import {
   API,
   getActiveProducts,
   getCategories,
+  getNews,
   getReviews,
   getStoreSettings,
   getVouchers,
@@ -97,11 +99,12 @@ export default async function HomePage({
     productError = true;
   }
 
-  const [categories, settings, reviews, vouchers] = await Promise.all([
+  const [categories, settings, reviews, vouchers, news] = await Promise.all([
     getCategories(),
     getStoreSettings(),
     getReviews({ limit: 6 }),
     getVouchers(),
+    getNews({ limit: 4 }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(allProducts.length / PER_PAGE));
@@ -219,6 +222,25 @@ export default async function HomePage({
 
       {/* 6. Ulasan asli pembeli */}
       <ReviewsSection reviews={reviews} settings={settings} />
+
+      {/* Berita kamera terbaru (halaman lengkap: /berita) */}
+      {news && news.results.length > 0 && (
+        <section aria-labelledby="judul-berita" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-3">
+            <h2 id="judul-berita" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              Berita kamera terbaru
+            </h2>
+            <Link href="/berita" className="shrink-0 text-sm font-bold text-ink hover:underline">
+              Lihat semua berita
+            </Link>
+          </div>
+          <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+            {news.results.map((article) => (
+              <NewsCard key={article.id} article={article} compact />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 7. Keunggulan toko: daftar ringkas, bukan kartu */}
       <section aria-labelledby="judul-keunggulan" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

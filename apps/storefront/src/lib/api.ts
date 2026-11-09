@@ -201,3 +201,37 @@ export async function getVouchers(): Promise<import('./vouchers').VoucherInfo[]>
     return [];
   }
 }
+
+export type NewsArticle = {
+  id: number;
+  title: string;
+  summary: string;
+  url: string;
+  source: string;
+  source_id: number;
+  published_at: string;
+  is_translated: boolean;
+  is_pinned: boolean;
+};
+
+export type NewsPage = {
+  count: number;
+  page: number;
+  pages: number;
+  results: NewsArticle[];
+  sources: { id: number; name: string; site_url: string }[];
+};
+
+/** Berita kamera & fotografi (diambil dari RSS, diterjemahkan di backend). */
+export async function getNews(params: { page?: number; limit?: number; source?: string } = {}): Promise<NewsPage | null> {
+  const query = new URLSearchParams();
+  if (params.page) query.set('page', String(params.page));
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.source) query.set('source', params.source);
+  try {
+    const response = await fetch(`${API}/news/?${query}`, { next: { revalidate: 300 } } as RequestInit);
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}

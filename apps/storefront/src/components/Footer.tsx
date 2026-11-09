@@ -64,6 +64,7 @@ export default function Footer({
           <ul className="mt-4 space-y-2.5 text-sm">
             <li><Link href="/#cara-pesan" className="hover:text-sun-400">Cara pesan via WhatsApp</Link></li>
             <li><Link href="/cart" className="hover:text-sun-400">Keranjang belanja</Link></li>
+            <li><Link href="/berita" className="hover:text-sun-400">Berita kamera &amp; fotografi</Link></li>
             {settings?.shopee_reviews_url && (
               <li>
                 <a href={settings.shopee_reviews_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">

@@ -17,7 +17,8 @@ from rest_framework.throttling import ScopedRateThrottle
 from . import checkout_service as svc
 from . import vouchers as voucher_engine
 from .checkout_serializers import CheckoutSerializer, QuoteRequestSerializer
-from .models import Order, Review, StoreSettings
+from . import news as news_engine
+from .models import NewsArticle, NewsSource, Order, Review, StoreSettings
 
 
 def _public(view):
@@ -175,3 +176,43 @@ def voucher_list(request):
     """Voucher publik yang sedang berlaku (untuk diklaim di beranda/halaman produk)."""
     return Response([voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()])
 
+
+
+def _article(a):
+    return {
+        "id": a.id,
+        "title": a.title,
+        "summary": a.summary,
+        "url": a.url,
+        "source": a.source.name,
+        "source_id": a.source_id,
+        "published_at": a.published_at,
+        "is_translated": a.is_translated or a.source.language == "id",
+        "is_pinned": a.is_pinned,
+    }
+
+
+@api_view(["GET"])
+@_public
+def news_list(request):
+    """Berita kamera & fotografi. ?source=<id>, ?page=<n>, ?limit=<n> (maks. 48)."""
+    news_engine.refresh_in_background()
+    qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True).select_related("source")
+    source = request.query_params.get("source", "")
+    if source.isdigit():
+        qs = qs.filter(source_id=int(source))
+    try:
+        limit = max(1, min(48, int(request.query_params.get("limit", 12))))
+        page = max(1, int(request.query_params.get("page", 1)))
+    except ValueError:
+        limit, page = 12, 1
+    total = qs.count()
+    start = (page - 1) * limit
+    sources = NewsSource.objects.filter(is_active=True, articles__is_visible=True).distinct()
+    return Response({
+        "count": total,
+        "page": page,
+        "pages": max(1, -(-total // limit)),
+        "results": [_article(a) for a in qs[start:start + limit]],
+        "sources": [{"id": s.id, "name": s.name, "site_url": s.site_url} for s in sources],
+    })

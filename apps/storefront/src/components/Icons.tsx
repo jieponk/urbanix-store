@@ -61,6 +61,19 @@ export const CartIcon = (p: Props) => (
   </Svg>
 );
 
+export const NewsIcon = (p: Props) => (
+  <Svg {...p}>
+    <path d="M5 4h11a1 1 0 0 1 1 1v14a1 1 0 0 0 1 1H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1Z" />
+    <path d="M17 8h2a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2M8 8h5M8 12h5M8 16h3" />
+  </Svg>
+);
+
+export const ExternalIcon = (p: Props) => (
+  <Svg {...p}>
+    <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+  </Svg>
+);
+
 /** Tautan kembali bergaya seragam (ikon panah + teks). */
 export function BackLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
