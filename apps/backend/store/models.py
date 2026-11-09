@@ -57,6 +57,10 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def shopee_link(self, shop_id: str) -> str:
+        """Link produk di Shopee. Kode produk = id produk (diimpor dari Shopee Seller Centre)."""
+        return f"https://shopee.co.id/product/{shop_id}/{self.pk}/" if shop_id and self.pk else ""
+
     def buyable_variations(self):
         """Varian yang harus dipilih pembeli.
 
@@ -98,6 +102,13 @@ class StoreSettings(models.Model):
         max_length=500,
         blank=True,
         help_text="Dipakai bila produk belum punya link Shopee sendiri.",
+    )
+    shopee_shop_id = models.CharField(
+        "ID toko Shopee",
+        max_length=20,
+        blank=True,
+        default="1735329821",
+        help_text="Untuk link produk otomatis: https://shopee.co.id/product/<ID toko>/<kode produk>/",
     )
     enable_midtrans = models.BooleanField(
         "Aktifkan bayar di web (Midtrans)",

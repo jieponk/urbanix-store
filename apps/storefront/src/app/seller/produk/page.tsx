@@ -16,7 +16,7 @@ const FILTERS = [
   { value: 'all', label: 'Semua' },
 ];
 
-type BulkAction = 'activate' | 'deactivate' | 'category' | 'price_percent' | 'set_stock' | 'add_promo' | 'remove_promo';
+type BulkAction = 'activate' | 'deactivate' | 'category' | 'price_percent' | 'set_stock' | 'add_promo' | 'remove_promo' | 'shopee_auto';
 
 export default function ProductsPage() {
   const [filter, setFilter] = useState('');
@@ -84,6 +84,7 @@ export default function ProductsPage() {
           <button type="button" className={btn.small} onClick={() => setBulk('category')}>Pindah kategori</button>
           <button type="button" className={btn.small} onClick={() => setBulk('add_promo')}>Masukkan ke promo</button>
           <button type="button" className={btn.small} onClick={() => setBulk('remove_promo')}>Keluarkan dari promo</button>
+          <button type="button" className={btn.small} onClick={() => quick('shopee_auto')}>Isi link Shopee otomatis</button>
           <button type="button" className="ml-auto text-xs font-bold underline" onClick={() => setSelected([])}>Batal pilih</button>
         </div>
       )}

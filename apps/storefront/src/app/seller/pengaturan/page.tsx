@@ -69,6 +69,9 @@ export default function SettingsPage() {
         </Card>
         <Card title="Toko Shopee">
           <div className="space-y-4">
+            <Field label="ID toko Shopee" hint="Dipakai untuk link produk otomatis: shopee.co.id/product/<ID toko>/<kode produk>/">
+              <input className={inputCls} inputMode="numeric" value={form.shopee_shop_id} onChange={(e) => set('shopee_shop_id', e.target.value)} />
+            </Field>
             <Field label="Link toko Shopee"><input className={inputCls} value={form.shopee_store_url} onChange={(e) => set('shopee_store_url', e.target.value)} /></Field>
             <Field label="Link halaman penilaian Shopee"><input className={inputCls} value={form.shopee_reviews_url} onChange={(e) => set('shopee_reviews_url', e.target.value)} /></Field>
             <div className="grid grid-cols-2 gap-3">

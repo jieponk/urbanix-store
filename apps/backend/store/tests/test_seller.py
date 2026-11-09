@@ -260,3 +260,13 @@ class ContentTests(SellerTestBase):
         self.assertEqual(r.status_code, 200, r.content)
         self.assertFalse(StoreSettings.load().show_whatsapp_popup)
         self.assertEqual(self.api.get("/api/v1/seller/categories/").data[0]["products"], 1)
+
+
+class ShopeeLinkTests(SellerTestBase):
+    def test_link_format_and_bulk_auto(self):
+        self.assertEqual(self.cam.shopee_link("1735329821"), f"https://shopee.co.id/product/1735329821/{self.cam.id}/")
+        r = self.api.post("/api/v1/seller/products/bulk/", {"ids": [self.cam.id, self.lens.id], "action": "shopee_auto"}, format="json")
+        self.assertEqual(r.data["updated"], 2)
+        self.lens.refresh_from_db()
+        self.assertEqual(self.lens.shopee_url, f"https://shopee.co.id/product/1735329821/{self.lens.id}/")
+        self.assertEqual(self.api.get("/api/v1/seller/settings/").data["shopee_shop_id"], "1735329821")

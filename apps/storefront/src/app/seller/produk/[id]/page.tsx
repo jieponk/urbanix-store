@@ -80,8 +80,16 @@ export default function ProductEditPage({ params }: { params: { id: string } }) 
                   <Field label="Stok"><input className={inputCls} inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
                 </>
               )}
-              <Field label="Link Shopee" className="sm:col-span-2" hint="Dipakai tombol Beli di Shopee di halaman produk.">
-                <input className={inputCls} value={form.shopee_url} onChange={(e) => setForm({ ...form, shopee_url: e.target.value })} placeholder="https://shopee.co.id/..." />
+              <Field label="Link Shopee" className="sm:col-span-2" hint="Format: https://shopee.co.id/product/<ID toko>/<kode produk>/ — kode produk = ID produk ini.">
+                <div className="flex gap-2">
+                  <input className={inputCls} value={form.shopee_url} onChange={(e) => setForm({ ...form, shopee_url: e.target.value })} placeholder="https://shopee.co.id/product/..." />
+                  <button type="button" className={btn.ghost} onClick={async () => {
+                    const s = await sellerApi('settings').catch(() => null);
+                    if (s?.shopee_shop_id) setForm({ ...form, shopee_url: `https://shopee.co.id/product/${s.shopee_shop_id}/${data.id}/` });
+                    else notify('Isi ID toko Shopee di Pengaturan dulu.', 'error');
+                  }}>Isi otomatis</button>
+                  {form.shopee_url && <a href={form.shopee_url} target="_blank" rel="noopener noreferrer" className={btn.ghost}>Cek</a>}
+                </div>
               </Field>
               <Field label="Link foto utama" className="sm:col-span-2"><input className={inputCls} value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></Field>
               <Field label="Deskripsi" className="sm:col-span-2"><textarea className={inputCls} rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>

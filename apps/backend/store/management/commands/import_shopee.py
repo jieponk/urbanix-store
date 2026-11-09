@@ -223,6 +223,9 @@ class Command(BaseCommand):
                   "foto_varian": 0, "kategori": {}, "kategori_dihapus": 0}
         used_skus = set()
         categories: dict[str, Category] = {}
+        from store.models import StoreSettings
+
+        shop_id = StoreSettings.load().shopee_shop_id
 
         for pid, rows in sales.items():
             info, med = basic.get(pid, {}), media.get(pid, {})
@@ -271,6 +274,9 @@ class Command(BaseCommand):
                 slug = f"{slugify(name)[:36]}-{pid}"[:50]
                 product = Product.objects.create(id=int(pid), slug=slug, **values)
                 report["baru"] += 1
+            if not product.shopee_url and shop_id:
+                product.shopee_url = product.shopee_link(shop_id)
+                product.save(update_fields=["shopee_url"])
 
             option_images = med.get("option_images", {})
             keep = []

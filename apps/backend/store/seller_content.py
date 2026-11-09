@@ -460,7 +460,7 @@ class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreSettings
         fields = [
-            "whatsapp_number", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
+            "whatsapp_number", "shopee_shop_id", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
             "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
             "shopee_rating_count",
         ]

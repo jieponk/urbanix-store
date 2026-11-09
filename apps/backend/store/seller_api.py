@@ -687,6 +687,16 @@ def products_bulk(request):
                     PriceCutItem.objects.filter(price_cut=cut, product=p).delete()
                     PriceCutItem.objects.create(price_cut=cut, product=p, discount_percent=percent)
                     n += 1
+            elif action == "shopee_auto":
+                from .models import StoreSettings
+
+                shop_id = StoreSettings.load().shopee_shop_id
+                if not shop_id:
+                    return bad("Isi ID toko Shopee dulu di Pengaturan.")
+                n = 0
+                for p in qs:
+                    Product.objects.filter(pk=p.pk).update(shopee_url=p.shopee_link(shop_id))
+                    n += 1
             elif action == "remove_promo":
                 cut = get_object_or_404(PriceCut, pk=int(value))
                 n, _ = PriceCutItem.objects.filter(price_cut=cut, product__in=qs).delete()
