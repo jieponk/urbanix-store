@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 
 from .models import (
+    Banner,
     Category,
     NewsArticle,
     NewsSource,
@@ -325,3 +326,9 @@ class NewsArticleAdmin(admin.ModelAdmin):
             a.is_translated = False
         done = news.translate_articles(items)
         self.message_user(request, f"{done} berita diterjemahkan.", messages.SUCCESS)
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ("title", "link_url", "sort_order", "starts_at", "ends_at", "is_active")
+    list_editable = ("sort_order", "is_active")

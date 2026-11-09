@@ -15,3 +15,6 @@ out/
 # Environment (berisi kunci rahasia, jangan di-commit)
 .env
 .env*.local
+
+# Upload dari Seller Center (banner)
+apps/backend/media/

@@ -94,6 +94,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'checkout_quote': '120/min',
         'checkout': '10/min',
+        'seller_login': '10/min',
     },
 }
 
@@ -105,6 +106,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Midtrans Config

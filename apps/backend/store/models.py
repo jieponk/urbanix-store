@@ -269,6 +269,11 @@ class Order(models.Model):
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     shipping_address = models.TextField()
+    shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
+    tracking_number = models.CharField("No. resi", max_length=80, blank=True)
+    shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)
+    admin_note = models.TextField("Catatan admin (internal)", blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -633,3 +638,36 @@ class NewsArticle(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Banner(models.Model):
+    """Banner beranda yang diatur dari Seller Center (gambar + link tujuan + jadwal tayang)."""
+
+    title = models.CharField("Judul (untuk alt & admin)", max_length=120)
+    image = models.FileField("Gambar desktop", upload_to="banners/")
+    mobile_image = models.FileField("Gambar HP (opsional)", upload_to="banners/", blank=True)
+    link_url = models.CharField("Link tujuan", max_length=500, blank=True,
+                                help_text="Contoh: /produk?promo=1, /produk/12, atau link Shopee.")
+    sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
+    starts_at = models.DateTimeField("Mulai tayang", null=True, blank=True)
+    ends_at = models.DateTimeField("Selesai tayang", null=True, blank=True)
+    is_active = models.BooleanField("Aktif", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "-id"]
+        verbose_name = "Banner"
+        verbose_name_plural = "Banner"
+
+    def __str__(self):
+        return self.title
+
+    def is_running(self, now=None):
+        from django.utils import timezone
+
+        now = now or timezone.now()
+        return (
+            self.is_active
+            and (self.starts_at is None or self.starts_at <= now)
+            and (self.ends_at is None or self.ends_at >= now)
+        )
