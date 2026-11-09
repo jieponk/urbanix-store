@@ -1,5 +1,6 @@
-Django>=5.0,<5.1
-djangorestframework>=3.14.0
+# Django 5.2 LTS: wajib >=5.2.8 untuk Python 3.14 (Ubuntu/WSL terbaru)
+Django>=5.2.8,<5.3
+djangorestframework>=3.16.0
 django-cors-headers>=4.3.0
 psycopg2-binary>=2.9.9
 redis>=5.0.1
