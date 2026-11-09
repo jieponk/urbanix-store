@@ -22,6 +22,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
+from . import vouchers as voucher_engine
 from .pricing import prefetch_running_promos, price_info
 from .models import (
     AuditLog,
@@ -160,25 +161,11 @@ def build_lines(raw_items) -> list[QuoteLine]:
     return lines
 
 
-def whatsapp_discount(lines: list[QuoteLine], store: StoreSettings) -> dict:
-    """Diskon pesan via WhatsApp. Default tidak berlaku untuk produk yang sedang promo."""
-    percent = Decimal(str(store.whatsapp_discount_percent or 0))
-    eligible = [l for l in lines if store.whatsapp_discount_on_promo or not l.is_promo]
-    base = sum((l.subtotal for l in eligible), Decimal("0"))
-    amount = (base * percent / Decimal(100)).quantize(Decimal("1")) if percent > 0 else Decimal("0")
-    note = f"Diskon pesan via WhatsApp {percent.normalize():f}%" if amount > 0 else ""
-    return {
-        "percent": str(percent.normalize()),
-        "amount": str(amount),
-        "eligible_subtotal": str(base),
-        "applies_to_promo": store.whatsapp_discount_on_promo,
-        "note": note,
-    }
-
-
-def quote(raw_items) -> dict:
+def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dict:
     store = StoreSettings.load()
     lines = build_lines(raw_items)
+    vouchers = voucher_engine.evaluate(voucher_codes, lines, payment_method, phone)
+    subtotal = sum((l.subtotal for l in lines), Decimal("0"))
     return {
         "items": [
             {
@@ -198,10 +185,13 @@ def quote(raw_items) -> dict:
             }
             for line in lines
         ],
-        "subtotal": str(sum((l.subtotal for l in lines), Decimal("0"))),
+        "subtotal": str(subtotal),
+        "vouchers": vouchers.as_dict(),
+        "total": str(subtotal - vouchers.discount_amount),
         "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
+        "tax_note": "Harga sudah termasuk PPN.",
         "methods": available_methods(store),
-        "whatsapp_discount": whatsapp_discount(lines, store),
+        "available_vouchers": [voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()],
     }
 
 
@@ -266,13 +256,13 @@ def whatsapp_message(order: Order) -> str:
             f"{money_text(item.price_snapshot * item.quantity)}"
         )
     lines.append("")
-    if order.discount_amount:
-        lines += [
-            f"Subtotal: {money_text(order.total_amount + order.discount_amount)}",
-            f"{order.discount_note}: -{money_text(order.discount_amount)}",
-        ]
+    if order.discount_amount or order.voucher_codes:
+        lines.append(f"Subtotal: {money_text(order.total_amount + order.discount_amount)}")
+        for part in order.discount_note.split("; "):
+            if part:
+                lines.append(part)
     lines += [
-        f"Total: {money_text(order.total_amount)} (belum termasuk ongkir)",
+        f"Total: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)",
         "",
         f"Nama: {order.customer_name}",
         f"No. HP: {order.customer_phone}",
@@ -294,6 +284,8 @@ def whatsapp_message(order: Order) -> str:
     )
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
+    if order.shipping_discount_max:
+        lines.append(f"(Mohon potong ongkir s/d {money_text(order.shipping_discount_max)} sesuai voucher.)")
     lines += ["", "Mohon info total dengan ongkir dan cara pembayarannya. Terima kasih!"]
     return "\n".join(lines)
 
@@ -327,6 +319,13 @@ def create_snap_transaction(order: Order) -> dict:
         }
         for item in order.items.all()
     ]
+    if order.discount_amount:
+        item_details.append({
+            "id": "VOUCHER",
+            "price": -int(order.discount_amount),
+            "quantity": 1,
+            "name": f"Voucher {order.voucher_codes}"[:50],
+        })
     payload = {
         "transaction_details": {
             "order_id": order.order_number,
@@ -400,9 +399,15 @@ def place_order(data: dict) -> dict:
             return order_result(existing, store)
 
     lines = build_lines(data["items"])
+    vouchers = voucher_engine.evaluate(
+        data.get("voucher_codes"), lines, method, data.get("customer", {}).get("phone")
+    )
+    if vouchers.rejected:
+        first = vouchers.rejected[0]
+        raise CheckoutError(f"Voucher {first['code']}: {first['message']}")
 
     try:
-        order = _create_order(method, lines, data, idem)
+        order = _create_order(method, lines, data, idem, vouchers)
     except IntegrityError:
         # Klik ganda: permintaan lain dengan kunci yang sama sudah lebih dulu tersimpan.
         existing = Order.objects.filter(idempotency_key=idem).first() if idem else None
@@ -433,11 +438,8 @@ def place_order(data: dict) -> dict:
 
 
 @transaction.atomic
-def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Order:
+def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, vouchers) -> Order:
     subtotal = sum((l.subtotal for l in lines), Decimal("0"))
-    discount = {"amount": "0", "note": ""}
-    if method == "WHATSAPP":
-        discount = whatsapp_discount(lines, StoreSettings.load())
     customer, shipping = data["customer"], data["shipping"]
     if method == "MIDTRANS":
         reserve_stock(lines)
@@ -459,9 +461,11 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem) -> Orde
         notes=data.get("notes", ""),
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),
-        total_amount=subtotal - Decimal(discount["amount"]),
-        discount_amount=Decimal(discount["amount"]),
-        discount_note=discount["note"],
+        total_amount=subtotal - vouchers.discount_amount,
+        discount_amount=vouchers.discount_amount,
+        discount_note=vouchers.note[:255],
+        voucher_codes=",".join(vouchers.codes),
+        shipping_discount_max=vouchers.shipping_discount_max,
         idempotency_key=idem,
     )
     OrderItem.objects.bulk_create(

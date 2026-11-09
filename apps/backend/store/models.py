@@ -107,20 +107,18 @@ class StoreSettings(models.Model):
     enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
-    # Diskon tambahan untuk pesanan via WhatsApp (ditampilkan juga sebagai popup di beranda)
-    whatsapp_discount_percent = models.DecimalField(
-        "Diskon pesan via WhatsApp (%)",
-        max_digits=4,
-        decimal_places=1,
-        default=5,
-        help_text="Isi 0 untuk mematikan diskon WhatsApp.",
+    show_whatsapp_popup = models.BooleanField(
+        "Tampilkan popup voucher di beranda",
+        default=True,
+        help_text="Voucher yang tampil = voucher dengan centang \"Tampilkan di popup\".",
     )
-    whatsapp_discount_on_promo = models.BooleanField(
-        "Diskon WhatsApp juga untuk produk yang sedang promo",
-        default=False,
-        help_text="Biarkan mati agar diskon tidak bertumpuk dengan Potong harga (menjaga margin).",
+    voucher_combo_min_purchase = models.DecimalField(
+        "Min. belanja untuk menggabung 2 voucher (Rp)",
+        max_digits=12,
+        decimal_places=0,
+        default=2000000,
+        help_text="Voucher diskon + voucher gratis ongkir hanya bisa dipakai bersamaan mulai nilai belanja ini.",
     )
-    show_whatsapp_popup = models.BooleanField("Tampilkan popup diskon WhatsApp di beranda", default=True)
 
     # Ringkasan rating toko di Shopee (diisi manual, dilihat di halaman penilaian toko Shopee)
     shopee_rating = models.DecimalField(
@@ -258,7 +256,12 @@ class Order(models.Model):
     )
     payment_url = models.URLField("Link pembayaran", max_length=500, blank=True)
     discount_amount = models.DecimalField("Potongan", max_digits=12, decimal_places=2, default=0)
-    discount_note = models.CharField("Keterangan potongan", max_length=120, blank=True)
+    discount_note = models.CharField("Keterangan potongan", max_length=255, blank=True)
+    voucher_codes = models.CharField("Kode voucher", max_length=100, blank=True)
+    shipping_discount_max = models.DecimalField(
+        "Potongan ongkir maks. (Rp)", max_digits=12, decimal_places=2, default=0,
+        help_text="Dari voucher gratis ongkir; dipotong saat ongkir dikonfirmasi.",
+    )
     stock_reserved = models.BooleanField(
         "Stok sudah dikurangi",
         default=False,
@@ -477,4 +480,106 @@ class Review(models.Model):
         if len(name) <= 2:
             return name[:1] + "*"
         return f"{name[0]}***{name[-1]}"
+
+
+class Voucher(models.Model):
+    """Voucher toko (menu "Voucher" di admin). Dipakai di checkout lewat kode."""
+
+    TYPE_CHOICES = (
+        ("PERCENT", "Diskon persen"),
+        ("FIXED", "Diskon nominal (Rp)"),
+        ("FREE_SHIPPING", "Gratis ongkir (potongan ongkir maks. Rp)"),
+    )
+
+    code = models.CharField(
+        "Kode", max_length=30, unique=True,
+        help_text="Huruf/angka tanpa spasi, contoh: WAHEMAT5. Otomatis huruf besar.",
+    )
+    title = models.CharField("Judul", max_length=80, help_text="Contoh: Diskon 5% pesan via WhatsApp")
+    terms = models.TextField(
+        "Syarat & ketentuan", blank=True,
+        help_text="Satu poin per baris. Tampil di kartu voucher.",
+    )
+    voucher_type = models.CharField("Jenis", max_length=15, choices=TYPE_CHOICES, default="PERCENT")
+    value = models.DecimalField(
+        "Nilai", max_digits=12, decimal_places=2,
+        help_text="Persen untuk diskon persen (5 = 5%); rupiah untuk diskon nominal dan gratis ongkir.",
+    )
+    max_discount = models.DecimalField(
+        "Maks. potongan (Rp)", max_digits=12, decimal_places=0, null=True, blank=True,
+        help_text="Hanya untuk diskon persen. Kosongkan = tanpa batas.",
+    )
+    min_purchase = models.DecimalField("Min. belanja (Rp)", max_digits=12, decimal_places=0, default=0)
+    for_whatsapp = models.BooleanField("Berlaku untuk pesan via WhatsApp", default=True)
+    for_midtrans = models.BooleanField("Berlaku untuk bayar di web (Midtrans)", default=True)
+    exclude_promo = models.BooleanField(
+        "Tidak berlaku untuk produk yang sedang promo", default=True,
+        help_text="Diskon hanya dihitung dari produk yang tidak ikut Potong harga.",
+    )
+    can_combine = models.BooleanField(
+        "Boleh digabung dengan voucher lain", default=True,
+        help_text="Maks. 1 voucher diskon + 1 voucher gratis ongkir per pesanan.",
+    )
+    usage_limit = models.PositiveIntegerField("Kuota total", null=True, blank=True, help_text="Kosongkan = tanpa batas.")
+    per_customer_limit = models.PositiveIntegerField(
+        "Maks. pemakaian per pembeli", null=True, blank=True,
+        help_text="Dihitung dari nomor HP/WhatsApp pembeli. Kosongkan = tanpa batas.",
+    )
+    starts_at = models.DateTimeField("Mulai", null=True, blank=True)
+    ends_at = models.DateTimeField("Selesai", null=True, blank=True)
+    is_active = models.BooleanField("Aktif", default=True)
+    is_public = models.BooleanField(
+        "Tampilkan untuk diklaim", default=True,
+        help_text="Tampil di beranda, halaman produk, dan checkout. Matikan untuk voucher rahasia (hanya lewat kode).",
+    )
+    show_in_popup = models.BooleanField("Tampilkan di popup beranda", default=False)
+    sort_order = models.PositiveSmallIntegerField("Urutan tampil", default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Voucher"
+        verbose_name_plural = "Voucher"
+        ordering = ["sort_order", "-created_at"]
+
+    def __str__(self):
+        return f"{self.code} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        self.code = "".join(self.code.split()).upper()
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.value is None or self.value <= 0:
+            raise ValidationError({"value": "Nilai harus lebih dari 0."})
+        if self.voucher_type == "PERCENT" and self.value >= 100:
+            raise ValidationError({"value": "Diskon persen harus di bawah 100."})
+        if not (self.for_whatsapp or self.for_midtrans):
+            raise ValidationError("Pilih minimal satu metode: WhatsApp atau Midtrans.")
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValidationError({"ends_at": "Waktu selesai harus setelah waktu mulai."})
+
+    def is_running(self, now=None):
+        from django.utils import timezone
+
+        now = now or timezone.now()
+        return (
+            self.is_active
+            and (self.starts_at is None or self.starts_at <= now)
+            and (self.ends_at is None or self.ends_at >= now)
+        )
+
+    @property
+    def is_shipping(self):
+        return self.voucher_type == "FREE_SHIPPING"
+
+    def used_count(self, phone=None):
+        qs = Order.objects.exclude(status="CANCELLED").filter(voucher_codes__regex=rf"(^|,){self.code}(,|$)")
+        if phone:
+            digits = "".join(ch for ch in phone if ch.isdigit())
+            local = "0" + digits[2:] if digits.startswith("62") else digits
+            intl = "62" + digits[1:] if digits.startswith("0") else digits
+            qs = qs.filter(customer_phone__in={phone, digits, local, intl, "+" + intl})
+        return qs.count()
 

@@ -11,6 +11,7 @@ from .models import (
     ProductVariation,
     Review,
     StoreSettings,
+    Voucher,
 )
 
 
@@ -103,12 +104,19 @@ class OrderAdmin(admin.ModelAdmin):
         "total_amount",
         "discount_amount",
         "discount_note",
+        "voucher_codes",
+        "shipping_discount_max",
         "idempotency_key",
     )
     fieldsets = (
         (
             "Pesanan",
-            {"fields": ("order_number", "created_at", "status", "total_amount", "discount_amount", "discount_note", "notes")},
+            {
+                "fields": (
+                    "order_number", "created_at", "status", "total_amount", "discount_amount",
+                    "discount_note", "voucher_codes", "shipping_discount_max", "notes",
+                )
+            },
         ),
         ("Pembeli", {"fields": ("customer_name", "customer_phone", "customer_email", "user")}),
         (
@@ -138,8 +146,11 @@ class StoreSettingsAdmin(admin.ModelAdmin):
         ("Kontak & marketplace", {"fields": ("whatsapp_number", "shopee_store_url")}),
         ("Metode pembayaran", {"fields": ("enable_midtrans", "enable_whatsapp", "enable_shopee")}),
         (
-            "Diskon pesan via WhatsApp",
-            {"fields": ("whatsapp_discount_percent", "whatsapp_discount_on_promo", "show_whatsapp_popup")},
+            "Voucher",
+            {
+                "fields": ("show_whatsapp_popup", "voucher_combo_min_purchase"),
+                "description": "Voucher sendiri diatur di menu Voucher.",
+            },
         ),
         (
             "Rating toko di Shopee",
@@ -218,3 +229,27 @@ class ReviewAdmin(admin.ModelAdmin):
     @admin.display(description="Ulasan")
     def short_text(self, obj):
         return (obj.text[:70] + "…") if len(obj.text) > 70 else obj.text
+
+
+@admin.register(Voucher)
+class VoucherAdmin(admin.ModelAdmin):
+    list_display = ("code", "title", "voucher_type", "value", "min_purchase", "status", "used", "is_public", "show_in_popup")
+    list_filter = ("is_active", "voucher_type", "is_public")
+    search_fields = ("code", "title")
+    list_editable = ("is_public", "show_in_popup")
+    fieldsets = (
+        ("Voucher", {"fields": ("code", "title", "voucher_type", "value", "max_discount", "terms")}),
+        ("Syarat", {"fields": ("min_purchase", "for_whatsapp", "for_midtrans", "exclude_promo", "can_combine")}),
+        ("Kuota", {"fields": ("usage_limit", "per_customer_limit")}),
+        ("Jadwal & tampilan", {"fields": ("starts_at", "ends_at", "is_active", "is_public", "show_in_popup", "sort_order")}),
+    )
+
+    @admin.display(description="Status")
+    def status(self, obj):
+        if not obj.is_active:
+            return "Nonaktif"
+        return "Berjalan" if obj.is_running() else "Terjadwal / selesai"
+
+    @admin.display(description="Terpakai")
+    def used(self, obj):
+        return obj.used_count()

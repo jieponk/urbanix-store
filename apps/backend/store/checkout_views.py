@@ -15,7 +15,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
-from .checkout_serializers import CheckoutSerializer, QuoteSerializer
+from . import vouchers as voucher_engine
+from .checkout_serializers import CheckoutSerializer, QuoteRequestSerializer
 from .models import Order, Review, StoreSettings
 
 
@@ -29,16 +30,20 @@ def _public(view):
 def store_settings(request):
     store = StoreSettings.load()
     reviews = Review.objects.filter(is_published=True)
+    popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup), None)
+    popup_percent = (
+        str(Decimal(str(popup.value)).normalize()) if popup and popup.voucher_type == "PERCENT" else "0"
+    )
     return Response(
         {
             "methods": svc.available_methods(store),
             "whatsapp_number": store.whatsapp_number,
             "shopee_store_url": store.shopee_store_url,
-            "whatsapp_discount_percent": str(Decimal(str(store.whatsapp_discount_percent)).normalize()),
-            "whatsapp_discount_on_promo": store.whatsapp_discount_on_promo,
-            "show_whatsapp_popup": bool(
-                store.show_whatsapp_popup and store.whatsapp_number and store.whatsapp_discount_percent > 0
-            ),
+            # Kompatibel dengan tampilan lama: persen & popup diambil dari voucher popup.
+            "whatsapp_discount_percent": popup_percent,
+            "whatsapp_discount_on_promo": bool(popup and not popup.exclude_promo),
+            "show_whatsapp_popup": bool(store.show_whatsapp_popup and store.whatsapp_number and popup),
+            "popup_voucher": voucher_engine.voucher_summary(popup) if popup else None,
             "shopee_rating": str(store.shopee_rating) if store.shopee_rating is not None else None,
             "shopee_rating_count": store.shopee_rating_count,
             "shopee_reviews_url": store.shopee_reviews_url,
@@ -87,10 +92,13 @@ def review_list(request):
 @_public
 @throttle_classes([ScopedRateThrottle])
 def checkout_quote(request):
-    serializer = QuoteSerializer(data=request.data)
+    serializer = QuoteRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
     try:
-        return Response(svc.quote(serializer.validated_data["items"]))
+        return Response(
+            svc.quote(data["items"], data["voucher_codes"], data["payment_method"], data["phone"] or None)
+        )
     except svc.CheckoutError as exc:
         return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -132,6 +140,9 @@ def order_detail(request, order_number):
             "total_amount": str(order.total_amount),
             "discount_amount": str(order.discount_amount),
             "discount_note": order.discount_note,
+            "voucher_codes": order.voucher_codes,
+            "shipping_discount_max": str(order.shipping_discount_max),
+            "tax_note": "Harga sudah termasuk PPN.",
             "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
@@ -156,3 +167,11 @@ def order_detail(request, order_number):
 def midtrans_webhook(request):
     code, message = svc.handle_midtrans_notification(dict(request.data))
     return Response({"status": message}, status=code)
+
+
+@api_view(["GET"])
+@_public
+def voucher_list(request):
+    """Voucher publik yang sedang berlaku (untuk diklaim di beranda/halaman produk)."""
+    return Response([voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()])
+
