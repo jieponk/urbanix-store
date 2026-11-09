@@ -126,6 +126,7 @@ export default function CheckoutForm() {
 
   const [codes, setCodes] = useState<string[]>([]);
   const [codeInput, setCodeInput] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const itemsRef = useRef<CartItem[]>([]);
   const firstLoad = useRef(true);
@@ -452,25 +453,25 @@ export default function CheckoutForm() {
         {needsForm && (
           <Section title="2. Voucher">
             {quote.available_vouchers.length > 0 && (
-              <ul className="grid gap-2">
+              <ul className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
                 {quote.available_vouchers.map((v) => {
                   const selected = codes.includes(v.code);
                   const applied = appliedCodes.includes(v.code);
                   const problem = quote.vouchers.rejected.find((r) => r.code === v.code);
                   const usable = method === 'WHATSAPP' ? v.for_whatsapp : method === 'MIDTRANS' ? v.for_midtrans : true;
                   return (
-                    <li key={v.code}>
+                    <li key={v.code} className="w-[80%] max-w-[300px] shrink-0 snap-start sm:w-auto sm:max-w-none">
                       <button
                         type="button"
                         onClick={() => toggleVoucher(v)}
                         disabled={!usable && !selected}
                         aria-pressed={selected}
-                        className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition disabled:opacity-45 ${
+                        className={`flex h-full w-full items-center gap-2.5 rounded-xl border-2 p-2.5 text-left transition disabled:opacity-45 ${
                           applied ? 'border-emerald-600 bg-emerald-50' : selected ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-300'
                         }`}
                       >
                         <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold text-white ${
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white ${
                             v.type === 'FREE_SHIPPING' ? 'bg-emerald-600' : 'bg-sale-600'
                           }`}
                           aria-hidden="true"
@@ -478,7 +479,7 @@ export default function CheckoutForm() {
                           {v.type === 'FREE_SHIPPING' ? 'ONGKIR' : '%'}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-bold text-ink">{v.headline}</span>
+                          <span className="block truncate text-sm font-bold text-ink">{v.headline}</span>
                           <span className="block truncate text-xs text-slate-500">
                             {problem && selected ? problem.message : !usable ? 'Tidak berlaku untuk metode ini' : v.terms[0]}
                           </span>
@@ -497,6 +498,15 @@ export default function CheckoutForm() {
               </ul>
             )}
 
+            {quote.available_vouchers.length > 1 && (
+              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">Geser untuk melihat voucher lain →</p>
+            )}
+
+            {!showCodeInput ? (
+              <button type="button" onClick={() => setShowCodeInput(true)} className="mt-3 text-sm font-bold text-ink underline">
+                Punya kode voucher lain?
+              </button>
+            ) : (
             <div className="mt-3 flex gap-2">
               <input
                 value={codeInput}
@@ -507,10 +517,11 @@ export default function CheckoutForm() {
                     addCode();
                   }
                 }}
-                placeholder="Punya kode voucher lain?"
+                placeholder="Ketik kode voucher"
+                autoFocus
                 aria-label="Kode voucher"
                 autoCapitalize="characters"
-                className={inputCls() + ' uppercase'}
+                className={inputCls() + ' uppercase placeholder:normal-case'}
               />
               <button
                 type="button"
@@ -520,6 +531,7 @@ export default function CheckoutForm() {
                 Pakai
               </button>
             </div>
+            )}
 
             {rejected
               .filter((r) => !quote.available_vouchers.some((v) => v.code === r.code))
@@ -534,7 +546,7 @@ export default function CheckoutForm() {
                 </p>
               ))}
             <p className="mt-3 text-xs text-slate-500">
-              Maks. 1 voucher diskon + 1 voucher gratis ongkir per pesanan. Voucher yang sudah diklaim di beranda otomatis dipilih.
+              Maks. 1 voucher diskon + 1 gratis ongkir. Voucher yang sudah diklaim otomatis dipilih.
             </p>
           </Section>
         )}
