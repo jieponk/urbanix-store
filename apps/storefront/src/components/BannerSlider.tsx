@@ -7,6 +7,8 @@ export type BannerSlide = {
   src: string;
   alt: string;
   href?: string;
+  /** Gambar khusus HP (opsional, dari Seller Center). */
+  mobileSrc?: string;
 };
 
 const INTERVAL_MS = 5000;
@@ -50,12 +52,15 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
       <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[360px]">
         {slides.map((slide, i) => {
           const image = (
-            <img
-              src={slide.src}
-              alt={slide.alt}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-full w-full object-cover"
-            />
+            <picture>
+              {slide.mobileSrc && <source media="(max-width: 639px)" srcSet={slide.mobileSrc} />}
+              <img
+                src={slide.src}
+                alt={slide.alt}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                className="h-full w-full object-cover"
+              />
+            </picture>
           );
 
           return (

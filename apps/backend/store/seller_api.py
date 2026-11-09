@@ -172,7 +172,7 @@ def _user(user):
 
 @staff(["GET"])
 def me(request):
-    return Response(_user(request.user))
+    return Response({**_user(request.user), "new_orders": Order.objects.filter(status="PENDING").count()})
 
 
 @staff(["POST"])

@@ -254,3 +254,15 @@ export async function getNewsDetail(id: string): Promise<NewsDetail | null> {
     return null;
   }
 }
+
+export type ApiBanner = { id: number; title: string; image: string; mobile_image: string; link_url: string };
+
+/** Banner beranda dari Seller Center (gambar disajikan lewat /media/... di storefront). */
+export async function getBanners(): Promise<ApiBanner[]> {
+  try {
+    const response = await fetch(`${API}/banners/`, { next: { revalidate: 60 } } as RequestInit);
+    return response.ok ? await response.json() : [];
+  } catch {
+    return [];
+  }
+}

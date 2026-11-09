@@ -10,6 +10,7 @@ import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
 import {
   API,
   getActiveProducts,
+  getBanners,
   getCategories,
   getNews,
   getReviews,
@@ -99,12 +100,13 @@ export default async function HomePage({
     productError = true;
   }
 
-  const [categories, settings, reviews, vouchers, news] = await Promise.all([
+  const [categories, settings, reviews, vouchers, news, apiBanners] = await Promise.all([
     getCategories(),
     getStoreSettings(),
     getReviews({ limit: 6 }),
     getVouchers(),
     getNews({ limit: 4 }),
+    getBanners(),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(allProducts.length / PER_PAGE));
@@ -122,7 +124,10 @@ export default async function HomePage({
   const waNumber = settings?.whatsapp_number ?? '';
   const waOnPromo = settings?.whatsapp_discount_on_promo ?? false;
 
-  const slides = loadBannerSlides();
+  // Banner dari Seller Center diutamakan; kalau belum ada, pakai gambar di folder public/banners.
+  const slides: BannerSlide[] = apiBanners.length
+    ? apiBanners.map((b) => ({ src: b.image, mobileSrc: b.mobile_image || undefined, alt: b.title, href: b.link_url || undefined }))
+    : loadBannerSlides();
   const { features, featuresTitle } = siteConfig;
 
   return (

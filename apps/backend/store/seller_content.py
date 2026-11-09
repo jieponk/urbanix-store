@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Q
@@ -166,8 +166,12 @@ def promo_items(request, pk):
         )
         price = row.get("promo_price")
         percent = row.get("discount_percent")
-        item.promo_price = Decimal(str(price)) if price not in (None, "") else None
-        item.discount_percent = Decimal(str(percent)) if percent not in (None, "") else None
+        try:
+            item.promo_price = Decimal(str(price)) if price not in (None, "") else None
+            item.discount_percent = Decimal(str(percent).replace(",", ".")) if percent not in (None, "") else None
+        except (InvalidOperation, ValueError):
+            errors.append(f"{product.name}: angka promo tidak valid.")
+            continue
         try:
             item.full_clean(exclude=["price_cut"])
         except DjangoValidationError as exc:

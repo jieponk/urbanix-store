@@ -1,6 +1,7 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
+import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
@@ -38,14 +39,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
-        <SiteHeader
-          categories={categories}
-          promo={promo}
-          whatsappNumber={settings?.whatsapp_number ?? ''}
-          whatsappDiscount={Number(settings?.whatsapp_discount_percent) || 0}
-        />
-        <main className="flex-1">{children}</main>
-        <Footer categories={categories} settings={settings} />
+        <ShopChrome
+          header={
+            <SiteHeader
+              categories={categories}
+              promo={promo}
+              whatsappNumber={settings?.whatsapp_number ?? ''}
+              whatsappDiscount={Number(settings?.whatsapp_discount_percent) || 0}
+            />
+          }
+          footer={<Footer categories={categories} settings={settings} />}
+        >
+          {children}
+        </ShopChrome>
       </body>
     </html>
   );
