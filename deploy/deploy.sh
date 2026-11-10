@@ -13,7 +13,7 @@ echo "==> Membungkus kode"
 tar -C "$ROOT" -czf "$TMP/app.tgz" \
   --exclude=node_modules --exclude=.next --exclude=venv --exclude=__pycache__ --exclude=.git \
   --exclude=apps/backend/db.sqlite3 --exclude=apps/backend/.env --exclude=apps/backend/media \
-  --exclude='*.tgz' --exclude=urbanix-data.json .
+  --exclude='*.tgz' --exclude=urbanix-data.json --exclude='.env.local' .
 
 grep -E '^DEEPL_API_KEY=.+' "$ROOT/apps/backend/.env" > "$TMP/secrets" 2>/dev/null || : > "$TMP/secrets"
 chmod 600 "$TMP/secrets"

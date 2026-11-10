@@ -6,3 +6,4 @@
 apps/backend/db.sqlite3
 apps/backend/.env
 apps/backend/media
+**/.env.local

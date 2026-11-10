@@ -66,7 +66,7 @@ export async function fetchAll<T>(
   let pageCount = 0;
 
   while (next && pageCount < 100) {
-    const response = await fetch(next, init);
+    const response: Response = await fetch(next, init);
 
     if (!response.ok) {
       throw new Error(`API ${endpoint} gagal: HTTP ${response.status}`);
