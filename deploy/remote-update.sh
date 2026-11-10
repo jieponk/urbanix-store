@@ -32,6 +32,17 @@ MIDTRANS_IS_PRODUCTION=False
 CONF
 fi
 
+# Domain: isi/perbaiki di .env kalau dikirim lewat argumen, lalu pastikan tidak kosong.
+if [ -n "${DOMAIN:-}" ]; then
+  if grep -q '^DOMAIN=' "$ENVF"; then sed -i "s|^DOMAIN=.*|DOMAIN=$DOMAIN|" "$ENVF"; else echo "DOMAIN=$DOMAIN" >> "$ENVF"; fi
+fi
+DOMAIN=$(grep -E '^DOMAIN=' "$ENVF" | cut -d= -f2- | tr -d '[:space:]"' || true)
+if [ -z "$DOMAIN" ]; then
+  echo "DOMAIN kosong di $ENVF. Jalankan ulang: ./deploy/deploy.sh urbanix@IP namadomain.com"
+  exit 1
+fi
+echo "==> Domain: $DOMAIN"
+
 if [ -f /tmp/urbanix-secrets ]; then
   KEY=$(grep -E '^DEEPL_API_KEY=' /tmp/urbanix-secrets | cut -d= -f2- || true)
   if [ -n "$KEY" ] && grep -qE '^DEEPL_API_KEY=$' "$ENVF"; then
