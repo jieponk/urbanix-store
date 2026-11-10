@@ -16,6 +16,8 @@ export function readCookie(request: Request, name: string): string {
 }
 
 export function sessionCookie(token: string, request: Request, maxAge = 60 * 60 * 24 * 30) {
-  const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
+  const https =
+    request.headers.get('x-forwarded-proto') === 'https' || new URL(request.url).protocol === 'https:';
+  const secure = https ? '; Secure' : '';
   return `${SELLER_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }
