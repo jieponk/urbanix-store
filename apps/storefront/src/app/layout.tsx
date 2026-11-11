@@ -1,7 +1,7 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
-import BrandMarquee, { brandsFromProducts } from '@/components/BrandMarquee';
+import BrandMarquee, { topBrands } from '@/components/BrandMarquee';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { themeScript } from '@/components/ThemeToggle';
@@ -80,7 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }
           footer={
             <>
-              <BrandMarquee brands={brandsFromProducts(products)} />
+              <BrandMarquee brands={topBrands()} />
               <Footer categories={categories} settings={settings} />
             </>
           }
