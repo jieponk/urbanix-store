@@ -45,14 +45,16 @@ def norm(s: str) -> str:
 def get(url: str, params: dict | None = None) -> bytes:
     if params:
         url += "?" + urllib.parse.urlencode(params)
-    for attempt in range(3):
+    tries = 6
+    for attempt in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
                 return r.read()
-        except Exception:
-            if attempt == 2:
+        except Exception as e:  # 502 = situs sedang restart (mis. baru deploy): tunggu lalu coba lagi
+            if attempt == tries - 1:
                 raise
-            time.sleep(2)
+            print(f"    ({e}; coba lagi dalam 10 detik...)")
+            time.sleep(10)
     return b""
 
 
