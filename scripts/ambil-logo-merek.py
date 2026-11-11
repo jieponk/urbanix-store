@@ -33,6 +33,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "apps" / "storefront" / "public" / "brands"
 EXTS = (".svg", ".png", ".webp", ".jpg", ".jpeg")
 
+# Nama sama tapi perusahaan lain (mis. Vanguard = perusahaan investasi): jangan dicari otomatis,
+# logonya diisi manual. Tambahkan di sini kalau ketemu kasus serupa.
+MANUAL = {"rode", "vanguard", "takara"}
+# Judul file Commons yang pasti benar (hasil pencarian sering keliru).
+EXACT = {"sony": "File:Sony logo.svg"}
+
 
 def slug(brand: str) -> str:  # harus sama dengan slug() di components/BrandMarquee.tsx
     return re.sub(r"^-|-$", "", re.sub(r"[^a-z0-9]+", "-", brand.lower()))
@@ -106,8 +112,12 @@ def main() -> None:
             print(f"  = {brand:<20} sudah ada ({existing[0].name})")
             rows.append((brand, total, existing[0].name, "sudah ada"))
             continue
+        if s in MANUAL:
+            print(f"  · {brand:<20} isi manual: public/brands/{s}.svg|png")
+            rows.append((brand, total, None, "isi manual"))
+            continue
         try:
-            title = find_logo(brand)
+            title = EXACT.get(s) or find_logo(brand)
             if not title:
                 print(f"  ✗ {brand:<20} tidak ketemu — taruh manual: public/brands/{s}.svg")
                 rows.append((brand, total, None, "tidak ketemu"))
