@@ -25,3 +25,7 @@ materi promosi resmi dari brand).
 3 banner bawaan (1-gear-terbaik, 2-fast-service, 3-produk-pilihan) adalah contoh.
 Ganti/hapus kapan saja. Kalau kamu menghapus atau mengganti nama file, ubah juga
 barisnya di `bannerLinks`.
+
+Versi kecil untuk HP (opsional, mempercepat loading): simpan salinan banner berukuran
+lebar 640 px dan 1024 px di folder _sizes dengan nama  <nama-banner>-640.webp  dan
+<nama-banner>-1024.webp  (contoh: 1-gear-terbaik-640.webp). Kalau tidak ada, banner asli yang dipakai.

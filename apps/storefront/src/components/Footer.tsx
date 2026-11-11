@@ -110,7 +110,7 @@ export default function Footer({
               <li key={method.name}>
                 {method.src ? (
                   <span className="flex h-9 items-center gap-2 rounded-lg bg-white px-3">
-                    <img src={method.src} alt={method.showName ? '' : method.name} loading="lazy" className="h-5 w-auto max-w-[80px] object-contain" />
+                    <img src={method.src} alt={method.showName ? '' : method.name} loading="lazy" width={60} height={20} className="h-5 w-auto max-w-[80px] object-contain" />
                     {method.showName && <span className="text-xs font-bold text-cobalt-900">{method.name}</span>}
                   </span>
                 ) : (

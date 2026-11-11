@@ -35,7 +35,18 @@ function loadBannerSlides(): BannerSlide[] {
       .replace(/[-_]+/g, ' ')
       .trim() || 'Banner promo',
     href: siteConfig.bannerLinks[file],
+    srcSet: bannerSrcSet(file),
   }));
+}
+
+/** Pakai versi 640/1024 px di public/banners/_sizes bila tersedia (HP tidak perlu mengunduh 1600 px). */
+function bannerSrcSet(file: string): string | undefined {
+  const base = file.replace(/\.[^.]+$/, '');
+  const sizes = listPublicImages('banners/_sizes');
+  const parts = [640, 1024]
+    .filter((w) => sizes.includes(`${base}-${w}.webp`))
+    .map((w) => `/banners/_sizes/${encodeURIComponent(`${base}-${w}.webp`)} ${w}w`);
+  return parts.length ? [...parts, `${publicUrl('banners', file)} 1600w`].join(', ') : undefined;
 }
 
 function PageLink({

@@ -9,6 +9,8 @@ export type BannerSlide = {
   href?: string;
   /** Gambar khusus HP (opsional, dari Seller Center). */
   mobileSrc?: string;
+  /** Versi ukuran kecil (srcset) agar HP tidak mengunduh gambar 1600 px. */
+  srcSet?: string;
 };
 
 const INTERVAL_MS = 5000;
@@ -56,6 +58,10 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
               {slide.mobileSrc && <source media="(max-width: 639px)" srcSet={slide.mobileSrc} />}
               <img
                 src={slide.src}
+                srcSet={slide.srcSet}
+                sizes={slide.srcSet ? '(max-width: 1024px) 100vw, 64vw' : undefined}
+                width={1600}
+                height={686}
                 alt={slide.alt}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 // Banner pertama = gambar LCP: minta browser mengunduhnya paling dulu.
