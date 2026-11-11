@@ -91,10 +91,16 @@ nano ~/urbanix/.env                              # rahasia & kunci (DeepL, Midtr
 
 `~/urbanix/.env` berisi kunci rahasia: jangan dibagikan & jangan masuk GitHub.
 
-## Email konfirmasi pesanan (opsional)
+## Email pesanan (opsional)
 
-Pembeli yang mengisi email saat checkout otomatis menerima email berisi nomor pesanan + link status & invoice,
-asal SMTP diisi di `~/urbanix/.env` server:
+Pembeli yang mengisi email saat checkout otomatis menerima 3 email:
+
+1. **Pesanan diterima**: nomor pesanan, rincian, link status & invoice (saat checkout).
+2. **Pengingat bayar**: sekali saja, bila 12 jam setelah pesan belum lunas (dicek cron tiap jam, pesanan maks. 3 hari).
+3. **Paket dikirim**: kurir, no. resi, dan link lacak. Terkirim sekali saat status pesanan di Seller Center
+   jadi **Dikirim** dan **No. resi** sudah diisi.
+
+Semua aktif asal SMTP diisi di `~/urbanix/.env` server:
 
 ```
 EMAIL_HOST=smtp.gmail.com

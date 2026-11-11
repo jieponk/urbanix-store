@@ -407,6 +407,9 @@ def order_detail(request, number):
             svc.release_stock(order)
         if fields:
             order.save(update_fields=fields + ["updated_at"])
+            from .emails import notify_shipped  # email "paket dikirim" (sekali, butuh status Dikirim + resi)
+
+            notify_shipped(order)
     return Response(_order_detail(order))
 
 

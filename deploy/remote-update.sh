@@ -65,7 +65,8 @@ docker image prune -f >/dev/null
 echo "==> Jadwal otomatis: berita tiap 2 jam, backup tiap hari 02:30"
 CRON_NEWS="15 */2 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py ambil_berita >> $BASE/cron.log 2>&1"
 CRON_BACKUP="30 2 * * * bash $APP/deploy/backup.sh >> $BASE/cron.log 2>&1"
-{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; } | crontab -
+CRON_REMIND="5 * * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py kirim_pengingat >> $BASE/cron.log 2>&1"
+{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; echo "$CRON_REMIND # urbanix"; } | crontab -
 
 echo
 echo "Selesai. Pantau build:  cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml logs -f storefront"

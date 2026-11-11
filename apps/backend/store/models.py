@@ -285,6 +285,8 @@ class Order(models.Model):
     shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)
     admin_note = models.TextField("Catatan admin (internal)", blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    reminder_sent_at = models.DateTimeField("Email pengingat bayar terkirim", null=True, blank=True)
+    shipped_email_sent_at = models.DateTimeField("Email paket dikirim terkirim", null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
