@@ -8,11 +8,41 @@ import {
   type Product,
 } from '@/lib/api';
 
-export const metadata = {
-  title: 'Semua Produk',
-};
-
 type SearchParams = { category?: string; q?: string; promo?: string };
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams?: SearchParams | Promise<SearchParams>;
+}) {
+  const params = (await searchParams) || {};
+  // Halaman hasil pencarian tidak perlu diindeks Google (isinya duplikat halaman lain).
+  if ((params.q || '').trim()) {
+    return { title: `Hasil pencarian "${params.q!.trim().slice(0, 60)}"`, robots: { index: false, follow: true } };
+  }
+  if (params.category) {
+    const category = (await getCategories()).find((c) => String(c.id) === String(params.category));
+    if (category) {
+      return {
+        title: `Jual ${category.name} Original Bergaransi`,
+        description: `Belanja ${category.name} original bergaransi di Urbanix Store. Harga transparan sudah termasuk PPN, kirim dari Jakarta, pesan via WhatsApp atau Shopee.`,
+        alternates: { canonical: `/produk?category=${category.id}` },
+      };
+    }
+  }
+  if (params.promo === '1') {
+    return {
+      title: 'Promo Kamera, Lensa & Gear Kreator',
+      description: 'Daftar produk yang sedang promo di Urbanix Store: kamera, lensa, drone, audio, dan aksesori original bergaransi.',
+      alternates: { canonical: '/produk?promo=1' },
+    };
+  }
+  return {
+    title: 'Semua Produk: Kamera, Lensa, Drone & Aksesori',
+    description: 'Katalog lengkap Urbanix Store: kamera, lensa, drone, audio, lighting, dan aksesori kreator original bergaransi. Harga sudah termasuk PPN.',
+    alternates: { canonical: '/produk' },
+  };
+}
 
 export default async function CatalogPage({
   searchParams,

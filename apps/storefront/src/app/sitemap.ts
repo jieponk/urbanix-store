@@ -1,4 +1,4 @@
-import { fetchAll, getArticles, type ArticleCard, type Product } from '@/lib/api';
+import { fetchAll, getArticles, getCategories, type ArticleCard, type Product } from '@/lib/api';
 import { SITE_URL } from '@/lib/seo';
 
 export const revalidate = 3600;
@@ -27,8 +27,16 @@ export default async function sitemap() {
     if (page >= data.pages) break;
   }
 
+  const categories = await getCategories();
+
   return [
     ...pages,
+    ...categories.map((c) => ({
+      url: `${SITE_URL}/produk?category=${c.id}`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    })),
     ...articles.map((a) => ({
       url: `${SITE_URL}/inspirasi/${a.slug}`,
       lastModified: a.published_at ? new Date(a.published_at) : now,

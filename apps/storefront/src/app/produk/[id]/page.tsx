@@ -13,7 +13,7 @@ import {
   getVouchers,
   type Product,
 } from '@/lib/api';
-import { SITE_URL, plainText } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, detectBrand, jsonLd, plainText } from '@/lib/seo';
 
 const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
@@ -51,8 +51,10 @@ export async function generateMetadata({
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) return { title: 'Produk tidak ditemukan', robots: { index: false } };
-  const description =
-    plainText(product.description, 155) || `${product.name} original bergaransi di Urbanix Store.`;
+  const price = Number(product.final_price ?? product.price) || 0;
+  const priceText = price ? `Rp${Math.round(price).toLocaleString('id-ID')}` : '';
+  const lead = `Jual ${product.name} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, pesan via WhatsApp atau Shopee.`;
+  const description = plainText(`${lead} ${plainText(product.description, 300)}`, 158);
   const images = product.image_url ? [{ url: product.image_url, alt: product.name }] : undefined;
   return {
     title: product.name,
@@ -63,25 +65,39 @@ export async function generateMetadata({
   };
 }
 
-/** Data terstruktur Google (Product + Offer) agar harga & stok bisa tampil di hasil pencarian. */
+/** Data terstruktur Google (Product + Offer) agar harga, stok & merek bisa tampil di hasil pencarian. */
 function productJsonLd(product: Product) {
   const price = Number(product.final_price ?? product.price) || 0;
+  const brand = detectBrand(product.name);
+  const promoEnd = product.promo_ends_at && (product.discount_percent ?? 0) > 0 ? product.promo_ends_at.slice(0, 10) : undefined;
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     sku: product.sku,
+    ...(brand ? { brand: { '@type': 'Brand', name: brand } } : {}),
     image: [product.image_url, ...(product.images ?? [])].filter(Boolean).slice(0, 6),
-    description: plainText(product.description, 500),
+    description: plainText(product.description, 500) || product.name,
     category: product.category_name,
+    url: `${SITE_URL}/produk/${product.id}`,
     offers: {
       '@type': 'Offer',
       url: `${SITE_URL}/produk/${product.id}`,
       priceCurrency: 'IDR',
       price: Math.round(price),
+      ...(promoEnd ? { priceValidUntil: promoEnd } : {}),
       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@type': 'Organization', name: 'Urbanix Store' },
+      seller: { '@id': `${SITE_URL}/#toko` },
+      // Sesuai Syarat & Ketentuan: laporan kendala barang maks. 2×24 jam dengan video unboxing.
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'ID',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 2,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        merchantReturnLink: `${SITE_URL}/syarat-ketentuan#pembatalan-retur`,
+      },
     },
   };
 }
@@ -131,7 +147,19 @@ export default async function ProductPage({
         <BackLink href="/produk">Kembali ke katalog</BackLink>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product)).replace(/</g, '\\u003c') }}
+          dangerouslySetInnerHTML={jsonLd(productJsonLd(product))}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(
+            breadcrumbJsonLd([
+              { name: 'Beranda', path: '/' },
+              ...(product.category_name
+                ? [{ name: product.category_name, path: `/produk?category=${product.category}` }]
+                : [{ name: 'Produk', path: '/produk' }]),
+              { name: product.name, path: `/produk/${product.id}` },
+            ])
+          )}
         />
 
         <ProductHero

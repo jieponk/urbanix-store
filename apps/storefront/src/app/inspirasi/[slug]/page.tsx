@@ -10,7 +10,7 @@ import ReadingProgress from '@/components/inspirasi/ReadingProgress';
 import ShareButtons from '@/components/inspirasi/ShareButtons';
 import { getArticle } from '@/lib/api';
 import { renderMarkdown } from '@/lib/markdown';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, jsonLd as jsonLdHtml } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
   const { blocks, headings } = renderMarkdown(article.body);
   const url = `${SITE_URL}/inspirasi/${article.slug}`;
-  const jsonLd = {
+  const articleLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: article.title,
@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
     datePublished: article.published_at,
     dateModified: article.updated_at,
     author: { '@type': 'Organization', name: article.author_name },
-    publisher: { '@type': 'Organization', name: 'Urbanix Store', logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/urbanix-logo-dark.png` } },
+    publisher: { '@id': `${SITE_URL}/#toko`, '@type': 'Organization', name: 'Urbanix Store', logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/urbanix-logo-dark.png` } },
     mainEntityOfPage: url,
     articleSection: article.category?.name,
     keywords: article.tags.join(', '),
@@ -65,7 +65,17 @@ export default async function ArticlePage({ params }: { params: { slug: string }
   return (
     <article>
       <ReadingProgress targetId="isi-artikel" />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(articleLd)} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={jsonLdHtml(
+          breadcrumbJsonLd([
+            { name: 'Inspirasi', path: '/inspirasi' },
+            ...(article.category ? [{ name: article.category.name, path: `/inspirasi?kategori=${article.category.slug}` }] : []),
+            { name: article.title, path: `/inspirasi/${article.slug}` },
+          ])
+        )}
+      />
 
       {/* Kepala artikel */}
       <header className="relative isolate overflow-hidden bg-cobalt-900 px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">

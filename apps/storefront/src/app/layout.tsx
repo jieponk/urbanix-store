@@ -5,7 +5,7 @@ import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL, jsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { siteConfig } from '@/lib/siteConfig';
 
 const jakarta = Plus_Jakarta_Sans({
@@ -58,6 +58,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="id" className={jakarta.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Identitas toko & nama situs untuk Google */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(
+            organizationJsonLd({ whatsapp: settings?.whatsapp_number, shopeeUrl: settings?.shopee_store_url })
+          )}
+        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd())} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
         <ShopChrome
