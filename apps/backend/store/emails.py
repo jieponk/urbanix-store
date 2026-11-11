@@ -9,6 +9,9 @@ from html import escape
 from urllib.parse import quote
 
 from django.conf import settings
+from email.utils import make_msgid, parseaddr
+from urllib.parse import urlparse
+
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
@@ -26,6 +29,14 @@ REMINDER_MAX_AGE = timedelta(days=3)
 
 
 # ---------------------------------------------------------------- kerangka email
+def _site_domain() -> str:
+    return urlparse(frontend_url("/")).hostname or "urbanix.id"
+
+
+def _reply_to() -> str:
+    return parseaddr(settings.DEFAULT_FROM_EMAIL)[1] or settings.EMAIL_HOST_USER or "urbanixstore26@gmail.com"
+
+
 def _wa(store: StoreSettings) -> str:
     return "".join(ch for ch in (store.whatsapp_number or "") if ch.isdigit())
 
@@ -39,8 +50,8 @@ def _layout(title: str, inner_html: str, wa: str) -> str:
 <div style="font-size:12px;letter-spacing:3px;color:#ffc93c;font-weight:700">URBANIX STORE</div>
 <div style="font-size:22px;font-weight:800;margin-top:6px">{escape(title)}</div></td></tr>
 <tr><td style="padding:24px">{inner_html}{wa_btn}
-<p style="margin:20px 0 0;padding:12px;background:#fffbeb;border-radius:10px;font-size:12px;color:#92400e">
-<b>Waspada penipuan:</b> pembayaran hanya ke rekening atas nama {COMPANY} yang diinfokan lewat WhatsApp resmi kami.</p>
+<p style="margin:20px 0 0;padding:12px;background:#f3f5fa;border-radius:10px;font-size:12px;color:#4b5563">
+Info pembayaran hanya kami berikan lewat WhatsApp resmi Urbanix Store, atas nama {COMPANY}.</p>
 </td></tr></table>
 <p style="font-size:11px;color:#6b7280">Email ini dikirim otomatis karena ada pesanan dengan alamat email ini di urbanix.id.</p>
 </td></tr></table></body></html>"""
@@ -86,8 +97,7 @@ def _items_table(order: Order) -> tuple[str, list[str]]:
 def _message(order: Order, subject: str, text_lines: list[str], html: str) -> EmailMultiAlternatives:
     footer = [
         "",
-        f"PENTING: pembayaran hanya ke rekening atas nama {COMPANY} yang diinfokan lewat WhatsApp resmi kami. "
-        "Abaikan permintaan transfer dari nomor atau rekening lain.",
+        f"Info pembayaran hanya kami berikan lewat WhatsApp resmi Urbanix Store, atas nama {COMPANY}.",
         "",
         "Salam,",
         "Urbanix Store",
@@ -97,6 +107,12 @@ def _message(order: Order, subject: str, text_lines: list[str], html: str) -> Em
         body="\n".join(text_lines + footer),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[order.customer_email],
+        reply_to=[_reply_to()],
+        headers={
+            # Message-ID memakai domain toko (bukan nama host server) agar email terlihat wajar bagi filter spam.
+            "Message-ID": make_msgid(domain=_site_domain()),
+            "Auto-Submitted": "auto-generated",
+        },
     )
     msg.attach_alternative(html, "text/html")
     return msg
