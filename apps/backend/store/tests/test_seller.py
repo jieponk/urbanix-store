@@ -19,8 +19,16 @@ from store.models import (
 from store.xlsx_reader import read_sheets
 
 MEDIA = tempfile.mkdtemp()
-PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-       b"\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")
+def _png() -> bytes:
+    import io as _io
+
+    from PIL import Image as _Image
+    buf = _io.BytesIO()
+    _Image.new("RGB", (2, 2), (255, 91, 20)).save(buf, "PNG")
+    return buf.getvalue()
+
+
+PNG = _png()
 
 
 @override_settings(MEDIA_ROOT=MEDIA)

@@ -17,6 +17,7 @@ from rest_framework.throttling import SimpleRateThrottle
 
 from django.core.files.storage import default_storage
 
+from .images import MAX_BODY, MAX_COVER, ImageError, to_webp
 from .models import Article, ArticleCategory, ArticleComment, Product
 from .seller_api import _product_row, bad, paginate, staff
 
@@ -297,9 +298,13 @@ def _save_article(request, article: Article | None):
     if cover:
         if not cover.name.lower().endswith(ALLOWED_IMAGE) or cover.size > MAX_IMAGE:
             return None, "Gambar sampul harus JPG/PNG/WebP/GIF, maks. 5 MB."
+        try:
+            webp = to_webp(cover, MAX_COVER)
+        except ImageError as exc:
+            return None, str(exc)
         if article.cover:
             article.cover.delete(save=False)
-        article.cover = cover
+        article.cover = webp
     elif d.get("cover") == "" and article.cover:
         article.cover.delete(save=False)
         article.cover = ""
@@ -366,8 +371,11 @@ def seller_article_image(request):
         return bad("Pilih gambar dulu.")
     if not f.name.lower().endswith(ALLOWED_IMAGE) or f.size > MAX_IMAGE:
         return bad("Gambar harus JPG/PNG/WebP/GIF, maks. 5 MB.")
-    ext = f.name.rsplit(".", 1)[-1].lower()
-    path = default_storage.save(f"articles/body/{timezone.localdate():%Y%m}/{uuid.uuid4().hex[:12]}.{ext}", f)
+    try:
+        webp = to_webp(f, MAX_BODY)
+    except ImageError as exc:
+        return bad(str(exc))
+    path = default_storage.save(f"articles/body/{timezone.localdate():%Y%m}/{uuid.uuid4().hex[:12]}.webp", webp)
     return Response({"url": default_storage.url(path)}, status=201)
 
 

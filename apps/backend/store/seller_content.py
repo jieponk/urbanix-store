@@ -27,6 +27,7 @@ from .models import (
     StoreSettings,
     Voucher,
 )
+from .images import MAX_BANNER, ImageError, to_webp
 from .pricing import price_info
 from .seller_api import bad, paginate, rupiah, staff
 
@@ -258,7 +259,12 @@ class BannerSerializer(serializers.ModelSerializer):
     def _check(self, f):
         if f and (not f.name.lower().endswith(ALLOWED_IMAGE) or f.size > MAX_IMAGE):
             raise serializers.ValidationError("Gambar harus JPG/PNG/WebP/GIF, maks. 5 MB.")
-        return f
+        if not f:
+            return f
+        try:
+            return to_webp(f, MAX_BANNER)  # disimpan sebagai WebP agar web lebih cepat
+        except ImageError as exc:
+            raise serializers.ValidationError(str(exc)) from None
 
     def validate_image(self, f):
         return self._check(f)

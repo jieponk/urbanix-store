@@ -319,7 +319,7 @@ export default function ArticleEditorPage() {
                 <button type="button" className={btn.ghost} onClick={() => { setCoverFile(null); setRemoveCover(true); setDirty(true); }}>Hapus</button>
               )}
             </div>
-            <p className="mt-2 text-xs text-slate-500">Ukuran ideal 1200×630 px (JPG/PNG/WebP, maks. 5 MB).</p>
+            <p className="mt-2 text-xs text-slate-500">Ukuran ideal 1200×630 px. JPG/PNG/GIF boleh, maks. 5 MB; otomatis diubah ke WebP.</p>
           </Card>
 
           <Card title="Kategori & label">

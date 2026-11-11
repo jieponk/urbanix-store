@@ -98,7 +98,7 @@ export default function BannersPage() {
         {editing && (
           <div className="space-y-4">
             <Field label="Judul" hint="Untuk admin & teks alternatif gambar."><input className={inputCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></Field>
-            <Field label="Gambar desktop" hint="Disarankan 2100×900 px (rasio 21:9), JPG/WebP maks. 5 MB.">
+            <Field label="Gambar desktop" hint="Disarankan 2100×900 px (rasio 21:9). JPG/PNG boleh, maks. 5 MB; otomatis diubah ke WebP.">
               <input type="file" accept="image/*" className={inputCls} onChange={(e) => setImage(e.target.files?.[0] ?? null)} />
             </Field>
             {(image || editing.image) && (

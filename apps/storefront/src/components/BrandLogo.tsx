@@ -21,11 +21,11 @@ export default function BrandLogo({
   const DIM: Record<string, [number, number]> = { mark: [136, 150], wordmark: [346, 72], tagline: [306, 36] };
   const img = (part: string, className: string) =>
     tone === 'light' ? (
-      <img src={`/brand/urbanix-${part}-light.png`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} w-auto`} />
+      <img src={`/brand/urbanix-${part}-light.webp`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} w-auto`} />
     ) : (
       <>
-        <img src={`/brand/urbanix-${part}-dark.png`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} w-auto dark:hidden`} />
-        <img src={`/brand/urbanix-${part}-light.png`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} hidden w-auto dark:block`} />
+        <img src={`/brand/urbanix-${part}-dark.webp`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} w-auto dark:hidden`} />
+        <img src={`/brand/urbanix-${part}-light.webp`} alt="" width={DIM[part][0]} height={DIM[part][1]} className={`${className} hidden w-auto dark:block`} />
       </>
     );
 
