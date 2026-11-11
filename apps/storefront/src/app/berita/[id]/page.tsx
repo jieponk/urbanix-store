@@ -10,9 +10,12 @@ type Params = { id: string };
 export async function generateMetadata({ params }: { params: Promise<Params> | Params }) {
   const { id } = await params;
   const article = await getNewsDetail(id);
+  // Isi berita = terjemahan otomatis dari situs lain: boleh dibaca pembeli, tapi tidak diindeks Google
+  // (konten pihak lain/terjemahan otomatis bisa menurunkan penilaian kualitas seluruh situs).
+  const robots = { index: false, follow: true };
   return article
-    ? { title: article.title, description: article.summary || `Berita dari ${article.source}` }
-    : { title: 'Berita tidak ditemukan' };
+    ? { title: article.title, description: article.summary || `Berita dari ${article.source}`, robots }
+    : { title: 'Berita tidak ditemukan', robots };
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<Params> | Params }) {

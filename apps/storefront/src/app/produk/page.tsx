@@ -18,7 +18,8 @@ export async function generateMetadata({
   const params = (await searchParams) || {};
   // Halaman hasil pencarian tidak perlu diindeks Google (isinya duplikat halaman lain).
   if ((params.q || '').trim()) {
-    return { title: `Hasil pencarian "${params.q!.trim().slice(0, 60)}"`, robots: { index: false, follow: true } };
+    // Kata pencarian sengaja TIDAK ditulis di judul: mencegah spam "link pencarian berisi kata judi" di Google.
+    return { title: 'Hasil pencarian produk', robots: { index: false, follow: true } };
   }
   if (params.category) {
     const category = (await getCategories()).find((c) => String(c.id) === String(params.category));
