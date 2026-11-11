@@ -14,6 +14,15 @@ export const siteConfig = {
   // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
   motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
 
+  // Data hukum untuk halaman Syarat & Ketentuan dan Kebijakan Privasi. WAJIB diisi sebelum dipublikasikan luas.
+  legal: {
+    company: '[Nama badan usaha, mis. PT ...]',
+    address: '[Alamat kantor/toko lengkap]',
+    updated: '11 November 2026',
+    paymentDeadline: '1×24 jam',
+    returnWindow: '2×24 jam',
+  },
+
   // Kontak toko (tampil di footer). Nomor WhatsApp di Pengaturan toko (admin) diutamakan bila diisi.
   contact: {
     person: 'Admin Urbanix',

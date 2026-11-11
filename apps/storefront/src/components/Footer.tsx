@@ -65,6 +65,8 @@ export default function Footer({
             <li><Link href="/#cara-pesan" className="hover:text-sun-400">Cara pesan via WhatsApp</Link></li>
             <li><Link href="/cart" className="hover:text-sun-400">Keranjang belanja</Link></li>
             <li><Link href="/berita" className="hover:text-sun-400">Berita kamera &amp; fotografi</Link></li>
+            <li><Link href="/syarat-ketentuan" className="hover:text-sun-400">Syarat &amp; Ketentuan</Link></li>
+            <li><Link href="/kebijakan-privasi" className="hover:text-sun-400">Kebijakan Privasi</Link></li>
             {settings?.shopee_reviews_url && (
               <li>
                 <a href={settings.shopee_reviews_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">

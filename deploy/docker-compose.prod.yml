@@ -61,6 +61,7 @@ services:
     restart: unless-stopped
     environment:
       API_URL: http://backend:8000/api/v1
+      SITE_URL: https://${DOMAIN}
       NODE_ENV: production
     depends_on:
       backend:

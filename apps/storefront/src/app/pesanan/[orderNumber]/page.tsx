@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { API, money } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Status Pesanan' };
+export const metadata = { title: 'Status Pesanan', robots: { index: false, follow: false } };
 
 type OrderDetail = {
   order_number: string;

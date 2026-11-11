@@ -5,6 +5,7 @@ import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
+import { SITE_URL } from '@/lib/seo';
 import { siteConfig } from '@/lib/siteConfig';
 
 const jakarta = Plus_Jakarta_Sans({
@@ -20,6 +21,21 @@ export const metadata = {
     template: '%s | URBANIX STORE',
   },
   description: siteConfig.motto,
+  metadataBase: new URL(SITE_URL),
+  applicationName: siteConfig.name,
+  alternates: {
+    canonical: '/',
+    types: { 'application/rss+xml': [{ url: '/rss.xml', title: 'Produk terbaru Urbanix Store' }] },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    siteName: siteConfig.name,
+    title: `URBANIX STORE | ${siteConfig.tagline}`,
+    description: siteConfig.motto,
+    images: [{ url: '/brand/og-image.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
+  },
+  twitter: { card: 'summary_large_image', images: ['/brand/og-image.png'] },
   // Safari iPhone otomatis mengubah nomor telepon jadi tautan, yang membuat
   // tampilan HP berbeda dari server ("Hydration failed"). Matikan deteksi otomatis itu.
   formatDetection: { telephone: false, email: false, address: false },

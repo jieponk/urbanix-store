@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { cache } from 'react';
 import { BackLink } from '@/components/Icons';
 import { ReviewsSection } from '@/components/HomeSections';
 import ProductHero from '@/components/ProductHero';
@@ -12,8 +13,9 @@ import {
   getVouchers,
   type Product,
 } from '@/lib/api';
+import { SITE_URL, plainText } from '@/lib/seo';
 
-async function getProduct(id: string): Promise<Product | null> {
+const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
   try {
     const response = await fetch(
@@ -39,6 +41,49 @@ async function getProduct(id: string): Promise<Product | null> {
     console.error('[Detail Produk] Gagal membaca daftar:', error);
     return null;
   }
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}) {
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) return { title: 'Produk tidak ditemukan', robots: { index: false } };
+  const description =
+    plainText(product.description, 155) || `${product.name} original bergaransi di Urbanix Store.`;
+  const images = product.image_url ? [{ url: product.image_url, alt: product.name }] : undefined;
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: `/produk/${product.id}` },
+    openGraph: { type: 'website', title: product.name, description, url: `/produk/${product.id}`, images },
+    twitter: { card: 'summary_large_image', title: product.name, description, images: images?.map((i) => i.url) },
+  };
+}
+
+/** Data terstruktur Google (Product + Offer) agar harga & stok bisa tampil di hasil pencarian. */
+function productJsonLd(product: Product) {
+  const price = Number(product.final_price ?? product.price) || 0;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    sku: product.sku,
+    image: [product.image_url, ...(product.images ?? [])].filter(Boolean).slice(0, 6),
+    description: plainText(product.description, 500),
+    category: product.category_name,
+    offers: {
+      '@type': 'Offer',
+      url: `${SITE_URL}/produk/${product.id}`,
+      priceCurrency: 'IDR',
+      price: Math.round(price),
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: 'Urbanix Store' },
+    },
+  };
 }
 
 export default async function ProductPage({
@@ -84,6 +129,10 @@ export default async function ProductPage({
     <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <BackLink href="/produk">Kembali ke katalog</BackLink>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product)).replace(/</g, '\\u003c') }}
+        />
 
         <ProductHero
           product={product}
