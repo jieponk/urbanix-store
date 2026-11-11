@@ -100,7 +100,14 @@ Pembeli yang mengisi email saat checkout otomatis menerima 3 email:
 3. **Paket dikirim**: kurir, no. resi, dan link lacak. Terkirim sekali saat status pesanan di Seller Center
    jadi **Dikirim** dan **No. resi** sudah diisi.
 
-Semua aktif asal SMTP diisi di `~/urbanix/.env` server:
+Cara termudah (dari laptop, App Password diketik saat diminta dan tidak tampil di layar):
+
+```
+./deploy/set-email.sh urbanix@IP-SERVER urbanixstore26@gmail.com
+```
+
+Skrip ini mengisi `.env` server, menyalakan ulang backend, lalu mengirim email uji.
+Atau isi manual di `~/urbanix/.env` server:
 
 ```
 EMAIL_HOST=smtp.gmail.com
