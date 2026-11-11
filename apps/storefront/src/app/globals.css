@@ -309,3 +309,12 @@ body {
 .article-prose .tok-k { color: #ff8a52; font-weight: 600; }
 .article-prose .tok-f { color: #7cc7ff; }
 .article-prose .tok-t { color: #f6a6ff; }
+
+/* Deretan merek berjalan (di atas footer). Isi diulang 4×, geser 1/4 agar mulus di layar lebar. */
+.marquee-inner { animation: marquee 30s linear infinite; }
+.marquee:hover .marquee-inner, .marquee:focus-within .marquee-inner { animation-play-state: paused; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-25%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; }
+  .marquee-inner { animation: none; }
+}
