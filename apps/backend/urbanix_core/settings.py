@@ -142,5 +142,7 @@ EMAIL_TIMEOUT = 15
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', '') or (
     f'Urbanix Store <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Urbanix Store <noreply@urbanix.id>'
 )
+# Balasan pembeli diarahkan ke kotak masuk yang benar-benar dibaca admin.
+EMAIL_REPLY_TO = os.environ.get('EMAIL_REPLY_TO', '') or 'urbanixstore26@gmail.com'
 ORDER_EMAIL_ENABLED = bool(EMAIL_HOST)
 ORDER_EMAIL_SYNC = False  # True di tes: kirim langsung, bukan di thread

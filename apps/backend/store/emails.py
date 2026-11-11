@@ -34,7 +34,7 @@ def _site_domain() -> str:
 
 
 def _reply_to() -> str:
-    return parseaddr(settings.DEFAULT_FROM_EMAIL)[1] or settings.EMAIL_HOST_USER or "urbanixstore26@gmail.com"
+    return getattr(settings, "EMAIL_REPLY_TO", "") or parseaddr(settings.DEFAULT_FROM_EMAIL)[1]
 
 
 def _wa(store: StoreSettings) -> str:
