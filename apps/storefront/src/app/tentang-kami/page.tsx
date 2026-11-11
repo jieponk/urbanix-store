@@ -39,10 +39,6 @@ export default async function AboutPage() {
       <section className="relative overflow-hidden bg-cobalt-900 px-4 py-16 text-white sm:px-6 sm:py-24 lg:px-8">
         <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-brand-500/25 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 left-0 h-80 w-80 rounded-full bg-sky-400/15 blur-3xl" />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]"
-        />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-sun-400 ring-1 ring-white/15">

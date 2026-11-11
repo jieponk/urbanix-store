@@ -68,12 +68,15 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
       {/* Kepala artikel */}
-      <header className="relative overflow-hidden bg-cobalt-900 px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-500/25 blur-3xl" />
-        <div
+      <header className="relative isolate overflow-hidden bg-[#140a2e] px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">
+        {/* Latar diambil dari sampul artikel (diburamkan), jadi warnanya selalu senada dengan sampul */}
+        <img
+          src={article.cover || '/inspirasi/default-cover.webp'}
+          alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-70 blur-[70px] saturate-150"
         />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/45 via-black/25 to-black/55" />
         <div className="relative mx-auto max-w-3xl text-center">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
             <Link href="/inspirasi" className="hover:text-white">Inspirasi</Link>

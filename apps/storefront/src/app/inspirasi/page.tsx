@@ -52,13 +52,12 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
   return (
     <div>
       {/* Pembuka */}
-      <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-36 sm:pt-16 lg:px-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-500/25 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-10 h-72 w-72 rounded-full bg-sky-400/15 blur-3xl" />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]"
-        />
+      <section className="relative isolate overflow-hidden bg-[#18093a] px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-36 sm:pt-16 lg:px-8">
+        {/* Warna senada dengan sampul default Inspirasi: ungu, oranye, pink, biru */}
+        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-40 -z-10 h-[30rem] w-[30rem] rounded-full bg-[#ff5b14] opacity-80 blur-[110px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-1/4 -z-10 h-96 w-96 rounded-full bg-[#ff3d8b] opacity-70 blur-[110px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-96 w-96 rounded-full bg-[#4c3dff] opacity-80 blur-[110px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-20 left-1/4 -z-10 h-72 w-72 rounded-full bg-[#ffc93c] opacity-30 blur-[110px]" />
         <div className="relative mx-auto max-w-7xl">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">Inspirasi Urbanix</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">

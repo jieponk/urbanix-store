@@ -35,10 +35,6 @@ export default function LegalPage({
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-20 pt-12 text-white sm:px-6 sm:pb-28 sm:pt-16 lg:px-8">
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-sky-400/15 blur-3xl" />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]"
-        />
         <div className="relative mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
             <Link href="/" className="hover:text-white">Beranda</Link>
