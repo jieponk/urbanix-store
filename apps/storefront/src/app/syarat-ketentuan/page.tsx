@@ -59,6 +59,11 @@ export default function TermsPage() {
               </li>
               <li>Pesanan dianggap sah setelah pembayaran kami terima dan dikonfirmasi admin.</li>
               <li>
+                Alur status pesanan: <b>Dipesan → Diproses (dikemas) → Dikirim → Selesai</b>. Statusnya bisa dipantau
+                kapan saja di halaman Cek Pesanan dengan nomor pesanan.
+              </li>
+              <li>Pastikan alamat dan nomor HP benar. Perubahan alamat hanya bisa dilakukan sebelum paket dikirim.</li>
+              <li>
                 <b>Beli di Shopee:</b> transaksi terjadi di Shopee dan tunduk pada syarat, pembayaran, dan perlindungan
                 pembeli Shopee.
               </li>
@@ -99,8 +104,12 @@ export default function TermsPage() {
             <ul>
               <li>Kami mengirim ke <b>{legal.shipArea}</b> dari Jakarta melalui jasa ekspedisi pilihan.</li>
               <li>
-                Pesanan diproses dan dikirim maksimal <b>{legal.shipProcessing}</b> setelah pembayaran dikonfirmasi.
-                Nomor resi diinformasikan lewat WhatsApp/email dan bisa dicek di halaman Cek Pesanan.
+                Pesanan dikemas dan dikirim maksimal <b>{legal.shipProcessing}</b> ({legal.workDays}) setelah pembayaran
+                dikonfirmasi. Nomor resi diinformasikan lewat WhatsApp/email dan bisa dicek di halaman Cek Pesanan.
+              </li>
+              <li>
+                Bila pesanan belum dikirim melewati batas tersebut, pembeli boleh membatalkan pesanan dan dana dikembalikan
+                penuh maksimal {legal.refundTime}.
               </li>
               <li>Ongkos kirim mengikuti tarif ekspedisi ke alamat tujuan dan dikonfirmasi admin sebelum pembayaran.</li>
               <li>Estimasi waktu sampai mengikuti layanan ekspedisi yang dipilih.</li>

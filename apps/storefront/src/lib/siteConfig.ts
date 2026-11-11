@@ -22,7 +22,8 @@ export const siteConfig = {
     paymentDeadline: '1×24 jam',
     returnWindow: '2×24 jam',
     // Ketentuan pengiriman & retur (gaya Shopee). Ubah di sini bila kebijakan berubah.
-    shipProcessing: '1×24 jam hari kerja', // pesanan dikirim maks. sekian setelah pembayaran dikonfirmasi
+    shipProcessing: '2 hari kerja', // masa pengemasan (standar Shopee): dikirim maks. sekian setelah pembayaran dikonfirmasi
+    workDays: 'Senin–Sabtu, kecuali libur nasional',
     shipArea: 'seluruh Indonesia',
     reviewTime: '1×24 jam hari kerja', // admin memeriksa pengajuan retur maks. sekian
     refundTime: '7 hari kerja', // dana dikembalikan maks. sekian setelah barang retur diterima & dicek
