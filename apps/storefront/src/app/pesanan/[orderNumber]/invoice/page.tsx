@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { UrbanixLogoStacked } from '@/components/BrandSvg';
 import PrintButton from '@/components/PrintButton';
 import { API, money } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
@@ -98,7 +99,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           {/* Kepala */}
           <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
-              <img src="/brand/urbanix-logo-dark.webp" alt="Urbanix Store" className="h-16 w-auto" />
+              <UrbanixLogoStacked className="h-16 w-auto shrink-0 text-[#111111]" />
               <div className="text-xs leading-5 text-[#4b5563]">
                 <p className="text-sm font-extrabold text-[#1c2030]">{legal.company}</p>
                 <p className="max-w-xs">{legal.address}</p>
