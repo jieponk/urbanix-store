@@ -25,7 +25,9 @@ const MENU: { group: string; items: { href: string; label: string; icon: IconNam
     { href: '/seller/banner', label: 'Banner & link', icon: 'banner' },
   ] },
   { group: 'Konten', items: [
-    { href: '/seller/berita', label: 'Berita', icon: 'news' },
+    { href: '/seller/artikel', label: 'Artikel', icon: 'article' },
+    { href: '/seller/komentar', label: 'Komentar', icon: 'chat' },
+    { href: '/seller/berita', label: 'Berita RSS', icon: 'news' },
     { href: '/seller/ulasan', label: 'Ulasan', icon: 'reviews' },
   ] },
   { group: 'Toko', items: [{ href: '/seller/pengaturan', label: 'Pengaturan', icon: 'settings' }] },

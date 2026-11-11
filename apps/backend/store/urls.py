@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from . import checkout_views, seller_content
+from . import articles_api, checkout_views, seller_content
 from .views import CartViewSet, CategoryViewSet, OrderViewSet, ProductViewSet
 
 router = DefaultRouter()
@@ -16,6 +16,10 @@ urlpatterns = [
     path('reviews/', checkout_views.review_list, name='review_list'),
     path('seller/', include('store.seller_urls')),
     path('banners/', seller_content.public_banners, name='public_banners'),
+    path('articles/', articles_api.article_list, name='article_list'),
+    path('article-categories/', articles_api.article_categories, name='article_categories'),
+    path('articles/<slug:slug>/', articles_api.article_detail, name='article_detail'),
+    path('articles/<slug:slug>/comments/', articles_api.article_comment, name='article_comment'),
     path('news/', checkout_views.news_list, name='news_list'),
     path('news/<int:pk>/', checkout_views.news_detail, name='news_detail'),
     path('vouchers/', checkout_views.voucher_list, name='voucher_list'),

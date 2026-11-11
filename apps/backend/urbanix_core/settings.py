@@ -103,6 +103,7 @@ REST_FRAMEWORK = {
         'checkout_quote': '120/min',
         'checkout': '10/min',
         'seller_login': '10/min',
+        'article_comment': '5/min',
     },
 }
 

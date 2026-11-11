@@ -682,3 +682,72 @@ class Banner(models.Model):
             and (self.starts_at is None or self.starts_at <= now)
             and (self.ends_at is None or self.ends_at >= now)
         )
+
+
+# ---------------------------------------------------------------- Artikel Urbanix (blog "Inspirasi")
+class ArticleCategory(models.Model):
+    name = models.CharField("Nama", max_length=60, unique=True)
+    slug = models.SlugField(max_length=70, unique=True)
+    sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "Kategori artikel"
+        verbose_name_plural = "Kategori artikel"
+
+    def __str__(self):
+        return self.name
+
+
+class Article(models.Model):
+    """Artikel tulisan tim Urbanix. Isi ditulis dengan format Markdown sederhana."""
+
+    STATUS_CHOICES = (("DRAFT", "Draf"), ("PUBLISHED", "Terbit"))
+
+    title = models.CharField("Judul", max_length=160)
+    slug = models.SlugField("Alamat (slug)", max_length=180, unique=True)
+    excerpt = models.CharField("Ringkasan", max_length=300, blank=True,
+                               help_text="Tampil di kartu artikel & Google. Kosong = diambil dari awal isi.")
+    body = models.TextField("Isi (Markdown)", blank=True)
+    cover = models.FileField("Gambar sampul", upload_to="articles/", blank=True)
+    category = models.ForeignKey(ArticleCategory, null=True, blank=True, on_delete=models.SET_NULL,
+                                 related_name="articles", verbose_name="Kategori")
+    tags = models.CharField("Label", max_length=300, blank=True,
+                            help_text="Pisahkan dengan koma, contoh: sony, mirrorless, tips foto.")
+    author_name = models.CharField("Nama penulis", max_length=80, default="Tim Urbanix")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="DRAFT")
+    is_pinned = models.BooleanField("Disematkan", default=False)
+    allow_comments = models.BooleanField("Boleh dikomentari", default=True)
+    related_products = models.ManyToManyField("Product", blank=True, related_name="articles",
+                                              verbose_name="Produk terkait")
+    published_at = models.DateTimeField("Tanggal terbit", null=True, blank=True)
+    views = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_pinned", "-published_at", "-id"]
+        verbose_name = "Artikel"
+        verbose_name_plural = "Artikel"
+
+    def __str__(self):
+        return self.title
+
+
+class ArticleComment(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments")
+    name = models.CharField("Nama", max_length=60)
+    email = models.EmailField("Email (tidak ditampilkan)", blank=True)
+    body = models.TextField("Komentar", max_length=1500)
+    is_approved = models.BooleanField("Disetujui", default=False)
+    is_staff_reply = models.BooleanField("Balasan admin", default=False)
+    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "Komentar artikel"
+        verbose_name_plural = "Komentar artikel"
+
+    def __str__(self):
+        return f"{self.name}: {self.body[:40]}"

@@ -1,11 +1,11 @@
-import { fetchAll, type Product } from '@/lib/api';
+import { fetchAll, getArticles, type ArticleCard, type Product } from '@/lib/api';
 import { SITE_URL } from '@/lib/seo';
 
 export const revalidate = 3600;
 
 export default async function sitemap() {
   const now = new Date();
-  const pages = ['', '/produk', '/produk?promo=1', '/berita', '/tentang-kami', '/kontak', '/cek-pesanan', '/syarat-ketentuan', '/kebijakan-privasi'].map((path) => ({
+  const pages = ['', '/produk', '/produk?promo=1', '/inspirasi', '/berita', '/tentang-kami', '/kontak', '/cek-pesanan', '/syarat-ketentuan', '/kebijakan-privasi'].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: now,
     changeFrequency: path === '' || path.startsWith('/produk') ? ('daily' as const) : ('monthly' as const),
@@ -19,8 +19,22 @@ export default async function sitemap() {
     products = [];
   }
 
+  const articles: ArticleCard[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const data = await getArticles({ page, limit: 48 });
+    if (!data) break;
+    articles.push(...data.results);
+    if (page >= data.pages) break;
+  }
+
   return [
     ...pages,
+    ...articles.map((a) => ({
+      url: `${SITE_URL}/inspirasi/${a.slug}`,
+      lastModified: a.published_at ? new Date(a.published_at) : now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
     ...products
       .filter((p) => p.is_active !== false)
       .map((p) => ({

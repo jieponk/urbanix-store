@@ -67,11 +67,11 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
               </Link>
             )}
             <Link
-              href="/berita"
+              href="/inspirasi"
               className="flex h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold text-ink hover:bg-mist"
             >
               <NewsIcon size={17} />
-              Berita
+              Inspirasi
             </Link>
           </div>
           <SearchBox className="hidden flex-1 md:flex" />
@@ -95,8 +95,8 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
               </a>
             )}
             <Link
-              href="/berita"
-              aria-label="Berita kamera"
+              href="/inspirasi"
+              aria-label="Inspirasi: artikel & berita kamera"
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-mist md:hidden"
             >
               <NewsIcon size={20} />

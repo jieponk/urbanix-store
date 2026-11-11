@@ -266,3 +266,71 @@ export async function getBanners(): Promise<ApiBanner[]> {
     return [];
   }
 }
+
+/* ---------------------------------------------------------------- Artikel Urbanix (Inspirasi) */
+export type ArticleCard = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  cover: string;
+  category: { name: string; slug: string } | null;
+  author_name: string;
+  published_at: string | null;
+  reading_minutes: number;
+  is_pinned: boolean;
+  tags: string[];
+  comment_count: number | null;
+};
+
+export type ArticleComment = {
+  id: number;
+  name: string;
+  body: string;
+  created_at: string;
+  is_staff_reply: boolean;
+  replies?: ArticleComment[];
+};
+
+export type ArticleDetail = ArticleCard & {
+  body: string;
+  updated_at: string;
+  allow_comments: boolean;
+  products: Record<string, Product>;
+  related_products: Product[];
+  comments: ArticleComment[];
+  more: ArticleCard[];
+};
+
+export type ArticlePage = { count: number; page: number; pages: number; results: ArticleCard[] };
+
+export async function getArticles(
+  params: { page?: number; limit?: number; category?: string; label?: string } = {}
+): Promise<ArticlePage | null> {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) query.set(k, String(v));
+  try {
+    const response = await fetch(`${API}/articles/?${query}`, { next: { revalidate: 60 } } as RequestInit);
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getArticleCategories(): Promise<{ name: string; slug: string; count: number }[]> {
+  try {
+    const response = await fetch(`${API}/article-categories/`, { next: { revalidate: 300 } } as RequestInit);
+    return response.ok ? await response.json() : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getArticle(slug: string): Promise<ArticleDetail | null> {
+  try {
+    const response = await fetch(`${API}/articles/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}

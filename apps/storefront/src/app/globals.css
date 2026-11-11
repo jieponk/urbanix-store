@@ -139,3 +139,50 @@ body {
   html, body { background: #fff !important; }
   .invoice-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------------------------------------------------------------- Artikel Urbanix (isi tulisan) */
+.article-prose { font-size: 1.0625rem; line-height: 1.85; color: rgb(var(--slate-700)); overflow-wrap: break-word; }
+.article-prose > * + * { margin-top: 1.25em; }
+.article-prose h2, .article-prose h3, .article-prose h4 { color: rgb(var(--ink)); font-weight: 800; letter-spacing: -0.015em; scroll-margin-top: 8rem; }
+.article-prose h2 { font-size: 1.6rem; line-height: 1.3; margin-top: 2.2em; padding-top: 0.2em; }
+.article-prose h3 { font-size: 1.28rem; line-height: 1.35; margin-top: 1.8em; }
+.article-prose h4 { font-size: 1.08rem; margin-top: 1.6em; }
+.article-prose h2 + *, .article-prose h3 + *, .article-prose h4 + * { margin-top: 0.7em; }
+.article-prose strong { color: rgb(var(--ink)); font-weight: 700; }
+.article-prose a { color: #cf4309; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.dark .article-prose a { color: #ff8a52; }
+.article-prose a:hover { text-decoration-thickness: 3px; }
+.article-prose mark { background: rgb(255 201 60 / 0.45); color: inherit; padding: 0.05em 0.25em; border-radius: 0.25em; }
+.article-prose del { opacity: 0.7; }
+.article-prose :not(pre) > code { font-size: 0.88em; background: rgb(var(--mist)); color: rgb(var(--ink)); padding: 0.15em 0.4em; border-radius: 0.4em; border: 1px solid rgb(var(--slate-200)); }
+.article-prose ul, .article-prose ol { padding-left: 1.4em; }
+.article-prose ul { list-style: none; }
+.article-prose ul > li { position: relative; }
+.article-prose ul > li::before { content: ''; position: absolute; left: -1.05em; top: 0.75em; width: 0.42em; height: 0.42em; border-radius: 999px; background: #ff5b14; }
+.article-prose ol { list-style: decimal; }
+.article-prose ol > li::marker { color: #ff5b14; font-weight: 800; }
+.article-prose li + li { margin-top: 0.45em; }
+.article-prose blockquote { position: relative; padding: 1.1em 1.4em 1.1em 1.6em; border-left: 4px solid #ff5b14; background: rgb(var(--mist)); border-radius: 0 1rem 1rem 0; font-size: 1.15em; font-weight: 600; font-style: italic; color: rgb(var(--ink)); }
+.article-prose blockquote p + p, .article-prose .callout p + p { margin-top: 0.6em; }
+.article-prose .callout { padding: 1em 1.25em; border-radius: 1rem; border: 1px solid; font-size: 0.97em; }
+.article-prose .callout-title { font-weight: 800; margin-bottom: 0.3em; color: rgb(var(--ink)); }
+.article-prose .callout-tip { background: rgb(16 185 129 / 0.09); border-color: rgb(16 185 129 / 0.35); }
+.article-prose .callout-info { background: rgb(56 128 248 / 0.08); border-color: rgb(56 128 248 / 0.32); }
+.article-prose .callout-warning { background: rgb(245 158 11 / 0.1); border-color: rgb(245 158 11 / 0.4); }
+.article-prose hr { border: 0; height: 1px; margin: 2.5em auto; background: linear-gradient(90deg, transparent, rgb(var(--slate-300)), transparent); }
+.article-prose figure.image img, .article-prose p img { width: 100%; height: auto; border-radius: 1rem; background: rgb(var(--mist)); }
+.article-prose figure.image figcaption { margin-top: 0.6em; text-align: center; font-size: 0.85em; color: rgb(var(--slate-500)); }
+.article-prose .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid rgb(var(--slate-200)); }
+.article-prose table { width: 100%; border-collapse: collapse; font-size: 0.93em; }
+.article-prose th { background: rgb(var(--mist)); color: rgb(var(--ink)); font-weight: 800; text-align: left; }
+.article-prose th, .article-prose td { padding: 0.7em 1em; border-bottom: 1px solid rgb(var(--slate-200)); }
+.article-prose tbody tr:last-child td { border-bottom: 0; }
+.article-prose .code-block { position: relative; border-radius: 1rem; overflow: hidden; background: #0f1430; border: 1px solid rgb(255 255 255 / 0.08); }
+.article-prose .code-block figcaption { padding: 0.5em 1.1em; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #ffc93c; background: rgb(255 255 255 / 0.04); border-bottom: 1px solid rgb(255 255 255 / 0.08); }
+.article-prose pre { overflow-x: auto; padding: 1.1em 1.2em; font-size: 0.86rem; line-height: 1.7; color: #e6e9f2; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.article-prose .tok-c { color: #7c86a8; font-style: italic; }
+.article-prose .tok-s { color: #9be29b; }
+.article-prose .tok-n { color: #ffb86b; }
+.article-prose .tok-k { color: #ff8a52; font-weight: 600; }
+.article-prose.lead > p:first-child { font-size: 1.15em; color: rgb(var(--ink)); }
+.article-prose > :first-child { margin-top: 0; }

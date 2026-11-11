@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import seller_api as a
+from . import articles_api as art
 from . import seller_content as c
 
 urlpatterns = [
@@ -26,6 +27,13 @@ urlpatterns = [
     path("vouchers/<int:pk>/", c.voucher_detail),
     path("banners/", c.banners),
     path("banners/<int:pk>/", c.banner_detail),
+    path("articles/", art.seller_articles),
+    path("articles/image/", art.seller_article_image),
+    path("articles/<int:pk>/", art.seller_article_detail),
+    path("article-categories/", art.seller_article_categories),
+    path("article-categories/<int:pk>/", art.seller_article_category_detail),
+    path("article-comments/", art.seller_comments),
+    path("article-comments/<int:pk>/", art.seller_comment_detail),
     path("news/", c.news_articles),
     path("news/fetch/", c.news_fetch),
     path("news/<int:pk>/", c.news_article_detail),
