@@ -7,7 +7,8 @@ ENV NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max-old-space-size=2048 TZ=Asia/Jak
 WORKDIR /app
 
 COPY apps/storefront/package.json apps/storefront/package-lock.json ./
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+# npm install (bukan npm ci) supaya tetap jalan walau package-lock belum disinkron.
+RUN npm install --no-audit --no-fund
 
 COPY apps/storefront/ ./
 EXPOSE 3000
