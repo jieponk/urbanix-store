@@ -36,21 +36,21 @@ export default function BrandMarquee({ brands }: { brands: { name: string; total
   const row = (hidden: boolean) => (
     <ul className="marquee-track flex shrink-0 items-center gap-3 pr-3" aria-hidden={hidden || undefined}>
       {brands.map((b) => (
-        <li key={b.name}>
+        <li key={b.name} className="shrink-0">
           <Link
             href={`/produk?q=${encodeURIComponent(b.name)}`}
             tabIndex={hidden ? -1 : undefined}
             title={`${b.total} produk ${b.name}`}
-            className="group flex h-14 min-w-[120px] items-center justify-center rounded-2xl bg-surface px-5 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
+            className="group flex h-16 w-40 items-center justify-center overflow-hidden rounded-2xl bg-surface px-4 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
           >
             {b.logo ? (
               <img
                 src={b.logo}
                 alt={b.name}
                 loading="lazy"
-                width={110}
-                height={32}
-                className="h-7 w-auto max-w-[110px] object-contain opacity-70 grayscale transition group-hover:opacity-100 group-hover:grayscale-0 dark:invert"
+                width={128}
+                height={36}
+                className="h-9 w-full object-contain opacity-70 grayscale transition group-hover:opacity-100 group-hover:grayscale-0 dark:invert"
               />
             ) : (
               <span className="whitespace-nowrap text-[15px] font-black uppercase tracking-[0.12em] text-slate-500 transition group-hover:text-ink">
