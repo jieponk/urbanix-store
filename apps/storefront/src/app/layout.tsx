@@ -36,6 +36,11 @@ export const metadata = {
     images: [{ url: '/brand/og-image.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
   },
   twitter: { card: 'summary_large_image', images: ['/brand/og-image.png'] },
+  // Kode verifikasi Google Search Console (opsional). Isi GOOGLE_SITE_VERIFICATION di .env
+  // bila mendaftar lewat cara "tag HTML". Kalau kosong, baris ini tidak ditampilkan.
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   // Safari iPhone otomatis mengubah nomor telepon jadi tautan, yang membuat
   // tampilan HP berbeda dari server ("Hydration failed"). Matikan deteksi otomatis itu.
   formatDetection: { telephone: false, email: false, address: false },
