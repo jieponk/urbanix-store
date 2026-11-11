@@ -20,7 +20,7 @@ export default function TermsPage() {
         { icon: 'shield', title: 'Produk original', text: 'Semua produk original dengan garansi sesuai ketentuan resmi.' },
         { icon: 'tag', title: 'Harga termasuk PPN', text: 'Harga sudah termasuk PPN, belum termasuk ongkos kirim.' },
         { icon: 'lock', title: 'Rekening resmi PT', text: `Bayar hanya ke rekening atas nama ${legal.company}.` },
-        { icon: 'box', title: `Retur ${legal.returnWindow}`, text: 'Laporkan kendala barang dengan video unboxing.' },
+        { icon: 'box', title: `Retur ${legal.returnWindow}`, text: 'Wajib video unboxing. Ongkir retur ditanggung toko untuk kesalahan kami.' },
       ]}
       sections={[
         {
@@ -97,27 +97,71 @@ export default function TermsPage() {
           title: 'Pengiriman',
           body: (
             <ul>
-              <li>Pesanan dikirim melalui jasa ekspedisi pilihan. Nomor resi diinformasikan setelah paket dikirim.</li>
-              <li>Estimasi waktu pengiriman mengikuti layanan ekspedisi dan dapat berbeda dari perkiraan.</li>
-              <li>Kami menyarankan asuransi pengiriman untuk produk bernilai tinggi. Risiko kehilangan/kerusakan selama pengiriman mengikuti ketentuan ekspedisi dan asuransi yang dipilih.</li>
+              <li>Kami mengirim ke <b>{legal.shipArea}</b> dari Jakarta melalui jasa ekspedisi pilihan.</li>
+              <li>
+                Pesanan diproses dan dikirim maksimal <b>{legal.shipProcessing}</b> setelah pembayaran dikonfirmasi.
+                Nomor resi diinformasikan lewat WhatsApp/email dan bisa dicek di halaman Cek Pesanan.
+              </li>
+              <li>Ongkos kirim mengikuti tarif ekspedisi ke alamat tujuan dan dikonfirmasi admin sebelum pembayaran.</li>
+              <li>Estimasi waktu sampai mengikuti layanan ekspedisi yang dipilih.</li>
+              <li>
+                Untuk produk bernilai tinggi kami sarankan asuransi pengiriman. Kehilangan/kerusakan selama pengiriman
+                ditangani sesuai ketentuan ekspedisi dan asuransi.
+              </li>
             </ul>
           ),
         },
         {
           id: 'pembatalan-retur',
-          title: 'Pembatalan, pengembalian, dan garansi',
+          title: 'Pembatalan, pengembalian barang & dana',
+          body: (
+            <>
+              <p>
+                <b>Pembatalan:</b> pesanan dapat dibatalkan sebelum paket dikirim dengan menghubungi admin. Bila sudah
+                dibayar, dana dikembalikan penuh maksimal {legal.refundTime}.
+              </p>
+              <p>
+                <b>Pengembalian (retur) diterima bila:</b>
+              </p>
+              <ul>
+                <li>barang yang diterima salah (produk, varian, atau warna tidak sesuai pesanan);</li>
+                <li>barang kurang atau tidak lengkap;</li>
+                <li>barang rusak atau cacat dari pabrik saat diterima.</li>
+              </ul>
+              <p>
+                <b>Syarat utama:</b> pengajuan maksimal <b>{legal.returnWindow} sejak paket diterima</b> (sesuai status
+                ekspedisi) dan wajib melampirkan <b>video unboxing</b> utuh tanpa jeda/potongan, dimulai dari paket
+                masih tersegel. Tanpa video unboxing, pengajuan retur tidak dapat diproses.
+              </p>
+              <p><b>Cara mengajukan:</b></p>
+              <ol>
+                <li>Hubungi admin lewat WhatsApp resmi, sebutkan nomor pesanan, kirim video unboxing dan foto kendala.</li>
+                <li>Admin memeriksa pengajuan maksimal {legal.reviewTime}.</li>
+                <li>
+                  Bila disetujui, kirim barang kembali lengkap dengan kemasan, aksesori, dan kelengkapan aslinya.{' '}
+                  <b>Ongkos kirim retur ditanggung Urbanix Store</b> untuk kesalahan dari pihak kami.
+                </li>
+                <li>
+                  Setelah barang retur kami terima dan periksa, kamu bisa memilih <b>barang pengganti</b> (bila stok
+                  tersedia) atau <b>pengembalian dana penuh</b> sebesar harga barang, ditransfer ke rekening atas nama
+                  pembeli maksimal {legal.refundTime}.
+                </li>
+              </ol>
+              <p>
+                Retur karena berubah pikiran, salah memilih produk/varian oleh pembeli, atau kerusakan akibat pemakaian
+                tidak dapat diterima.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'garansi',
+          title: 'Garansi',
           body: (
             <ul>
-              <li>Pesanan dapat dibatalkan sebelum paket dikirim dengan menghubungi admin.</li>
-              <li>
-                Pengajuan retur karena barang salah kirim, kurang, atau cacat dari pabrik dilakukan maksimal{' '}
-                {legal.returnWindow} sejak paket diterima, disertai <b>video unboxing</b> tanpa jeda.
-              </li>
-              <li>Barang retur harus lengkap dengan kemasan, aksesori, dan kelengkapan aslinya.</li>
-              <li>
-                Garansi mengikuti ketentuan garansi resmi/distributor masing-masing produk. Kerusakan karena pemakaian,
-                jatuh, terkena cairan, atau modifikasi tidak termasuk garansi.
-              </li>
+              <li>Garansi mengikuti ketentuan garansi resmi/distributor masing-masing produk, sesuai yang tertera di halaman produk.</li>
+              <li>Klaim garansi dilakukan dengan kartu/nota garansi. Admin kami siap membantu mengarahkan ke pusat servis resmi.</li>
+              <li>Kerusakan karena pemakaian, jatuh, terkena cairan, atau modifikasi tidak termasuk garansi.</li>
             </ul>
           ),
         },

@@ -117,7 +117,7 @@ export default function LegalPage({
                   </span>
                   <h2 className="text-xl font-extrabold text-ink sm:text-2xl">{s.title}</h2>
                 </div>
-                <div className="mt-4 space-y-3 text-[15px] leading-7 text-slate-700 sm:pl-14 [&_b]:text-ink [&_li]:relative [&_li]:pl-6 [&_li]:before:absolute [&_li]:before:left-1 [&_li]:before:top-[0.7rem] [&_li]:before:h-1.5 [&_li]:before:w-1.5 [&_li]:before:rounded-full [&_li]:before:bg-brand-500 [&_ul]:space-y-2">
+                <div className="mt-4 space-y-3 text-[15px] leading-7 text-slate-700 sm:pl-14 [&_b]:text-ink [&_ul>li]:relative [&_ul>li]:pl-6 [&_ul>li]:before:absolute [&_ul>li]:before:left-1 [&_ul>li]:before:top-[0.7rem] [&_ul>li]:before:h-1.5 [&_ul>li]:before:w-1.5 [&_ul>li]:before:rounded-full [&_ul>li]:before:bg-brand-500 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_ol>li]:pl-1 [&_ol>li]:marker:font-extrabold [&_ol>li]:marker:text-brand-600">
                   {s.body}
                 </div>
               </section>

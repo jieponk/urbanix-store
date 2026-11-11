@@ -21,6 +21,11 @@ export const siteConfig = {
     updated: '11 November 2026',
     paymentDeadline: '1×24 jam',
     returnWindow: '2×24 jam',
+    // Ketentuan pengiriman & retur (gaya Shopee). Ubah di sini bila kebijakan berubah.
+    shipProcessing: '1×24 jam hari kerja', // pesanan dikirim maks. sekian setelah pembayaran dikonfirmasi
+    shipArea: 'seluruh Indonesia',
+    reviewTime: '1×24 jam hari kerja', // admin memeriksa pengajuan retur maks. sekian
+    refundTime: '7 hari kerja', // dana dikembalikan maks. sekian setelah barang retur diterima & dicek
   },
 
   // Kontak toko (tampil di footer). Nomor WhatsApp di Pengaturan toko (admin) diutamakan bila diisi.

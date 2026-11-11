@@ -149,12 +149,12 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           </li>
           <li>
             <b className="block text-ink">Pengiriman</b>
-            Dari Jakarta ke seluruh Indonesia; ongkir dikonfirmasi admin.{' '}
+            Dikirim maks. {siteConfig.legal.shipProcessing} setelah bayar, ke {siteConfig.legal.shipArea}.{' '}
             <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">Detail</Link>
           </li>
           <li>
             <b className="block text-ink">Retur & garansi</b>
-            Laporkan kendala maks. {siteConfig.legal.returnWindow} dengan video unboxing.{' '}
+            Maks. {siteConfig.legal.returnWindow} dengan video unboxing; ganti barang atau uang kembali.{' '}
             <Link href="/syarat-ketentuan#pembatalan-retur" className="font-semibold text-ink underline">Detail</Link>
           </li>
         </ul>

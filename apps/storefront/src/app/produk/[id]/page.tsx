@@ -96,6 +96,7 @@ function productJsonLd(product: Product) {
         returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
         merchantReturnDays: 2,
         returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
         merchantReturnLink: `${SITE_URL}/syarat-ketentuan#pembatalan-retur`,
       },
     },
