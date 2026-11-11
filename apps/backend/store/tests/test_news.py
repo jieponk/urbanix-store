@@ -200,3 +200,29 @@ class NewsDetailTests(TestCase):
         self.art.is_visible = False
         self.art.save()
         self.assertEqual(self.api.get(f"/api/v1/news/{self.art.id}/").status_code, 404)
+
+
+class DeepLToolsTests(TestCase):
+    def test_check_key_without_key(self):
+        from unittest import mock
+
+        from store import news
+        with mock.patch.dict("os.environ", {"DEEPL_API_KEY": ""}):
+            ok, msg = news.check_key()
+        self.assertFalse(ok)
+        self.assertIn("kosong", msg)
+
+    def test_translate_all_pending(self):
+        from unittest import mock
+
+        from store import news
+        from store.models import NewsArticle, NewsSource
+        src = NewsSource.objects.create(name="Tes EN", feed_url="https://contoh.id/en.xml", language="en")
+        for i in range(45):  # lebih dari satu putaran (40)
+            NewsArticle.objects.create(source=src, guid=f"g{i}", url=f"https://contoh.id/{i}", title=f"Camera {i}",
+                                       original_title=f"Camera {i}", published_at=timezone.now())
+        fake = lambda texts, source_lang="EN": [f"ID {t}" for t in texts]  # noqa: E731
+        with mock.patch.object(news, "translate", side_effect=fake):
+            self.assertEqual(news.translate_all_pending(), 45)
+        self.assertFalse(NewsArticle.objects.filter(is_translated=False).exists())
+        self.assertEqual(NewsArticle.objects.get(url="https://contoh.id/3").title, "ID Camera 3")

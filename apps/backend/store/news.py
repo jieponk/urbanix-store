@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import threading
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -185,6 +186,49 @@ def translate(texts: list[str], source_lang: str = "EN") -> list[str] | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("Terjemahan DeepL gagal: %s", exc)
         return None
+
+
+def check_key() -> tuple[bool, str]:
+    """Uji kunci DeepL dengan menerjemahkan satu kata. Mengembalikan (berhasil, pesan)."""
+    key = deepl_key()
+    if not key:
+        return False, "DEEPL_API_KEY kosong."
+    host = "api-free.deepl.com" if key.endswith(":fx") else "api.deepl.com"
+    body = json.dumps({"text": ["Camera lens"], "target_lang": "ID"}).encode()
+    req = urllib.request.Request(
+        f"https://{host}/v2/translate",
+        data=body,
+        headers={"Authorization": f"DeepL-Auth-Key {key}", "Content-Type": "application/json", "User-Agent": USER_AGENT},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:  # noqa: S310
+            text = json.loads(resp.read())["translations"][0]["text"]
+        return True, f'Kunci valid. Contoh: "Camera lens" -> "{text}"'
+    except urllib.error.HTTPError as exc:
+        reasons = {
+            403: "Kunci ditolak DeepL (salah ketik, atau kunci sudah dihapus).",
+            456: "Kuota DeepL bulan ini habis.",
+            429: "Terlalu banyak permintaan, coba lagi sebentar.",
+        }
+        return False, reasons.get(exc.code, f"DeepL menjawab HTTP {exc.code}.")
+    except Exception as exc:  # noqa: BLE001
+        return False, f"Tidak bisa terhubung ke DeepL: {exc}"
+
+
+def translate_all_pending(limit_rounds: int = 25) -> int:
+    """Terjemahkan semua berita bahasa Inggris yang belum diterjemahkan (40 per putaran)."""
+    from .models import NewsArticle
+
+    total = 0
+    for _ in range(limit_rounds):
+        batch = list(NewsArticle.objects.filter(is_translated=False, source__language="en")[:40])
+        if not batch:
+            break
+        done = translate_articles(batch)
+        if not done:
+            break
+        total += done
+    return total
 
 
 def translate_articles(articles) -> int:
