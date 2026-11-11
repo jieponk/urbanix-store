@@ -30,7 +30,7 @@ export const siteConfig = {
     // Kalau dikosongkan, nomor tampil sebagai teks biasa (bukan tautan WhatsApp).
     whatsappNumber: '628212990180',
     whatsappDisplay: '0821-2990-180',
-    email: 'urbanixstore@gmail.com',
+    email: 'urbanixstore26@gmail.com',
     hours: 'Senin–Sabtu, 09.00–17.00 WIB',
   },
 
