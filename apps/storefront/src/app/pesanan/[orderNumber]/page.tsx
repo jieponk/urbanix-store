@@ -197,6 +197,15 @@ export default async function OrderPage({
           </p>
         </section>
 
+        {order.status !== 'CANCELLED' && (
+          <Link
+            href={`/pesanan/${order.order_number}/invoice`}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-surface px-5 py-3.5 text-sm font-bold text-ink hover:border-ink"
+          >
+            Lihat / unduh invoice
+          </Link>
+        )}
+
         <p className="text-center text-xs text-slate-500">
           Simpan nomor pesanan ini. Halaman ini bisa dibuka lagi lewat alamat yang sama.
         </p>

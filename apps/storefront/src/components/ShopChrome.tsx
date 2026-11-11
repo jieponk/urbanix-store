@@ -16,9 +16,10 @@ export default function ShopChrome({
   if (pathname === '/seller' || pathname.startsWith('/seller/')) return <>{children}</>;
   return (
     <>
-      {header}
+      {/* "contents" agar header tetap sticky; disembunyikan saat mencetak (mis. invoice) */}
+      <div className="contents print:hidden">{header}</div>
       <main className="flex-1">{children}</main>
-      {footer}
+      <div className="contents print:hidden">{footer}</div>
     </>
   );
 }

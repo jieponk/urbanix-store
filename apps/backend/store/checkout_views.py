@@ -124,6 +124,13 @@ def checkout(request):
 checkout.cls.throttle_scope = "checkout"
 
 
+def _mask_phone(phone: str) -> str:
+    digits = "".join(ch for ch in (phone or "") if ch.isdigit())
+    if len(digits) < 7:
+        return ""
+    return f"{digits[:4]}{'*' * (len(digits) - 7)}{digits[-3:]}"
+
+
 @api_view(["GET"])
 @_public
 def order_detail(request, order_number):
@@ -144,6 +151,14 @@ def order_detail(request, order_number):
             "discount_note": order.discount_note,
             "voucher_codes": order.voucher_codes,
             "shipping_discount_max": str(order.shipping_discount_max),
+            # Untuk invoice: hanya kota/provinsi & HP disamarkan (link pesanan bisa diteruskan ke orang lain).
+            "customer_phone_masked": _mask_phone(order.customer_phone),
+            "shipping_city": order.shipping_city,
+            "shipping_province": order.shipping_province,
+            "shipping_courier": order.shipping_courier,
+            "tracking_number": order.tracking_number,
+            "shipping_cost": str(order.shipping_cost) if order.shipping_cost is not None else None,
+            "updated_at": order.updated_at,
             "tax_note": "Harga sudah termasuk PPN.",
             "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",

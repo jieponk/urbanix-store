@@ -241,6 +241,9 @@ class CheckoutTests(TestCase):
         flat = str(d.data)
         self.assertNotIn("Jl. Mawar", flat.replace("%20", " ").split("wa.me")[0])
         self.assertNotIn("customer_phone", d.data)
+        masked = d.data["customer_phone_masked"]
+        self.assertIn("*", masked)
+        self.assertIsNone(d.data["shipping_cost"])
         self.assertEqual(self.api.get("/api/v1/checkout/orders/URX-TIDAK-ADA/").status_code, 404)
 
     # ---------------------------------------------------------- keamanan API produk

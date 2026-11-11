@@ -69,6 +69,9 @@ export default function OrderDetailPage({ params }: { params: { number: string }
                 {icons.chat({ size: 16 })} Chat pembeli
               </a>
             )}
+            <a href={`/pesanan/${data.order_number}/invoice`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
+              Invoice
+            </a>
             {next && (
               <button type="button" disabled={saving} className={btn.primary} onClick={() => save({ status: next.to }, `Status: ${next.label.toLowerCase()}.`)}>
                 {next.label}
