@@ -1,24 +1,19 @@
-# URBANIX STORE Test Suite Executable Script (Windows PowerShell)
-Write-Host "=========================================" -ForegroundColor Magenta
-Write-Host "   URBANIX STORE - Automated Test Suite  " -ForegroundColor Magenta
-Write-Host "=========================================" -ForegroundColor Magenta
+# Tes backend Django (Windows PowerShell). Stack harus sudah jalan (scripts/dev.ps1).
+Set-Location (Join-Path $PSScriptRoot "..")
+$fail = $false
 
-Write-Host "`n[1/3] Testing Python Django Backend (pytest)..." -ForegroundColor Yellow
-docker-compose exec -T backend pytest
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[FAIL] Backend tests failed!" -ForegroundColor Red
-} else {
-    Write-Host "[PASS] Backend tests succeeded!" -ForegroundColor Green
-}
+Write-Host "== 1. Backend Django ==" -ForegroundColor Yellow
+docker compose exec -T backend python manage.py test store
+if ($LASTEXITCODE -ne 0) { $fail = $true }
 
-Write-Host "`n[2/3] Testing Go Catalog Import Worker..." -ForegroundColor Yellow
-Set-Location services/go-worker
-go test ./...
-Set-Location ../..
+if (Get-Command "go" -ErrorAction SilentlyContinue) {
+    Write-Host "== 2. Go worker (eksperimental) ==" -ForegroundColor Yellow
+    Push-Location services/go-worker; go test ./...; if ($LASTEXITCODE -ne 0) { $fail = $true }; Pop-Location
+} else { Write-Host "== 2. Go worker: dilewati (Go tidak terpasang) ==" }
 
-Write-Host "`n[3/3] Testing Rust Audit Security Tools..." -ForegroundColor Yellow
-Set-Location services/rust-tools
-cargo test
-Set-Location ../..
+if (Get-Command "cargo" -ErrorAction SilentlyContinue) {
+    Write-Host "== 3. Rust tools (eksperimental) ==" -ForegroundColor Yellow
+    Push-Location services/rust-tools; cargo test; if ($LASTEXITCODE -ne 0) { $fail = $true }; Pop-Location
+} else { Write-Host "== 3. Rust tools: dilewati (Rust tidak terpasang) ==" }
 
-Write-Host "`n[COMPLETED] Pengujian selesai!" -ForegroundColor Cyan
+if ($fail) { Write-Host "ADA TES YANG GAGAL" -ForegroundColor Red; Exit 1 } else { Write-Host "SEMUA TES LULUS" -ForegroundColor Green }

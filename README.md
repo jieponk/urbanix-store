@@ -88,11 +88,13 @@ Akses:
 
 ## 🧪 Menguji
 
-Backend (Django):
+Dengan stack lokal sudah jalan:
 
 ```bash
-docker compose exec backend python manage.py test store
+make test            # atau: ./scripts/test.sh
 ```
+
+`scripts/test.sh` juga menguji layanan eksperimental bila Go/Rust terpasang (kalau tidak, dilewati).
 
 ---
 
@@ -106,6 +108,7 @@ Ringkasnya, dari komputer lokal:
 
 ```bash
 ./deploy/deploy.sh urbanix@IP-SERVER namadomain.com
+# atau: make deploy SERVER=urbanix@IP-SERVER DOMAIN=namadomain.com
 ```
 
 ---
