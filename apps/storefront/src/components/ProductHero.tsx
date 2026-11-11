@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import ProductBuyButtons from '@/components/ProductBuyButtons';
+import { siteConfig } from '@/lib/siteConfig';
 import ProductGallery from '@/components/ProductGallery';
 import { VoucherStrip } from '@/components/VoucherCard';
 import { money, type Product, type Variation } from '@/lib/api';
@@ -137,6 +139,25 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           onVariationChange={setVariationId}
           whatsappNumber={whatsappNumber}
         />
+
+        {/* Info pembayaran, pengiriman & retur di dekat tombol beli (juga syarat Google Merchant Center) */}
+        <ul className="mt-5 grid gap-2 rounded-2xl bg-mist p-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
+          <li>
+            <b className="block text-ink">Pembayaran</b>
+            {siteConfig.paymentMethods.map((m) => m.name).join(', ')}.{' '}
+            <Link href="/syarat-ketentuan#pembayaran" className="font-semibold text-ink underline">Detail</Link>
+          </li>
+          <li>
+            <b className="block text-ink">Pengiriman</b>
+            Dari Jakarta ke seluruh Indonesia; ongkir dikonfirmasi admin.{' '}
+            <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">Detail</Link>
+          </li>
+          <li>
+            <b className="block text-ink">Retur & garansi</b>
+            Laporkan kendala maks. {siteConfig.legal.returnWindow} dengan video unboxing.{' '}
+            <Link href="/syarat-ketentuan#pembatalan-retur" className="font-semibold text-ink underline">Detail</Link>
+          </li>
+        </ul>
       </section>
     </div>
   );
