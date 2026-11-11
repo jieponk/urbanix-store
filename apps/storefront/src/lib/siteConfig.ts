@@ -16,8 +16,8 @@ export const siteConfig = {
 
   // Data hukum untuk halaman Syarat & Ketentuan dan Kebijakan Privasi. WAJIB diisi sebelum dipublikasikan luas.
   legal: {
-    company: '[Nama badan usaha, mis. PT ...]',
-    address: '[Alamat kantor/toko lengkap]',
+    company: 'PT Koolsnap Multi Retailindo',
+    address: 'Jl. Kerekot Bundar XI No. 4, RT.8/RW.6, Pasar Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta 10710',
     updated: '11 November 2026',
     paymentDeadline: '1×24 jam',
     returnWindow: '2×24 jam',
