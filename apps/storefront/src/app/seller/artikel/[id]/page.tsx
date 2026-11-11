@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ArticleBody from '@/components/inspirasi/ArticleBody';
 import { Card, ConfirmButton, Drawer, ErrorBox, Field, PageHeader, Spinner, Thumb, Toggle, btn, inputCls } from '@/components/seller/ui';
-import { DEFAULT_COVER, renderMarkdown } from '@/lib/markdown';
+import { DEFAULT_COVER, FORMAT_GUIDE, renderMarkdown } from '@/lib/markdown';
 import { fromLocalInput, notify, rp, sellerApi, toLocalInput } from '@/lib/seller';
 
 type Form = {
@@ -29,6 +29,7 @@ const EMPTY: Form = {
 
 /** Tombol format: [label, sebelum, sesudah, isi contoh, awal baris?] */
 const TOOLS: { label: string; title: string; before: string; after?: string; sample: string; line?: boolean }[] = [
+  { label: 'H1', title: 'Judul besar', before: '# ', sample: 'Judul besar', line: true },
   { label: 'H2', title: 'Judul bagian', before: '## ', sample: 'Judul bagian', line: true },
   { label: 'H3', title: 'Sub-judul', before: '### ', sample: 'Sub-judul', line: true },
   { label: 'B', title: 'Tebal', before: '**', after: '**', sample: 'teks tebal' },
@@ -39,6 +40,7 @@ const TOOLS: { label: string; title: string; before: string; after?: string; sam
   { label: '1.', title: 'Daftar nomor', before: '1. ', sample: 'Langkah', line: true },
   { label: '❝', title: 'Kutipan', before: '> ', sample: 'Kutipan', line: true },
   { label: '💡', title: 'Kotak tips', before: '> [!TIP]\n> ', sample: 'Isi tips', line: true },
+  { label: '🙈', title: 'Spoiler', before: '||', after: '||', sample: 'rahasia' },
   { label: '⚠️', title: 'Kotak perhatian', before: '> [!WARNING]\n> ', sample: 'Isi peringatan', line: true },
   { label: '</>', title: 'Blok kode', before: '```\n', after: '\n```', sample: 'kode', line: true },
   { label: 'Tabel', title: 'Tabel', before: '| Kolom 1 | Kolom 2 |\n| --- | --- |\n| ', after: ' | isi |', sample: 'isi', line: true },
@@ -62,6 +64,7 @@ export default function ArticleEditorPage() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const [pickProduct, setPickProduct] = useState(false);
+  const [guide, setGuide] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [meta, setMeta] = useState<any>(null);
 
@@ -250,6 +253,9 @@ export default function ArticleEditorPage() {
                     className="rounded-md px-2 py-1.5 text-xs font-bold text-ink hover:bg-mist" title="Sisipkan video YouTube">
                     ▶ Video
                   </button>
+                  <button type="button" onClick={() => setGuide(true)} className="rounded-md bg-ink px-2.5 py-1.5 text-xs font-bold text-surface hover:opacity-90" title="Semua format">
+                    ＋ Format lain
+                  </button>
                 </>
               )}
             </div>
@@ -383,6 +389,36 @@ export default function ArticleEditorPage() {
       </div>
 
       <ProductPicker open={pickProduct} onClose={() => setPickProduct(false)} onPick={addProduct} />
+      <Drawer open={guide} title="Semua format tulisan" onClose={() => setGuide(false)}>
+        <p className="text-sm text-slate-500">Klik “Sisipkan” untuk memasukkan contoh ke posisi kursor, lalu ubah isinya.</p>
+        {FORMAT_GUIDE.map((g) => (
+          <div key={g.group} className="mt-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{g.group}</p>
+            <ul className="mt-2 space-y-2">
+              {g.items.map(([name, code]) => (
+                <li key={name} className="rounded-xl bg-surface p-3 ring-1 ring-slate-200">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-ink">{name}</span>
+                    <button
+                      type="button"
+                      className={btn.small}
+                      onClick={() => {
+                        const snippet = code.split('  atau  ')[0].split('  (atau')[0];
+                        insert(snippet, '', '', g.group !== 'Teks');
+                        setTab('write');
+                        setGuide(false);
+                      }}
+                    >
+                      Sisipkan
+                    </button>
+                  </div>
+                  <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-mist px-3 py-2 font-mono text-xs text-ink">{code}</pre>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </Drawer>
     </div>
   );
 }

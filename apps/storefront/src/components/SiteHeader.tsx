@@ -56,22 +56,17 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           </Link>
 
           {/* Desktop: kategori, promo, pencarian */}
-          <div className="ml-4 hidden items-center gap-2 md:flex">
+          <div className="ml-4 hidden items-center gap-1 md:flex">
             <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
             {promo && (
-              <Link
-                href="/produk?promo=1"
-                className="flex h-10 items-center rounded-full px-3.5 text-sm font-bold text-sale-600 hover:bg-sale-50"
-              >
-                Promo
+              <Link href="/produk?promo=1" aria-label="Promo" title="Promo" className={`${iconBtn} !text-sale-600 hover:!bg-sale-50`}>
+                <PromoIcon />
+                <span className={`${slideLabel} font-bold`}>Promo</span>
               </Link>
             )}
-            <Link
-              href="/inspirasi"
-              className="flex h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold text-ink hover:bg-mist"
-            >
-              <NewsIcon size={17} />
-              Inspirasi
+            <Link href="/inspirasi" aria-label="Inspirasi" title="Inspirasi" className={iconBtn}>
+              <NewsIcon size={19} />
+              <span className={`${slideLabel} font-bold`}>Inspirasi</span>
             </Link>
           </div>
           <SearchBox className="hidden flex-1 md:flex" />
@@ -101,8 +96,10 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
             >
               <NewsIcon size={20} />
             </Link>
-            <ThemeToggle />
             <CartLink />
+            {/* Pemisah tipis, lalu tombol terang/gelap di paling ujung kanan */}
+            <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-slate-200 sm:block" />
+            <ThemeToggle />
           </nav>
         </div>
 
@@ -113,6 +110,15 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         </div>
       </div>
     </header>
+  );
+}
+
+function PromoIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+      <circle cx="7.5" cy="7.5" r="1.5" />
+    </svg>
   );
 }
 

@@ -5,6 +5,7 @@ import ProductCard from '@/components/ProductCard';
 import ArticleBody from '@/components/inspirasi/ArticleBody';
 import ArticleCard, { Cover, articleDate } from '@/components/inspirasi/ArticleCard';
 import CommentSection from '@/components/inspirasi/CommentSection';
+import ArticleEnhancer from '@/components/inspirasi/ArticleEnhancer';
 import ReadingProgress from '@/components/inspirasi/ReadingProgress';
 import ShareButtons from '@/components/inspirasi/ShareButtons';
 import { getArticle } from '@/lib/api';
@@ -127,6 +128,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
             )}
 
             <ArticleBody blocks={blocks} products={article.products} />
+            <ArticleEnhancer targetId="isi-artikel" />
 
             {/* Label */}
             {article.tags.length > 0 && (
