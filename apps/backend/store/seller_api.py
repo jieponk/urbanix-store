@@ -367,9 +367,16 @@ def orders(request):
     return Response(data)
 
 
-@staff(["GET", "PATCH"])
+@staff(["GET", "PATCH", "DELETE"])
 def order_detail(request, number):
     order = get_object_or_404(Order, order_number=number)
+    if request.method == "DELETE":
+        if order.status != "CANCELLED":
+            return bad("Hanya pesanan berstatus Dibatalkan yang bisa dihapus. Batalkan dulu pesanannya.")
+        if order.stock_reserved:
+            svc.release_stock(order)
+        order.delete()
+        return Response(status=204)
     if request.method == "PATCH":
         d = request.data
         fields = []

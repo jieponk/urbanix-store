@@ -171,6 +171,31 @@ export default function OrderDetailPage({ params }: { params: { number: string }
             </div>
             <p className="mt-2 text-xs text-slate-500">Membatalkan pesanan otomatis mengembalikan stok yang sudah dikurangi.</p>
           </Card>
+
+          {data.status === 'CANCELLED' && (
+            <Card title="Hapus pesanan">
+              <p className="text-sm text-slate-600">
+                Untuk pesanan tes/salah input. Pesanan dihapus permanen dan tidak bisa dikembalikan.
+              </p>
+              <div className="mt-3">
+                <ConfirmButton
+                  className={btn.danger}
+                  confirmText="Ya, hapus permanen"
+                  onConfirm={async () => {
+                    try {
+                      await sellerApi(`orders/${encodeURIComponent(number)}`, { method: 'DELETE' });
+                      notify('Pesanan dihapus.');
+                      window.location.href = '/seller/pesanan';
+                    } catch (err) {
+                      notify((err as Error).message, 'error');
+                    }
+                  }}
+                >
+                  Hapus pesanan
+                </ConfirmButton>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -270,3 +270,13 @@ class ShopeeLinkTests(SellerTestBase):
         self.lens.refresh_from_db()
         self.assertEqual(self.lens.shopee_url, f"https://shopee.co.id/product/1735329821/{self.lens.id}/")
         self.assertEqual(self.api.get("/api/v1/seller/settings/").data["shopee_shop_id"], "1735329821")
+
+
+class OrderDeleteTests(SellerTestBase):
+    def test_only_cancelled_orders_can_be_deleted(self):
+        o = self.make_order(status="COMPLETED")
+        url = f"/api/v1/seller/orders/{o.order_number}/"
+        self.assertEqual(self.api.delete(url).status_code, 400)
+        self.api.patch(url, {"status": "CANCELLED"}, format="json")
+        self.assertEqual(self.api.delete(url).status_code, 204)
+        self.assertFalse(Order.objects.filter(pk=o.pk).exists())
