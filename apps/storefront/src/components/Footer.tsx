@@ -4,7 +4,6 @@ import type { Category, StoreSettings } from '@/lib/api';
 import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
-import CourierBadge from '@/components/CourierBadge';
 import { courierLogos } from '@/lib/courierLogos';
 import { SHIPPING_BRANDS } from '@/lib/shipping';
 
@@ -23,7 +22,7 @@ export default function Footer({
 }) {
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
-  const logos = courierLogos();
+  const logos = courierLogos('mono');
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -145,11 +144,26 @@ export default function Footer({
               Ongkir sesuai tarif resmi ekspedisi · Detail
             </Link>
           </div>
-          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <ul className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
             {SHIPPING_BRANDS.map((b) => (
-              <li key={b.logo} className="flex flex-col items-center gap-2 rounded-xl bg-white/5 p-3 text-center ring-1 ring-white/10">
-                <CourierBadge courier={b.courier} logo={logos[b.logo]} label={b.name} size="lg" />
-                <span className="text-xs leading-5 text-white/80">{b.services}</span>
+              <li key={b.logo}>
+                <span
+                  title={`${b.name} · ${b.services}`}
+                  className="group flex h-16 items-center justify-center rounded-2xl bg-white/5 px-4 ring-1 ring-white/10 transition hover:bg-white/10"
+                >
+                  {logos[b.logo] ? (
+                    <img
+                      src={logos[b.logo]}
+                      alt={b.name}
+                      loading="lazy"
+                      width={128}
+                      height={32}
+                      className="h-8 w-full object-contain opacity-75 transition group-hover:opacity-100"
+                    />
+                  ) : (
+                    <span className="whitespace-nowrap text-sm font-black text-white/80">{b.name}</span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
