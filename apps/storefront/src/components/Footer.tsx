@@ -124,8 +124,8 @@ export default function Footer({
       </div>
 
       <div className="border-t border-white/10">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/55 sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} {name}. Harga dan stok dapat berubah sewaktu-waktu.
+        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/65 sm:px-6 lg:px-8">
+          © {new Date().getFullYear()} {name} · {siteConfig.legal.company}. Seluruh hak cipta dilindungi.
         </p>
       </div>
     </footer>
