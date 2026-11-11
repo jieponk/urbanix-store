@@ -15,13 +15,21 @@ if ! [[ "$EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[a-z]+$ ]]; then
 fi
 
 echo "Akun Gmail : $EMAIL"
-read -r -s -p "Tempel App Password (16 huruf, tidak akan terlihat), lalu Enter: " PASS
-echo
-PASS="${PASS// /}"
-if ! [[ "$PASS" =~ ^[a-zA-Z]{16}$ ]]; then
-  echo "App Password harus 16 huruf (spasi boleh). Coba lagi."
-  exit 1
-fi
+echo "Cara tempel di terminal Ubuntu: klik kanan, atau Ctrl+Shift+V. Layar memang tetap kosong."
+PASS=""
+for TRY in 1 2 3; do
+  read -r -s -p "Tempel App Password lalu Enter (percobaan $TRY/3): " RAW
+  echo
+  # Buang semua yang bukan huruf (spasi biasa, spasi khusus hasil copy dari Google, dll.)
+  PASS=$(printf '%s' "$RAW" | LC_ALL=C tr -cd 'A-Za-z')
+  if [ ${#PASS} -eq 16 ]; then
+    echo "OK, terbaca 16 huruf."
+    break
+  fi
+  echo "Terbaca ${#PASS} huruf, seharusnya 16. Copy ulang dari halaman Google lalu tempel lagi."
+  PASS=""
+done
+[ -n "$PASS" ] || { echo "Dibatalkan. Jalankan perintahnya lagi kalau sudah siap."; exit 1; }
 
 echo "==> Menyimpan pengaturan email di server & menyalakan ulang backend..."
 # Isi variabel lalu skrip dikirim sebagai SATU aliran ke server (password tidak muncul di layar/riwayat).
