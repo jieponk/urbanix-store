@@ -28,9 +28,9 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mist text-ink">
           <FeatureIcon name={icon} size={20} />
         </span>
         <div className="min-w-0">
@@ -82,7 +82,7 @@ function Items({
         >
           <span
             aria-hidden="true"
-            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500"
+            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"
           />
           <span className="min-w-0 break-words">{item}</span>
         </li>
@@ -287,7 +287,7 @@ export default function ProductInfoSections({
 
       {/* 7. Informasi lainnya (bagian lain dari deskripsi asli) */}
       {hasContent(parsed.extras) && (
-        <details className="group rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+        <details className="group rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-slate-900 sm:text-lg">
             Informasi Lainnya
             <svg

@@ -7,11 +7,15 @@ PHONE_RE = re.compile(r"^(\+62|62|0)8[0-9]{7,12}$")
 
 class CheckoutItemSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(min_value=1)
+    variation_id = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
     quantity = serializers.IntegerField(min_value=1, max_value=99)
 
 
 class QuoteSerializer(serializers.Serializer):
     items = CheckoutItemSerializer(many=True, allow_empty=False, max_length=50)
+    voucher_codes = serializers.ListField(
+        child=serializers.CharField(max_length=30), required=False, max_length=5, default=list
+    )
 
 
 class CustomerSerializer(serializers.Serializer):
@@ -39,6 +43,13 @@ class ShippingSerializer(serializers.Serializer):
         default="",
         error_messages={"invalid": "Kode pos harus 5 angka."},
     )
+
+
+class QuoteRequestSerializer(QuoteSerializer):
+    payment_method = serializers.ChoiceField(
+        choices=["MIDTRANS", "WHATSAPP", "SHOPEE"], required=False, allow_null=True, default=None
+    )
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
 
 
 class CheckoutSerializer(QuoteSerializer):

@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/venv
+**/__pycache__
+.git
+apps/backend/db.sqlite3
+apps/backend/.env
+apps/backend/media
+**/.env.local

@@ -2,14 +2,21 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { money } from '@/lib/api';
-import { CartItem, clearCart, getCart, saveCart } from '@/lib/cart';
+import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
+import { ArrowLeftIcon } from '@/components/Icons';
+import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
+import { productImg } from '@/lib/img';
+import { rememberOrder } from '@/lib/recentOrders';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
 type QuoteItem = {
   product_id: number;
+  variation_id: string;
+  variation_name: string;
+  sku: string;
   name: string;
   image_url: string | null;
   unit_price: string;
@@ -17,6 +24,7 @@ type QuoteItem = {
   subtotal: string;
   stock: number;
   in_stock: boolean;
+  is_promo?: boolean;
   shopee_url: string;
 };
 
@@ -25,9 +33,18 @@ type Quote = {
   subtotal: string;
   shipping_note: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+  vouchers: {
+    discount_amount: string;
+    shipping_discount_max: string;
+    applied: { code: string; title: string; kind: 'discount' | 'shipping'; amount: string; label: string }[];
+    rejected: { code: string; message: string }[];
+  };
+  total: string;
+  tax_note: string;
+  available_vouchers: VoucherInfo[];
 };
 
-type ShopeeLink = { name: string; quantity: number; url: string };
+type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
 
 const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; text: string }> = {
   MIDTRANS: {
@@ -38,7 +55,7 @@ const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; 
   WHATSAPP: {
     key: 'whatsapp',
     title: 'Pesan via WhatsApp',
-    text: 'Pesanan dikirim ke admin. Total + ongkir dan cara bayar dikonfirmasi lewat chat.',
+    text: 'Pesanan dikirim ke admin. Ongkir dan cara bayar dikonfirmasi lewat chat.',
   },
   SHOPEE: {
     key: 'shopee',
@@ -109,43 +126,107 @@ export default function CheckoutForm() {
   const [shopeeLinks, setShopeeLinks] = useState<ShopeeLink[] | null>(null);
   const [idemKey] = useState(makeKey);
 
-  // 1. Baca keranjang, 2. minta harga & stok terbaru dari server.
-  useEffect(() => {
-    const items = getCart();
-    setCart(items);
+  const [codes, setCodes] = useState<string[]>([]);
+  const [codeInput, setCodeInput] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const itemsRef = useRef<CartItem[]>([]);
+  const firstLoad = useRef(true);
+
+  const loadQuote = useCallback(async (voucherCodes: string[], paymentMethod: Method | null) => {
+    const items = itemsRef.current ?? [];
     if (items.length === 0) return;
+    setQuoteLoading(true);
+    try {
+      const res = await fetch('/api/checkout/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            product_id: Number(cartProductId(i)),
+            variation_id: i.variationId ?? '',
+            quantity: i.quantity,
+          })),
+          voucher_codes: voucherCodes,
+          payment_method: paymentMethod,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(parseErrors(data).general || 'Gagal memuat ringkasan.');
+      const q = data as Quote;
+      setQuote(q);
+      setQuoteError('');
 
-    fetch('/api/checkout/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: items.map((i) => ({ product_id: Number(i.id), quantity: i.quantity })),
-      }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(parseErrors(data).general || 'Gagal memuat ringkasan.');
-        const q = data as Quote;
-        setQuote(q);
-
+      if (firstLoad.current) {
+        firstLoad.current = false;
         // Samakan harga & stok di keranjang dengan data server.
-        const byId = new Map(q.items.map((i) => [String(i.product_id), i]));
+        const byLine = new Map(
+          q.items.map((i) => [cartLineId(String(i.product_id), i.variation_id || undefined), i])
+        );
         saveCart(
           items.map((item) => {
-            const fresh = byId.get(item.id);
+            const fresh = byLine.get(cartLineId(cartProductId(item), item.variationId));
             return fresh
-              ? { ...item, price: Number(fresh.unit_price), stock: fresh.stock }
+              ? {
+                  ...item,
+                  price: Number(fresh.unit_price),
+                  stock: fresh.stock,
+                  sku: fresh.sku || item.sku,
+                  variationName: fresh.variation_name || item.variationName,
+                }
               : item;
           })
         );
-
-        const first = (Object.keys(METHOD_INFO) as Method[]).find(
-          (m) => q.methods[METHOD_INFO[m].key]
-        );
+        const first = (Object.keys(METHOD_INFO) as Method[]).find((m) => q.methods[METHOD_INFO[m].key]);
         setMethod(first ?? null);
-      })
-      .catch((err: Error) => setQuoteError(err.message));
+      }
+    } catch (err) {
+      if (firstLoad.current) setQuoteError((err as Error).message);
+    } finally {
+      setQuoteLoading(false);
+    }
   }, []);
+
+  // 1. Baca keranjang + voucher yang sudah diklaim, 2. minta harga, stok & potongan dari server.
+  useEffect(() => {
+    const items = getCart();
+    itemsRef.current = items;
+    setCart(items);
+    if (items.length === 0) return;
+    const claimed = getClaimed();
+    setCodes(claimed.slice(0, 2));
+    loadQuote(claimed.slice(0, 2), null);
+  }, [loadQuote]);
+
+  // Hitung ulang potongan saat voucher atau metode bayar berubah.
+  useEffect(() => {
+    if (firstLoad.current) return;
+    loadQuote(method === 'SHOPEE' ? [] : codes, method);
+  }, [codes, method, loadQuote]);
+
+  const appliedCodes = quote?.vouchers.applied.map((a) => a.code) ?? [];
+
+  function toggleVoucher(voucher: VoucherInfo) {
+    setCodes((current) => {
+      if (current.includes(voucher.code)) return current.filter((c) => c !== voucher.code);
+      // Maks. 1 voucher per jenis: ganti voucher sejenis yang sedang dipakai.
+      const isShipping = voucher.type === 'FREE_SHIPPING';
+      const known = quote?.available_vouchers ?? [];
+      const kept = current.filter((c) => {
+        const info = known.find((v) => v.code === c);
+        return !info || (info.type === 'FREE_SHIPPING') !== isShipping;
+      });
+      return [...kept, voucher.code].slice(-2);
+    });
+  }
+
+  function addCode(event?: FormEvent) {
+    event?.preventDefault();
+    const code = codeInput.replace(/\s+/g, '').toUpperCase();
+    if (!code) return;
+    setCodes((current) => (current.includes(code) ? current : [...current, code].slice(-2)));
+    setCodeInput('');
+  }
 
   const outOfStock = useMemo(() => quote?.items.filter((i) => !i.in_stock) ?? [], [quote]);
   const needsForm = method !== null && method !== 'SHOPEE';
@@ -187,7 +268,11 @@ export default function CheckoutForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payment_method: method,
-          items: quote.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+          items: quote.items.map((i) => ({
+            product_id: i.product_id,
+            variation_id: i.variation_id,
+            quantity: i.quantity,
+          })),
           ...(needsForm && {
             customer: { name: form.name, phone: form.phone, email: form.email },
             shipping: {
@@ -197,7 +282,8 @@ export default function CheckoutForm() {
               postal_code: form.postal_code,
             },
             notes: form.notes,
-            idempotency_key: `${idemKey}-${method}`,
+            voucher_codes: appliedCodes,
+            idempotency_key: `${idemKey}-${method}-${appliedCodes.join('.')}`,
           }),
         }),
       });
@@ -227,6 +313,7 @@ export default function CheckoutForm() {
       }
 
       clearCart();
+      rememberOrder(data.order_number);
       if (method === 'MIDTRANS' && data.payment_url) {
         window.location.href = data.payment_url;
         return;
@@ -245,11 +332,11 @@ export default function CheckoutForm() {
 
   if (cart.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center">
         <p className="mb-4 text-slate-500">Keranjang belanja kamu masih kosong.</p>
         <Link
           href="/produk"
-          className="inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
+          className="inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
         >
           Mulai Belanja
         </Link>
@@ -274,7 +361,7 @@ export default function CheckoutForm() {
 
   if (shopeeLinks) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-surface p-6">
         <h2 className="text-lg font-black text-slate-900">Lanjut beli di Shopee</h2>
         <p className="mt-1 text-sm text-slate-500">
           Shopee hanya bisa membuka satu produk per klik. Buka setiap produk di bawah ini, lalu
@@ -282,16 +369,21 @@ export default function CheckoutForm() {
         </p>
         <ul className="mt-5 divide-y divide-slate-100">
           {shopeeLinks.map((link) => (
-            <li key={link.name} className="flex items-center justify-between gap-4 py-3">
+            <li key={`${link.name}-${link.variation_name}`} className="flex items-center justify-between gap-4 py-3">
               <span className="min-w-0 text-sm text-slate-800">
                 {link.name} <span className="text-slate-400">×{link.quantity}</span>
+                {link.variation_name && (
+                  <span className="block text-xs text-slate-500">
+                    Pilih varian di Shopee: <b>{link.variation_name}</b>
+                  </span>
+                )}
               </span>
               {link.url ? (
                 <a
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 rounded-lg bg-orange-600 px-4 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                  className="shrink-0 rounded-lg bg-ink px-4 py-2 text-xs font-bold text-surface hover:bg-slate-800"
                 >
                   Buka di Shopee
                 </a>
@@ -304,9 +396,10 @@ export default function CheckoutForm() {
         <button
           type="button"
           onClick={() => setShopeeLinks(null)}
-          className="mt-5 text-sm font-semibold text-slate-600 underline"
+          className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-ink"
         >
-          ← Pilih metode lain
+          <ArrowLeftIcon size={16} />
+          Pilih metode lain
         </button>
       </div>
     );
@@ -316,6 +409,10 @@ export default function CheckoutForm() {
     (m) => quote.methods[METHOD_INFO[m].key]
   );
   const blocked = method !== 'SHOPEE' && outOfStock.length > 0;
+  const voucherDiscount = Number(quote.vouchers.discount_amount) || 0;
+  const shippingDiscount = Number(quote.vouchers.shipping_discount_max) || 0;
+  const total = Number(quote.total);
+  const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
@@ -332,7 +429,7 @@ export default function CheckoutForm() {
                 <label
                   key={m}
                   className={`flex cursor-pointer gap-3 rounded-xl border-2 p-4 transition ${
-                    method === m ? 'border-orange-600 bg-orange-50' : 'border-slate-200 hover:border-slate-300'
+                    method === m ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <input
@@ -344,7 +441,7 @@ export default function CheckoutForm() {
                       setMethod(m);
                       setSubmitError('');
                     }}
-                    className="mt-1 accent-orange-600"
+                    className="mt-1 accent-slate-900"
                   />
                   <span>
                     <span className="block font-bold text-slate-900">{METHOD_INFO[m].title}</span>
@@ -357,8 +454,109 @@ export default function CheckoutForm() {
         </Section>
 
         {needsForm && (
+          <Section title="2. Voucher">
+            {quote.available_vouchers.length > 0 && (
+              <ul className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
+                {quote.available_vouchers.map((v) => {
+                  const selected = codes.includes(v.code);
+                  const applied = appliedCodes.includes(v.code);
+                  const problem = quote.vouchers.rejected.find((r) => r.code === v.code);
+                  const usable = method === 'WHATSAPP' ? v.for_whatsapp : method === 'MIDTRANS' ? v.for_midtrans : true;
+                  return (
+                    <li key={v.code} className="w-[80%] max-w-[300px] shrink-0 snap-start sm:w-auto sm:max-w-none">
+                      <button
+                        type="button"
+                        onClick={() => toggleVoucher(v)}
+                        disabled={!usable && !selected}
+                        aria-pressed={selected}
+                        className={`flex h-full w-full items-center gap-2.5 rounded-xl border-2 p-2.5 text-left transition disabled:opacity-45 ${
+                          applied ? 'border-emerald-600 bg-emerald-50' : selected ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white ${
+                            v.type === 'FREE_SHIPPING' ? 'bg-emerald-700' : 'bg-sale-600'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {v.type === 'FREE_SHIPPING' ? 'ONGKIR' : '%'}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-ink">{v.headline}</span>
+                          <span className="block truncate text-xs text-slate-500">
+                            {problem && selected ? problem.message : !usable ? 'Tidak berlaku untuk metode ini' : v.terms[0]}
+                          </span>
+                        </span>
+                        <span
+                          className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                            applied ? 'bg-emerald-700 text-white' : selected ? 'bg-ink text-surface' : 'bg-mist text-ink'
+                          }`}
+                        >
+                          {applied ? 'Terpakai' : selected ? 'Dipilih' : 'Pakai'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {quote.available_vouchers.length > 1 && (
+              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">Geser untuk melihat voucher lain →</p>
+            )}
+
+            {!showCodeInput ? (
+              <button type="button" onClick={() => setShowCodeInput(true)} className="mt-3 text-sm font-bold text-ink underline">
+                Punya kode voucher lain?
+              </button>
+            ) : (
+            <div className="mt-3 flex gap-2">
+              <input
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e: { key: string; preventDefault(): void }) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCode();
+                  }
+                }}
+                placeholder="Ketik kode voucher"
+                autoFocus
+                aria-label="Kode voucher"
+                autoCapitalize="characters"
+                className={inputCls() + ' uppercase placeholder:normal-case'}
+              />
+              <button
+                type="button"
+                onClick={() => addCode()}
+                className="shrink-0 rounded-xl bg-ink px-4 text-sm font-bold text-surface hover:bg-slate-800"
+              >
+                Pakai
+              </button>
+            </div>
+            )}
+
+            {rejected
+              .filter((r) => !quote.available_vouchers.some((v) => v.code === r.code))
+              .map((r) => (
+                <p key={r.code} className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <span>
+                    <b>{r.code}</b>: {r.message}
+                  </span>
+                  <button type="button" onClick={() => setCodes((c) => c.filter((x) => x !== r.code))} className="font-bold underline">
+                    Hapus
+                  </button>
+                </p>
+              ))}
+            <p className="mt-3 text-xs text-slate-500">
+              Maks. 1 voucher diskon + 1 gratis ongkir. Voucher yang sudah diklaim otomatis dipilih.
+            </p>
+          </Section>
+        )}
+
+        {needsForm && (
           <>
-            <Section title="2. Data pembeli">
+            <Section title="3. Data pembeli">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Nama lengkap" required error={errors.name} className="sm:col-span-2">
                   <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} className={inputCls(errors.name)} />
@@ -372,7 +570,7 @@ export default function CheckoutForm() {
               </div>
             </Section>
 
-            <Section title="3. Alamat pengiriman">
+            <Section title="4. Alamat pengiriman">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Alamat lengkap" required error={errors.address} className="sm:col-span-2">
                   <textarea value={form.address} onChange={(e) => update('address', e.target.value)} rows={3} autoComplete="street-address" maxLength={500} placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan" className={inputCls(errors.address)} />
@@ -389,7 +587,7 @@ export default function CheckoutForm() {
               </div>
             </Section>
 
-            <Section title="4. Catatan untuk penjual (opsional)">
+            <Section title="5. Catatan untuk penjual (opsional)">
               <Field label="Catatan" error={errors.notes}>
                 <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} rows={3} maxLength={1000} placeholder="Contoh: warna hitam, tolong dibungkus bubble wrap tebal" className={inputCls(errors.notes)} />
               </Field>
@@ -399,16 +597,23 @@ export default function CheckoutForm() {
       </div>
 
       {/* Ringkasan */}
-      <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-5 lg:sticky lg:top-24">
+      <aside className="h-fit rounded-2xl border border-slate-200 bg-surface p-5 lg:sticky lg:top-24">
         <h2 className="font-black text-slate-900">Ringkasan pesanan</h2>
         <ul className="mt-4 divide-y divide-slate-100">
           {quote.items.map((item) => (
-            <li key={item.product_id} className="flex gap-3 py-3">
+            <li key={`${item.product_id}:${item.variation_id}`} className="flex gap-3 py-3">
               {item.image_url && (
-                <img src={item.image_url} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
+                <img src={productImg(item.image_url, 120)} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
               )}
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm text-slate-800">{item.name}</p>
+                {(item.variation_name || item.sku) && (
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {item.variation_name}
+                    {item.variation_name && item.sku && ' · '}
+                    {item.sku && `SKU ${item.sku}`}
+                  </p>
+                )}
                 <p className="mt-0.5 text-xs text-slate-500">
                   {item.quantity} × {money(item.unit_price)}
                 </p>
@@ -432,10 +637,31 @@ export default function CheckoutForm() {
             <dt className="text-slate-500">Ongkos kirim</dt>
             <dd className="text-right text-slate-500">Dikonfirmasi penjual</dd>
           </div>
+          {quote.vouchers.applied
+            .filter((a) => a.kind === 'discount')
+            .map((a) => (
+              <div key={a.code} className="flex justify-between gap-4 text-emerald-700">
+                <dt>Voucher {a.code}</dt>
+                <dd className="font-semibold">-{money(a.amount)}</dd>
+              </div>
+            ))}
+          {shippingDiscount > 0 && (
+            <div className="flex justify-between gap-4 text-emerald-700">
+              <dt>Potongan ongkir</dt>
+              <dd className="text-right font-semibold">s/d {money(shippingDiscount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
             <dt className="font-bold">Total produk</dt>
-            <dd className="font-black text-slate-900">{money(quote.subtotal)}</dd>
+            <dd className={`font-black text-slate-900 transition-opacity ${quoteLoading ? 'opacity-50' : ''}`}>
+              {money(total)}
+            </dd>
           </div>
+          <p className="text-xs text-slate-500">
+            {quote.tax_note}
+            {shippingDiscount > 0 && ' Potongan ongkir dipotong saat admin mengonfirmasi ongkir.'}
+            {voucherDiscount === 0 && shippingDiscount === 0 && ' Belum ada voucher terpakai.'}
+          </p>
         </dl>
 
         {blocked && (
@@ -453,7 +679,7 @@ export default function CheckoutForm() {
         <button
           type="submit"
           disabled={!method || submitting || blocked}
-          className="mt-5 w-full rounded-xl bg-orange-600 px-5 py-4 font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? 'Memproses…'
@@ -465,8 +691,9 @@ export default function CheckoutForm() {
                   ? 'Lanjut ke Shopee'
                   : 'Pilih metode pembayaran'}
         </button>
-        <Link href="/cart" className="mt-3 block text-center text-sm text-slate-500 hover:text-orange-600">
-          ← Ubah keranjang
+        <Link href="/cart" className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500 hover:text-ink">
+          <ArrowLeftIcon size={15} />
+          Ubah keranjang
         </Link>
       </aside>
     </form>
@@ -477,13 +704,13 @@ function inputCls(error?: string) {
   return `w-full rounded-xl border px-3.5 py-2.5 text-base outline-none transition focus:ring-2 sm:text-sm ${
     error
       ? 'border-red-400 focus:ring-red-200'
-      : 'border-slate-300 focus:border-orange-500 focus:ring-orange-100'
+      : 'border-slate-300 focus:border-slate-900 focus:ring-slate-200'
   }`;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <h2 className="mb-4 font-black text-slate-900">{title}</h2>
       {children}
     </section>

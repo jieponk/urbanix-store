@@ -11,7 +11,8 @@ export async function proxyToBackend(
   method: 'GET' | 'POST' = request.method as 'GET' | 'POST'
 ): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  const forwardedFor = request.headers.get('x-forwarded-for');
+  // Di belakang Cloudflare, IP asli pembeli ada di CF-Connecting-IP (dipakai untuk batas spam).
+  const forwardedFor = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for');
   if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
 
   let body: string | undefined;

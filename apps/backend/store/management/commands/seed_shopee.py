@@ -1,3 +1,4 @@
+from pathlib import Path
 
 import json
 import os
@@ -5,16 +6,35 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.conf import settings
 from django.utils.text import slugify
 
 from store.category_map import clean_category
 from store.models import Category, Product, ProductVariation
+from store.migrations_helpers import gallery_from_item
 
 
 class Command(BaseCommand):
-    help = "Impor produk dan variasi Shopee dari products_full.json"
+    help = (
+        "LAMA: impor dari products_full.json (data lama). "
+        "Gunakan 'python manage.py import_shopee' untuk file Shopee terbaru."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--paksa",
+            action="store_true",
+            help="Tetap jalankan walaupun data Shopee terbaru (data/shopee/) tersedia.",
+        )
 
     def handle(self, *args, **kwargs):
+        newer = Path(settings.BASE_DIR) / "data" / "shopee"
+        if not kwargs.get("paksa") and any(newer.glob("*.xlsx")):
+            raise CommandError(
+                "Data Shopee terbaru ada di data/shopee/. Jalankan 'python manage.py import_shopee'. "
+                "Perintah ini memakai data LAMA dan akan menimpa stok/harga terbaru "
+                "(pakai --paksa bila memang sengaja)."
+            )
         base_dir = os.path.dirname(
             os.path.dirname(
                 os.path.dirname(
@@ -114,6 +134,7 @@ class Command(BaseCommand):
                             0, int(first_variation.get("stock", 0) or 0)
                         ),
                         "image_url": image_url,
+                        "images": gallery_from_item(item),
                         "is_active": True,
                     }
 
@@ -205,6 +226,10 @@ class Command(BaseCommand):
                     f"Gagal mengimpor produk {name} "
                     f"(ID {product_id}): {exc}"
                 ) from exc
+
+        # Stok induk = jumlah stok semua varian (sebelumnya hanya varian pertama).
+        for product in Product.objects.filter(variations__isnull=False).distinct():
+            product.sync_stock_from_variations()
 
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("IMPOR SELESAI"))

@@ -1,0 +1,152 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { claimVoucher, type VoucherInfo } from '@/lib/vouchers';
+
+const STORAGE_KEY = 'urbanix-wa-popup-closed';
+const HIDE_DAYS = 3;
+const DELAY_MS = 2500;
+
+type Props = {
+  percent: number;
+  whatsappNumber: string;
+  appliesToPromo: boolean;
+  /** Voucher yang ditampilkan (voucher bercentang "Tampilkan di popup"). */
+  voucher?: VoucherInfo | null;
+};
+
+function closedRecently() {
+  try {
+    const at = Number(localStorage.getItem(STORAGE_KEY));
+    return at > 0 && Date.now() - at < HIDE_DAYS * 86400000;
+  } catch {
+    return false;
+  }
+}
+
+/** Popup "Pesan via WhatsApp, hemat X%". Muncul sekali, lalu disembunyikan 3 hari setelah ditutup. */
+export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToPromo, voucher }: Props) {
+  const [open, setOpen] = useState(false);
+  const closeButton = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (closedRecently()) return;
+    const timer = window.setTimeout(() => setOpen(true), DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    closeButton.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  function close() {
+    setOpen(false);
+    try {
+      localStorage.setItem(STORAGE_KEY, String(Date.now()));
+    } catch {
+      /* browser tanpa penyimpanan: popup bisa muncul lagi, tidak masalah */
+    }
+  }
+
+  function startShopping() {
+    if (voucher) claimVoucher(voucher.code);
+    close();
+    document.getElementById('produk-pilihan')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  if (!open) return null;
+
+  const chatText = encodeURIComponent(
+    `Halo admin URBANIX, saya mau pesan via WhatsApp dengan diskon ${percent}%. Bisa dibantu?`
+  );
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-cobalt-900/60 p-3 sm:items-center" onClick={close}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wa-popup-title"
+        onClick={(e) => e.stopPropagation()}
+        className="popup-in relative w-full max-w-md overflow-hidden rounded-[28px] bg-surface shadow-2xl"
+      >
+        <button
+          ref={closeButton}
+          type="button"
+          onClick={close}
+          aria-label="Tutup"
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-xl text-ink hover:bg-surface"
+        >
+          ×
+        </button>
+
+        <div className="relative bg-sun-400 px-6 pb-6 pt-7">
+          <p className="text-sm font-bold text-cobalt-800">Khusus pesan lewat WhatsApp</p>
+          <p className="mt-1 flex items-end gap-2 leading-none text-cobalt-900">
+            <span className="text-[5.5rem] font-extrabold tracking-[-0.06em]">{percent}%</span>
+            <span className="pb-3 text-lg font-extrabold">lebih hemat</span>
+          </p>
+        </div>
+
+        <div className="px-6 pb-6 pt-5">
+          <h2 id="wa-popup-title" className="text-xl font-extrabold tracking-tight text-ink">
+            Pesan via WhatsApp, potongan {percent}% langsung terhitung
+          </h2>
+          {voucher && (
+            <p className="mt-3 flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-slate-300 px-3 py-2 text-sm">
+              <span className="text-slate-500">Kode voucher</span>
+              <b className="tracking-wider text-ink">{voucher.code}</b>
+            </p>
+          )}
+          <ol className="mt-4 space-y-2.5 text-sm text-slate-600">
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">1</span>
+              Masukkan produk ke keranjang.
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">2</span>
+              Di halaman checkout, pilih <b className="text-ink">Pesan via WhatsApp</b>.
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">3</span>
+              {voucher ? 'Pakai voucher di checkout, lalu kirim chat pesanan ke admin.' : `Kirim chat pesanan ke admin. Totalnya sudah dipotong ${percent}%.`}
+            </li>
+          </ol>
+          {voucher ? (
+            <ul className="mt-4 list-disc space-y-0.5 pl-4 text-xs text-slate-500">
+              {voucher.terms.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          ) : (
+            !appliesToPromo && (
+              <p className="mt-4 text-xs text-slate-500">Tidak berlaku untuk produk yang sedang ikut promo potong harga.</p>
+            )
+          )}
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={startShopping}
+              className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
+            >
+              {voucher ? 'Klaim & mulai belanja' : 'Mulai belanja'}
+            </button>
+            <a
+              href={`https://wa.me/${whatsappNumber}?text=${chatText}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={close}
+              className="rounded-full border-2 border-ink px-5 py-2.5 text-center text-sm font-bold text-ink hover:bg-mist"
+            >
+              Tanya admin dulu
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

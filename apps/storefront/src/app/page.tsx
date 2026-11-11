@@ -1,8 +1,26 @@
 import Link from 'next/link';
 import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
+import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
+import NewsCard from '@/components/NewsCard';
+import ArticleCard from '@/components/inspirasi/ArticleCard';
 import ProductCard from '@/components/ProductCard';
-import { API, getActiveProducts, type Product } from '@/lib/api';
+import PromoCountdown from '@/components/PromoCountdown';
+import { VoucherStrip } from '@/components/VoucherCard';
+import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
+import {
+  API,
+  getActiveProducts,
+  getBanners,
+  getCategories,
+  getArticles,
+  getNews,
+  getReviews,
+  getStoreSettings,
+  getVouchers,
+  promoSummary,
+  type Product,
+} from '@/lib/api';
 import { listPublicImages, publicUrl } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 
@@ -19,7 +37,18 @@ function loadBannerSlides(): BannerSlide[] {
       .replace(/[-_]+/g, ' ')
       .trim() || 'Banner promo',
     href: siteConfig.bannerLinks[file],
+    srcSet: bannerSrcSet(file),
   }));
+}
+
+/** Pakai versi 640/1024 px di public/banners/_sizes bila tersedia (HP tidak perlu mengunduh 1600 px). */
+function bannerSrcSet(file: string): string | undefined {
+  const base = file.replace(/\.[^.]+$/, '');
+  const sizes = listPublicImages('banners/_sizes');
+  const parts = [640, 1024]
+    .filter((w) => sizes.includes(`${base}-${w}.webp`))
+    .map((w) => `/banners/_sizes/${encodeURIComponent(`${base}-${w}.webp`)} ${w}w`);
+  return parts.length ? [...parts, `${publicUrl('banners', file)} 1600w`].join(', ') : undefined;
 }
 
 function PageLink({
@@ -35,7 +64,7 @@ function PageLink({
     <Link
       href={`/?hal=${page}#produk-pilihan`}
       scroll={false}
-      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-surface px-5 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-900 hover:bg-mist hover:text-slate-900"
     >
       {!isNext && (
         <svg
@@ -84,175 +113,176 @@ export default async function HomePage({
     productError = true;
   }
 
+  const [categories, settings, reviews, vouchers, news, apiBanners, articlePage] = await Promise.all([
+    getCategories(),
+    getStoreSettings(),
+    getReviews({ limit: 6 }),
+    getVouchers(),
+    getNews({ limit: 4 }),
+    getBanners(),
+    getArticles({ limit: 4 }),
+  ]);
+  const articles = articlePage?.results ?? [];
+
   const totalPages = Math.max(1, Math.ceil(allProducts.length / PER_PAGE));
   const requestedPage = parseInt(params?.hal || '1', 10) || 1;
   const page = Math.min(totalPages, Math.max(1, requestedPage));
   const products = allProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const slides = loadBannerSlides();
-  const { features, featuresTitle, highlights } = siteConfig;
+  const promo = promoSummary(allProducts);
+  const promoProducts = allProducts
+    .filter((p) => (p.discount_percent ?? 0) > 0)
+    .sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0))
+    .slice(0, 12);
+
+  const waPercent = Number(settings?.whatsapp_discount_percent) || 0;
+  const waNumber = settings?.whatsapp_number ?? '';
+  const waOnPromo = settings?.whatsapp_discount_on_promo ?? false;
+
+  // Banner dari Seller Center diutamakan; kalau belum ada, pakai gambar di folder public/banners.
+  const slides: BannerSlide[] = apiBanners.length
+    ? apiBanners.map((b) => ({ src: b.image, mobileSrc: b.mobile_image || undefined, alt: b.title, href: b.link_url || undefined }))
+    : loadBannerSlides();
+  const { features, featuresTitle } = siteConfig;
 
   return (
-    <div className="bg-white text-slate-900">
-      {/* 1. Banner: slideshow dari folder public/banners, atau banner teks bawaan */}
-      {slides.length > 0 ? (
-        <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
-          <BannerSlider slides={slides} />
-        </section>
-      ) : (
-        <section className="bg-gradient-to-br from-[#171717] via-[#1f1f1f] to-[#2b1608] text-white">
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-            <div className="max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-[0.16em] text-orange-400 sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                URBANIX STORE
-              </span>
+    <div className="pb-4">
+      {settings?.show_whatsapp_popup && waNumber && (
+        <WhatsappPromoPopup
+          percent={waPercent}
+          whatsappNumber={waNumber}
+          appliesToPromo={waOnPromo}
+          voucher={settings.popup_voucher ?? null}
+        />
+      )}
 
-              <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Gear terbaik.
-                <br />
-                <span className="text-orange-500">Cerita dimulai.</span>
+      {/* 1. Banner + panel promo */}
+      <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+        <div className={`grid gap-4 ${promo ? 'lg:grid-cols-[1.75fr_1fr]' : ''}`}>
+          {slides.length > 0 ? (
+            <BannerSlider slides={slides} />
+          ) : (
+            <div className="flex flex-col justify-center rounded-[28px] bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
+              <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">
+                Kamera, lensa, dan gear kreator dalam satu toko.
               </h1>
-
-              <p className="mt-4 max-w-lg text-sm leading-6 text-slate-300 sm:text-base">
-                Temukan perlengkapan kamera dan gear kreator untuk setiap
-                momen yang ingin kamu abadikan.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/produk"
-                  className="rounded-xl bg-orange-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-700"
-                >
-                  Belanja sekarang
-                </Link>
-                <Link
-                  href="#produk-pilihan"
-                  className="rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                >
-                  Lihat pilihan kami
-                </Link>
-              </div>
+              <Link href="/produk" className="mt-6 w-fit rounded-full bg-ink px-6 py-3 text-sm font-bold text-surface hover:bg-slate-800">
+                Belanja sekarang
+              </Link>
             </div>
-          </div>
+          )}
+          {promo && (
+            <PromoCountdown name={promo.name} maxDiscount={promo.maxDiscount} count={promo.count} endsAt={promo.endsAt} />
+          )}
+        </div>
+      </section>
+
+      {/* Voucher yang bisa diklaim */}
+      {vouchers.length > 0 && (
+        <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+          <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            Voucher toko
+          </h2>
+          <VoucherStrip vouchers={vouchers} />
+          <p className="mt-2 text-xs text-slate-500">
+            Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.
+          </p>
         </section>
       )}
 
-      {/* 2. Produk pilihan: 8 produk (4 + 4) dengan tombol halaman */}
-      <section
-        id="produk-pilihan"
-        className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 sm:px-6 sm:py-16 lg:px-8"
-      >
+      {/* 2. Kategori bergambar */}
+      <CategoryStrip categories={categories} products={allProducts} />
+
+      {/* 3. Produk promo, potongan terbesar dulu */}
+      {promo && <FlashSale products={promoProducts} promoName={promo.name} />}
+
+      {/* 4. Cara pesan via WhatsApp + diskon */}
+      <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
+
+      {/* 5. Produk pilihan: 8 produk (4 + 4) dengan tombol halaman */}
+      <section id="produk-pilihan" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-600 sm:text-xs">
-              Pilihan untukmu
-            </p>
-            <h2 className="mt-1 text-xl font-extrabold tracking-tight sm:text-2xl">
-              Produk pilihan
-            </h2>
-          </div>
-          <Link
-            href="/produk"
-            className="shrink-0 text-sm font-bold text-orange-600 hover:text-orange-700"
-          >
-            Lihat semua →
+          <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Produk pilihan</h2>
+          <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:text-slate-900">
+            Lihat semua produk
           </Link>
         </div>
 
         {productError ? (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
             <p className="font-bold text-red-700">Produk gagal dimuat</p>
-            <p className="mt-2 text-sm text-slate-600">
-              Pastikan backend Django berjalan dan API produk dapat diakses.
-            </p>
-            <p className="mt-2 break-all text-xs text-slate-500">
-              API: {API}/products/
-            </p>
+            <p className="mt-2 text-sm text-slate-600">Pastikan backend Django berjalan dan API produk dapat diakses.</p>
+            <p className="mt-2 break-all text-xs text-slate-500">API: {API}/products/</p>
           </div>
         ) : products.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
             <p className="font-bold">Produk belum tersedia</p>
-            <p className="mt-2 text-sm text-slate-500">
-              Silakan cek kembali sebentar lagi.
-            </p>
+            <p className="mt-2 text-sm text-slate-500">Silakan cek kembali sebentar lagi.</p>
           </div>
         ) : (
           <>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
             {totalPages > 1 && (
-              <nav
-                aria-label="Halaman produk"
-                className="mt-8 flex flex-wrap items-center justify-center gap-3"
-              >
+              <nav aria-label="Halaman produk" className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 {page > 1 && <PageLink page={page - 1} direction="prev" />}
                 <span className="px-2 text-sm font-semibold text-slate-500">
                   Halaman {page} dari {totalPages}
                 </span>
-                {page < totalPages && (
-                  <PageLink page={page + 1} direction="next" />
-                )}
+                {page < totalPages && <PageLink page={page + 1} direction="next" />}
               </nav>
             )}
           </>
         )}
       </section>
 
-      {/* 3. Keunggulan toko */}
-      <section className="bg-orange-50">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-600 sm:text-xs">
-              Keunggulan kami
-            </p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-              {featuresTitle}
-            </h2>
-          </div>
+      {/* 6. Ulasan asli pembeli */}
+      <ReviewsSection reviews={reviews} settings={settings} />
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-2xl border border-orange-100 bg-white p-5"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-                  <FeatureIcon name={feature.icon} />
-                </span>
-                <h3 className="mt-4 text-base font-extrabold text-slate-900">
-                  {feature.title}
-                </h3>
-                <p className="mt-1.5 text-sm leading-6 text-slate-600">
-                  {feature.text}
-                </p>
-              </div>
+      {/* Inspirasi: artikel Urbanix diutamakan, sisanya berita kamera (halaman lengkap: /inspirasi) */}
+      {(articles.length > 0 || (news && news.results.length > 0)) && (
+        <section aria-labelledby="judul-inspirasi" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-3">
+            <h2 id="judul-inspirasi" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              Inspirasi untuk kreator
+            </h2>
+            <Link href="/inspirasi" className="shrink-0 text-sm font-bold text-ink hover:underline">
+              Lihat semua
+            </Link>
+          </div>
+          <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+            {articles.slice(0, 4).map((a) => (
+              <ArticleCard key={`a${a.id}`} article={a} />
+            ))}
+            {(news?.results ?? []).slice(0, Math.max(0, 4 - Math.min(4, articles.length))).map((article) => (
+              <NewsCard key={article.id} article={article} compact />
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* 4. Teks berjalan: pelayanan toko */}
-      <section
-        aria-label="Keunggulan Urbanix Store"
-        className="overflow-hidden border-y border-slate-200 bg-white py-4"
-      >
-        <div className="marquee-track flex w-max text-sm font-semibold text-slate-700">
-          {[...highlights, ...highlights].map((text, index) => (
-            <span
-              key={index}
-              aria-hidden={index >= highlights.length}
-              className="flex items-center gap-3 whitespace-nowrap pr-12"
-            >
-              <span className="text-orange-500">★</span>
-              {text}
-            </span>
+      {/* 7. Keunggulan toko: daftar ringkas, bukan kartu */}
+      <section aria-labelledby="judul-keunggulan" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <h2 id="judul-keunggulan" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+          {featuresTitle}
+        </h2>
+        <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <li key={feature.title} className="flex gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink ring-1 ring-slate-200">
+                <FeatureIcon name={feature.icon} size={22} />
+              </span>
+              <span>
+                <span className="block font-bold text-ink">{feature.title}</span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">{feature.text}</span>
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
     </div>
   );

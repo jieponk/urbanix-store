@@ -1,9 +1,21 @@
 import Link from 'next/link';
-import ProductBuyButtons from '@/components/ProductBuyButtons';
+import { cache } from 'react';
+import { BackLink } from '@/components/Icons';
+import { ReviewsSection } from '@/components/HomeSections';
+import ProductHero from '@/components/ProductHero';
 import ProductInfoSections from '@/components/ProductInfoSections';
-import { API, fetchAll, money, type Product } from '@/lib/api';
+import {
+  API,
+  buyableVariations,
+  fetchAll,
+  getReviews,
+  getStoreSettings,
+  getVouchers,
+  type Product,
+} from '@/lib/api';
+import { SITE_URL, plainText } from '@/lib/seo';
 
-async function getProduct(id: string): Promise<Product | null> {
+const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
   try {
     const response = await fetch(
@@ -29,6 +41,49 @@ async function getProduct(id: string): Promise<Product | null> {
     console.error('[Detail Produk] Gagal membaca daftar:', error);
     return null;
   }
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}) {
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) return { title: 'Produk tidak ditemukan', robots: { index: false } };
+  const description =
+    plainText(product.description, 155) || `${product.name} original bergaransi di Urbanix Store.`;
+  const images = product.image_url ? [{ url: product.image_url, alt: product.name }] : undefined;
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: `/produk/${product.id}` },
+    openGraph: { type: 'website', title: product.name, description, url: `/produk/${product.id}`, images },
+    twitter: { card: 'summary_large_image', title: product.name, description, images: images?.map((i) => i.url) },
+  };
+}
+
+/** Data terstruktur Google (Product + Offer) agar harga & stok bisa tampil di hasil pencarian. */
+function productJsonLd(product: Product) {
+  const price = Number(product.final_price ?? product.price) || 0;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    sku: product.sku,
+    image: [product.image_url, ...(product.images ?? [])].filter(Boolean).slice(0, 6),
+    description: plainText(product.description, 500),
+    category: product.category_name,
+    offers: {
+      '@type': 'Offer',
+      url: `${SITE_URL}/produk/${product.id}`,
+      priceCurrency: 'IDR',
+      price: Math.round(price),
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: 'Urbanix Store' },
+    },
+  };
 }
 
 export default async function ProductPage({
@@ -37,12 +92,15 @@ export default async function ProductPage({
   params: Promise<{ id: string }> | { id: string };
 }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const [product, storeSettings] = await Promise.all([
+    getProduct(id),
+    getStoreSettings(),
+  ]);
 
   if (!product) {
     return (
       <div className="bg-slate-50 px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
           <h1 className="text-xl font-black text-slate-900">
             Produk tidak ditemukan
           </h1>
@@ -52,7 +110,7 @@ export default async function ProductPage({
           </p>
           <Link
             href="/produk"
-            className="mt-6 inline-block rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-700"
+            className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
           >
             Lihat semua produk
           </Link>
@@ -61,111 +119,34 @@ export default async function ProductPage({
     );
   }
 
-  const price = Number(product.price) || 0;
-  const discountPrice = Number(product.discount_price) || 0;
-  const hasDiscount = discountPrice > 0 && discountPrice < price;
-  const finalPrice = hasDiscount ? discountPrice : price;
-  const discountPercent = hasDiscount
-    ? Math.round(((price - discountPrice) / price) * 100)
-    : 0;
-  const stock = Number(product.stock) || 0;
-  const variationCount = product.variations?.length ?? 0;
+  const variants = buyableVariations(product);
+  const [reviews, vouchers] = await Promise.all([
+    getReviews({ product: product.id, limit: 6 }),
+    getVouchers(),
+  ]);
 
   return (
-    <div className="bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
+        <BackLink href="/produk">Kembali ke katalog</BackLink>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product)).replace(/</g, '\\u003c') }}
+        />
+
+        <ProductHero
+          product={product}
+          variants={variants}
+          whatsappNumber={storeSettings?.whatsapp_number ?? ''}
+          vouchers={vouchers}
+        />
+
         <Link
-          href="/produk"
-          className="inline-flex items-center text-sm font-semibold text-slate-500 transition hover:text-orange-600"
+          href="/cart"
+          className="mt-4 inline-flex items-center text-sm font-semibold text-slate-600 underline"
         >
-          <span className="mr-2">←</span>
-          Kembali ke katalog
+          Lihat Keranjang Belanja
         </Link>
-
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10 lg:gap-14">
-          {/* Gambar produk */}
-          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 sm:p-8">
-            {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <p className="text-sm text-slate-400">
-                Gambar produk tidak tersedia
-              </p>
-            )}
-          </div>
-
-          {/* Judul, harga, dan tombol beli */}
-          <section className="min-w-0 py-1 sm:py-3">
-            <p className="text-xs font-semibold text-orange-600 sm:text-sm">
-              {product.category_name || 'Produk'}
-            </p>
-
-            <h1 className="mt-3 break-words text-2xl font-black leading-tight tracking-tight sm:text-3xl">
-              {product.name}
-            </h1>
-
-            {product.sku && (
-              <p className="mt-3 text-xs text-slate-400">SKU: {product.sku}</p>
-            )}
-
-            <div className="mt-6 border-y border-slate-200 py-5">
-              {hasDiscount && (
-                <p className="flex items-center gap-2 text-sm text-slate-400">
-                  <span className="line-through">{money(price)}</span>
-                  <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
-                    -{discountPercent}%
-                  </span>
-                </p>
-              )}
-
-              <p className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
-                {money(finalPrice)}
-              </p>
-
-              <p
-                className={`mt-3 text-sm font-semibold ${
-                  stock > 0 ? 'text-emerald-700' : 'text-slate-500'
-                }`}
-              >
-                {stock > 0
-                  ? `Stok tercatat tersedia (${stock})`
-                  : 'Stok tercatat habis'}
-              </p>
-
-              {variationCount > 1 && (
-                <p className="mt-2 text-xs text-slate-500">
-                  Produk ini punya {variationCount} varian dengan harga bisa
-                  berbeda.{' '}
-                  <a
-                    href="#info-produk"
-                    className="font-semibold text-orange-600 hover:underline"
-                  >
-                    Lihat daftar varian
-                  </a>
-                </p>
-              )}
-            </div>
-
-            <ProductBuyButtons
-              id={String(product.id)}
-              name={product.name}
-              price={finalPrice}
-              imageUrl={product.image_url ?? null}
-              stock={stock}
-            />
-
-            <Link
-              href="/cart"
-              className="mt-4 inline-flex items-center text-sm font-semibold text-slate-600 underline"
-            >
-              Lihat Keranjang Belanja
-            </Link>
-          </section>
-        </div>
 
         {/* Informasi produk: susunan sama untuk semua produk */}
         <div id="info-produk" className="mt-8 scroll-mt-24 sm:mt-10">
@@ -175,6 +156,12 @@ export default async function ProductPage({
             variations={product.variations}
           />
         </div>
+
+        {reviews.length > 0 && (
+          <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+            <ReviewsSection reviews={reviews} settings={storeSettings} title="Ulasan produk ini" />
+          </div>
+        )}
       </div>
     </div>
   );

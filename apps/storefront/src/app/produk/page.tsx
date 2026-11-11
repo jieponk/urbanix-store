@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
 import {
   API,
@@ -8,10 +9,10 @@ import {
 } from '@/lib/api';
 
 export const metadata = {
-  title: 'Semua Produk - URBANIX STORE',
+  title: 'Semua Produk',
 };
 
-type SearchParams = { category?: string; q?: string };
+type SearchParams = { category?: string; q?: string; promo?: string };
 
 export default async function CatalogPage({
   searchParams,
@@ -21,6 +22,7 @@ export default async function CatalogPage({
   const params = await searchParams;
   const selectedCategory = params?.category || '';
   const searchQuery = (params?.q || '').trim().toLowerCase();
+  const promoOnly = params?.promo === '1';
 
   const [productResult, categories] = await Promise.all([
     fetchAll<Product>('products').then(
@@ -40,31 +42,40 @@ export default async function CatalogPage({
 
     const matchesSearch =
       !searchQuery ||
-      (product.name || '').toLowerCase().includes(searchQuery) ||
-      (product.sku || '').toLowerCase().includes(searchQuery) ||
-      (product.category_name || '').toLowerCase().includes(searchQuery);
+      searchQuery
+        .split(/\s+/)
+        .every((word) =>
+          `${product.name || ''} ${product.sku || ''} ${product.category_name || ''}`
+            .toLowerCase()
+            .includes(word)
+        );
 
-    return matchesCategory && matchesSearch;
+    const matchesPromo = !promoOnly || (product.discount_percent ?? 0) > 0;
+
+    return matchesCategory && matchesSearch && matchesPromo;
   });
+
+  if (promoOnly) {
+    filteredProducts.sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
+  }
 
   const selectedCategoryName = categories.find(
     (category) => String(category.id) === selectedCategory
   )?.name;
 
-  const title = selectedCategory
+  const title = promoOnly
+    ? 'Produk promo'
+    : selectedCategory
     ? selectedCategoryName || 'Produk kategori'
     : searchQuery
       ? 'Hasil pencarian'
       : 'Semua produk';
 
   return (
-    <div className="bg-white text-slate-900">
+    <div className="text-ink">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-orange-600 sm:text-xs">
-              Katalog
-            </p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
               {title}
             </h1>
@@ -77,11 +88,12 @@ export default async function CatalogPage({
         <form
           action="/produk"
           method="GET"
-          className="mt-5 flex max-w-2xl gap-2 rounded-2xl border border-slate-200 bg-white p-2"
+          className="mt-5 flex max-w-2xl gap-2 rounded-2xl border border-slate-200 bg-surface p-2"
         >
           {selectedCategory && (
             <input type="hidden" name="category" value={selectedCategory} />
           )}
+          {promoOnly && <input type="hidden" name="promo" value="1" />}
 
           <input
             type="search"
@@ -94,19 +106,16 @@ export default async function CatalogPage({
 
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-orange-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-orange-700 sm:px-6 sm:text-sm"
+            className="shrink-0 rounded-xl bg-ink px-4 py-3 text-xs font-bold text-surface transition hover:bg-slate-800 sm:px-6 sm:text-sm"
           >
             Cari
           </button>
         </form>
 
-        {(selectedCategory || searchQuery) && (
-          <Link
-            href="/produk"
-            className="mt-3 inline-block text-sm font-semibold text-orange-600 hover:text-orange-700"
-          >
-            ← Tampilkan semua produk
-          </Link>
+        {(selectedCategory || searchQuery || promoOnly) && (
+          <div className="mt-3">
+            <BackLink href="/produk">Tampilkan semua produk</BackLink>
+          </div>
         )}
 
         {!productResult.ok ? (

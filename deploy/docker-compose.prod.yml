@@ -1,0 +1,99 @@
+# Dijalankan di VPS oleh deploy/remote-update.sh:
+#   docker compose --env-file ~/urbanix/.env -f docker-compose.prod.yml up -d --build
+name: urbanix
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: urbanix
+      POSTGRES_USER: urbanix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di .env}
+      TZ: Asia/Jakarta
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanix -d urbanix"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:?isi SECRET_KEY di .env}
+      ALLOWED_HOSTS: ${DOMAIN},www.${DOMAIN},backend,localhost
+      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://www.${DOMAIN}
+      FRONTEND_URL: https://${DOMAIN}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: urbanix
+      POSTGRES_USER: urbanix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      STATIC_ROOT: /srv/static
+      MEDIA_ROOT: /srv/media
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
+      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
+      MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-False}
+    volumes:
+      - static:/srv/static
+      - media:/srv/media
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/store-settings/', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      retries: 30
+      start_period: 20s
+
+  storefront:
+    build:
+      context: ..
+      dockerfile: deploy/storefront.Dockerfile
+    restart: unless-stopped
+    environment:
+      API_URL: http://backend:8000/api/v1
+      SITE_URL: https://${DOMAIN}
+      GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+      NODE_ENV: production
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - static:/srv/static:ro
+      - media:/srv/media:ro
+    depends_on:
+      - storefront
+
+volumes:
+  pgdata:
+  static:
+  media:
+  caddy_data:
+  caddy_config:

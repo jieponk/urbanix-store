@@ -1,17 +1,13 @@
 #!/bin/bash
-echo -e "\033[0;36m=========================================\033[0m"
-echo -e "\033[0;36m  URBANIX STORE - Development Launcher  \033[0m"
-echo -e "\033[0;36m=========================================\033[0m"
+# Jalankan stack pengembangan lokal. Konfigurasi default sudah ada di docker-compose.yml (tanpa .env).
+set -e
+cd "$(dirname "$0")/.."
 
 if ! command -v docker &> /dev/null; then
-    echo -e "\033[0;31m[ERROR] Docker is not installed or not in PATH!\033[0m"
-    exit 1
+  echo "[ERROR] Docker belum terpasang atau belum masuk PATH."
+  exit 1
 fi
 
-if [ ! -f ".env" ]; then
-    echo -e "\033[0;33m[INFO] .env file not found. Copying from .env.example...\033[0m"
-    cp .env.example .env
-fi
-
-echo -e "\033[0;32m[INFO] Starting Docker Containers...\033[0m"
-docker-compose up --build
+echo "[INFO] Menjalankan storefront, backend, dan database..."
+echo "       Storefront: http://localhost:3000   API: http://localhost:8000/api/v1/"
+docker compose up --build

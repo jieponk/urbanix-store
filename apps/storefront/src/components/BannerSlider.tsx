@@ -7,6 +7,10 @@ export type BannerSlide = {
   src: string;
   alt: string;
   href?: string;
+  /** Gambar khusus HP (opsional, dari Seller Center). */
+  mobileSrc?: string;
+  /** Versi ukuran kecil (srcset) agar HP tidak mengunduh gambar 1600 px. */
+  srcSet?: string;
 };
 
 const INTERVAL_MS = 5000;
@@ -38,7 +42,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-slate-100"
+      className="relative h-full overflow-hidden rounded-[28px] bg-surface"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -47,15 +51,25 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
       aria-roledescription="carousel"
       aria-label="Banner promo"
     >
-      <div className="relative aspect-[16/9] sm:aspect-[21/9]">
+      <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[360px]">
         {slides.map((slide, i) => {
           const image = (
-            <img
-              src={slide.src}
-              alt={slide.alt}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              className="h-full w-full object-cover"
-            />
+            <picture>
+              {slide.mobileSrc && <source media="(max-width: 639px)" srcSet={slide.mobileSrc} />}
+              <img
+                src={slide.src}
+                srcSet={slide.srcSet}
+                sizes={slide.srcSet ? '(max-width: 1024px) 100vw, 64vw' : undefined}
+                width={1600}
+                height={686}
+                alt={slide.alt}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                // Banner pertama = gambar LCP: minta browser mengunduhnya paling dulu.
+                {...(i === 0 ? { fetchpriority: 'high' } : {})}
+                decoding={i === 0 ? 'sync' : 'async'}
+                className="h-full w-full object-cover"
+              />
+            </picture>
           );
 
           return (
@@ -122,7 +136,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
             </svg>
           </button>
 
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
+          <div className="absolute inset-x-0 bottom-1 flex justify-center">
             {slides.map((slide, i) => (
               <button
                 key={slide.src}
@@ -130,10 +144,14 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 onClick={() => setIndex(i)}
                 aria-label={`Tampilkan banner ${i + 1}`}
                 aria-current={i === index}
-                className={`h-2 rounded-full transition-all ${
-                  i === index ? 'w-6 bg-white' : 'w-2 bg-white/50'
-                }`}
-              />
+                className="flex h-7 min-w-[28px] items-center justify-center px-1"
+              >
+                <span
+                  className={`block h-2 rounded-full transition-all ${
+                    i === index ? 'w-6 bg-surface' : 'w-2 bg-surface/50'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </>

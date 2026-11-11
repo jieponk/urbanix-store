@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+<defs><clipPath id="c"><circle cx="60" cy="60" r="58"/></clipPath></defs>
+<circle cx="60" cy="60" r="58" fill="#94a3b8"/>
+<polygon points="90,28 180,118 120,182 30,92" fill="#000" fill-opacity="0.13" clip-path="url(#c)"/>
+
+<path d="M60 44 C48 26 34 34 44 44 M60 44 C72 26 86 34 76 44" fill="none" stroke="#1a1d26" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="34" y="54" width="52" height="38" rx="5" fill="#2e3240" stroke="#1a1d26" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="30" y="44" width="60" height="14" rx="4" fill="#474d61" stroke="#1a1d26" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="54" y="44" width="12" height="48" fill="#ff5b5b" stroke="#1a1d26" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
