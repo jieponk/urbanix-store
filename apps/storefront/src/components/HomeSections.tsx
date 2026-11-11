@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { money, type Category, type Product, type Review, type StoreSettings } from '@/lib/api';
 import { productImg } from '@/lib/img';
+import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -191,7 +192,7 @@ export function ReviewsSection({
 }) {
   const rating = Number(settings?.shopee_rating) || 0;
   const url = settings?.shopee_reviews_url;
-  if (reviews.length === 0 && !rating && !url) return null;
+  if (reviews.length === 0 && !rating && !url && !settings?.shopee_store_url) return null;
 
   return (
     <section aria-labelledby="judul-ulasan" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
@@ -210,11 +211,11 @@ export function ReviewsSection({
             </p>
           )}
         </div>
-        {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-ink hover:underline">
-            Baca semua ulasan di Shopee
-          </a>
-        )}
+        <ShopeeReviewsLink
+          reviewsUrl={url}
+          storeUrl={settings?.shopee_store_url}
+          className="text-sm font-bold text-ink hover:underline"
+        />
       </div>
 
       {reviews.length > 0 && (

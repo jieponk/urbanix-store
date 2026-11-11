@@ -3,6 +3,7 @@ import BrandLogo from '@/components/BrandLogo';
 import type { Category, StoreSettings } from '@/lib/api';
 import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
+import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -70,11 +71,15 @@ export default function Footer({
             <li><Link href="/cek-pesanan" className="hover:text-sun-400">Cek pesanan</Link></li>
             <li><Link href="/syarat-ketentuan" className="hover:text-sun-400">Syarat &amp; Ketentuan</Link></li>
             <li><Link href="/kebijakan-privasi" className="hover:text-sun-400">Kebijakan Privasi</Link></li>
-            {settings?.shopee_reviews_url && (
+            {(settings?.shopee_reviews_url || settings?.shopee_store_url) && (
               <li>
-                <a href={settings.shopee_reviews_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
-                  Ulasan pembeli di Shopee
-                </a>
+                <ShopeeReviewsLink
+                  reviewsUrl={settings?.shopee_reviews_url}
+                  storeUrl={settings?.shopee_store_url}
+                  className="hover:text-sun-400"
+                  desktopLabel="Ulasan pembeli di Shopee"
+                  mobileLabel="Ulasan pembeli di Shopee"
+                />
               </li>
             )}
             {settings?.shopee_store_url && (
