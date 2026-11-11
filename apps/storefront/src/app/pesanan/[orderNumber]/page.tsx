@@ -20,6 +20,7 @@ type OrderDetail = {
   tax_note?: string;
   shipping_note: string;
   shipping_courier?: string;
+  shipping_service?: string;
   tracking_number?: string;
   shipping_cost?: string | null;
   customer_email_masked?: string;
@@ -217,7 +218,7 @@ export default async function OrderPage({
               <p className="text-sm text-slate-600">
                 {order.status === 'COMPLETED'
                   ? 'Pesanan sudah selesai.'
-                  : 'Nomor resi akan muncul di sini setelah paket dikirim admin.'}
+                  : `Nomor resi akan muncul di sini setelah paket dikirim admin.${order.shipping_service ? ` Pengiriman dipilih: ${order.shipping_service}.` : ''}`}
               </p>
             )}
           </section>

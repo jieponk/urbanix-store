@@ -15,6 +15,7 @@ type Invoice = {
   shipping_city: string;
   shipping_province: string;
   shipping_courier: string;
+  shipping_service?: string;
   tracking_number: string;
   shipping_cost: string | null;
   payment_method: 'MIDTRANS' | 'WHATSAPP' | '';
@@ -135,7 +136,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">Pengiriman</p>
-              <p className="mt-1 text-[#4b5563]">Kurir: <b className="text-[#1c2030]">{o.shipping_courier || 'Dikonfirmasi admin'}</b></p>
+              <p className="mt-1 text-[#4b5563]">Kurir: <b className="text-[#1c2030]">{o.shipping_courier || o.shipping_service || 'Dikonfirmasi admin'}</b></p>
               <p className="break-all text-[#4b5563]">No. resi: <b className="text-[#1c2030]">{o.tracking_number || '-'}</b></p>
             </div>
           </section>

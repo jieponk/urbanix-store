@@ -2,6 +2,8 @@ import re
 
 from rest_framework import serializers
 
+from .shipping import SHIPPING_CHOICES
+
 PHONE_RE = re.compile(r"^(\+62|62|0)8[0-9]{7,12}$")
 
 
@@ -33,6 +35,10 @@ class CustomerSerializer(serializers.Serializer):
 
 
 class ShippingSerializer(serializers.Serializer):
+    service = serializers.ChoiceField(
+        choices=SHIPPING_CHOICES, required=False, allow_blank=True, default="",
+        error_messages={"invalid_choice": "Pilihan pengiriman tidak dikenal."},
+    )
     address = serializers.CharField(max_length=500)
     city = serializers.CharField(max_length=100)
     province = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")

@@ -20,7 +20,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
   useEffect(() => {
     if (!data) return;
     setForm({
-      shipping_courier: data.shipping_courier || '',
+      shipping_courier: data.shipping_courier || data.shipping_service || '',
       tracking_number: data.tracking_number || '',
       shipping_cost: data.shipping_cost !== null && data.shipping_cost !== undefined ? String(data.shipping_cost) : '',
       admin_note: data.admin_note || '',
@@ -126,7 +126,12 @@ export default function OrderDetailPage({ params }: { params: { number: string }
               className="grid gap-3 sm:grid-cols-3"
               onSubmit={(e) => { e.preventDefault(); save({ ...form, shipping_cost: form.shipping_cost === '' ? null : form.shipping_cost }); }}
             >
-              <Field label="Kurir"><input className={inputCls} value={form.shipping_courier} onChange={(e) => setForm({ ...form, shipping_courier: e.target.value })} placeholder="JNE / J&T / SiCepat" /></Field>
+              {data.shipping_service && (
+                <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-ink dark:bg-brand-500/10">
+                  Pilihan pembeli: <b>{data.shipping_service}</b>
+                </p>
+              )}
+              <Field label="Kurir"><input className={inputCls} value={form.shipping_courier} onChange={(e) => setForm({ ...form, shipping_courier: e.target.value })} placeholder="JNE Reguler / J&T Cargo / GoSend" /></Field>
               <Field label="No. resi"><input className={inputCls} value={form.tracking_number} onChange={(e) => setForm({ ...form, tracking_number: e.target.value })} /></Field>
               <Field label="Ongkir (Rp)"><input className={inputCls} inputMode="numeric" value={form.shipping_cost} onChange={(e) => setForm({ ...form, shipping_cost: e.target.value })} placeholder="mis. 25000" /></Field>
               <Field label="Catatan admin (tidak terlihat pembeli)" className="sm:col-span-3">

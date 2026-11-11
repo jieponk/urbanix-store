@@ -2,6 +2,8 @@
 import re
 
 from django.conf import settings
+
+from .shipping import shipping_label
 from decimal import Decimal
 
 from django.db.models import Case, IntegerField, Value, When
@@ -167,6 +169,7 @@ def order_detail(request, order_number):
             "shipping_city": order.shipping_city,
             "shipping_province": order.shipping_province,
             "shipping_courier": order.shipping_courier,
+            "shipping_service": shipping_label(order.shipping_service),
             "tracking_number": order.tracking_number,
             "shipping_cost": str(order.shipping_cost) if order.shipping_cost is not None else None,
             "updated_at": order.updated_at,

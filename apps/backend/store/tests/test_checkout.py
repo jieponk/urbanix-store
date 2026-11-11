@@ -463,3 +463,25 @@ class OrderEmailFlowTests(_TestCase):
         self.assertIn("JNE123", _mail.outbox[0].body)
         api.patch(url, {"admin_note": "cek"}, format="json")                     # tidak terkirim ulang
         self.assertEqual(len(_mail.outbox), 1)
+
+
+class ShippingChoiceTests(CheckoutTests):
+    """Pilihan jasa kirim di checkout (subclass agar memakai data produk CheckoutTests)."""
+
+    def test_service_saved_and_in_whatsapp(self):
+        from urllib.parse import unquote
+        from store.models import Order
+        body = self.body("WHATSAPP")
+        body["shipping"]["service"] = "jne_reg"
+        r = self.api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(Order.objects.get(order_number=r.data["order_number"]).shipping_service, "jne_reg")
+        self.assertIn("Pengiriman: JNE Reguler", unquote(r.data["whatsapp_url"]))
+        d = self.api.get(f"/api/v1/checkout/orders/{r.data['order_number']}/")
+        self.assertEqual(d.data["shipping_service"], "JNE Reguler")
+
+    def test_unknown_service_rejected(self):
+        body = self.body("WHATSAPP", idempotency_key="x-salah")
+        body["shipping"]["service"] = "kapal_laut"
+        r = self.api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 400)

@@ -24,6 +24,7 @@ from django.utils import timezone
 
 from . import vouchers as voucher_engine
 from .pricing import prefetch_running_promos, price_info
+from .shipping import shipping_label
 from .models import (
     AuditLog,
     Order,
@@ -282,6 +283,8 @@ def whatsapp_message(order: Order) -> str:
             if p
         )
     )
+    if order.shipping_service:
+        lines.append(f"Pengiriman: {shipping_label(order.shipping_service)} (mohon info ongkirnya)")
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
     lines.append(f"Cek status & invoice: {frontend_url('/pesanan/' + order.order_number)}")
@@ -462,6 +465,7 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         shipping_city=shipping["city"],
         shipping_province=shipping.get("province", ""),
         shipping_postal_code=shipping.get("postal_code", ""),
+        shipping_service=shipping.get("service", ""),
         notes=data.get("notes", ""),
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),

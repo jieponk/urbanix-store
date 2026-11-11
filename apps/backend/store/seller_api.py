@@ -28,6 +28,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
+from .shipping import shipping_label
 from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation
 from .pricing import prefetch_running_promos, price_info
 from .serializers import ProductSerializer
@@ -334,6 +335,7 @@ def _order_detail(o: Order):
         "discount_note": o.discount_note,
         "shipping_discount_max": rupiah(o.shipping_discount_max),
         "shipping_courier": o.shipping_courier,
+        "shipping_service": shipping_label(o.shipping_service),
         "shipping_cost": rupiah(o.shipping_cost) if o.shipping_cost is not None else None,
         "admin_note": o.admin_note,
         "stock_reserved": o.stock_reserved,

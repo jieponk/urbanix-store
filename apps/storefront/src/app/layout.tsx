@@ -1,6 +1,7 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
+import BrandMarquee, { brandsFromProducts } from '@/components/BrandMarquee';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { themeScript } from '@/components/ThemeToggle';
@@ -77,7 +78,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               whatsappDiscount={Number(settings?.whatsapp_discount_percent) || 0}
             />
           }
-          footer={<Footer categories={categories} settings={settings} />}
+          footer={
+            <>
+              <BrandMarquee brands={brandsFromProducts(products)} />
+              <Footer categories={categories} settings={settings} />
+            </>
+          }
         >
           {children}
         </ShopChrome>

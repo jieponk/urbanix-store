@@ -4,6 +4,9 @@ import type { Category, StoreSettings } from '@/lib/api';
 import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
+import CourierBadge from '@/components/CourierBadge';
+import { courierLogos } from '@/lib/courierLogos';
+import { COURIERS } from '@/lib/shipping';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -20,6 +23,7 @@ export default function Footer({
 }) {
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
+  const logos = courierLogos();
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -126,6 +130,26 @@ export default function Footer({
                     {method.name}
                   </span>
                 )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Jasa pengiriman */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="text-sm font-bold text-white">Jasa pengiriman</h2>
+            <Link href="/syarat-ketentuan#pengiriman" className="text-xs hover:text-sun-400">
+              Ongkir sesuai tarif resmi ekspedisi · Detail
+            </Link>
+          </div>
+          <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {COURIERS.map((c) => (
+              <li key={c.key} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
+                <CourierBadge courier={c.key} logo={logos[c.key]} />
+                <span className="min-w-0 text-xs leading-5 text-white/80">{c.services.join(' · ')}</span>
               </li>
             ))}
           </ul>

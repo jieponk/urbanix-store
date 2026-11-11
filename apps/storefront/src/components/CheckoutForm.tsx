@@ -9,6 +9,8 @@ import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
 import { productImg } from '@/lib/img';
 import { rememberOrder } from '@/lib/recentOrders';
+import { SHIPPING_GROUPS, type CourierKey } from '@/lib/shipping';
+import CourierBadge from '@/components/CourierBadge';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -72,6 +74,7 @@ const EMPTY_FORM = {
   city: '',
   province: '',
   postal_code: '',
+  service: '',
   notes: '',
 };
 type FormState = typeof EMPTY_FORM;
@@ -113,7 +116,7 @@ function parseErrors(data: Record<string, unknown>): { fields: FieldErrors; gene
   return { fields, general };
 }
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Partial<Record<CourierKey, string>> }) {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[] | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -246,6 +249,7 @@ export default function CheckoutForm() {
     if (form.address.trim().length < 10) e.address = 'Tulis alamat lengkap (jalan, nomor, RT/RW, kelurahan).';
     if (!form.city.trim()) e.city = 'Kota/kabupaten wajib diisi.';
     if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = 'Kode pos harus 5 angka.';
+    if (!form.service) e.service = 'Pilih jasa pengiriman.';
     return e;
   }
 
@@ -280,6 +284,7 @@ export default function CheckoutForm() {
               city: form.city,
               province: form.province,
               postal_code: form.postal_code,
+              service: form.service,
             },
             notes: form.notes,
             voucher_codes: appliedCodes,
@@ -587,7 +592,47 @@ export default function CheckoutForm() {
               </div>
             </Section>
 
-            <Section title="5. Catatan untuk penjual (opsional)">
+            <Section title="5. Pilih pengiriman">
+              <div role="radiogroup" aria-label="Jasa pengiriman" className="space-y-5">
+                {SHIPPING_GROUPS.map((group) => (
+                  <div key={group.name}>
+                    <p className="text-sm font-extrabold text-ink">
+                      {group.name} <span className="font-normal text-slate-500">· {group.note}</span>
+                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {group.options.map((o) => {
+                        const on = form.service === o.code;
+                        return (
+                          <label
+                            key={o.code}
+                            className={`flex cursor-pointer items-center gap-3 rounded-xl p-3 ring-1 transition ${
+                              on ? 'bg-brand-50 ring-2 ring-brand-600 dark:bg-brand-500/10' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="service"
+                              value={o.code}
+                              checked={on}
+                              onChange={() => update('service', o.code)}
+                              className="h-4 w-4 accent-[#cf4309]"
+                            />
+                            <CourierBadge courier={o.courier} logo={courierLogos[o.courier]} />
+                            <span className="text-sm font-bold text-ink">{o.short}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {errors.service && <p className="mt-3 text-sm font-semibold text-red-600">{errors.service}</p>}
+              <p className="mt-4 text-xs text-slate-500">
+                Ongkir mengikuti tarif resmi ekspedisi dan dikonfirmasi admin lewat WhatsApp sebelum pembayaran.
+              </p>
+            </Section>
+
+            <Section title="6. Catatan untuk penjual (opsional)">
               <Field label="Catatan" error={errors.notes}>
                 <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} rows={3} maxLength={1000} placeholder="Contoh: warna hitam, tolong dibungkus bubble wrap tebal" className={inputCls(errors.notes)} />
               </Field>

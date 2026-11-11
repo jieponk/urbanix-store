@@ -280,6 +280,10 @@ class Order(models.Model):
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     shipping_address = models.TextField()
+    shipping_service = models.CharField(
+        "Pilihan pengiriman pembeli", max_length=30, blank=True,
+        help_text="Dipilih pembeli saat checkout (mis. jne_reg). Ongkir tetap dikonfirmasi admin.",
+    )
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
     tracking_number = models.CharField("No. resi", max_length=80, blank=True)
     shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)
