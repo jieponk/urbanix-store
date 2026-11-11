@@ -149,7 +149,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           </li>
           <li>
             <b className="block text-ink">Pengiriman</b>
-            Dikirim maks. {siteConfig.legal.shipProcessing} setelah bayar, ke {siteConfig.legal.shipArea}.{' '}
+            Reguler & kargo (JNE/J&T), instan (GoSend/Grab). Dikirim maks. {siteConfig.legal.shipProcessing} setelah bayar.{' '}
             <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">Detail</Link>
           </li>
           <li>

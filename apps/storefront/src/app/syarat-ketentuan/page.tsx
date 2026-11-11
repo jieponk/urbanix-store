@@ -111,7 +111,17 @@ export default function TermsPage() {
                 Bila pesanan belum dikirim melewati batas tersebut, pembeli boleh membatalkan pesanan dan dana dikembalikan
                 penuh maksimal {legal.refundTime}.
               </li>
-              <li>Ongkos kirim mengikuti tarif ekspedisi ke alamat tujuan dan dikonfirmasi admin sebelum pembayaran.</li>
+              <li>
+                Pilihan pengiriman, dengan ongkos kirim mengikuti <b>tarif resmi</b> masing-masing ekspedisi ke alamat tujuan:
+                <ul className="mt-2">
+                  {legal.shippingOptions.map((o) => (
+                    <li key={o.name}>
+                      <b>{o.name}</b> ({o.couriers}): {o.note}.
+                    </li>
+                  ))}
+                </ul>
+              </li>
+              <li>Total ongkos kirim dikonfirmasi admin sebelum pembayaran, tanpa biaya tambahan tersembunyi.</li>
               <li>Estimasi waktu sampai mengikuti layanan ekspedisi yang dipilih.</li>
               <li>
                 Untuk produk bernilai tinggi kami sarankan asuransi pengiriman. Kehilangan/kerusakan selama pengiriman

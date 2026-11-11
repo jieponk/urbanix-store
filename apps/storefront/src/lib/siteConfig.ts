@@ -24,6 +24,12 @@ export const siteConfig = {
     // Ketentuan pengiriman & retur (gaya Shopee). Ubah di sini bila kebijakan berubah.
     shipProcessing: '2 hari kerja', // masa pengemasan (standar Shopee): dikirim maks. sekian setelah pembayaran dikonfirmasi
     workDays: 'Senin–Sabtu, kecuali libur nasional',
+    // Jenis pengiriman; ongkir mengikuti tarif resmi masing-masing ekspedisi.
+    shippingOptions: [
+      { name: 'Reguler', couriers: 'JNE / J&T Express', note: 'ke seluruh Indonesia' },
+      { name: 'Kargo', couriers: 'JNE / J&T Cargo', note: 'untuk paket besar atau berat' },
+      { name: 'Instan', couriers: 'GoSend / GrabExpress', note: 'untuk alamat yang terjangkau layanan instan dari Jakarta' },
+    ],
     shipArea: 'seluruh Indonesia',
     reviewTime: '1×24 jam hari kerja', // admin memeriksa pengajuan retur maks. sekian
     refundTime: '7 hari kerja', // dana dikembalikan maks. sekian setelah barang retur diterima & dicek
