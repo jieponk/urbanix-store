@@ -9,7 +9,7 @@ import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
 import { productImg } from '@/lib/img';
 import { rememberOrder } from '@/lib/recentOrders';
-import { SHIPPING_GROUPS, type CourierKey } from '@/lib/shipping';
+import { SHIPPING_GROUPS, type LogoKey } from '@/lib/shipping';
 import CourierBadge from '@/components/CourierBadge';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
@@ -116,7 +116,7 @@ function parseErrors(data: Record<string, unknown>): { fields: FieldErrors; gene
   return { fields, general };
 }
 
-export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Partial<Record<CourierKey, string>> }) {
+export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Partial<Record<LogoKey, string>> }) {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[] | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -617,7 +617,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                               onChange={() => update('service', o.code)}
                               className="h-4 w-4 accent-[#cf4309]"
                             />
-                            <CourierBadge courier={o.courier} logo={courierLogos[o.courier]} />
+                            <CourierBadge courier={o.courier} logo={courierLogos[o.logo]} label={o.label} />
                             <span className="text-sm font-bold text-ink">{o.short}</span>
                           </label>
                         );

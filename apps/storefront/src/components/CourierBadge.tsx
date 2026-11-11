@@ -8,13 +8,13 @@ const TEXT_STYLE: Record<CourierKey, string> = {
 };
 
 /** Logo kurir bila file resminya ada; kalau belum, nama kurir dalam huruf tebal. */
-export default function CourierBadge({ courier, logo, className = '' }: { courier: CourierKey; logo?: string; className?: string }) {
+export default function CourierBadge({ courier, logo, label, size = 'sm', className = '' }: { courier: CourierKey; logo?: string; label?: string; size?: 'sm' | 'lg'; className?: string }) {
   return (
-    <span className={`inline-flex h-8 min-w-[72px] items-center justify-center rounded-lg bg-white px-2.5 ring-1 ring-black/5 ${className}`}>
+    <span className={`inline-flex ${size === 'lg' ? 'h-12 w-full px-3' : 'h-9 min-w-[76px] px-2.5'} items-center justify-center rounded-lg bg-white ring-1 ring-black/5 ${className}`}>
       {logo ? (
-        <img src={logo} alt={courierName(courier)} loading="lazy" width={80} height={24} className="h-5 w-auto max-w-[88px] object-contain" />
+        <img src={logo} alt={label ?? courierName(courier)} loading="lazy" width={80} height={24} className={size === 'lg' ? 'h-8 w-auto max-w-full object-contain' : 'h-6 w-auto max-w-[96px] object-contain'} />
       ) : (
-        <span className={`whitespace-nowrap text-[13px] font-black tracking-tight ${TEXT_STYLE[courier]}`}>{courierName(courier)}</span>
+        <span className={`whitespace-nowrap text-[13px] font-black tracking-tight ${TEXT_STYLE[courier]}`}>{label ?? courierName(courier)}</span>
       )}
     </span>
   );

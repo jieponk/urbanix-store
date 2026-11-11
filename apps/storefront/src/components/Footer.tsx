@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/siteConfig';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 import CourierBadge from '@/components/CourierBadge';
 import { courierLogos } from '@/lib/courierLogos';
-import { COURIERS } from '@/lib/shipping';
+import { SHIPPING_BRANDS } from '@/lib/shipping';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -145,11 +145,11 @@ export default function Footer({
               Ongkir sesuai tarif resmi ekspedisi · Detail
             </Link>
           </div>
-          <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {COURIERS.map((c) => (
-              <li key={c.key} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-                <CourierBadge courier={c.key} logo={logos[c.key]} />
-                <span className="min-w-0 text-xs leading-5 text-white/80">{c.services.join(' · ')}</span>
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {SHIPPING_BRANDS.map((b) => (
+              <li key={b.logo} className="flex flex-col items-center gap-2 rounded-xl bg-white/5 p-3 text-center ring-1 ring-white/10">
+                <CourierBadge courier={b.courier} logo={logos[b.logo]} label={b.name} size="lg" />
+                <span className="text-xs leading-5 text-white/80">{b.services}</span>
               </li>
             ))}
           </ul>
