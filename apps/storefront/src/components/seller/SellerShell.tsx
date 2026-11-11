@@ -98,7 +98,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
                 <Icon size={18} />
                 <span className="flex-1">{item.label}</span>
                 {item.href === '/seller/pesanan' && (me?.new_orders ?? 0) > 0 && (
-                  <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[11px] font-bold text-white">{me?.new_orders}</span>
+                  <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">{me?.new_orders}</span>
                 )}
               </Link>
             );

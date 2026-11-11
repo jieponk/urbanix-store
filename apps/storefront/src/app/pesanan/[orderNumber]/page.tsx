@@ -137,7 +137,7 @@ export default async function OrderPage({
           {order.payment_method === 'MIDTRANS' && order.payment_url && order.payment_status === 'UNPAID' && (
             <a
               href={order.payment_url}
-              className="mt-4 block rounded-xl bg-brand-500 px-5 py-4 text-center font-bold text-white hover:bg-brand-600"
+              className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
             >
               Lanjutkan Pembayaran
             </a>

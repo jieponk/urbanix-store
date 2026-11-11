@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { money, type Category, type Product, type Review, type StoreSettings } from '@/lib/api';
+import { productImg } from '@/lib/img';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -96,7 +97,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                   className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
                   <span className="relative block aspect-square bg-white p-3">
-                    <img src={product.image_url} alt={product.name} loading="lazy" className="h-full w-full object-contain" />
+                    <img src={productImg(product.image_url, 300)} alt={product.name} loading="lazy" className="h-full w-full object-contain" />
                     <span className="absolute left-2 top-2 rounded-lg bg-sale-600 px-2 py-1 text-sm font-extrabold text-white">
                       -{product.discount_percent}%
                     </span>
@@ -105,7 +106,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                     <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{product.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
                     <span className="mt-2 text-base font-extrabold text-sale-600">{money(final)}</span>
                     <span className="text-xs text-slate-400 line-through">{money(normal)}</span>
-                    <span className="mt-auto pt-2 text-xs font-bold text-cobalt-700">Hemat {money(normal - final)}</span>
+                    <span className="mt-auto pt-2 text-xs font-bold text-cobalt-700 dark:text-sky-300">Hemat {money(normal - final)}</span>
                   </span>
                 </Link>
               </li>
@@ -166,7 +167,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
 
 function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
-    <span className="flex gap-0.5" aria-label={`${value} dari 5 bintang`}>
+    <span role="img" className="flex gap-0.5" aria-label={`${value} dari 5 bintang`}>
       {[1, 2, 3, 4, 5].map((i) => (
         <svg key={i} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
           <path

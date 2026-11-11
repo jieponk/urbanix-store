@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { money, type Product } from '@/lib/api';
+import { productImg } from '@/lib/img';
 
 export default function ProductCard({ product }: { product: Product }) {
   const originalPrice = Number(product.price) || 0;
@@ -25,7 +26,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-square overflow-hidden bg-[#f7f7f7] p-3 sm:p-5">
         {product.image_url ? (
           <img
-            src={product.image_url}
+            src={productImg(product.image_url, 450)}
             alt={product.name}
             loading="lazy"
             className="h-full w-full object-contain transition duration-300 group-hover:scale-105"

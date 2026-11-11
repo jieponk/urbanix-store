@@ -100,7 +100,7 @@ export default function LegalPage({
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 block rounded-xl bg-brand-500 px-4 py-2.5 text-center text-sm font-bold hover:brightness-95"
+                  className="mt-4 block rounded-xl bg-brand-600 text-white px-4 py-2.5 text-center text-sm font-bold hover:brightness-95"
                 >
                   Chat admin
                 </a>
@@ -149,7 +149,7 @@ export default function LegalPage({
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 rounded-xl bg-brand-500 px-6 py-3 text-center font-bold text-white hover:brightness-95"
+                  className="shrink-0 rounded-xl bg-brand-600 px-6 py-3 text-center font-bold text-white hover:brightness-95"
                 >
                   Chat admin via WhatsApp
                 </a>

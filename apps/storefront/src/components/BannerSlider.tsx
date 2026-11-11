@@ -58,6 +58,9 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 src={slide.src}
                 alt={slide.alt}
                 loading={i === 0 ? 'eager' : 'lazy'}
+                // Banner pertama = gambar LCP: minta browser mengunduhnya paling dulu.
+                {...(i === 0 ? { fetchpriority: 'high' } : {})}
+                decoding={i === 0 ? 'sync' : 'async'}
                 className="h-full w-full object-cover"
               />
             </picture>
@@ -127,7 +130,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
             </svg>
           </button>
 
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
+          <div className="absolute inset-x-0 bottom-1 flex justify-center">
             {slides.map((slide, i) => (
               <button
                 key={slide.src}
@@ -135,10 +138,14 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 onClick={() => setIndex(i)}
                 aria-label={`Tampilkan banner ${i + 1}`}
                 aria-current={i === index}
-                className={`h-2 rounded-full transition-all ${
-                  i === index ? 'w-6 bg-surface' : 'w-2 bg-surface/50'
-                }`}
-              />
+                className="flex h-7 min-w-[28px] items-center justify-center px-1"
+              >
+                <span
+                  className={`block h-2 rounded-full transition-all ${
+                    i === index ? 'w-6 bg-surface' : 'w-2 bg-surface/50'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </>

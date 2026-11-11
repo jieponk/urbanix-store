@@ -42,7 +42,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
       {/* Potongan tiket */}
       <div
         className={`relative flex w-[74px] shrink-0 flex-col items-center justify-center gap-1 px-2 text-center ${
-          shipping ? 'bg-emerald-600 text-white' : 'bg-sale-600 text-white'
+          shipping ? 'bg-emerald-700 text-white' : 'bg-sale-600 text-white'
         }`}
       >
         <TicketIcon shipping={shipping} />
@@ -57,7 +57,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
           <button
             type="button"
             onClick={() => setShowTerms((v) => !v)}
-            className="text-[11px] font-semibold text-slate-500 underline-offset-2 hover:text-ink hover:underline"
+            className="-my-2 min-w-[24px] py-2 text-[11px] font-semibold text-slate-500 underline-offset-2 hover:text-ink hover:underline"
             aria-expanded={showTerms}
           >
             S&K{ends ? ` · s/d ${ends}` : ''}

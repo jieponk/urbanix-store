@@ -15,8 +15,8 @@ module.exports = {
           50: '#fff4ed',
           100: '#ffe4d3',
           500: '#ff5b14',
-          600: '#e64a0a',
-          700: '#bf3a06',
+          600: '#cf4309', // tombol: kontras teks putih ≥ 4.5
+          700: '#b03905',
           dark: '#1b2559',
           accent: '#ff5b14',
         },

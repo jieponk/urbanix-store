@@ -33,7 +33,7 @@ export default function ReviewsAdminPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <b className="text-ink">{r.customer_name}</b>
-                      <span className="text-amber-500" aria-label={`${r.rating} bintang`}>{'★'.repeat(r.rating)}<span className="text-slate-300">{'★'.repeat(5 - r.rating)}</span></span>
+                      <span role="img" className="text-amber-500" aria-label={`${r.rating} bintang`}>{'★'.repeat(r.rating)}<span className="text-slate-300">{'★'.repeat(5 - r.rating)}</span></span>
                       <span className="text-xs text-slate-500">{fmtDate(r.date)} · {r.source}</span>
                       {!r.is_published && <Badge tone="gray">Disembunyikan</Badge>}
                     </div>

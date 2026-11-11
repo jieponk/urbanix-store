@@ -7,6 +7,7 @@ import { money } from '@/lib/api';
 import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
 import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
+import { productImg } from '@/lib/img';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -472,7 +473,7 @@ export default function CheckoutForm() {
                       >
                         <span
                           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white ${
-                            v.type === 'FREE_SHIPPING' ? 'bg-emerald-600' : 'bg-sale-600'
+                            v.type === 'FREE_SHIPPING' ? 'bg-emerald-700' : 'bg-sale-600'
                           }`}
                           aria-hidden="true"
                         >
@@ -486,7 +487,7 @@ export default function CheckoutForm() {
                         </span>
                         <span
                           className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                            applied ? 'bg-emerald-600 text-white' : selected ? 'bg-ink text-surface' : 'bg-mist text-ink'
+                            applied ? 'bg-emerald-700 text-white' : selected ? 'bg-ink text-surface' : 'bg-mist text-ink'
                           }`}
                         >
                           {applied ? 'Terpakai' : selected ? 'Dipilih' : 'Pakai'}
@@ -600,7 +601,7 @@ export default function CheckoutForm() {
           {quote.items.map((item) => (
             <li key={`${item.product_id}:${item.variation_id}`} className="flex gap-3 py-3">
               {item.image_url && (
-                <img src={item.image_url} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
+                <img src={productImg(item.image_url, 120)} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
               )}
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm text-slate-800">{item.name}</p>
@@ -676,7 +677,7 @@ export default function CheckoutForm() {
         <button
           type="submit"
           disabled={!method || submitting || blocked}
-          className="mt-5 w-full rounded-xl bg-brand-500 px-5 py-4 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? 'Memproses…'

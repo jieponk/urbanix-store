@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
+import { productImg } from '@/lib/img';
 
 type Hit = {
   id: number;
@@ -126,7 +127,7 @@ export default function SearchBox({ className }: { className: string }) {
           className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 md:text-sm"
         />
         {loading && (
-          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" aria-label="Mencari" />
+          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" role="status" aria-label="Mencari" />
         )}
       </label>
 
@@ -148,7 +149,7 @@ export default function SearchBox({ className }: { className: string }) {
                       className={`flex items-center gap-3 px-4 py-2.5 ${i === active ? 'bg-mist' : ''}`}
                     >
                       <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#f7f7f7] p-1">
-                        {h.image && <img src={h.image} alt="" className="h-full w-full object-contain" />}
+                        {h.image && <img src={productImg(h.image, 120)} alt="" className="h-full w-full object-contain" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="line-clamp-1 text-sm font-semibold text-ink">{h.name}</span>

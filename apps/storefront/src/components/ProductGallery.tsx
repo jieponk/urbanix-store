@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
+import { productImg } from '@/lib/img';
 
 type Props = {
   images: string[];
@@ -56,8 +57,9 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
       >
         <img
           key={images[index]}
-          src={images[index]}
+          src={productImg(images[index], 800)}
           alt={`${alt} - gambar ${index + 1}`}
+          {...(index === 0 ? { fetchpriority: 'high' } : {})}
           className="h-full w-full object-contain"
         />
 
@@ -105,7 +107,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
                 i === index ? 'border-ink' : 'border-slate-200 opacity-70 hover:opacity-100'
               }`}
             >
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-contain" />
+              <img src={productImg(src, 160)} alt="" loading="lazy" className="h-full w-full object-contain" />
             </button>
           ))}
         </div>

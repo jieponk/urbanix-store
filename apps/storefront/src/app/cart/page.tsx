@@ -9,6 +9,7 @@ import {
   removeFromCart,
   updateCartQuantity,
 } from '@/lib/cart';
+import { productImg } from '@/lib/img';
 
 const money = (value: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -69,7 +70,7 @@ export default function CartPage() {
                 <div key={item.id} className="flex gap-3 py-4 sm:gap-4 sm:py-5">
                   {item.image_url ? (
                     <img
-                      src={item.image_url}
+                      src={productImg(item.image_url, 200)}
                       alt={item.name}
                       className="h-20 w-20 shrink-0 rounded-xl border border-slate-200 bg-white object-contain sm:h-24 sm:w-24"
                     />
@@ -148,7 +149,7 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="mt-5 block rounded-xl bg-brand-500 px-5 py-4 text-center font-bold text-white hover:bg-brand-600"
+                className="mt-5 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
               >
                 Lanjut ke Checkout
               </Link>

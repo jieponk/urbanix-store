@@ -84,7 +84,7 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
         <p className="text-sm text-white/80">{count} produk ikut promo</p>
         <Link
           href="/produk?promo=1"
-          className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600"
+          className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
         >
           Lihat semua promo
         </Link>

@@ -34,7 +34,7 @@ export default function CartLink() {
       </svg>
       <span className="hidden sm:inline">Keranjang</span>
       {count > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[11px] font-bold text-white sm:static sm:h-auto sm:py-0.5">
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white sm:static sm:h-auto sm:py-0.5">
           {count}
         </span>
       )}

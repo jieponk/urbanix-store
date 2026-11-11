@@ -2,6 +2,7 @@ import Link from 'next/link';
 import FeatureIcon from '@/components/FeatureIcon';
 import { getActiveProducts, getCategories, getStoreSettings } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
+import { productImg } from '@/lib/img';
 
 export const metadata = {
   title: 'Tentang Kami',
@@ -56,7 +57,7 @@ export default async function AboutPage() {
               transparan dan layanan yang cepat.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/produk" className="rounded-xl bg-brand-500 px-6 py-3 font-bold text-white hover:brightness-95">
+              <Link href="/produk" className="rounded-xl bg-brand-600 px-6 py-3 font-bold text-white hover:brightness-95">
                 Lihat produk
               </Link>
               <a href="#cerita" className="rounded-xl px-6 py-3 font-bold text-white ring-1 ring-white/30 hover:bg-white/10">
@@ -74,7 +75,7 @@ export default async function AboutPage() {
                   className={`group rounded-2xl bg-white p-4 shadow-2xl shadow-black/30 transition hover:-translate-y-1 ${i % 2 === 1 ? 'translate-y-6' : ''}`}
                 >
                   <span className="block aspect-square">
-                    <img src={p.image_url} alt={p.name} className="h-full w-full object-contain transition duration-300 group-hover:scale-105" />
+                    <img src={productImg(p.image_url, 450)} alt={p.name} className="h-full w-full object-contain transition duration-300 group-hover:scale-105" />
                   </span>
                   <span className="mt-2 block truncate text-xs font-bold uppercase tracking-wider text-slate-500">
                     {p.category_name}
@@ -208,7 +209,7 @@ export default async function AboutPage() {
             <p className="mt-2 max-w-xl text-white/75">{legal.address}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/produk" className="rounded-xl bg-brand-500 px-6 py-3 font-bold text-white hover:brightness-95">
+            <Link href="/produk" className="rounded-xl bg-brand-600 px-6 py-3 font-bold text-white hover:brightness-95">
               Mulai belanja
             </Link>
             {whatsapp && (

@@ -199,7 +199,7 @@ export default function ProductBuyButtons({
           type="button"
           onClick={buyNow}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl bg-brand-500 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Beli Sekarang
         </button>
@@ -274,7 +274,7 @@ export default function ProductBuyButtons({
             type="button"
             onClick={buyNow}
             disabled={!hasVariants && !canBuy}
-            className="h-11 shrink-0 rounded-xl bg-brand-500 px-4 text-sm font-bold text-white disabled:opacity-50"
+            className="h-11 shrink-0 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white disabled:opacity-50"
           >
             {!hasVariants && !canBuy ? 'Stok habis' : 'Beli Sekarang'}
           </button>
