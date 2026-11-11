@@ -11,8 +11,16 @@ export default function PrivacyPage() {
   const { legal, contact } = siteConfig;
   return (
     <LegalPage
+      eyebrow="Data pribadi kamu"
       title="Kebijakan Privasi"
+      intro="Bagaimana kami mengumpulkan, memakai, dan melindungi data pribadimu saat berbelanja di urbanix.id, sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi."
       updated={legal.updated}
+      highlights={[
+        { icon: 'list', title: 'Data seperlunya', text: 'Hanya data yang dibutuhkan untuk memproses pesananmu.' },
+        { icon: 'lock', title: 'Tidak dijual', text: 'Data pribadimu tidak pernah kami jual ke pihak lain.' },
+        { icon: 'shield', title: 'Sesuai UU PDP', text: 'Dikelola mengikuti UU Pelindungan Data Pribadi.' },
+        { icon: 'chat', title: 'Hakmu terjamin', text: 'Kamu bisa minta akses, koreksi, atau penghapusan datamu.' },
+      ]}
       sections={[
         {
           id: 'pengantar',

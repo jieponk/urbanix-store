@@ -12,8 +12,16 @@ export default function TermsPage() {
   const wa = contact.whatsappDisplay;
   return (
     <LegalPage
+      eyebrow="Aturan belanja"
       title="Syarat & Ketentuan"
+      intro="Aturan main belanja di Urbanix Store, dari pemesanan, pembayaran, dan voucher sampai pengiriman, retur, dan garansi. Dibuat ringkas supaya mudah dipahami."
       updated={legal.updated}
+      highlights={[
+        { icon: 'shield', title: 'Produk original', text: 'Semua produk original dengan garansi sesuai ketentuan resmi.' },
+        { icon: 'tag', title: 'Harga termasuk PPN', text: 'Harga sudah termasuk PPN, belum termasuk ongkos kirim.' },
+        { icon: 'lock', title: 'Rekening resmi PT', text: `Bayar hanya ke rekening atas nama ${legal.company}.` },
+        { icon: 'box', title: `Retur ${legal.returnWindow}`, text: 'Laporkan kendala barang dengan video unboxing.' },
+      ]}
       sections={[
         {
           id: 'umum',

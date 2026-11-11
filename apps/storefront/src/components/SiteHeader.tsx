@@ -3,6 +3,7 @@ import BrandLogo from '@/components/BrandLogo';
 import CartLink from '@/components/CartLink';
 import CategoryMenu from '@/components/CategoryMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import SearchBox from '@/components/SearchBox';
 import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 
@@ -19,23 +20,6 @@ function endDate(iso: string | null) {
   return Number.isNaN(date.getTime())
     ? ''
     : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', timeZone: 'Asia/Jakarta' });
-}
-
-function SearchForm({ className }: { className: string }) {
-  return (
-    <form action="/produk" method="GET" role="search" className={className}>
-      <label className="flex w-full items-center gap-2 rounded-full border border-slate-200 bg-mist px-3.5 py-2 focus-within:border-slate-900 focus-within:bg-surface md:px-4 md:py-2.5">
-        <SearchIcon />
-        <input
-          type="search"
-          name="q"
-          placeholder="Cari kamera, lensa, mic…"
-          aria-label="Cari produk"
-          className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 md:text-sm"
-        />
-      </label>
-    </form>
-  );
 }
 
 export default function SiteHeader({ categories, promo, whatsappNumber, whatsappDiscount }: Props) {
@@ -89,7 +73,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
               Berita
             </Link>
           </div>
-          <SearchForm className="hidden flex-1 md:flex" />
+          <SearchBox className="hidden flex-1 md:flex" />
 
           <nav className="ml-auto flex items-center gap-0.5 sm:gap-1 md:ml-0">
             {whatsappNumber && (
@@ -118,19 +102,10 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         {/* HP: kategori + pencarian di baris kedua */}
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 pb-2.5 sm:px-6 md:hidden">
           <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
-          <SearchForm className="flex min-w-0 flex-1" />
+          <SearchBox className="flex min-w-0 flex-1" />
         </div>
       </div>
     </header>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true" className="shrink-0 text-slate-500">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
   );
 }
 

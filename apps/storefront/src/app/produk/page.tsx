@@ -42,9 +42,13 @@ export default async function CatalogPage({
 
     const matchesSearch =
       !searchQuery ||
-      (product.name || '').toLowerCase().includes(searchQuery) ||
-      (product.sku || '').toLowerCase().includes(searchQuery) ||
-      (product.category_name || '').toLowerCase().includes(searchQuery);
+      searchQuery
+        .split(/\s+/)
+        .every((word) =>
+          `${product.name || ''} ${product.sku || ''} ${product.category_name || ''}`
+            .toLowerCase()
+            .includes(word)
+        );
 
     const matchesPromo = !promoOnly || (product.discount_percent ?? 0) > 0;
 
