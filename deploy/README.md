@@ -90,3 +90,19 @@ nano ~/urbanix/.env                              # rahasia & kunci (DeepL, Midtr
 ```
 
 `~/urbanix/.env` berisi kunci rahasia: jangan dibagikan & jangan masuk GitHub.
+
+## Email konfirmasi pesanan (opsional)
+
+Pembeli yang mengisi email saat checkout otomatis menerima email berisi nomor pesanan + link status & invoice,
+asal SMTP diisi di `~/urbanix/.env` server:
+
+```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=urbanixstore@gmail.com
+EMAIL_HOST_PASSWORD=<App Password 16 huruf>
+EMAIL_FROM=Urbanix Store <urbanixstore@gmail.com>
+```
+
+App Password Gmail: aktifkan Verifikasi 2 Langkah di akun Google, lalu buat di myaccount.google.com/apppasswords.
+Setelah mengisi, jalankan deploy lagi. Kosongkan EMAIL_HOST untuk mematikan.

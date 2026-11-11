@@ -1,5 +1,7 @@
 """Endpoint checkout tamu. Tidak memakai autentikasi/CSRF karena dipanggil dari proxy Next.js."""
 import re
+
+from django.conf import settings
 from decimal import Decimal
 
 from django.db.models import Case, IntegerField, Value, When
@@ -124,6 +126,13 @@ def checkout(request):
 checkout.cls.throttle_scope = "checkout"
 
 
+def _mask_email(email: str) -> str:
+    if not email or "@" not in email:
+        return ""
+    user, domain = email.split("@", 1)
+    return f"{user[:2]}{'*' * max(1, len(user) - 2)}@{domain}"
+
+
 def _mask_phone(phone: str) -> str:
     digits = "".join(ch for ch in (phone or "") if ch.isdigit())
     if len(digits) < 7:
@@ -153,6 +162,8 @@ def order_detail(request, order_number):
             "shipping_discount_max": str(order.shipping_discount_max),
             # Untuk invoice: hanya kota/provinsi & HP disamarkan (link pesanan bisa diteruskan ke orang lain).
             "customer_phone_masked": _mask_phone(order.customer_phone),
+            "customer_email_masked": _mask_email(order.customer_email),
+            "email_enabled": bool(settings.ORDER_EMAIL_ENABLED),
             "shipping_city": order.shipping_city,
             "shipping_province": order.shipping_province,
             "shipping_courier": order.shipping_courier,

@@ -128,3 +128,18 @@ MIDTRANS_IS_PRODUCTION = os.environ.get('MIDTRANS_IS_PRODUCTION', 'False') == 'T
 
 # Alamat storefront (dipakai untuk tombol "kembali ke toko" setelah bayar di Midtrans).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+# Email pesanan ke pembeli (opsional). Kosongkan EMAIL_HOST untuk mematikan.
+# Contoh Gmail: EMAIL_HOST=smtp.gmail.com, EMAIL_PORT=587, EMAIL_HOST_USER=urbanixstore@gmail.com,
+# EMAIL_HOST_PASSWORD=<App Password 16 huruf dari akun Google>.
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587') or 587)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', '') or (
+    f'Urbanix Store <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Urbanix Store <noreply@urbanix.id>'
+)
+ORDER_EMAIL_ENABLED = bool(EMAIL_HOST)
+ORDER_EMAIL_SYNC = False  # True di tes: kirim langsung, bukan di thread

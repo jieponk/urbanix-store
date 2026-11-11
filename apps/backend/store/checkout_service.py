@@ -284,6 +284,7 @@ def whatsapp_message(order: Order) -> str:
     )
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
+    lines.append(f"Cek status & invoice: {frontend_url('/pesanan/' + order.order_number)}")
     if order.shipping_discount_max:
         lines.append(f"(Mohon potong ongkir s/d {money_text(order.shipping_discount_max)} sesuai voucher.)")
     lines += ["", "Mohon info total dengan ongkir dan cara pembayarannya. Terima kasih!"]
@@ -434,6 +435,9 @@ def place_order(data: dict) -> dict:
         order.payment_url = snap.get("redirect_url", "")
         order.save(update_fields=["snap_token", "payment_url"])
 
+    from .emails import notify_order_created  # impor di sini: emails.py mengimpor modul ini
+
+    notify_order_created(order)
     return order_result(order, store)
 
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CopyText from '@/components/CopyText';
 import { API, money } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,11 @@ type OrderDetail = {
   shipping_discount_max?: string;
   tax_note?: string;
   shipping_note: string;
+  shipping_courier?: string;
+  tracking_number?: string;
+  shipping_cost?: string | null;
+  customer_email_masked?: string;
+  email_enabled?: boolean;
   payment_url: string;
   whatsapp_url: string;
   items: {
@@ -73,6 +79,13 @@ function statusInfo(order: OrderDetail, fromMidtrans: boolean) {
   }
 }
 
+const STEPS = [
+  { key: 'PENDING', label: 'Dipesan' },
+  { key: 'PROCESSING', label: 'Diproses' },
+  { key: 'SHIPPED', label: 'Dikirim' },
+  { key: 'COMPLETED', label: 'Selesai' },
+];
+
 const TONES: Record<string, string> = {
   green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
   amber: 'border-amber-200 bg-amber-50 text-amber-900',
@@ -114,11 +127,21 @@ export default async function OrderPage({
   return (
     <div className="px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-2xl space-y-5">
-        <div>
+        <div className="rounded-2xl border border-dashed border-brand-500 bg-surface p-5">
           <p className="text-sm text-slate-500">Nomor pesanan</p>
-          <h1 className="break-all text-xl font-black text-slate-900 sm:text-2xl">{order.order_number}</h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <div className="mt-1 flex items-center gap-3">
+            <h1 className="min-w-0 flex-1 break-all font-mono text-xl font-black text-ink sm:text-2xl">{order.order_number}</h1>
+            <CopyText text={order.order_number} remember />
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
             {created} · a.n. {order.customer_name}
+          </p>
+          <p className="mt-3 text-xs leading-5 text-slate-600">
+            Simpan nomor ini untuk <Link href="/cek-pesanan" className="font-bold text-ink underline">cek pesanan</Link> dan
+            invoice.
+            {order.email_enabled && order.customer_email_masked
+              ? ` Salinannya juga kami kirim ke email ${order.customer_email_masked}.`
+              : ' Nomor ini juga tercantum di chat WhatsApp pesananmu.'}
           </p>
         </div>
 
@@ -143,6 +166,62 @@ export default async function OrderPage({
             </a>
           )}
         </div>
+
+        {order.status !== 'CANCELLED' && (
+          <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+            <h2 className="font-black text-ink">Lacak pesanan</h2>
+            <ol className="mt-4 grid grid-cols-4 gap-1 text-center text-[11px] font-semibold sm:text-xs">
+              {STEPS.map((step, i) => {
+                const current = Math.max(0, STEPS.findIndex((x) => x.key === order.status));
+                const done = i <= current;
+                return (
+                  <li key={step.key} className="relative">
+                    {i > 0 && (
+                      <span aria-hidden="true" className={`absolute right-1/2 top-3.5 h-0.5 w-full ${i <= current ? 'bg-emerald-600' : 'bg-slate-200'}`} />
+                    )}
+                    <span
+                      className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold ${
+                        done ? 'bg-emerald-700 text-white' : 'bg-mist text-slate-500 ring-1 ring-slate-200'
+                      }`}
+                    >
+                      {done ? '✓' : i + 1}
+                    </span>
+                    <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{step.label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            <div className="mt-5 border-t border-slate-200 pt-4" />
+            {order.tracking_number ? (
+              <div className="space-y-3 text-sm">
+                <p className="text-slate-600">
+                  Kurir: <b className="text-ink">{order.shipping_courier || '-'}</b>
+                </p>
+                <div className="flex items-center gap-3 rounded-xl bg-mist p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-slate-500">No. resi</p>
+                    <p className="break-all font-mono font-bold text-ink">{order.tracking_number}</p>
+                  </div>
+                  <CopyText text={order.tracking_number} label="Salin resi" />
+                </div>
+                <a
+                  href={`https://cekresi.com/?noresi=${encodeURIComponent(order.tracking_number)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block font-bold text-ink underline"
+                >
+                  Lacak paket di cekresi.com →
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">
+                {order.status === 'COMPLETED'
+                  ? 'Pesanan sudah selesai.'
+                  : 'Nomor resi akan muncul di sini setelah paket dikirim admin.'}
+              </p>
+            )}
+          </section>
+        )}
 
         <section className="rounded-2xl border border-slate-200 bg-surface p-5">
           <h2 className="font-black text-slate-900">Rincian</h2>
@@ -206,9 +285,6 @@ export default async function OrderPage({
           </Link>
         )}
 
-        <p className="text-center text-xs text-slate-500">
-          Simpan nomor pesanan ini. Halaman ini bisa dibuka lagi lewat alamat yang sama.
-        </p>
         <Link href="/produk" className="block text-center text-sm font-semibold text-ink hover:underline">
           Lanjut belanja
         </Link>

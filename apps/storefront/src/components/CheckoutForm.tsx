@@ -8,6 +8,7 @@ import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } fro
 import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
 import { productImg } from '@/lib/img';
+import { rememberOrder } from '@/lib/recentOrders';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -312,6 +313,7 @@ export default function CheckoutForm() {
       }
 
       clearCart();
+      rememberOrder(data.order_number);
       if (method === 'MIDTRANS' && data.payment_url) {
         window.location.href = data.payment_url;
         return;

@@ -76,6 +76,14 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           <SearchBox className="hidden flex-1 md:flex" />
 
           <nav className="ml-auto flex items-center gap-0.5 sm:gap-1 md:ml-0">
+            <Link
+              href="/cek-pesanan"
+              aria-label="Cek pesanan"
+              className="flex h-10 items-center gap-2 rounded-full px-2.5 text-sm font-semibold text-ink hover:bg-mist lg:px-3"
+            >
+              <OrderIcon />
+              <span className="hidden lg:inline">Cek pesanan</span>
+            </Link>
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}`}
@@ -106,6 +114,15 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         </div>
       </div>
     </header>
+  );
+}
+
+function OrderIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M21 8 12 3 3 8v8l9 5 9-5V8z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </svg>
   );
 }
 

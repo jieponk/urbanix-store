@@ -246,6 +246,30 @@ class CheckoutTests(TestCase):
         self.assertIsNone(d.data["shipping_cost"])
         self.assertEqual(self.api.get("/api/v1/checkout/orders/URX-TIDAK-ADA/").status_code, 404)
 
+    # ---------------------------------------------------------- email pesanan
+    def test_order_email_sent_when_configured(self):
+        from django.core import mail
+        from django.test import override_settings
+        with override_settings(ORDER_EMAIL_ENABLED=True, ORDER_EMAIL_SYNC=True,
+                               EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+            r = self.api.post("/api/v1/checkout/", self.body("WHATSAPP"), format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, ["budi@contoh.id"])
+        self.assertIn(r.data["order_number"], msg.subject)
+        self.assertIn(f"/pesanan/{r.data['order_number']}/invoice", msg.body)
+
+    def test_order_email_skipped_without_smtp_or_email(self):
+        from django.core import mail
+        r = self.api.post("/api/v1/checkout/", self.body("WHATSAPP"), format="json")
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_whatsapp_message_has_status_link(self):
+        r = self.api.post("/api/v1/checkout/", self.body("WHATSAPP"), format="json")
+        self.assertIn("Cek%20status", r.data["whatsapp_url"].replace("+", "%20"))
+
     # ---------------------------------------------------------- keamanan API produk
     def test_product_api_is_read_only(self):
         r = self.api.delete(f"/api/v1/products/{self.cam.id}/")

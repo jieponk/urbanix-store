@@ -54,6 +54,11 @@ fi
 
 echo "==> Build & jalankan (storefront butuh ±2–4 menit untuk build)"
 cd "$APP/deploy"
+# Kunci email (opsional) disiapkan kosong; isi untuk mengaktifkan email pesanan.
+for K in EMAIL_HOST EMAIL_PORT EMAIL_HOST_USER EMAIL_HOST_PASSWORD EMAIL_FROM; do
+  grep -q "^$K=" "$ENVF" || echo "$K=" >> "$ENVF"
+done
+
 docker compose --env-file "$ENVF" -f docker-compose.prod.yml up -d --build --remove-orphans
 docker image prune -f >/dev/null
 

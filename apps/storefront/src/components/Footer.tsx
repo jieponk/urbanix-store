@@ -67,6 +67,7 @@ export default function Footer({
             <li><Link href="/berita" className="hover:text-sun-400">Berita kamera &amp; fotografi</Link></li>
             <li><Link href="/tentang-kami" className="hover:text-sun-400">Tentang kami</Link></li>
             <li><Link href="/kontak" className="hover:text-sun-400">Kontak</Link></li>
+            <li><Link href="/cek-pesanan" className="hover:text-sun-400">Cek pesanan</Link></li>
             <li><Link href="/syarat-ketentuan" className="hover:text-sun-400">Syarat &amp; Ketentuan</Link></li>
             <li><Link href="/kebijakan-privasi" className="hover:text-sun-400">Kebijakan Privasi</Link></li>
             {settings?.shopee_reviews_url && (
