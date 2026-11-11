@@ -5,7 +5,11 @@ import { detectBrand } from '@/lib/seo';
 
 const slug = (brand: string) => brand.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** Merek yang dijual (dihitung dari produk aktif), terbanyak lebih dulu. */
+/**
+ * Merek yang dijual (dihitung dari produk aktif), terbanyak lebih dulu.
+ * Begitu ada minimal 6 logo di public/brands, hanya merek berlogo yang tampil;
+ * merek lain otomatis ikut muncul setelah logonya ditambahkan.
+ */
 export function brandsFromProducts(products: Product[], limit = 24) {
   const count = new Map<string, number>();
   for (const p of products) {
@@ -14,8 +18,13 @@ export function brandsFromProducts(products: Product[], limit = 24) {
   }
   return [...count.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, limit)
-    .map(([name, total]) => ({ name, total, logo: findPublicImage('brands', slug(name)) }));
+    .map(([name, total]) => ({ name, total, logo: findPublicImage('brands', slug(name)) }))
+    .filter((b, _i, all) => {
+      // Kalau sudah ada cukup logo, tampilkan hanya merek yang punya logo (lebih rapi).
+      const withLogo = all.filter((x) => x.logo).length;
+      return withLogo >= 6 ? Boolean(b.logo) : true;
+    })
+    .slice(0, limit);
 }
 
 /**
