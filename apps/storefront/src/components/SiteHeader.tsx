@@ -4,6 +4,7 @@ import CartLink from '@/components/CartLink';
 import CategoryMenu from '@/components/CategoryMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 import SearchBox from '@/components/SearchBox';
+import { iconBtn, slideLabel } from '@/components/headerLabel';
 import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 
@@ -76,23 +77,21 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           <SearchBox className="hidden flex-1 md:flex" />
 
           <nav className="ml-auto flex items-center gap-0.5 sm:gap-1 md:ml-0">
-            <Link
-              href="/cek-pesanan"
-              aria-label="Cek pesanan"
-              className="flex h-10 items-center gap-2 rounded-full px-2.5 text-sm font-semibold text-ink hover:bg-mist lg:px-3"
-            >
+            <Link href="/cek-pesanan" aria-label="Cek pesanan" title="Cek pesanan" className={iconBtn}>
               <OrderIcon />
-              <span className="hidden lg:inline">Cek pesanan</span>
+              <span className={slideLabel}>Cek pesanan</span>
             </Link>
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-ink hover:bg-mist lg:flex"
+                aria-label="Chat admin"
+                title="Chat admin"
+                className={`${iconBtn} hidden md:flex`}
               >
                 <ChatIcon />
-                Chat admin
+                <span className={slideLabel}>Chat admin</span>
               </a>
             )}
             <Link
