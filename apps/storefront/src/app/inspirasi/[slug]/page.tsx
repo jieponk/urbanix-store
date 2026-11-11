@@ -68,7 +68,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
       {/* Kepala artikel */}
-      <header className="relative isolate overflow-hidden bg-[#16161c] px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">
+      <header className="relative isolate overflow-hidden bg-cobalt-900 px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">
         {article.cover ? (
           <>
             {/* Ada sampul sendiri: latar diambil dari sampul (diburamkan) agar warnanya senada */}
@@ -81,8 +81,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
           </>
         ) : (
-          /* Sampul default (krem + oranye): latar gelap hangat dengan cahaya oranye */
-          <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#ff5b14] opacity-35 blur-[120px]" />
+          /* Sampul default (navy + oranye): latar navy Urbanix dengan cahaya oranye, senada sampul */
+          <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#ff5b14] opacity-25 blur-[120px]" />
         )}
         <div className="relative mx-auto max-w-3xl text-center">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
