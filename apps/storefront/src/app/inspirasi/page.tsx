@@ -52,12 +52,14 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
   return (
     <div>
       {/* Pembuka */}
-      <section className="relative isolate overflow-hidden bg-[#18093a] px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-36 sm:pt-16 lg:px-8">
-        {/* Warna senada dengan sampul default Inspirasi: ungu, oranye, pink, biru */}
-        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-40 -z-10 h-[30rem] w-[30rem] rounded-full bg-[#ff5b14] opacity-80 blur-[110px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-1/4 -z-10 h-96 w-96 rounded-full bg-[#ff3d8b] opacity-70 blur-[110px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-20 -z-10 h-96 w-96 rounded-full bg-[#4c3dff] opacity-80 blur-[110px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -top-20 left-1/4 -z-10 h-72 w-72 rounded-full bg-[#ffc93c] opacity-30 blur-[110px]" />
+      <section className="relative isolate overflow-hidden bg-[#16161c] px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-36 sm:pt-16 lg:px-8">
+        {/* Senada dengan sampul default: gelap hangat + aksen oranye + cincin lensa */}
+        <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#ff5b14] opacity-35 blur-[120px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-1/2 -z-10 hidden h-[26rem] w-[26rem] -translate-y-1/2 rounded-full border border-white/10 lg:block">
+          <div className="absolute inset-12 rounded-full border border-white/10" />
+          <div className="absolute inset-24 rounded-full border border-white/10" />
+          <div className="absolute inset-36 rounded-full bg-[#ff5b14]/80" />
+        </div>
         <div className="relative mx-auto max-w-7xl">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">Inspirasi Urbanix</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
