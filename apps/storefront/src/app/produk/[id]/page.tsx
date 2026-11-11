@@ -13,7 +13,7 @@ import {
   getVouchers,
   type Product,
 } from '@/lib/api';
-import { SITE_URL, breadcrumbJsonLd, detectBrand, jsonLd, plainText } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, cleanProductName, detectBrand, jsonLd, plainText, shorten } from '@/lib/seo';
 
 const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
@@ -53,15 +53,18 @@ export async function generateMetadata({
   if (!product) return { title: 'Produk tidak ditemukan', robots: { index: false } };
   const price = Number(product.final_price ?? product.price) || 0;
   const priceText = price ? `Rp${Math.round(price).toLocaleString('id-ID')}` : '';
-  const lead = `Jual ${product.name} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, pesan via WhatsApp atau Shopee.`;
+  const name = cleanProductName(product.name);
+  // Nama dipendekkan agar harga selalu terlihat di cuplikan Google.
+  const lead = `Jual ${shorten(name, 70)} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, pesan via WhatsApp atau Shopee.`;
   const description = plainText(`${lead} ${plainText(product.description, 300)}`, 158);
+  const title = shorten(name, 65);
   const images = product.image_url ? [{ url: product.image_url, alt: product.name }] : undefined;
   return {
-    title: product.name,
+    title,
     description,
     alternates: { canonical: `/produk/${product.id}` },
-    openGraph: { type: 'website', title: product.name, description, url: `/produk/${product.id}`, images },
-    twitter: { card: 'summary_large_image', title: product.name, description, images: images?.map((i) => i.url) },
+    openGraph: { type: 'website', title: name, description, url: `/produk/${product.id}`, images },
+    twitter: { card: 'summary_large_image', title: name, description, images: images?.map((i) => i.url) },
   };
 }
 
@@ -73,7 +76,7 @@ function productJsonLd(product: Product) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.name,
+    name: cleanProductName(product.name),
     sku: product.sku,
     ...(brand ? { brand: { '@type': 'Brand', name: brand } } : {}),
     image: [product.image_url, ...(product.images ?? [])].filter(Boolean).slice(0, 6),
@@ -158,7 +161,7 @@ export default async function ProductPage({
               ...(product.category_name
                 ? [{ name: product.category_name, path: `/produk?category=${product.category}` }]
                 : [{ name: 'Produk', path: '/produk' }]),
-              { name: product.name, path: `/produk/${product.id}` },
+              { name: cleanProductName(product.name), path: `/produk/${product.id}` },
             ])
           )}
         />

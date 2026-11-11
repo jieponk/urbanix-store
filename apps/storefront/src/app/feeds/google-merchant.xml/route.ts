@@ -1,5 +1,5 @@
 import { fetchAll, type Product } from '@/lib/api';
-import { SITE_URL, detectBrand, plainText, xmlEscape } from '@/lib/seo';
+import { SITE_URL, cleanProductName, detectBrand, plainText, xmlEscape } from '@/lib/seo';
 
 /**
  * Feed produk untuk Google Merchant Center (produk tampil gratis di Google Shopping).
@@ -12,7 +12,7 @@ export const revalidate = 3600;
 const NOT_FOR_SHOPPING = /bubble\s*wrap|kertas\s*kado|gift\s*wrap|add-?on|packing\s*tambahan|extra\s*packing/i;
 
 const idr = (value: number) => `${Math.round(value)} IDR`;
-const cleanTitle = (name: string) => name.replace(/^\s*URBANIX\s*-\s*/i, '').trim().slice(0, 150);
+const cleanTitle = (name: string) => cleanProductName(name).slice(0, 150);
 
 function item(p: Product): string {
   const normal = Number(p.price) || 0;

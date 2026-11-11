@@ -52,6 +52,17 @@ export function detectBrand(name: string): string | undefined {
   return best?.brand;
 }
 
+/** Nama produk tanpa awalan "URBANIX - " (nama toko sudah ada di judul halaman). */
+export function cleanProductName(name: string) {
+  return name.replace(/^\s*URBANIX\s*-\s*/i, '').trim();
+}
+
+/** Potong teks di batas kata, maksimal `max` karakter. */
+export function shorten(text: string, max: number) {
+  if (text.length <= max) return text;
+  return text.slice(0, max).replace(/\s+\S*$/, '').replace(/[\s|,/-]+$/, '') + '…';
+}
+
 /** Aman disisipkan dalam <script type="application/ld+json">. */
 export function jsonLd(data: unknown) {
   return { __html: JSON.stringify(data).replace(/</g, '\\u003c') };
