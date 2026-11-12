@@ -12,7 +12,8 @@ if ! command -v rclone >/dev/null; then
 fi
 
 echo "==> Browser akan terbuka. Login dengan akun Google tempat backup disimpan (mis. urbanixstore26@gmail.com) lalu klik Izinkan."
-OUT=$(rclone authorize "drive" '{"scope":"drive.file"}' 2>&1)
+echo "    Kalau browser tidak terbuka sendiri, buka link http://127.0.0.1:53682/... yang muncul di bawah ini."
+OUT=$(rclone authorize "drive" '{"scope":"drive.file"}' 2>&1 | tee /dev/stderr)
 TOKEN=$(printf '%s\n' "$OUT" | sed -n '/--->/,/<---/p' | sed '1d;$d' | tr -d '\n')
 [ -n "$TOKEN" ] || TOKEN=$(printf '%s\n' "$OUT" | grep -o '{"access_token".*}' | head -1)
 if [ -z "$TOKEN" ]; then
