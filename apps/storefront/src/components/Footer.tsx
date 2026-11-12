@@ -22,7 +22,7 @@ export default function Footer({
 }) {
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
-  const logos = courierLogos('mono');
+  const logos = courierLogos();
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -135,33 +135,26 @@ export default function Footer({
         </div>
       </div>
 
-      {/* Jasa pengiriman */}
+      {/* Jasa pengiriman: logo kecil di kotak putih (gaya marketplace) */}
       <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-sm font-bold text-white">Jasa pengiriman</h2>
-            <Link href="/syarat-ketentuan#pengiriman" className="text-xs hover:text-sun-400">
-              Ongkir sesuai tarif resmi ekspedisi · Detail
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-sm font-bold text-white">Pengiriman</h2>
+            <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-sun-400">
+              Detail
             </Link>
           </div>
-          <ul className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
+          <ul className="mt-3 flex flex-wrap gap-2">
             {SHIPPING_BRANDS.map((b) => (
               <li key={b.logo}>
                 <span
                   title={`${b.name} · ${b.services}`}
-                  className="group flex h-16 items-center justify-center rounded-2xl bg-white/5 px-4 ring-1 ring-white/10 transition hover:bg-white/10"
+                  className="flex h-9 w-[76px] items-center justify-center rounded-md bg-white px-2 shadow-sm"
                 >
                   {logos[b.logo] ? (
-                    <img
-                      src={logos[b.logo]}
-                      alt={b.name}
-                      loading="lazy"
-                      width={128}
-                      height={32}
-                      className="h-8 w-full object-contain opacity-75 transition group-hover:opacity-100"
-                    />
+                    <img src={logos[b.logo]} alt={b.name} loading="lazy" width={60} height={20} className="h-5 w-full object-contain" />
                   ) : (
-                    <span className="whitespace-nowrap text-sm font-black text-white/80">{b.name}</span>
+                    <span className="truncate text-[11px] font-black text-slate-700">{b.name}</span>
                   )}
                 </span>
               </li>
