@@ -13,6 +13,9 @@ export const siteConfig = {
 
   // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
   motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
+  // Deskripsi beranda untuk Google (±150 karakter)
+  metaDescription:
+    'Belanja kamera, lensa, drone, action cam & mic Sony, Canon, DJI, Insta360, Fujifilm. 100% original bergaransi resmi, kirim ke seluruh Indonesia.',
 
   // Data hukum untuk halaman Syarat & Ketentuan dan Kebijakan Privasi. WAJIB diisi sebelum dipublikasikan luas.
   legal: {

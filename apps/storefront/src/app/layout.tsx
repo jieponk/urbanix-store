@@ -21,7 +21,7 @@ export const metadata = {
     default: `URBANIX STORE | ${siteConfig.tagline}`,
     template: '%s | URBANIX STORE',
   },
-  description: siteConfig.motto,
+  description: siteConfig.metaDescription,
   metadataBase: new URL(SITE_URL),
   applicationName: siteConfig.name,
   alternates: {
@@ -33,7 +33,7 @@ export const metadata = {
     locale: 'id_ID',
     siteName: siteConfig.name,
     title: `URBANIX STORE | ${siteConfig.tagline}`,
-    description: siteConfig.motto,
+    description: siteConfig.metaDescription,
     images: [{ url: '/brand/og-image.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
   },
   twitter: { card: 'summary_large_image', images: ['/brand/og-image.png'] },
