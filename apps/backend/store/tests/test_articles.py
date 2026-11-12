@@ -102,6 +102,17 @@ class ArticleTests(SellerTestBase):
         bad = pub.post(f"/api/v1/articles/{slug}/comments/",
                        {"name": "Gif", "body": "x", "gif_url": "https://evil.com/a.gif"}, format="json")
         self.assertEqual(bad.status_code, 400)
+        # admin: sematkan, beri reaksi, balas dengan GIF
+        adm = f"/api/v1/seller/article-comments/{top['id']}/"
+        self.api.patch(adm, {"is_pinned": True, "reaction": "🔥"}, format="json")
+        r = self.api.post(adm, {"body": "", "gif_url": "https://media1.giphy.com/media/xyz/200w.gif"}, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        first = pub.get(f"/api/v1/articles/{slug}/comments/").data["comments"][0]
+        self.assertTrue(first["is_pinned"])
+        self.assertEqual(first["staff_reaction"], "🔥")
+        self.assertEqual(first["replies"][-1]["gif_url"], "https://media1.giphy.com/media/xyz/200w.gif")
+        self.assertEqual(self.api.patch(f"/api/v1/seller/article-comments/{r1['id']}/", {"is_pinned": True},
+                                        format="json").status_code, 400)
         with self.settings(GIPHY_API_KEY=""):
             self.assertEqual(pub.get("/api/v1/gifs/?q=kucing").status_code, 503)
 

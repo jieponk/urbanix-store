@@ -5,7 +5,7 @@ import type { ArticleComment } from '@/lib/api';
 import { EMOJIS, REACTIONS, emojiUrl, splitEmoji } from '@/lib/emoji';
 
 type C = ArticleComment;
-type Gif = { id: string; title: string; url: string; preview: string; width: number; height: number };
+export type Gif = { id: string; title: string; url: string; preview: string; width: number; height: number };
 
 // ------------------------------------------------------------------ util
 function store(key: string, value?: string) {
@@ -71,7 +71,7 @@ function applyReaction(c: C, emoji: string): C {
 }
 
 // ------------------------------------------------------------------ kecil
-function Emoji({ char, className = 'h-[1.25em] w-[1.25em]' }: { char: string; className?: string }) {
+export function Emoji({ char, className = 'h-[1.25em] w-[1.25em]' }: { char: string; className?: string }) {
   return (
     <img
       src={emojiUrl(char)}
@@ -83,7 +83,7 @@ function Emoji({ char, className = 'h-[1.25em] w-[1.25em]' }: { char: string; cl
   );
 }
 
-function RichText({ text }: { text: string }) {
+export function RichText({ text }: { text: string }) {
   return (
     <>
       {splitEmoji(text).map((p, i) =>
@@ -170,7 +170,7 @@ function ReactionPicker({ mine, onPick, onClose }: { mine?: string; onPick: (e: 
   );
 }
 
-function ReactionChips({ c }: { c: C }) {
+export function ReactionChips({ c }: { c: C }) {
   const entries = Object.entries(c.reactions || {}).filter(([, n]) => n > 0);
   if (!entries.length) return null;
   const total = entries.reduce((a, [, n]) => a + n, 0);
@@ -187,7 +187,7 @@ function ReactionChips({ c }: { c: C }) {
 }
 
 // ------------------------------------------------------------------ GIF
-function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClose: () => void }) {
+export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClose: () => void }) {
   const [q, setQ] = useState('');
   const [items, setItems] = useState<Gif[]>([]);
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -252,7 +252,7 @@ function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClose: () 
   );
 }
 
-function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; onClose: () => void }) {
+export function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useOutside(ref, onClose, true);
   return (
@@ -510,6 +510,9 @@ function Item({
     <div className="group/item flex gap-3">
       <Avatar name={c.name} staff={c.is_staff_reply} small={reply} />
       <div className="min-w-0 flex-1">
+        {c.is_pinned && !reply && (
+          <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">📌 Disematkan admin</p>
+        )}
         <p className="break-words text-[15px] leading-6 text-slate-700">
           <b className="mr-1.5 text-ink">{c.name}</b>
           {c.is_staff_reply && (
@@ -541,6 +544,11 @@ function Item({
             )}
           </button>
           <ReactionChips c={c} />
+          {c.staff_reaction && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+              <Emoji char={c.staff_reaction} className="h-4 w-4" /> oleh admin
+            </span>
+          )}
           {picker && (
             <ReactionPicker
               mine={c.my_reaction}

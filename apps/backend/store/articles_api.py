@@ -138,6 +138,13 @@ def _visitor(raw) -> str:
     return hashlib.sha256(f"urbanix:{raw}".encode()).hexdigest()[:40]
 
 
+STAFF_VISITOR = "staff"  # reaksi dari Seller Center (admin)
+
+
+def _staff_reaction(c: ArticleComment) -> str:
+    return next((r.emoji for r in c.reactions.all() if r.visitor == STAFF_VISITOR), "")
+
+
 def _reaction_summary(c: ArticleComment, visitor: str) -> tuple[dict, str]:
     counts: dict[str, int] = {}
     mine = ""
@@ -158,8 +165,10 @@ def _one(c: ArticleComment, visitor: str = "") -> dict:
         "gif_url": c.gif_url,
         "created_at": c.created_at,
         "is_staff_reply": c.is_staff_reply,
+        "is_pinned": c.is_pinned,
         "reactions": reactions,
         "my_reaction": mine,
+        "staff_reaction": _staff_reaction(c),
     }
 
 
@@ -173,7 +182,7 @@ def _comment(c: ArticleComment, visitor: str = "") -> dict:
 def _comment_qs(article: Article):
     from django.db.models import Prefetch
 
-    return article.comments.filter(is_approved=True, parent__isnull=True).prefetch_related(
+    return article.comments.filter(is_approved=True, parent__isnull=True).order_by("-is_pinned", "-created_at").prefetch_related(
         "reactions",
         Prefetch("replies", queryset=ArticleComment.objects.order_by("created_at").prefetch_related("reactions")),
     )
@@ -587,6 +596,9 @@ def _seller_comment(c: ArticleComment) -> dict:
         "is_approved": c.is_approved,
         "is_staff_reply": c.is_staff_reply,
         "gif_url": c.gif_url,
+        "is_pinned": c.is_pinned,
+        "reactions": _reaction_summary(c, "")[0],
+        "staff_reaction": _staff_reaction(c),
         "parent_id": c.parent_id,
         "created_at": c.created_at,
         "article": {"id": c.article_id, "title": c.article.title, "slug": c.article.slug},
@@ -595,7 +607,7 @@ def _seller_comment(c: ArticleComment) -> dict:
 
 @staff(["GET"])
 def seller_comments(request):
-    qs = ArticleComment.objects.select_related("article").order_by("-created_at")
+    qs = ArticleComment.objects.select_related("article").prefetch_related("reactions").order_by("-created_at")
     st = request.query_params.get("status")
     if st == "pending":
         qs = qs.filter(is_approved=False)
@@ -608,24 +620,42 @@ def seller_comments(request):
 
 @staff(["PATCH", "DELETE", "POST"])
 def seller_comment_detail(request, pk):
-    c = get_object_or_404(ArticleComment.objects.select_related("article"), pk=pk)
+    c = get_object_or_404(ArticleComment.objects.select_related("article").prefetch_related("reactions"), pk=pk)
     if request.method == "DELETE":
         c.delete()
         return Response(status=204)
     if request.method == "POST":  # balasan admin
         body = (request.data.get("body") or "").strip()
-        if len(body) < 2:
-            return bad("Balasan terlalu pendek.")
+        gif = (request.data.get("gif_url") or "").strip()[:500]
+        if gif and not GIF_RE.match(gif):
+            return bad("GIF tidak valid.")
+        if not body and not gif:
+            return bad("Balasan masih kosong.")
         root = c.parent or c
         if not root.is_approved:
             root.is_approved = True
             root.save(update_fields=["is_approved"])
         reply = ArticleComment.objects.create(
             article=c.article, parent=root, name=(request.data.get("name") or "Admin Urbanix")[:60],
-            body=body[:1500], is_approved=True, is_staff_reply=True,
+            body=body[:1500], gif_url=gif, is_approved=True, is_staff_reply=True,
         )
         return Response(_seller_comment(reply), status=201)
     if "is_approved" in request.data:
         c.is_approved = _bool(request.data.get("is_approved"))
         c.save(update_fields=["is_approved"])
+    if "is_pinned" in request.data:
+        if c.parent_id:
+            return bad("Hanya komentar utama yang bisa disematkan.")
+        c.is_pinned = _bool(request.data.get("is_pinned"))
+        if c.is_pinned and not c.is_approved:
+            c.is_approved = True
+        c.save(update_fields=["is_pinned", "is_approved"])
+    if "reaction" in request.data:
+        emoji = (request.data.get("reaction") or "").strip()
+        if emoji and emoji not in REACTIONS:
+            return bad("Reaksi tidak dikenal.")
+        ArticleCommentReaction.objects.filter(comment=c, visitor=STAFF_VISITOR).delete()
+        if emoji:
+            ArticleCommentReaction.objects.create(comment=c, visitor=STAFF_VISITOR, emoji=emoji)
+        c = ArticleComment.objects.select_related("article").prefetch_related("reactions").get(pk=c.pk)
     return Response(_seller_comment(c))

@@ -748,6 +748,7 @@ class ArticleComment(models.Model):
     gif_url = models.URLField("GIF (GIPHY)", max_length=500, blank=True)
     is_approved = models.BooleanField("Disetujui", default=False)
     is_staff_reply = models.BooleanField("Balasan admin", default=False)
+    is_pinned = models.BooleanField("Disematkan", default=False)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
 

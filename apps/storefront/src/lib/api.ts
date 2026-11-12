@@ -292,6 +292,8 @@ export type ArticleComment = {
   is_staff_reply: boolean;
   reactions?: Record<string, number>;
   my_reaction?: string;
+  staff_reaction?: string;
+  is_pinned?: boolean;
   replies?: ArticleComment[];
 };
 
