@@ -132,24 +132,19 @@ export default function Footer({
               </li>
             ))}
           </ul>
-        </div>
-      </div>
 
-      {/* Jasa pengiriman: logo kecil di kotak putih (gaya marketplace) */}
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-baseline gap-3">
+          <div className="mt-7 flex items-baseline gap-3">
             <h2 className="text-sm font-bold text-white">Pengiriman</h2>
             <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-sun-400">
               Detail
             </Link>
           </div>
-          <ul className="mt-3 flex flex-wrap gap-2">
+          <ul className="mt-3 grid max-w-[260px] grid-cols-3 gap-2">
             {SHIPPING_BRANDS.map((b) => (
               <li key={b.logo}>
                 <span
                   title={`${b.name} · ${b.services}`}
-                  className="flex h-9 w-[76px] items-center justify-center rounded-md bg-white px-2 shadow-sm"
+                  className="flex h-9 items-center justify-center rounded-lg bg-white px-2"
                 >
                   {logos[b.logo] ? (
                     <img src={logos[b.logo]} alt={b.name} loading="lazy" width={60} height={20} className="h-5 w-full object-contain" />
