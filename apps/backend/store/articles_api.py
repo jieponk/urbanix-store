@@ -404,9 +404,16 @@ def gif_search(request):
         if q:
             results = _giphy("search", {"q": q, "limit": 24, "offset": offset})
         else:
-            results = _giphy("trending", {"limit": 24, "offset": offset})
-    except Exception:  # noqa: BLE001
-        return Response({"error": "GIF sedang tidak bisa dimuat. Coba lagi nanti."}, status=502)
+            try:
+                results = _giphy("trending", {"limit": 24, "offset": offset})
+            except Exception:  # noqa: BLE001  cadangan bila endpoint trending bermasalah
+                results = _giphy("search", {"q": "reaction", "limit": 24, "offset": offset})
+    except Exception as e:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).warning("GIPHY gagal: %s", e)
+        msg = "Kuota GIF sedang penuh, coba lagi beberapa menit." if "429" in str(e) else "GIF sedang tidak bisa dimuat. Coba lagi nanti."
+        return Response({"error": msg}, status=502)
     return Response({"results": results})
 
 

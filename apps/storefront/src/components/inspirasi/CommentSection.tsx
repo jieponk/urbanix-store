@@ -195,22 +195,36 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
   const ref = useRef<HTMLDivElement>(null);
   useOutside(ref, onClose, true);
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
+    const ctrl = new AbortController();
     const t = setTimeout(async () => {
       setState('loading');
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        ctrl.abort();
+      }, 12000);
       try {
-        const res = await fetch(`/api/gifs?q=${encodeURIComponent(q.trim())}`);
-        const data = await res.json();
+        const res = await fetch(`/api/gifs?q=${encodeURIComponent(q.trim())}`, { signal: ctrl.signal });
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'GIF tidak bisa dimuat.');
         setItems(data.results || []);
         setState('ok');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'GIF tidak bisa dimuat.');
+        if (ctrl.signal.aborted && !timedOut) return; // pencarian diganti: abaikan
+        setError(timedOut ? 'GIF terlalu lama dimuat.' : e instanceof Error ? e.message : 'GIF tidak bisa dimuat.');
         setState('error');
+      } finally {
+        clearTimeout(timeout);
       }
     }, q ? 400 : 0);
-    return () => clearTimeout(t);
-  }, [q]);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [q, attempt]);
 
   return (
     <div ref={ref} className="animate-pop mt-3 rounded-2xl bg-surface p-3 shadow-xl ring-1 ring-slate-200">
@@ -229,7 +243,14 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
             ))}
           </div>
         )}
-        {state === 'error' && <p className="py-10 text-center text-sm text-slate-500">{error}</p>}
+        {state === 'error' && (
+          <div className="py-10 text-center text-sm text-slate-500">
+            <p>{error}</p>
+            <button type="button" onClick={() => setAttempt((n) => n + 1)} className="mt-3 rounded-full bg-mist px-4 py-2 font-bold text-ink hover:bg-slate-200">
+              Coba lagi
+            </button>
+          </div>
+        )}
         {state === 'ok' && items.length === 0 && <p className="py-10 text-center text-sm text-slate-500">GIF tidak ditemukan.</p>}
         {state === 'ok' && (
           <div className="grid grid-cols-3 gap-2">
