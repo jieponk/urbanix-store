@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import GoogleReviewsOptIn from '@/components/GoogleReviewsOptIn';
 import CopyText from '@/components/CopyText';
 import { API, money } from '@/lib/api';
 
@@ -127,6 +128,7 @@ export default async function OrderPage({
 
   return (
     <div className="px-4 py-6 sm:py-10">
+      <GoogleReviewsOptIn orderNumber={order.order_number} />
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="rounded-2xl border border-dashed border-brand-500 bg-surface p-5">
           <p className="text-sm text-slate-500">Nomor pesanan</p>

@@ -319,6 +319,14 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
 
       clearCart();
       rememberOrder(data.order_number);
+      if (form.email) {
+        // Untuk tawaran survei Google Customer Reviews di halaman pesanan (hanya di browser ini, sekali pakai).
+        try {
+          sessionStorage.setItem('urbanix_gcr', JSON.stringify({ order: data.order_number, email: form.email.trim() }));
+        } catch {
+          /* abaikan */
+        }
+      }
       if (method === 'MIDTRANS' && data.payment_url) {
         window.location.href = data.payment_url;
         return;
