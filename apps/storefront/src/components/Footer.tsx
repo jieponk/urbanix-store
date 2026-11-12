@@ -116,19 +116,24 @@ export default function Footer({
           </ul>
 
           <h2 className="mt-7 text-sm font-bold text-white">Pembayaran</h2>
-          <ul className="mt-3 flex flex-wrap gap-2">
+          <ul className="mt-3 grid max-w-[260px] grid-cols-3 gap-2">
             {payments.map((method) => (
               <li key={method.name}>
-                {method.src ? (
-                  <span className="flex h-9 items-center gap-2 rounded-lg bg-white px-3">
-                    <img src={method.src} alt={method.showName ? '' : method.name} loading="lazy" width={60} height={20} className="h-5 w-auto max-w-[80px] object-contain" />
-                    {method.showName && <span className="text-xs font-bold text-cobalt-900">{method.name}</span>}
-                  </span>
-                ) : (
-                  <span className="flex h-9 items-center rounded-lg border border-white/15 px-3 text-xs font-semibold text-white">
-                    {method.name}
-                  </span>
-                )}
+                <span title={method.name} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white px-2">
+                  {method.src && (
+                    <img
+                      src={method.src}
+                      alt={method.showName ? '' : method.name}
+                      loading="lazy"
+                      width={60}
+                      height={20}
+                      className={method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'}
+                    />
+                  )}
+                  {(!method.src || method.showName) && (
+                    <span className="truncate text-[11px] font-black text-cobalt-900">{method.name}</span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

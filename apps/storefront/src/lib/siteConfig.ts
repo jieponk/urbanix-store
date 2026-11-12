@@ -100,9 +100,10 @@ export const siteConfig = {
    * PENTING: tampilkan hanya metode yang benar-benar bisa dipakai di checkout.
    */
   paymentMethods: [
-    { name: 'QRIS', logo: 'qris', showName: true },
-    { name: 'Transfer Bank', logo: 'transfer-bank', showName: true },
-    { name: 'E-Wallet', logo: 'e-wallet', showName: true },
+    // Logo resmi: public/payments/qris-logo.*, bca.*, shopeepay.* (sementara tampil sebagai teks).
+    { name: 'QRIS', logo: 'qris-logo' },
+    { name: 'BCA', logo: 'bca' },
+    { name: 'ShopeePay', logo: 'shopeepay' },
   ] as { name: string; logo: string; showName?: boolean }[],
 
   // Teks berjalan di beranda
