@@ -287,8 +287,11 @@ export type ArticleComment = {
   id: number;
   name: string;
   body: string;
+  gif_url?: string;
   created_at: string;
   is_staff_reply: boolean;
+  reactions?: Record<string, number>;
+  my_reaction?: string;
   replies?: ArticleComment[];
 };
 

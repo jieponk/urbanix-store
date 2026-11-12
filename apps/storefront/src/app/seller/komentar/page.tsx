@@ -64,7 +64,8 @@ export default function CommentsPage() {
                 <a href={`/inspirasi/${c.article.slug}#komentar`} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
                   di: {c.article.title}
                 </a>
-                <p className="mt-2 whitespace-pre-line break-words rounded-xl bg-mist px-3 py-2 text-sm text-ink">{c.body}</p>
+                {c.body && <p className="mt-2 whitespace-pre-line break-words rounded-xl bg-mist px-3 py-2 text-sm text-ink">{c.body}</p>}
+                {c.gif_url && <img src={c.gif_url} alt="GIF" loading="lazy" className="mt-2 max-h-40 rounded-xl" />}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {!c.is_approved ? (
                     <button type="button" className={btn.small} onClick={() => act(c, { is_approved: true }, 'Komentar disetujui.')}>✓ Setujui</button>

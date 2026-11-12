@@ -104,6 +104,8 @@ REST_FRAMEWORK = {
         'checkout': '10/min',
         'seller_login': '10/min',
         'article_comment': '5/min',
+        'comment_reaction': '40/min',
+        'gif_search': '30/min',
     },
 }
 
@@ -146,3 +148,6 @@ DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', '') or (
 EMAIL_REPLY_TO = os.environ.get('EMAIL_REPLY_TO', '') or 'urbanixstore26@gmail.com'
 ORDER_EMAIL_ENABLED = bool(EMAIL_HOST)
 ORDER_EMAIL_SYNC = False  # True di tes: kirim langsung, bukan di thread
+
+# GIF di komentar artikel (GIPHY). Kosongkan untuk mematikan tombol GIF.
+GIPHY_API_KEY = os.environ.get('GIPHY_API_KEY', '')

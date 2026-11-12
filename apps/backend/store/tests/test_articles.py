@@ -51,19 +51,59 @@ class ArticleTests(SellerTestBase):
     def test_comment_moderation_flow(self):
         pub = APIClient()
         slug = "selamat-datang-di-inspirasi-urbanix"
+        # komentar wajar langsung tampil
         r = pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Rani", "body": "Mantap, ditunggu reviewnya!"},
                      format="json")
         self.assertEqual(r.status_code, 201)
-        self.assertEqual(pub.get(f"/api/v1/articles/{slug}/").data["comments"], [])  # belum disetujui
+        self.assertFalse(r.data["held"])
+        self.assertEqual(pub.get(f"/api/v1/articles/{slug}/").data["comments"][0]["name"], "Rani")
+        # berisi link / kata kasar -> ditahan untuk dicek admin
+        r = pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Joko", "body": "cek https://a.com"}, format="json")
+        self.assertTrue(r.data["held"])
+        r = pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Budi", "body": "dasar goblok"}, format="json")
+        self.assertTrue(r.data["held"])
+        self.assertEqual(len(pub.get(f"/api/v1/articles/{slug}/comments/").data["comments"]), 1)
 
         c = ArticleComment.objects.get(name="Rani")
         lst = self.api.get("/api/v1/seller/article-comments/?status=pending")
-        self.assertEqual(lst.data["pending"], 1)
-        self.api.patch(f"/api/v1/seller/article-comments/{c.id}/", {"is_approved": True}, format="json")
+        self.assertEqual(lst.data["pending"], 2)
         self.api.post(f"/api/v1/seller/article-comments/{c.id}/", {"body": "Terima kasih!"}, format="json")
         comments = pub.get(f"/api/v1/articles/{slug}/").data["comments"]
-        self.assertEqual(comments[0]["name"], "Rani")
         self.assertTrue(comments[0]["replies"][0]["is_staff_reply"])
+
+    def test_reply_reaction_and_gif(self):
+        pub = APIClient()
+        slug = "selamat-datang-di-inspirasi-urbanix"
+        top = pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Rani", "body": "Halo"}, format="json").data["comment"]
+        r1 = pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Dimas", "body": "@Rani setuju", "parent": top["id"]},
+                      format="json").data["comment"]
+        # balas sebuah balasan -> tetap menempel ke komentar utama (1 tingkat)
+        pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Sari", "body": "aku juga", "parent": r1["id"]}, format="json")
+        data = pub.get(f"/api/v1/articles/{slug}/comments/").data["comments"]
+        self.assertEqual([r["name"] for r in data[0]["replies"]], ["Dimas", "Sari"])
+
+        v1, v2 = "a" * 20, "b" * 20
+        url = f"/api/v1/article-comments/{top['id']}/react/"
+        pub.post(url, {"visitor": v1, "emoji": "❤️"}, format="json")
+        r = pub.post(url, {"visitor": v2, "emoji": "😂"}, format="json")
+        self.assertEqual(r.data["reactions"], {"❤️": 1, "😂": 1})
+        r = pub.post(url, {"visitor": v1, "emoji": "😂"}, format="json")  # ganti reaksi
+        self.assertEqual(r.data["reactions"], {"😂": 2})
+        r = pub.post(url, {"visitor": v1, "emoji": "😂"}, format="json")  # tekan lagi = hapus
+        self.assertEqual((r.data["reactions"], r.data["my_reaction"]), ({"😂": 1}, ""))
+        self.assertEqual(pub.post(url, {"visitor": v1, "emoji": "💩"}, format="json").status_code, 400)
+        self.assertEqual(pub.post(url, {"visitor": "x", "emoji": "❤️"}, format="json").status_code, 400)
+        mine = pub.get(f"/api/v1/articles/{slug}/comments/?visitor={v2}").data["comments"][0]["my_reaction"]
+        self.assertEqual(mine, "😂")
+
+        ok = pub.post(f"/api/v1/articles/{slug}/comments/",
+                      {"name": "Gif", "body": "", "gif_url": "https://media2.giphy.com/media/abc123/200w.gif"}, format="json")
+        self.assertEqual(ok.status_code, 201, ok.data)
+        bad = pub.post(f"/api/v1/articles/{slug}/comments/",
+                       {"name": "Gif", "body": "x", "gif_url": "https://evil.com/a.gif"}, format="json")
+        self.assertEqual(bad.status_code, 400)
+        with self.settings(GIPHY_API_KEY=""):
+            self.assertEqual(pub.get("/api/v1/gifs/?q=kucing").status_code, 503)
 
     def test_comment_spam_guards(self):
         pub = APIClient()
@@ -74,6 +114,7 @@ class ArticleTests(SellerTestBase):
         r = pub.post(f"/api/v1/articles/{slug}/comments/",
                      {"name": "Spam", "body": "cek https://a.com dan https://b.com"}, format="json")
         self.assertEqual(r.status_code, 400)
+        cache.clear()
         cache.clear()
         for _ in range(5):
             pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Rani", "body": "halo"}, format="json")

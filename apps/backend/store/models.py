@@ -744,7 +744,8 @@ class ArticleComment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments")
     name = models.CharField("Nama", max_length=60)
     email = models.EmailField("Email (tidak ditampilkan)", blank=True)
-    body = models.TextField("Komentar", max_length=1500)
+    body = models.TextField("Komentar", max_length=1500, blank=True)
+    gif_url = models.URLField("GIF (GIPHY)", max_length=500, blank=True)
     is_approved = models.BooleanField("Disetujui", default=False)
     is_staff_reply = models.BooleanField("Balasan admin", default=False)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
@@ -757,3 +758,15 @@ class ArticleComment(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.body[:40]}"
+
+
+class ArticleCommentReaction(models.Model):
+    """Reaksi emoji pada komentar. Satu pengunjung (token browser, di-hash) = satu reaksi per komentar."""
+
+    comment = models.ForeignKey(ArticleComment, on_delete=models.CASCADE, related_name="reactions")
+    emoji = models.CharField(max_length=16)
+    visitor = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["comment", "visitor"], name="satu_reaksi_per_pengunjung")]

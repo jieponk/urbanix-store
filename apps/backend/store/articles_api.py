@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+import urllib.parse
+import urllib.request
 import uuid
+
+from django.conf import settings
+from django.core.cache import cache
 
 from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404
@@ -18,7 +25,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from django.core.files.storage import default_storage
 
 from .images import MAX_BODY, MAX_COVER, ImageError, to_webp
-from .models import Article, ArticleCategory, ArticleComment, Product
+from .models import Article, ArticleCategory, ArticleComment, ArticleCommentReaction, Product
 from .seller_api import _product_row, bad, paginate, staff
 
 PRODUCT_TOKEN = re.compile(r"\[\[produk:(\d+)\]\]")
@@ -114,19 +121,62 @@ def _products(ids) -> dict:
     return {str(p["id"]): p for p in ProductSerializer(list(qs), many=True).data}
 
 
-def _comment(c: ArticleComment) -> dict:
+REACTIONS = ["❤️", "😂", "😍", "😮", "😢", "🔥", "👍"]
+GIF_RE = re.compile(r"^https://media\d?\.giphy\.com/media/[\w./-]+$")
+# Kata yang membuat komentar ditahan untuk dicek admin dulu (tidak ditolak).
+HOLD_WORDS = re.compile(
+    r"\b(anjing|anjg|bangsat|bajingan|kontol|memek|ngentot|goblok|tolol|babi|judi|slot\s*gacor|togel|gacor|"
+    r"pinjol|bokep|porn|casino|viagra)\b",
+    re.I,
+)
+
+
+def _visitor(raw) -> str:
+    raw = str(raw or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9-]{16,64}", raw):
+        return ""
+    return hashlib.sha256(f"urbanix:{raw}".encode()).hexdigest()[:40]
+
+
+def _reaction_summary(c: ArticleComment, visitor: str) -> tuple[dict, str]:
+    counts: dict[str, int] = {}
+    mine = ""
+    for r in c.reactions.all():
+        counts[r.emoji] = counts.get(r.emoji, 0) + 1
+        if visitor and r.visitor == visitor:
+            mine = r.emoji
+    ordered = {e: counts[e] for e in sorted(counts, key=lambda e: (-counts[e], REACTIONS.index(e) if e in REACTIONS else 99))}
+    return ordered, mine
+
+
+def _one(c: ArticleComment, visitor: str = "") -> dict:
+    reactions, mine = _reaction_summary(c, visitor)
     return {
         "id": c.id,
         "name": c.name,
         "body": c.body,
+        "gif_url": c.gif_url,
         "created_at": c.created_at,
         "is_staff_reply": c.is_staff_reply,
-        "replies": [
-            {"id": r.id, "name": r.name, "body": r.body, "created_at": r.created_at, "is_staff_reply": r.is_staff_reply}
-            for r in c.replies.all()
-            if r.is_approved
-        ],
+        "reactions": reactions,
+        "my_reaction": mine,
     }
+
+
+def _comment(c: ArticleComment, visitor: str = "") -> dict:
+    return {
+        **_one(c, visitor),
+        "replies": [_one(r, visitor) for r in c.replies.all() if r.is_approved],
+    }
+
+
+def _comment_qs(article: Article):
+    from django.db.models import Prefetch
+
+    return article.comments.filter(is_approved=True, parent__isnull=True).prefetch_related(
+        "reactions",
+        Prefetch("replies", queryset=ArticleComment.objects.order_by("created_at").prefetch_related("reactions")),
+    )
 
 
 # --------------------------------------------------------------------------- publik
@@ -175,8 +225,7 @@ def article_detail(request, slug):
     products = _products(embedded_ids | {str(i) for i in related_ids})
 
     comments = (
-        article.comments.filter(is_approved=True, parent__isnull=True).prefetch_related("replies")
-        if article.allow_comments else []
+        _comment_qs(article) if article.allow_comments else []
     )
     more = published().exclude(pk=article.pk)
     same = list(more.filter(category=article.category)[:3]) if article.category_id else []
@@ -204,31 +253,152 @@ class CommentThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
 
 
-@api_view(["POST"])
+class ReactionThrottle(CommentThrottle):
+    scope = "comment_reaction"
+
+
+class GifThrottle(CommentThrottle):
+    scope = "gif_search"
+
+
+@api_view(["GET", "POST"])
 @_public
-@throttle_classes([CommentThrottle])
-def article_comment(request, slug):
+def article_comments(request, slug):
+    """GET: komentar terbaru (tanpa cache, berisi reaksi). POST: kirim komentar/balasan."""
+    if request.method == "POST":
+        return _post_comment(request, slug)
+    article = get_object_or_404(published(), slug=slug)
+    visitor = _visitor(request.query_params.get("visitor"))
+    comments = [_comment(c, visitor) for c in _comment_qs(article)] if article.allow_comments else []
+    return Response({
+        "comments": comments,
+        "allow_comments": article.allow_comments,
+        "gif_enabled": bool(settings.GIPHY_API_KEY),
+        "reactions": REACTIONS,
+    })
+
+
+def _post_comment(request, slug):
+    if not CommentThrottle().allow_request(request, None):
+        return Response({"error": "Terlalu banyak komentar. Tunggu sebentar."}, status=429)
     article = get_object_or_404(published(), slug=slug)
     if not article.allow_comments:
         return bad("Komentar untuk artikel ini ditutup.")
     data = request.data
     if (data.get("website") or "").strip():  # jebakan bot: kolom tersembunyi harus kosong
-        return Response({"message": "Terima kasih! Komentarmu akan tampil setelah dicek admin."}, status=201)
+        return Response({"message": "Terima kasih!", "held": True}, status=201)
     name = (data.get("name") or "").strip()[:60]
     body = (data.get("body") or "").strip()
     email = (data.get("email") or "").strip()[:254]
+    gif = (data.get("gif_url") or "").strip()[:500]
     if len(name) < 2:
         return bad("Nama minimal 2 huruf.")
-    if len(body) < 3:
-        return bad("Komentar terlalu pendek.")
+    if gif and not GIF_RE.match(gif):
+        return bad("GIF tidak valid.")
+    if not gif and len(body) < 1:
+        return bad("Komentar masih kosong.")
     if len(body) > 1500:
         return bad("Komentar maksimal 1.500 karakter.")
     if email and not re.match(r"^\S+@\S+\.\S+$", email):
         return bad("Email tidak valid.")
-    if len(re.findall(r"https?://|www\.", body, flags=re.I)) > 1:
+    links = len(re.findall(r"https?://|www\.", body, flags=re.I))
+    if links > 1:
         return bad("Komentar berisi terlalu banyak link.")
-    ArticleComment.objects.create(article=article, name=name, email=email, body=body)
-    return Response({"message": "Terima kasih! Komentarmu akan tampil setelah dicek admin."}, status=201)
+
+    parent = None
+    if data.get("parent"):
+        parent = ArticleComment.objects.filter(pk=data.get("parent"), article=article, is_approved=True).first()
+        if not parent:
+            return bad("Komentar yang dibalas tidak ditemukan.")
+        parent = parent.parent or parent  # balasan selalu satu tingkat (seperti Instagram)
+
+    held = bool(links or HOLD_WORDS.search(body) or HOLD_WORDS.search(name) or re.search(r"(.)\1{9,}", body))
+    c = ArticleComment.objects.create(
+        article=article, parent=parent, name=name, email=email, body=body, gif_url=gif, is_approved=not held
+    )
+    if held:
+        return Response({"message": "Komentarmu sedang dicek admin dulu sebelum tampil.", "held": True}, status=201)
+    return Response({"message": "Komentar terkirim.", "held": False, "comment": _comment(c)}, status=201)
+
+
+# lama: tetap dipakai URL .../comments/ (POST)
+article_comment = article_comments
+
+
+@api_view(["POST"])
+@_public
+@throttle_classes([ReactionThrottle])
+def comment_react(request, pk):
+    """Beri/ganti/hapus reaksi. emoji kosong atau sama dengan sebelumnya = hapus."""
+    c = get_object_or_404(ArticleComment, pk=pk, is_approved=True, article__status="PUBLISHED")
+    visitor = _visitor(request.data.get("visitor"))
+    if not visitor:
+        return bad("Pengunjung tidak dikenali. Muat ulang halaman.")
+    emoji = (request.data.get("emoji") or "").strip()
+    if emoji and emoji not in REACTIONS:
+        return bad("Reaksi tidak dikenal.")
+    current = ArticleCommentReaction.objects.filter(comment=c, visitor=visitor).first()
+    if not emoji or (current and current.emoji == emoji):
+        if current:
+            current.delete()
+    elif current:
+        current.emoji = emoji
+        current.save(update_fields=["emoji"])
+    else:
+        ArticleCommentReaction.objects.create(comment=c, visitor=visitor, emoji=emoji)
+    c = ArticleComment.objects.prefetch_related("reactions").get(pk=c.pk)
+    reactions, mine = _reaction_summary(c, visitor)
+    return Response({"reactions": reactions, "my_reaction": mine})
+
+
+def _giphy(endpoint: str, params: dict) -> list:
+    key = f"giphy:{endpoint}:{json.dumps(params, sort_keys=True)}"
+    hit = cache.get(key)
+    if hit is not None:
+        return hit
+    q = urllib.parse.urlencode({**params, "api_key": settings.GIPHY_API_KEY, "rating": "pg", "lang": "id"})
+    req = urllib.request.Request(f"https://api.giphy.com/v1/gifs/{endpoint}?{q}", headers={"User-Agent": "UrbanixStore/1.0"})
+    with urllib.request.urlopen(req, timeout=8) as r:
+        data = json.loads(r.read())
+    out = []
+    for g in data.get("data", []):
+        imgs = g.get("images", {})
+        small = imgs.get("fixed_width") or {}
+        prev = imgs.get("fixed_width_small") or small
+        url = (small.get("url") or "").split("?")[0]
+        if not GIF_RE.match(url):
+            continue
+        out.append({
+            "id": g.get("id"),
+            "title": g.get("title", ""),
+            "url": url,
+            "preview": (prev.get("webp") or prev.get("url") or url).split("?")[0],
+            "width": int(small.get("width") or 200),
+            "height": int(small.get("height") or 150),
+        })
+    cache.set(key, out, 60 * 30)  # hemat kuota GIPHY
+    return out
+
+
+@api_view(["GET"])
+@_public
+@throttle_classes([GifThrottle])
+def gif_search(request):
+    if not settings.GIPHY_API_KEY:
+        return Response({"error": "GIF belum diaktifkan."}, status=503)
+    q = (request.query_params.get("q") or "").strip()[:50]
+    try:
+        offset = max(0, min(200, int(request.query_params.get("offset", 0))))
+    except ValueError:
+        offset = 0
+    try:
+        if q:
+            results = _giphy("search", {"q": q, "limit": 24, "offset": offset})
+        else:
+            results = _giphy("trending", {"limit": 24, "offset": offset})
+    except Exception:  # noqa: BLE001
+        return Response({"error": "GIF sedang tidak bisa dimuat. Coba lagi nanti."}, status=502)
+    return Response({"results": results})
 
 
 # --------------------------------------------------------------------------- Seller Center
@@ -416,6 +586,7 @@ def _seller_comment(c: ArticleComment) -> dict:
         "body": c.body,
         "is_approved": c.is_approved,
         "is_staff_reply": c.is_staff_reply,
+        "gif_url": c.gif_url,
         "parent_id": c.parent_id,
         "created_at": c.created_at,
         "article": {"id": c.article_id, "title": c.article.title, "slug": c.article.slug},
