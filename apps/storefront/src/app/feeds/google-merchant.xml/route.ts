@@ -37,6 +37,8 @@ function item(p: Product): string {
     ],
     ['g:condition', 'new'],
     ['g:brand', brand],
+    // Tanpa GTIN; produk tanpa merek jelas ditandai tidak punya ID global agar tidak dianggap data kurang.
+    ['g:identifier_exists', brand ? undefined : 'no'],
     ['g:product_type', p.category_name || undefined],
   ];
   const body = fields

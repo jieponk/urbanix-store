@@ -31,7 +31,7 @@ const BRANDS = [
   'Saramonic', 'Boya', 'Ulanzi', 'SmallRig', 'Viltrox', 'Yongnuo', 'Samyang', 'Laowa', 'Aputure', 'Amaran',
   'Nanlite', 'Hollyland', 'SanDisk', 'Lexar', 'Peak Design', 'K&F Concept', 'K&F', 'Feiyu', 'Hohem', 'Moza',
   'Benro', 'Manfrotto', 'Joby', 'Synco', 'Comica', 'Deity', 'Shure', 'Elgato', 'Logitech', 'Anker', 'Ugreen',
-  'Baseus', 'Kingston', 'Samsung', 'Xiaomi', 'Ezviz', 'Imou', 'TP-Link', 'Instax', 'Kodak', 'Vanguard',
+  'Baseus', 'Kingston', 'Samsung', 'Xiaomi', 'Ezviz', 'Imou', 'TP-Link', 'Instax', 'Kodak', 'Vanguard', 'Yashica', 'Timekettle', 'PX',
   'Lowepro', 'Takara', '7Artisans', 'TTArtisan', 'Desview', 'Rokid', 'RayNeo', 'SBOX', 'CineTreak', 'Everbrait',
   'Feelworld', 'Enabot', 'Neewer', 'Plaud', 'Mova', 'Accsoon', 'Fotopro', 'Lomography', 'Medeli', 'iSnap',
   'Beike', 'Obsbot', 'Akaso', 'Avangarde', 'Escura', 'Tilta', 'Sirui', 'Nitecore', 'Maono', 'Fifine',

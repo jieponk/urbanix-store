@@ -88,10 +88,29 @@ function productJsonLd(product: Product) {
       url: `${SITE_URL}/produk/${product.id}`,
       priceCurrency: 'IDR',
       price: Math.round(price),
-      ...(promoEnd ? { priceValidUntil: promoEnd } : {}),
+      // Harga berlaku mulai hari ini; bila promo, sampai promo berakhir (selain itu ±1 tahun ke depan).
+      validFrom: new Date().toISOString().slice(0, 10),
+      priceValidUntil: promoEnd || new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10),
       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
       seller: { '@id': `${SITE_URL}/#toko` },
+      // Sama dengan pengaturan Google Merchant Center: tarif tetap Rp20.000, proses 0–2 hari, kirim 1–7 hari.
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: 20000, currency: 'IDR' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'ID' },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 7, unitCode: 'DAY' },
+          businessDays: {
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(
+              (d) => `https://schema.org/${d}`
+            ),
+          },
+        },
+      },
       // Sesuai Syarat & Ketentuan: laporan kendala barang maks. 2×24 jam dengan video unboxing.
       hasMerchantReturnPolicy: {
         '@type': 'MerchantReturnPolicy',
