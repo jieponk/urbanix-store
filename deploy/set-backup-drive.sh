@@ -13,11 +13,21 @@ fi
 
 echo "==> Browser akan terbuka. Login dengan akun Google tempat backup disimpan (mis. urbanixstore26@gmail.com) lalu klik Izinkan."
 echo "    Kalau browser tidak terbuka sendiri, buka link http://127.0.0.1:53682/... yang muncul di bawah ini."
-OUT=$(rclone authorize "drive" '{"scope":"drive.file"}' 2>&1 | tee /dev/stderr)
+# Parameter scope=drive.file dalam format base64 (format rclone versi baru)
+OUT=$(rclone authorize "drive" "eyJzY29wZSI6ImRyaXZlLmZpbGUifQ" 2>&1 | tee /dev/stderr)
 TOKEN=$(printf '%s\n' "$OUT" | sed -n '/--->/,/<---/p' | sed '1d;$d' | tr -d '\n')
 [ -n "$TOKEN" ] || TOKEN=$(printf '%s\n' "$OUT" | grep -o '{"access_token".*}' | head -1)
 if [ -z "$TOKEN" ]; then
   echo "Gagal mendapat izin Google Drive. Pesan rclone:"; printf '%s\n' "$OUT" | tail -5; exit 1
+fi
+# rclone versi baru memberi "config token" (base64 berisi {"token": "..."}): ambil token aslinya.
+if [ "${TOKEN:0:1}" != "{" ]; then
+  TOKEN=$(python3 -c '
+import base64, json, sys
+s = sys.argv[1].strip()
+data = json.loads(base64.urlsafe_b64decode(s + "=" * (-len(s) % 4)))
+print(data.get("token") or data.get("config_token") or json.dumps(data))
+' "$TOKEN") || { echo "Format token rclone tidak dikenali."; exit 1; }
 fi
 echo "OK, izin Google Drive didapat."
 
