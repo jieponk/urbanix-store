@@ -59,7 +59,17 @@ for K in EMAIL_HOST EMAIL_PORT EMAIL_HOST_USER EMAIL_HOST_PASSWORD EMAIL_FROM; d
   grep -q "^$K=" "$ENVF" || echo "$K=" >> "$ENVF"
 done
 
-docker compose --env-file "$ENVF" -f docker-compose.prod.yml up -d --build --remove-orphans
+DC="docker compose --env-file $ENVF -f docker-compose.prod.yml"
+# 1) Build dulu: versi lama tetap melayani pembeli selama build (±2–4 menit).
+$DC build
+# 2) Baru tukar container (jeda singkat; Caddy menahan permintaan sampai siap).
+$DC up -d --remove-orphans
+# Caddy membaca Caddyfile & halaman perawatan saat container dibuat: buat ulang hanya kalau berubah.
+if ! diff -rq "$APP.old/deploy/Caddyfile" "$APP/deploy/Caddyfile" >/dev/null 2>&1 \
+   || ! diff -rq "$APP.old/deploy/maintenance" "$APP/deploy/maintenance" >/dev/null 2>&1; then
+  echo "==> Konfigurasi Caddy berubah, memuat ulang"
+  $DC up -d --no-deps --force-recreate caddy
+fi
 docker image prune -f >/dev/null
 
 echo "==> Jadwal otomatis: berita tiap 2 jam, backup tiap hari 02:30"

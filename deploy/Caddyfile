@@ -28,11 +28,27 @@
 		root * /srv
 		file_server
 	}
+	# Saat deploy/restart, tahan permintaan sampai aplikasi siap lagi (bukan langsung 502).
 	handle /admin* {
-		reverse_proxy backend:8000
+		reverse_proxy backend:8000 {
+			lb_try_duration 45s
+			lb_try_interval 1s
+		}
 	}
 	handle {
-		reverse_proxy storefront:3000
+		reverse_proxy storefront:3000 {
+			lb_try_duration 45s
+			lb_try_interval 1s
+		}
+	}
+
+	# Kalau tetap belum siap: tampilkan halaman "sedang diperbarui" yang memuat ulang sendiri.
+	handle_errors 502 503 504 {
+		root * /srv/maintenance
+		rewrite * /index.html
+		header Cache-Control "no-store"
+		header Retry-After "30"
+		file_server
 	}
 
 	log {

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sebentar ya… | URBANIX STORE</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: radial-gradient(1200px 600px at 50% -10%, #23307a 0%, #121a42 55%, #0b1030 100%); color: #fff; }
+  .card { max-width: 440px; text-align: center; }
+  .logo { font-weight: 900; letter-spacing: .35em; font-size: 22px; }
+  .tag { font-size: 11px; letter-spacing: .3em; opacity: .7; margin-top: 4px; }
+  .ring { width: 56px; height: 56px; margin: 36px auto 24px; border-radius: 50%;
+          border: 4px solid rgba(255,255,255,.15); border-top-color: #ffc93c; animation: spin 1s linear infinite; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p { margin: 0; line-height: 1.6; color: rgba(255,255,255,.75); }
+  .wa { display: inline-block; margin-top: 24px; padding: 12px 20px; border-radius: 999px;
+        background: #fff; color: #121a42; font-weight: 700; text-decoration: none; }
+  small { display: block; margin-top: 16px; opacity: .5; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .ring { animation: none; } }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">URBANIX</div>
+    <div class="tag">CAPTURE YOUR STYLE</div>
+    <div class="ring" aria-hidden="true"></div>
+    <h1>Toko sedang diperbarui</h1>
+    <p>Kami sedang menambah fitur baru. Biasanya hanya sekitar satu menit; halaman ini akan memuat ulang sendiri.</p>
+    <a class="wa" href="https://wa.me/628212990180">Chat admin di WhatsApp</a>
+    <small>Pesanan &amp; keranjangmu aman.</small>
+  </main>
+  <script>setTimeout(function () { location.reload(); }, 15000);</script>
+</body>
+</html>
