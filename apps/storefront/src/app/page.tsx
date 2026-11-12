@@ -3,7 +3,6 @@ import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
 import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
 import NewsCard from '@/components/NewsCard';
-import ArticleCard from '@/components/inspirasi/ArticleCard';
 import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
 import { VoucherStrip } from '@/components/VoucherCard';
@@ -13,7 +12,6 @@ import {
   getActiveProducts,
   getBanners,
   getCategories,
-  getArticles,
   getNews,
   getReviews,
   getStoreSettings,
@@ -113,16 +111,16 @@ export default async function HomePage({
     productError = true;
   }
 
-  const [categories, settings, reviews, vouchers, news, apiBanners, articlePage] = await Promise.all([
+  const [categories, settings, reviews, vouchers, news, apiBanners] = await Promise.all([
     getCategories(),
     getStoreSettings(),
     getReviews({ limit: 6 }),
     getVouchers(),
-    getNews({ limit: 4 }),
+    getNews({ limit: 24 }),
     getBanners(),
-    getArticles({ limit: 4 }),
   ]);
-  const articles = articlePage?.results ?? [];
+  // Beranda: hanya berita terbaru yang punya gambar (berita tanpa gambar tetap ada di menu Berita).
+  const homeNews = (news?.results ?? []).filter((n) => Boolean(n.image_url)).slice(0, 4);
 
   const totalPages = Math.max(1, Math.ceil(allProducts.length / PER_PAGE));
   const requestedPage = parseInt(params?.hal || '1', 10) || 1;
@@ -243,22 +241,19 @@ export default async function HomePage({
       {/* 6. Ulasan asli pembeli */}
       <ReviewsSection reviews={reviews} settings={settings} />
 
-      {/* Inspirasi: artikel Urbanix diutamakan, sisanya berita kamera (halaman lengkap: /inspirasi) */}
-      {(articles.length > 0 || (news && news.results.length > 0)) && (
-        <section aria-labelledby="judul-inspirasi" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+      {/* Berita terbaru (hanya yang bergambar). Artikel Urbanix ada di menu Inspirasi. */}
+      {homeNews.length > 0 && (
+        <section aria-labelledby="judul-berita" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-3">
-            <h2 id="judul-inspirasi" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-              Inspirasi untuk kreator
+            <h2 id="judul-berita" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              Berita kamera & fotografi
             </h2>
-            <Link href="/inspirasi" className="shrink-0 text-sm font-bold text-ink hover:underline">
+            <Link href="/berita" className="shrink-0 text-sm font-bold text-ink hover:underline">
               Lihat semua
             </Link>
           </div>
           <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-            {articles.slice(0, 4).map((a) => (
-              <ArticleCard key={`a${a.id}`} article={a} />
-            ))}
-            {(news?.results ?? []).slice(0, Math.max(0, 4 - Math.min(4, articles.length))).map((article) => (
+            {homeNews.map((article) => (
               <NewsCard key={article.id} article={article} compact />
             ))}
           </div>
