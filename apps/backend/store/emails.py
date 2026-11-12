@@ -261,16 +261,61 @@ def build_shipped(order: Order) -> EmailMultiAlternatives:
     )
 
 
+def build_review_request(order: Order) -> EmailMultiAlternatives:
+    from .reviews_api import review_url
+
+    store = StoreSettings.load()
+    url = review_url(order)
+    names = list(dict.fromkeys(i.product_name for i in order.items.all()))
+    stars = "".join(
+        f"<a href='{url}?bintang={n}' style='text-decoration:none;font-size:30px;color:#f5b301;padding:0 2px'>★</a>"
+        for n in range(1, 6)
+    )
+    text = [
+        f"Halo {order.customer_name},",
+        "",
+        "Terima kasih sudah berbelanja di Urbanix Store! Bagaimana barangnya?",
+        "Bantu pembeli lain dengan memberi bintang & ulasan singkat (1 menit):",
+        url,
+        "",
+        "Produk: " + ", ".join(names[:5]),
+    ]
+    inner = (
+        f"<p style='margin:0 0 12px'>Halo {escape(order.customer_name)},</p>"
+        "<p style='margin:0 0 16px;color:#4b5563'>Terima kasih sudah berbelanja di Urbanix Store! "
+        "Bagaimana barangnya? Ulasanmu sangat membantu pembeli lain. 🙏</p>"
+        f"<p style='margin:0 0 8px;font-size:13px;color:#6b7280'>{escape(', '.join(names[:5]))}</p>"
+        f"<div style='margin:8px 0 16px'>{stars}</div>"
+        f"<a href='{url}' style='{BTN};background:#cf4309;color:#fff'>Tulis ulasan</a>"
+        "<p style='margin:16px 0 0;font-size:12px;color:#6b7280'>Hanya 1 menit. Boleh sertakan foto barangnya.</p>"
+    )
+    return _message(
+        order,
+        f"Bagaimana pesanan {order.order_number}? Beri ulasan - Urbanix Store",
+        text,
+        _layout("Bagaimana barangnya?", inner, _wa(store)),
+    )
+
+
 # ---------------------------------------------------------------- pengiriman
 def _deliver(order_pk: int, kind: str) -> bool:
-    builders = {"created": build_created, "reminder": build_reminder, "shipped": build_shipped}
+    builders = {
+        "created": build_created,
+        "reminder": build_reminder,
+        "shipped": build_shipped,
+        "review": build_review_request,
+    }
     try:
         order = Order.objects.prefetch_related("items").get(pk=order_pk)
         builders[kind](order).send()
     except Exception:
         logger.exception("Gagal mengirim email %s untuk pesanan #%s", kind, order_pk)
         return False
-    stamp = {"reminder": "reminder_sent_at", "shipped": "shipped_email_sent_at"}.get(kind)
+    stamp = {
+        "reminder": "reminder_sent_at",
+        "shipped": "shipped_email_sent_at",
+        "review": "review_email_sent_at",
+    }.get(kind)
     if stamp:
         Order.objects.filter(pk=order_pk).update(**{stamp: timezone.now()})
     return True
@@ -315,5 +360,31 @@ def send_payment_reminders() -> int:
     sent = 0
     for pk in list(reminder_candidates().values_list("pk", flat=True)):
         if _deliver(pk, "reminder"):
+            sent += 1
+    return sent
+
+
+# Email minta ulasan: sekali, 1 hari setelah pesanan ditandai Selesai (maks. 60 hari sejak pesan).
+REVIEW_AFTER_COMPLETED = timedelta(days=1)
+REVIEW_MAX_ORDER_AGE = timedelta(days=60)
+
+
+def review_candidates(now=None):
+    now = now or timezone.now()
+    return Order.objects.filter(
+        status="COMPLETED",
+        review_email_sent_at__isnull=True,
+        updated_at__lte=now - REVIEW_AFTER_COMPLETED,
+        created_at__gte=now - REVIEW_MAX_ORDER_AGE,
+    ).exclude(customer_email="")
+
+
+def send_review_requests() -> int:
+    """Dipanggil cron tiap jam (bersama pengingat bayar)."""
+    if not settings.ORDER_EMAIL_ENABLED:
+        return 0
+    sent = 0
+    for pk in list(review_candidates().values_list("pk", flat=True)):
+        if _deliver(pk, "review"):
             sent += 1
     return sent

@@ -291,6 +291,7 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
     reminder_sent_at = models.DateTimeField("Email pengingat bayar terkirim", null=True, blank=True)
     shipped_email_sent_at = models.DateTimeField("Email paket dikirim terkirim", null=True, blank=True)
+    review_email_sent_at = models.DateTimeField("Email minta ulasan terkirim", null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -771,3 +772,26 @@ class ArticleCommentReaction(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["comment", "visitor"], name="satu_reaksi_per_pengunjung")]
+
+
+class ProductReview(models.Model):
+    """Ulasan produk dari pembeli terverifikasi (lewat link ulasan pesanan)."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="buyer_reviews")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="buyer_reviews")
+    variation_name = models.CharField("Varian", max_length=255, blank=True)
+    name = models.CharField("Nama tampil", max_length=60)
+    rating = models.PositiveSmallIntegerField("Bintang")
+    body = models.TextField("Ulasan", max_length=2000, blank=True)
+    photo = models.ImageField("Foto", upload_to="ulasan/%Y/%m/", blank=True)
+    is_visible = models.BooleanField("Tampil", default=True)
+    staff_reply = models.TextField("Balasan toko", blank=True)
+    staff_reply_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["order", "product"], name="satu_ulasan_per_produk_per_pesanan")]
+
+    def __str__(self):
+        return f"{self.rating}★ {self.product_id} oleh {self.name}"

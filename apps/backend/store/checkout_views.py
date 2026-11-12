@@ -142,6 +142,12 @@ def _mask_phone(phone: str) -> str:
     return f"{digits[:4]}{'*' * (len(digits) - 7)}{digits[-3:]}"
 
 
+def _review_url(order):
+    from .reviews_api import review_url
+
+    return review_url(order)
+
+
 @api_view(["GET"])
 @_public
 def order_detail(request, order_number):
@@ -177,6 +183,8 @@ def order_detail(request, order_number):
             "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
+            # Link ulasan produk (setelah paket dikirim). Setara keamanannya dengan nomor pesanan.
+            "review_url": _review_url(order) if order.status in ("SHIPPED", "COMPLETED") else "",
             "items": [
                 {
                     "product_id": item.product_id,

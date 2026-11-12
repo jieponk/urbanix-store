@@ -166,7 +166,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
 
 /* ------------------------------------------------------------ Ulasan */
 
-function Stars({ value, size = 16 }: { value: number; size?: number }) {
+export function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
     <span role="img" className="flex gap-0.5" aria-label={`${value} dari 5 bintang`}>
       {[1, 2, 3, 4, 5].map((i) => (

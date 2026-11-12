@@ -163,6 +163,38 @@ export async function getReviews(params: { product?: number; limit?: number } = 
   }
 }
 
+export type ProductReview = {
+  id: number;
+  name: string;
+  rating: number;
+  body: string;
+  photo_url: string;
+  variation_name: string;
+  created_at: string;
+  staff_reply: string;
+  verified: boolean;
+};
+
+export type ProductReviewPage = {
+  count: number;
+  page: number;
+  pages: number;
+  results: ProductReview[];
+  summary: { average: number; count: number; distribution: Record<string, number> };
+};
+
+/** Ulasan pembeli terverifikasi (pesanan di urbanix.id) untuk satu produk. */
+export async function getProductReviews(productId: number, page = 1): Promise<ProductReviewPage | null> {
+  try {
+    const response = await fetch(`${API}/products/${productId}/reviews/?page=${page}&size=10`, {
+      next: { revalidate: 120 },
+    } as RequestInit);
+    return response.ok ? ((await response.json()) as ProductReviewPage) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Ringkasan promo yang sedang berjalan, dihitung dari data produk. */
 export function promoSummary(products: Product[]) {
   const promo = products.filter((p) => (p.discount_percent ?? 0) > 0);

@@ -2,13 +2,16 @@ import Link from 'next/link';
 import { cache } from 'react';
 import { BackLink } from '@/components/Icons';
 import { ReviewsSection } from '@/components/HomeSections';
+import ProductReviews from '@/components/ProductReviews';
 import ProductHero from '@/components/ProductHero';
 import ProductInfoSections from '@/components/ProductInfoSections';
 import {
   API,
   buyableVariations,
   fetchAll,
+  getProductReviews,
   getReviews,
+  type ProductReviewPage,
   getStoreSettings,
   getVouchers,
   type Product,
@@ -69,7 +72,7 @@ export async function generateMetadata({
 }
 
 /** Data terstruktur Google (Product + Offer) agar harga, stok & merek bisa tampil di hasil pencarian. */
-function productJsonLd(product: Product) {
+function productJsonLd(product: Product, reviews?: ProductReviewPage | null) {
   const price = Number(product.final_price ?? product.price) || 0;
   const brand = detectBrand(product.name);
   const promoEnd = product.promo_ends_at && (product.discount_percent ?? 0) > 0 ? product.promo_ends_at.slice(0, 10) : undefined;
@@ -83,6 +86,25 @@ function productJsonLd(product: Product) {
     description: plainText(product.description, 500) || product.name,
     category: product.category_name,
     url: `${SITE_URL}/produk/${product.id}`,
+    // Bintang hanya dari ulasan pembeli terverifikasi yang tampil di halaman ini (bukan salinan Shopee).
+    ...(reviews && reviews.summary.count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: reviews.summary.average,
+            reviewCount: reviews.summary.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: reviews.results.slice(0, 5).map((r) => ({
+            '@type': 'Review',
+            author: { '@type': 'Person', name: r.name },
+            datePublished: r.created_at.slice(0, 10),
+            reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            ...(r.body ? { reviewBody: r.body } : {}),
+          })),
+        }
+      : {}),
     offers: {
       '@type': 'Offer',
       url: `${SITE_URL}/produk/${product.id}`,
@@ -159,9 +181,10 @@ export default async function ProductPage({
   }
 
   const variants = buyableVariations(product);
-  const [reviews, vouchers] = await Promise.all([
+  const [reviews, vouchers, buyerReviews] = await Promise.all([
     getReviews({ product: product.id, limit: 6 }),
     getVouchers(),
+    getProductReviews(product.id),
   ]);
 
   return (
@@ -170,7 +193,7 @@ export default async function ProductPage({
         <BackLink href="/produk">Kembali ke katalog</BackLink>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={jsonLd(productJsonLd(product))}
+          dangerouslySetInnerHTML={jsonLd(productJsonLd(product, buyerReviews))}
         />
         <script
           type="application/ld+json"
@@ -208,9 +231,13 @@ export default async function ProductPage({
           />
         </div>
 
+        {buyerReviews && buyerReviews.summary.count > 0 && (
+          <ProductReviews productId={product.id} initial={buyerReviews} />
+        )}
+
         {reviews.length > 0 && (
           <div className="-mx-4 sm:-mx-6 lg:-mx-8">
-            <ReviewsSection reviews={reviews} settings={storeSettings} title="Ulasan produk ini" />
+            <ReviewsSection reviews={reviews} settings={storeSettings} title="Ulasan produk ini di Shopee" />
           </div>
         )}
       </div>

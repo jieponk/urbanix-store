@@ -72,6 +72,19 @@ export default function OrderDetailPage({ params }: { params: { number: string }
             <a href={`/pesanan/${data.order_number}/invoice`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
               Invoice
             </a>
+            {data.review_url && data.whatsapp_customer && (
+              <a
+                href={`${data.whatsapp_customer}${data.whatsapp_customer.includes('?') ? '&' : '?'}text=${encodeURIComponent(
+                  `Halo kak ${data.customer_name}, terima kasih sudah belanja di Urbanix Store 🙏 Boleh minta bantuannya beri ulasan untuk pesanan ${data.order_number}? Cukup 1 menit: ${data.review_url}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={btn.ghost}
+                title={data.review_email_sent_at ? 'Email minta ulasan sudah terkirim otomatis' : undefined}
+              >
+                ⭐ Minta ulasan via WA
+              </a>
+            )}
             {next && (
               <button type="button" disabled={saving} className={btn.primary} onClick={() => save({ status: next.to }, `Status: ${next.label.toLowerCase()}.`)}>
                 {next.label}

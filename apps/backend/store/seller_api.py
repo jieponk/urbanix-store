@@ -321,6 +321,12 @@ def _order_row(o: Order):
     }
 
 
+def _review_link(o: Order) -> str:
+    from .reviews_api import review_url
+
+    return review_url(o) if o.status in ("SHIPPED", "COMPLETED") else ""
+
+
 def _order_detail(o: Order):
     items = list(o.items.select_related("product", "variation"))
     return {
@@ -341,6 +347,8 @@ def _order_detail(o: Order):
         "stock_reserved": o.stock_reserved,
         "updated_at": o.updated_at,
         "whatsapp_customer": wa_link(o.customer_phone),
+        "review_url": _review_link(o),
+        "review_email_sent_at": o.review_email_sent_at,
         "items": [
             {
                 "product_id": i.product_id,

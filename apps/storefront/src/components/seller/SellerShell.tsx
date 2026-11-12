@@ -28,7 +28,8 @@ const MENU: { group: string; items: { href: string; label: string; icon: IconNam
     { href: '/seller/artikel', label: 'Artikel', icon: 'article' },
     { href: '/seller/komentar', label: 'Komentar', icon: 'chat' },
     { href: '/seller/berita', label: 'Berita RSS', icon: 'news' },
-    { href: '/seller/ulasan', label: 'Ulasan', icon: 'reviews' },
+    { href: '/seller/ulasan-pembeli', label: 'Ulasan produk', icon: 'reviews' },
+    { href: '/seller/ulasan', label: 'Ulasan Shopee', icon: 'reviews' },
   ] },
   { group: 'Toko', items: [{ href: '/seller/pengaturan', label: 'Pengaturan', icon: 'settings' }] },
 ];
@@ -77,7 +78,8 @@ export default function SellerShell({ children }: { children: React.ReactNode })
     window.location.href = '/seller/login';
   }
 
-  const active = (href: string) => (href === '/seller' ? pathname === '/seller' : pathname.startsWith(href));
+  const active = (href: string) =>
+    href === '/seller' ? pathname === '/seller' : pathname === href || pathname.startsWith(`${href}/`);
   const title = MENU.flatMap((g) => g.items).find((i) => active(i.href))?.label ?? 'Seller Center';
 
   const nav = (

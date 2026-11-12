@@ -28,6 +28,7 @@ type OrderDetail = {
   email_enabled?: boolean;
   payment_url: string;
   whatsapp_url: string;
+  review_url?: string;
   items: {
     product_id: number | null;
     name: string;
@@ -169,6 +170,19 @@ export default async function OrderPage({
             </a>
           )}
         </div>
+
+        {order.review_url && (
+          <a
+            href={order.review_url}
+            className="flex items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-sun-400 p-5 text-white shadow-sm transition hover:brightness-105"
+          >
+            <span>
+              <span className="block font-extrabold">Barang sudah sampai? Beri ulasan ⭐</span>
+              <span className="mt-0.5 block text-sm text-white/90">Bantu pembeli lain, hanya 1 menit.</span>
+            </span>
+            <span aria-hidden="true" className="text-2xl">→</span>
+          </a>
+        )}
 
         {order.status !== 'CANCELLED' && (
           <section className="rounded-2xl border border-slate-200 bg-surface p-5">
