@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { loadMotion, prefersReducedMotion } from '@/lib/motion';
 import { claimVoucher, type VoucherInfo } from '@/lib/vouchers';
 
 const STORAGE_KEY = 'urbanix-wa-popup-closed';
@@ -28,12 +29,45 @@ function closedRecently() {
 export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToPromo, voucher }: Props) {
   const [open, setOpen] = useState(false);
   const closeButton = useRef<HTMLButtonElement | null>(null);
+  const backdrop = useRef<HTMLDivElement | null>(null);
+  const dialog = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (closedRecently()) return;
+    const reduced = prefersReducedMotion();
+    // Library animasi dimuat selama jeda 2,5 detik, jadi tidak membebani loading halaman.
+    if (!reduced) loadMotion().catch(() => {});
     const timer = window.setTimeout(() => setOpen(true), DELAY_MS);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // Muncul dengan efek pegas lembut. useLayoutEffect: gaya awal dipasang sebelum digambar (tanpa kedip).
+  useLayoutEffect(() => {
+    const box = dialog.current;
+    const bg = backdrop.current;
+    if (!open || !box || !bg || prefersReducedMotion()) return;
+    box.style.opacity = '0';
+    bg.style.opacity = '0';
+    let cancelled = false;
+    loadMotion()
+      .then(({ animate }) => {
+        if (cancelled) return;
+        animate(bg, { opacity: [0, 1] }, { duration: 0.2, ease: 'easeOut' });
+        animate(
+          box,
+          { opacity: [0, 1], y: [28, 0], scale: [0.96, 1] },
+          { type: 'spring', bounce: 0.3, visualDuration: 0.45, opacity: { duration: 0.2, ease: 'easeOut' } }
+        );
+      })
+      .catch(() => {
+        // Gagal memuat library: tampilkan saja tanpa animasi.
+        box.style.opacity = '';
+        bg.style.opacity = '';
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -65,13 +99,14 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-cobalt-900/60 p-3 sm:items-center" onClick={close}>
+    <div ref={backdrop} className="fixed inset-0 z-[60] flex items-end justify-center bg-cobalt-900/60 p-3 sm:items-center" onClick={close}>
       <div
+        ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wa-popup-title"
         onClick={(e) => e.stopPropagation()}
-        className="popup-in relative w-full max-w-md overflow-hidden rounded-[28px] bg-surface shadow-2xl"
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] bg-surface shadow-2xl"
       >
         <button
           ref={closeButton}

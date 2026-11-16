@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
+import RevealGrid from '@/components/RevealGrid';
 import {
   API,
   fetchAll,
@@ -167,11 +168,11 @@ export default async function CatalogPage({
             </p>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+          <RevealGrid className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
+          </RevealGrid>
         )}
       </div>
     </div>

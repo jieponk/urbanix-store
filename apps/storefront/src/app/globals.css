@@ -87,17 +87,8 @@ body {
 }
 
 /* Popup diskon WhatsApp */
-@keyframes popup-in {
-  from { transform: translateY(24px) scale(0.98); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-.popup-in {
-  animation: popup-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .tick,
-  .popup-in {
+  .tick {
     animation: none;
   }
 }

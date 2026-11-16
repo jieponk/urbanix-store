@@ -4,6 +4,7 @@ import FeatureIcon from '@/components/FeatureIcon';
 import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
 import NewsCard from '@/components/NewsCard';
 import ProductCard from '@/components/ProductCard';
+import RevealGrid from '@/components/RevealGrid';
 import PromoCountdown from '@/components/PromoCountdown';
 import { VoucherStrip } from '@/components/VoucherCard';
 import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
@@ -219,11 +220,11 @@ export default async function HomePage({
           </div>
         ) : (
           <>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            <RevealGrid className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </RevealGrid>
 
             {totalPages > 1 && (
               <nav aria-label="Halaman produk" className="mt-8 flex flex-wrap items-center justify-center gap-3">
