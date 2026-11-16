@@ -78,9 +78,11 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
           type="button"
           onClick={close}
           aria-label="Tutup"
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-xl text-ink hover:bg-surface"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-cobalt-900/10 text-cobalt-900 transition hover:bg-cobalt-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cobalt-900/50"
         >
-          ×
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
 
         <div className="relative bg-sun-400 px-6 pb-6 pt-7">
