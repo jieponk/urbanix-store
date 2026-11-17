@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { ImageResponse } from 'next/og';
 import { getArticle } from '@/lib/api';
 import { SITE_URL } from '@/lib/seo';
@@ -7,22 +9,43 @@ export const dynamic = 'force-dynamic';
 const W = 1200;
 const H = 630;
 
-/** Palet yang sama dengan ikon kategori di beranda (public/categories/*.svg). */
-const PALETTE: { match: RegExp; color: string }[] = [
-  { match: /audio|mic/i, color: '#a78bfa' },
-  { match: /action|360/i, color: '#ff6b6b' },
-  { match: /lensa|filter/i, color: '#ffc93c' },
-  { match: /memory|gadget|kartu/i, color: '#ffa94d' },
-  { match: /aksesori/i, color: '#f06eaa' },
-  { match: /streaming|video/i, color: '#4f8ef7' },
-  { match: /lighting|lampu|studio/i, color: '#ffb020' },
-  { match: /drone/i, color: '#4fd1c5' },
-  { match: /tripod|stabilizer|gimbal/i, color: '#8bcb4a' },
-  { match: /tas|case/i, color: '#f6893b' },
-  { match: /webcam|komputer/i, color: '#7c83fd' },
-  { match: /cctv|keamanan/i, color: '#34c38f' },
-  { match: /kamera|camera/i, color: '#5bb5f9' },
+/**
+ * Topik → warna + ikon (sama dengan ikon kategori di beranda, public/categories/*.svg).
+ * Urutan penting: yang lebih spesifik di atas.
+ */
+const TOPICS: { match: RegExp; color: string; icon: string }[] = [
+  { match: /audio|mic\b|mikrofon|hollyland|lark/i, color: '#a78bfa', icon: 'audio-mic' },
+  { match: /action|360|insta360|osmo action|gopro/i, color: '#ff6b6b', icon: 'action-cam' },
+  { match: /lensa|lens\b|filter|bokeh|portrait/i, color: '#ffc93c', icon: 'lensa-filter' },
+  { match: /drone/i, color: '#4fd1c5', icon: 'drone' },
+  { match: /tripod|stabilizer|gimbal/i, color: '#8bcb4a', icon: 'stabilizer-tripod' },
+  { match: /lighting|lampu|studio/i, color: '#ffb020', icon: 'lighting-studio' },
+  { match: /streaming|webcam/i, color: '#4f8ef7', icon: 'streaming-video' },
+  { match: /memory|kartu memori|sd card|gadget/i, color: '#ffa94d', icon: 'memory-gadget' },
+  { match: /tas|case|backpack/i, color: '#f6893b', icon: 'tas-case' },
+  { match: /aksesori|gear|pemula|baterai/i, color: '#f06eaa', icon: 'aksesori-kamera' },
+  { match: /kamera|camera|pocket|mirrorless|instax|full frame/i, color: '#5bb5f9', icon: 'kamera' },
 ];
+const DEFAULT_TOPIC = { color: '#5bb5f9', icon: 'kamera' };
+
+/** Ambil gambar objek dari ikon kategori (bulatan & bayangan bawaannya dibuang), diperbesar. */
+function topicIcon(name: string): string | null {
+  try {
+    const raw = fs.readFileSync(path.join(process.cwd(), 'public', 'categories', `${name}.svg`), 'utf8');
+    const body = raw
+      .replace(/<\?xml[^>]*>/, '')
+      .replace(/<svg[^>]*>/, '')
+      .replace('</svg>', '')
+      .replace(/<defs>[\s\S]*?<\/defs>/, '')
+      .replace(/<circle cx="60" cy="60" r="58"[^>]*\/>/, '')
+      .replace(/<polygon[^>]*clip-path="url\(#c\)"[^>]*\/>/, '');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 84 84">${body}</svg>`;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  } catch {
+    return null;
+  }
+}
+
 const FALLBACK = ['#5bb5f9', '#a78bfa', '#ff6b6b', '#ffa94d', '#f06eaa', '#4fd1c5', '#8bcb4a', '#7c83fd'];
 
 /** Font untuk label kecil (Plus Jakarta Sans); bila gagal diunduh, pakai font bawaan. */
@@ -47,7 +70,6 @@ function font(weight: number) {
   return fonts.get(weight)!;
 }
 
-const abs = (src: string) => (src.startsWith('http') ? src : `${SITE_URL}${src}`);
 
 /** Gelapkan warna hex (untuk bayangan panjang). */
 function shade(hex: string, amount = 0.16) {
@@ -85,34 +107,34 @@ function backdropSvg(color: string) {
 
 /**
  * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
- * Gaya ikon kategori: warna cerah datar + bayangan panjang, satu foto produk di kartu putih, tulisan minimal.
+ * Gaya ikon kategori: warna cerah datar + bayangan panjang, ilustrasi ikon sesuai topik di kartu putih, tulisan minimal.
  */
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
   if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
 
-  const products = (article.related_products || []).filter((p) => p.image_url || p.images?.[0]);
-  const images = products.slice(0, 1).map((p) => abs(p.image_url || p.images?.[0] || ''));
-  const mainCat = products[0]?.category_name || article.title;
-  const color = PALETTE.find((p) => p.match.test(mainCat))?.color || FALLBACK[article.id % FALLBACK.length];
+  // Topik dari judul dulu; kalau tidak ketemu, dari kategori produk utama.
+  const productCat = article.related_products?.[0]?.category_name || '';
+  const topic =
+    TOPICS.find((t) => t.match.test(article.title)) ||
+    TOPICS.find((t) => t.match.test(productCat)) ||
+    TOPICS.find((t) => t.match.test(article.tags.join(' '))) ||
+    { ...DEFAULT_TOPIC, color: FALLBACK[article.id % FALLBACK.length] };
+  const color = topic.color;
+  const icon = topicIcon(topic.icon);
 
   const bold = await font(800);
   const family = bold ? 'Jakarta' : undefined;
-  const PHOTO = CARD - 56;
+  const PHOTO = CARD - 70;
 
   return new ImageResponse(
     (
       <div style={{ width: W, height: H, display: 'flex', position: 'relative', fontFamily: family }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={backdropSvg(color)} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
-        {images[0] && (
+        {icon && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={images[0]}
-            width={PHOTO}
-            height={PHOTO}
-            style={{ position: 'absolute', left: (W - PHOTO) / 2, top: (H - PHOTO) / 2, objectFit: 'contain', borderRadius: CARD_R - 16 }}
-          />
+          <img src={icon} width={PHOTO} height={PHOTO} style={{ position: 'absolute', left: (W - PHOTO) / 2, top: (H - PHOTO) / 2 }} />
         )}
 
         {/* label kecil: kategori artikel & logo */}
