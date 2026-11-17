@@ -498,7 +498,7 @@ const EN: Record<string, string> = {
   'Cerita kami': 'Our story',
   'Urbanix lahir dari satu keyakinan sederhana: karya yang bagus dimulai dari alat yang tepat. Kami melihat banyak kreator kesulitan memilih gear: bingung soal keaslian, harga yang berbeda-beda, dan pertanyaan yang lama dijawab.': 'Urbanix was born from a simple belief: great work starts with the right tools. We saw many creators struggle to choose gear: unsure about authenticity, inconsistent prices, and slow answers to their questions.',
   'Karena itu kami memilih produk dengan teliti, menampilkan harga dan promo apa adanya, dan menjawab pertanyaanmu secepat mungkin, dari pertimbangan sebelum membeli sampai urusan garansi setelahnya.': 'That is why we choose products carefully, show prices and promotions honestly, and answer your questions as fast as we can, from pre-purchase advice to warranty matters afterwards.',
-  '“Capture Your Style” adalah janji kami: apa pun gaya berkaryamu, kami bantu siapkan perlengkapannya.': '“Capture Your Style” is our promise: whatever your creative style, we help you gear up for it.',
+  'Dari situlah slogan kami lahir: “Capture Your Style”. Apa pun gaya berkaryamu, kami bantu siapkan perlengkapannya.': 'That is where our slogan comes from: “Capture Your Style”. Whatever your creative style, we help you gear up for it.',
   'Yang kami sediakan': 'What we offer',
   'Kamera, lensa, drone, audio, lighting, dan aksesori kreator.': 'Cameras, lenses, drones, audio, lighting, and creator accessories.',
   'Janji kami untukmu': 'Our promise to you',

@@ -111,7 +111,7 @@ export default async function AboutPage() {
                 {t('Karena itu kami memilih produk dengan teliti, menampilkan harga dan promo apa adanya, dan menjawab pertanyaanmu secepat mungkin, dari pertimbangan sebelum membeli sampai urusan garansi setelahnya.')}
               </p>
               <blockquote className="border-l-4 border-brand-500 pl-5 text-xl font-bold leading-8 text-ink">
-                {t('“Capture Your Style” adalah janji kami: apa pun gaya berkaryamu, kami bantu siapkan perlengkapannya.')}
+                {t('Dari situlah slogan kami lahir: “Capture Your Style”. Apa pun gaya berkaryamu, kami bantu siapkan perlengkapannya.')}
               </blockquote>
             </div>
           </div>
