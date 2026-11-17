@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { money, type Variation } from '@/lib/api';
 import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
 import { CartIcon } from '@/components/Icons';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 
 type Props = {
   id: string;
@@ -191,17 +192,19 @@ export default function ProductBuyButtons({
           type="button"
           onClick={addProduct}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
+          className="group inline-flex items-center justify-center gap-2 rounded-lg border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
         >
-          + Tambah ke Keranjang
+          <CartIcon size={18} className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+          Tambah ke Keranjang
         </button>
         <button
           type="button"
           onClick={buyNow}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3.5 text-sm font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Beli Sekarang
+          <ArrowRight size={18} />
         </button>
       </div>
 

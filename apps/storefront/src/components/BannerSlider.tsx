@@ -34,7 +34,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
 
   return (
     <div
-      className="relative h-full overflow-hidden rounded-[28px] bg-surface"
+      className="relative h-full overflow-hidden rounded-xl bg-surface ring-1 ring-slate-200"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}

@@ -161,7 +161,7 @@ export default async function HomePage({
           {slides.length > 0 ? (
             <BannerSlider slides={slides} />
           ) : (
-            <div className="flex flex-col justify-center rounded-[28px] bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
+            <div className="flex flex-col justify-center rounded-xl bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
               <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">
                 Kamera, lensa, dan gear kreator dalam satu toko.
               </h1>

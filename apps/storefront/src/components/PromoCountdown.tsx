@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 
 type Props = {
   name: string;
@@ -44,7 +45,7 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
   return (
     <section
       aria-label={`${name}, hemat sampai ${maxDiscount}%`}
-      className="relative flex h-full flex-col overflow-hidden rounded-[28px] bg-cobalt-800 p-5 text-white sm:p-6"
+      className="relative flex h-full flex-col overflow-hidden rounded-xl bg-cobalt-900 p-5 text-white sm:p-6"
     >
       {/* Sudut jendela bidik kamera */}
       <span className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l-2 border-t-2 border-white/30" aria-hidden="true" />
@@ -52,7 +53,7 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
       <span className="pointer-events-none absolute bottom-3 left-3 h-5 w-5 border-b-2 border-l-2 border-white/30" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 h-5 w-5 border-b-2 border-r-2 border-white/30" aria-hidden="true" />
 
-      <p className="flex items-center gap-2 text-sm font-semibold text-sun-300">
+      <p className="flex items-center gap-2 text-sm font-semibold text-white/75">
         <span className="h-2 w-2 rounded-full bg-sale-600 shadow-[0_0_0_3px_rgba(229,36,59,0.35)]" aria-hidden="true" />
         {name} sedang berjalan
       </p>
@@ -69,8 +70,8 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
           <p className="text-xs font-medium text-white/70">Berakhir dalam</p>
           <div className="mt-1.5 grid grid-cols-4 gap-1.5" role="timer" aria-live="off">
             {units.map((unit) => (
-              <div key={unit.label} className="rounded-xl bg-cobalt-900 px-1 py-2 text-center ring-1 ring-white/10">
-                <span key={unit.value} className="tick block text-2xl font-extrabold tabular-nums text-sun-400 sm:text-[28px]">
+              <div key={unit.label} className="rounded-md bg-white/[0.06] px-1 py-2 text-center ring-1 ring-white/10">
+                <span key={unit.value} className="tick block text-2xl font-extrabold tabular-nums text-white sm:text-[28px]">
                   {String(unit.value).padStart(2, '0')}
                 </span>
                 <span className="block text-[11px] text-white/60">{unit.label}</span>
@@ -84,9 +85,9 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
         <p className="text-sm text-white/80">{count} produk ikut promo</p>
         <Link
           href="/produk?promo=1"
-          className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-onbrand transition hover:bg-brand-700"
+          className="group inline-flex items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
         >
-          Lihat semua promo
+          Lihat semua promo <ArrowRight size={16} />
         </Link>
       </div>
     </section>

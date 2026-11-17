@@ -132,7 +132,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="grid gap-6 rounded-[28px] bg-cobalt-800 p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+      <div className="grid gap-6 rounded-xl bg-cobalt-900 p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
         <div>
           <h2 id="judul-wa" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
             {percent > 0 ? `Pesan via WhatsApp, hemat ${percent}%` : 'Pesan via WhatsApp'}

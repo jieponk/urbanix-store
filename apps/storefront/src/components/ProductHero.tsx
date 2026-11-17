@@ -6,6 +6,7 @@ import ProductBuyButtons from '@/components/ProductBuyButtons';
 import { siteConfig } from '@/lib/siteConfig';
 import ProductGallery from '@/components/ProductGallery';
 import { VoucherStrip } from '@/components/VoucherCard';
+import { ChevronRight, Ticket } from '@/components/inspirasi/InspoIcons';
 import { money, type Product, type Variation } from '@/lib/api';
 import type { VoucherInfo } from '@/lib/vouchers';
 
@@ -64,6 +65,12 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
     : Number(product.stock) || 0;
   const sku = selected?.sku || (!hasVariants ? product.sku : '');
   const promoEnds = promoEndText(product.promo_ends_at);
+  // Nama dari Shopee sering panjang: "URBANIX - Nama | kata kunci | ...". Judul = bagian utama, sisanya keterangan kecil.
+  const title = useMemo(() => {
+    const clean = product.name.replace(/^URBANIX\s*[-–—]\s*/i, '').trim();
+    const [main, ...rest] = clean.split(/\s+\|\s+/);
+    return { main: main || clean, extra: rest.join(' · ') };
+  }, [product.name]);
 
   return (
     <div className="mt-4 grid grid-cols-1 gap-5 sm:mt-6 md:grid-cols-2 md:gap-10 lg:gap-14">
@@ -78,8 +85,9 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         <p className="text-xs font-semibold text-ink sm:text-sm">{product.category_name || 'Produk'}</p>
 
         <h1 className="mt-2 break-words text-xl font-extrabold leading-snug tracking-tight sm:mt-3 sm:text-3xl sm:leading-tight">
-          {product.name}
+          {title.main}
         </h1>
+        {title.extra && <p className="mt-2 text-sm leading-6 text-slate-500">{title.extra}</p>}
 
         {sku && (
           <p className="mt-3 text-xs text-slate-400">
@@ -121,12 +129,6 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           </p>
         </div>
 
-        {vouchers.length > 0 && (
-          <div className="mt-4">
-            <VoucherStrip vouchers={vouchers} title="Voucher toko" stacked />
-          </div>
-        )}
-
         <ProductBuyButtons
           id={String(product.id)}
           name={product.name}
@@ -140,8 +142,27 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           whatsappNumber={whatsappNumber}
         />
 
+        {/* Voucher diringkas supaya tidak menutupi tombol beli */}
+        {vouchers.length > 0 && (
+          <details className="group mt-4 rounded-xl border border-slate-200">
+            <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 text-sm [&::-webkit-details-marker]:hidden">
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-sale-600 text-white">
+                <Ticket size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <b className="block text-ink">{vouchers.length} voucher toko tersedia</b>
+                <span className="block truncate text-xs text-slate-500">{vouchers.map((v) => v.headline).join(' · ')}</span>
+              </span>
+              <ChevronRight size={16} className="rotate-90 text-slate-500 transition-transform duration-300 group-open:-rotate-90" />
+            </summary>
+            <div className="border-t border-slate-200 p-3">
+              <VoucherStrip vouchers={vouchers} stacked />
+            </div>
+          </details>
+        )}
+
         {/* Info pembayaran, pengiriman & retur di dekat tombol beli (juga syarat Google Merchant Center) */}
-        <ul className="mt-5 grid gap-2 rounded-2xl bg-mist p-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
+        <ul className="mt-5 grid gap-3 border-t border-slate-200 pt-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
           <li>
             <b className="block text-ink">Pembayaran</b>
             {siteConfig.paymentMethods.map((m) => m.name).join(', ')}.{' '}

@@ -39,11 +39,11 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
   const ends = voucherEndText(voucher.ends_at);
 
   return (
-    <div className={`flex overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200 ${compact ? 'min-w-[260px]' : ''}`}>
+    <div className={`flex overflow-hidden rounded-xl bg-surface ring-1 ring-slate-200 ${compact ? 'min-w-[260px]' : ''}`}>
       {/* Potongan tiket */}
       <div
         className={`relative flex w-[74px] shrink-0 flex-col items-center justify-center gap-1 px-2 text-center ${
-          shipping ? 'bg-emerald-700 text-white' : 'bg-sale-600 text-white'
+          shipping ? 'bg-cobalt-900 text-white' : 'bg-sale-600 text-white'
         }`}
       >
         <TicketIcon shipping={shipping} />
@@ -67,7 +67,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
             type="button"
             onClick={() => claimVoucher(voucher.code)}
             disabled={claimed}
-            className={`h-8 shrink-0 rounded-full px-4 text-xs font-bold transition ${
+            className={`h-8 shrink-0 rounded-md px-4 text-xs font-bold transition ${
               claimed ? 'bg-mist text-slate-500' : 'bg-ink text-surface hover:bg-slate-800'
             }`}
           >

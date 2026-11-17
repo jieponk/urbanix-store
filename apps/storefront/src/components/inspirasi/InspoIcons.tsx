@@ -134,7 +134,7 @@ const Star = ({ size, className }: P) => (
   </svg>
 );
 
-const Ticket = ({ size, className }: P) => (
+export const Ticket = ({ size, className }: P) => (
   <svg {...base(size, className)}>
     <path d="M3.5 8a1.5 1.5 0 0 0 1.5-1.5V6h14v.5a1.5 1.5 0 0 0 1.5 1.5v2a2 2 0 0 0 0 4v2a1.5 1.5 0 0 0-1.5 1.5v.5H5v-.5A1.5 1.5 0 0 0 3.5 16v-2a2 2 0 0 0 0-4z" />
     <path d="M10 9.5v1M10 13.5v1" />

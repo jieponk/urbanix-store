@@ -94,7 +94,7 @@ export default function LegalPage({
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 block rounded-xl bg-brand-600 text-onbrand px-4 py-2.5 text-center text-sm font-bold hover:brightness-95"
+                  className="mt-4 block rounded-md bg-white px-4 py-2.5 text-center text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
                 >
                   Chat admin
                 </a>

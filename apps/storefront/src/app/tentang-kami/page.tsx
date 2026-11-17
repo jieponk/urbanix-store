@@ -51,7 +51,7 @@ export default async function AboutPage() {
               transparan dan layanan yang cepat.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/produk" className="rounded-xl bg-brand-600 px-6 py-3 font-bold text-onbrand hover:brightness-95">
+              <Link href="/produk" className="rounded-md bg-white px-6 py-3 font-bold text-cobalt-900 transition hover:bg-white/85">
                 Lihat produk
               </Link>
               <a href="#cerita" className="rounded-xl px-6 py-3 font-bold text-white ring-1 ring-white/30 hover:bg-white/10">
@@ -203,7 +203,7 @@ export default async function AboutPage() {
             <p className="mt-2 max-w-xl text-white/75">{legal.address}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/produk" className="rounded-xl bg-brand-600 px-6 py-3 font-bold text-onbrand hover:brightness-95">
+            <Link href="/produk" className="rounded-md bg-white px-6 py-3 font-bold text-cobalt-900 transition hover:bg-white/85">
               Mulai belanja
             </Link>
             {whatsapp && (
