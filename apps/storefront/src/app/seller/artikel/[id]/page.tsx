@@ -309,7 +309,18 @@ export default function ArticleEditorPage() {
           <Card title="Gambar sampul">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={coverPreview || DEFAULT_COVER} alt="" className="aspect-[1200/630] w-full rounded-xl bg-mist object-cover ring-1 ring-slate-200" />
-            {!coverPreview && <p className="mt-2 text-xs text-slate-500">Belum ada sampul: gambar default Urbanix yang dipakai.</p>}
+            {!coverPreview && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {related.length
+                  ? 'Belum upload sampul: sampul dibuat otomatis dari judul + foto produk terkait (maks. 3 produk pertama).'
+                  : 'Belum ada sampul: pilih Produk terkait untuk sampul otomatis, atau gambar default Urbanix yang dipakai.'}
+              </p>
+            )}
+            {!coverPreview && form.slug && related.length > 0 && (
+              <a href={`/inspirasi/${form.slug}/sampul.png`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-bold text-brand-600 hover:underline">
+                Lihat sampul otomatis (setelah disimpan & terbit) ↗
+              </a>
+            )}
             <div className="mt-3 flex gap-2">
               <label className={`${btn.ghost} cursor-pointer`}>
                 {coverPreview ? 'Ganti' : 'Upload sampul'}

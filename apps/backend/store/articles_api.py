@@ -69,7 +69,15 @@ def unique_slug(title: str, exclude_pk=None) -> str:
 
 
 def _cover(article: Article) -> str:
-    return article.cover.url if article.cover else ""
+    """Gambar sampul unggahan; bila kosong tapi ada produk terkait -> sampul otomatis (dibuat storefront)."""
+    if article.cover:
+        return article.cover.url
+    count = getattr(article, "related_count", None)
+    if count is None:
+        count = article.related_products.count() if article.pk else 0
+    if count:
+        return f"/inspirasi/{article.slug}/sampul.png?v={int(article.updated_at.timestamp())}"
+    return ""
 
 
 def _category(c: ArticleCategory | None):
@@ -107,7 +115,10 @@ def published():
     return (
         Article.objects.filter(status="PUBLISHED", published_at__lte=timezone.now())
         .select_related("category")
-        .annotate(approved_comments=Count("comments", filter=Q(comments__is_approved=True)))
+        .annotate(
+            approved_comments=Count("comments", filter=Q(comments__is_approved=True), distinct=True),
+            related_count=Count("related_products", distinct=True),
+        )
     )
 
 
