@@ -55,93 +55,65 @@ function shade(hex: string, amount = 0.16) {
   const f = (v: number) => Math.round(v * (1 - amount));
   return `rgb(${f(n >> 16)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`;
 }
-/** Campur warna dengan putih (untuk latar lembut). */
-function tint(hex: string, amount = 0.86) {
+/** Warna terang (kuning/oranye muda) butuh tulisan gelap supaya terbaca. */
+function isLight(hex: string) {
   const n = parseInt(hex.slice(1), 16);
-  const f = (v: number) => Math.round(v + (255 - v) * amount);
-  return `rgb(${f(n >> 16)}, ${f((n >> 8) & 255)}, ${f(n & 255)})`;
+  return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.68;
 }
 
+/** Ukuran kartu putih tempat foto produk. */
+const CARD = 400;
+const CARD_R = 44;
+
 /**
- * Latar gaya ikon datar: lingkaran besar berwarna + lingkaran putih + bayangan panjang miring (dipotong lingkaran).
- * Dibuat sebagai SVG supaya potongan (clip) bayangannya rapi.
+ * Latar gaya ikon datar: warna penuh + satu kartu putih bersudut tumpul + bayangan panjang miring.
+ * Dibuat sebagai SVG supaya bayangannya rapi.
  */
-function backdropSvg(color: string, extras: { x: number; y: number; r: number }[]) {
-  const cx = W / 2;
-  const cy = H / 2;
-  const R = 268;
-  const r = 168;
-  const k = Math.SQRT1_2;
-  const L = 700;
-  const band = (x: number, y: number, rr: number) => {
-    const p1 = [x + rr * k, y - rr * k];
-    const p2 = [x - rr * k, y + rr * k];
-    return `${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p2[0] + L * k},${p2[1] + L * k} ${p1[0] + L * k},${p1[1] + L * k}`;
-  };
+function backdropSvg(color: string) {
+  const x = (W - CARD) / 2;
+  const y = (H - CARD) / 2;
+  const L = 900;
+  // Bayangan: sisi kanan-atas & kiri-bawah kartu ditarik 45° ke kanan bawah
+  const shadow = `${x + CARD},${y} ${x + CARD + L},${y + L} ${x + L},${y + CARD + L} ${x},${y + CARD}`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs><clipPath id="c"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath></defs>
-  <rect width="${W}" height="${H}" fill="${tint(color)}"/>
-  <circle cx="${cx}" cy="${cy}" r="${R}" fill="${color}"/>
-  <polygon points="${band(cx, cy - 4, r)}" fill="${shade(color)}" clip-path="url(#c)"/>
-  <circle cx="${cx}" cy="${cy - 4}" r="${r}" fill="#ffffff"/>
-  ${extras
-    .map(
-      (e) => `<polygon points="${band(e.x, e.y, e.r)}" fill="#000" fill-opacity="0.08" clip-path="url(#c)"/>
-  <circle cx="${e.x}" cy="${e.y}" r="${e.r}" fill="#ffffff" stroke="${color}" stroke-width="6"/>`
-    )
-    .join('\n')}
+  <rect width="${W}" height="${H}" fill="${color}"/>
+  <polygon points="${shadow}" fill="${shade(color)}"/>
+  <rect x="${x}" y="${y}" width="${CARD}" height="${CARD}" rx="${CARD_R}" fill="#ffffff"/>
 </svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`; // isi SVG hanya ASCII
 }
 
 /**
  * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
- * Gaya sama dengan ikon kategori: warna cerah datar, bayangan panjang, foto produk di tengah, tulisan minimal.
+ * Gaya ikon kategori: warna cerah datar + bayangan panjang, satu foto produk di kartu putih, tulisan minimal.
  */
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
   if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
 
   const products = (article.related_products || []).filter((p) => p.image_url || p.images?.[0]);
-  const images = products.slice(0, 3).map((p) => abs(p.image_url || p.images?.[0] || ''));
+  const images = products.slice(0, 1).map((p) => abs(p.image_url || p.images?.[0] || ''));
   const mainCat = products[0]?.category_name || article.title;
   const color = PALETTE.find((p) => p.match.test(mainCat))?.color || FALLBACK[article.id % FALLBACK.length];
 
-  // Produk ke-2 & ke-3: lingkaran kecil di tepi lingkaran besar
-  const spots = [
-    { x: W / 2 - 250, y: H / 2 + 150, r: 92 },
-    { x: W / 2 + 255, y: H / 2 - 150, r: 92 },
-  ].slice(0, Math.max(0, images.length - 1));
-
   const bold = await font(800);
   const family = bold ? 'Jakarta' : undefined;
-  const MAIN = 168;
+  const PHOTO = CARD - 56;
 
   return new ImageResponse(
     (
       <div style={{ width: W, height: H, display: 'flex', position: 'relative', fontFamily: family }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={backdropSvg(color, spots)} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
-
+        <img src={backdropSvg(color)} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
         {images[0] && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={images[0]}
-            width={MAIN * 1.38}
-            height={MAIN * 1.38}
-            style={{ position: 'absolute', left: W / 2 - MAIN * 0.69, top: H / 2 - 4 - MAIN * 0.69, objectFit: 'contain' }}
+            width={PHOTO}
+            height={PHOTO}
+            style={{ position: 'absolute', left: (W - PHOTO) / 2, top: (H - PHOTO) / 2, objectFit: 'contain', borderRadius: CARD_R - 16 }}
           />
         )}
-        {spots.map((s, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={i}
-            src={images[i + 1]}
-            width={s.r * 1.38}
-            height={s.r * 1.38}
-            style={{ position: 'absolute', left: s.x - s.r * 0.69, top: s.y - s.r * 0.69, objectFit: 'contain' }}
-          />
-        ))}
 
         {/* label kecil: kategori artikel & logo */}
         {article.category?.name && (
@@ -153,8 +125,8 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
               display: 'flex',
               padding: '12px 24px',
               borderRadius: 9999,
-              background: '#111111',
-              color: '#ffffff',
+              background: '#ffffff',
+              color: '#111111',
               fontSize: 26,
               fontWeight: 800,
             }}
@@ -162,7 +134,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
             {article.category.name}
           </div>
         )}
-        <div style={{ position: 'absolute', right: 52, bottom: 50, display: 'flex', fontSize: 30, fontWeight: 800, letterSpacing: 8, color: '#111111' }}>
+        <div style={{ position: 'absolute', right: 52, bottom: 50, display: 'flex', fontSize: 30, fontWeight: 800, letterSpacing: 8, color: isLight(color) ? '#111111' : '#ffffff' }}>
           URBANIX
         </div>
       </div>
