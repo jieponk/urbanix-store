@@ -1,5 +1,6 @@
 'use client';
 
+import { FlashSaleStrip } from '@/components/FlashSale';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import ProductBuyButtons from '@/components/ProductBuyButtons';
@@ -8,7 +9,7 @@ import ProductGallery from '@/components/ProductGallery';
 import { VoucherStrip } from '@/components/VoucherCard';
 import { ChevronRight, Ticket } from '@/components/inspirasi/InspoIcons';
 import type { Product, Variation } from '@/lib/api';
-import { money } from '@/lib/money';
+import { money, weightText } from '@/lib/money';
 import type { VoucherInfo } from '@/lib/vouchers';
 import { useT } from '@/components/LangProvider';
 
@@ -68,6 +69,8 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
     : Number(product.stock) || 0;
   const sku = selected?.sku || (!hasVariants ? product.sku : '');
   const promoEnds = promoEndText(product.promo_ends_at);
+  const flash = selected ? selected.flash ?? null : product.flash ?? null;
+  const pkg = selected?.package ?? product.package;
   // Nama dari Shopee sering panjang: "URBANIX - Nama | kata kunci | ...". Judul = bagian utama, sisanya keterangan kecil.
   const title = useMemo(() => {
     const clean = product.name.replace(/^URBANIX\s*[-–—]\s*/i, '').trim();
@@ -100,7 +103,9 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         )}
 
         <div className="mt-4 border-y border-slate-200 py-4 sm:mt-6 sm:py-5">
-          {product.promo_name && maxDiscount > 0 && (
+          {flash ? (
+            <FlashSaleStrip flash={flash} />
+          ) : product.promo_name && maxDiscount > 0 && (
             <p className="mb-2 inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
               {product.promo_name}
               {promoEnds && <span className="font-medium text-red-600">{t('s/d {date}', { date: promoEnds })}</span>}
@@ -130,6 +135,22 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
                 ? t('Stok varian ini habis')
                 : t('Stok tercatat habis')}
           </p>
+
+          {pkg?.ship_weight_grams ? (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 8 12 3 3 8v8l9 5 9-5V8z" />
+                <path d="m3 8 9 5 9-5M12 13v8" />
+              </svg>
+              <span>
+                {t('Berat kirim {w}', { w: weightText(pkg.ship_weight_grams) })}
+                {pkg.volume_weight_grams && pkg.volume_weight_grams > (pkg.weight_grams ?? 0) ? ` (${t('berat volume')})` : ''}
+              </span>
+              {pkg.length_cm && pkg.width_cm && pkg.height_cm && (
+                <span className="text-slate-400">· {pkg.length_cm}×{pkg.width_cm}×{pkg.height_cm} cm</span>
+              )}
+            </p>
+          ) : null}
         </div>
 
         <ProductBuyButtons

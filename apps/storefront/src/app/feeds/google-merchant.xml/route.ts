@@ -40,6 +40,15 @@ function item(p: Product): string {
     // Tanpa GTIN; produk tanpa merek jelas ditandai tidak punya ID global agar tidak dianggap data kurang.
     ['g:identifier_exists', brand ? undefined : 'no'],
     ['g:product_type', p.category_name || undefined],
+    // Berat & ukuran paket (bila diisi di Seller Center)
+    ['g:shipping_weight', p.package?.ship_weight_grams ? `${p.package.ship_weight_grams} g` : undefined],
+    ...(p.package?.length_cm && p.package.width_cm && p.package.height_cm
+      ? ([
+          ['g:shipping_length', `${p.package.length_cm} cm`],
+          ['g:shipping_width', `${p.package.width_cm} cm`],
+          ['g:shipping_height', `${p.package.height_cm} cm`],
+        ] as [string, string][])
+      : []),
   ];
   const body = fields
     .filter(([, v]) => v !== undefined && v !== '')

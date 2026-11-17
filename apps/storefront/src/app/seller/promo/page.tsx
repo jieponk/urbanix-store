@@ -8,7 +8,7 @@ import { fmtDateTime, fromLocalInput, notify, sellerApi, useSellerData } from '@
 export default function PromosPage() {
   const { data, error, loading, reload } = useSellerData<any[]>('promos');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', starts_at: '', ends_at: '', is_active: true });
+  const [form, setForm] = useState({ name: '', starts_at: '', ends_at: '', is_active: true, is_flash_sale: false });
   const [busy, setBusy] = useState(false);
 
   async function create() {
@@ -40,7 +40,7 @@ export default function PromosPage() {
                 <li key={p.id}>
                   <Link href={`/seller/promo/${p.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-mist sm:px-5">
                     <span className="min-w-0 flex-1">
-                      <span className="block font-bold text-ink">{p.name}</span>
+                      <span className="block font-bold text-ink">{p.is_flash_sale ? '⚡ ' : ''}{p.name}</span>
                       <span className="text-xs text-slate-500">
                         {p.starts_at ? fmtDateTime(p.starts_at) : 'Langsung'} – {p.ends_at ? fmtDateTime(p.ends_at) : 'tanpa batas'} · {p.items_count} SKU
                       </span>
@@ -60,6 +60,7 @@ export default function PromosPage() {
           <Field label="Mulai" hint="Kosongkan = langsung berlaku."><input type="datetime-local" className={inputCls} value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} /></Field>
           <Field label="Selesai" hint="Kosongkan = berlaku sampai dimatikan."><input type="datetime-local" className={inputCls} value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} /></Field>
           <label className="flex items-center gap-3 text-sm font-bold text-ink"><Toggle checked={form.is_active} onChange={(v) => setForm({ ...form, is_active: v })} /> Aktif</label>
+          <label className="flex items-start gap-3 text-sm"><Toggle checked={form.is_flash_sale} onChange={(v) => setForm({ ...form, is_flash_sale: v })} /><span><b className="block text-ink">⚡ Flash Sale</b><span className="text-xs text-slate-500">Hitung mundur di beranda + kuota per produk.</span></span></label>
         </div>
       </Drawer>
     </div>

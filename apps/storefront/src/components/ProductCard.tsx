@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { money, type Product } from '@/lib/api';
 import { productImg } from '@/lib/img';
 import { getT } from '@/lib/lang-server';
+import { Bolt, QuotaBar } from '@/components/FlashSale';
 
 export default function ProductCard({ product }: { product: Product }) {
   const t = getT();
@@ -45,7 +46,8 @@ export default function ProductCard({ product }: { product: Product }) {
               -{discountPercent}%
             </span>
             {product.promo_name && (
-              <span className="max-w-[7.5rem] truncate rounded-md bg-cobalt-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
+              <span className="flex max-w-[7.5rem] items-center gap-0.5 truncate rounded-md bg-cobalt-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">
+                {product.flash && <Bolt size={11} />}
                 {product.promo_name}
               </span>
             )}
@@ -84,6 +86,11 @@ export default function ProductCard({ product }: { product: Product }) {
           <p className={`break-words text-sm font-extrabold leading-5 tracking-tight sm:text-base ${hasDiscount ? 'text-sale-600' : 'text-ink'}`}>
             {money(finalPrice)}
           </p>
+          {product.flash?.quota != null && (
+            <span className="mt-2 block">
+              <QuotaBar flash={product.flash} />
+            </span>
+          )}
         </div>
 
         <div className="mt-auto pt-3">

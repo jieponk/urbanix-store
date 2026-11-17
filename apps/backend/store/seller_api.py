@@ -28,7 +28,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
-from .shipping import shipping_label
+from .shipping import package_info, shipping_label
 from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation
 from .pricing import prefetch_running_promos, price_info
 from .serializers import ProductSerializer
@@ -499,6 +499,27 @@ def _product_row(p: Product):
     }
 
 
+PACKAGE_FIELDS = ("weight_grams", "length_cm", "width_cm", "height_cm")
+PACKAGE_LABELS = {"weight_grams": "Berat", "length_cm": "Panjang", "width_cm": "Lebar", "height_cm": "Tinggi"}
+
+
+def _set_package(obj, d) -> None:
+    """Isi berat (gram) & ukuran (cm). Kosong/0 = tidak diisi (varian ikut produk induk)."""
+    for field in PACKAGE_FIELDS:
+        if field in d:
+            raw = d[field]
+            if raw in (None, "", 0, "0"):
+                setattr(obj, field, None)
+                continue
+            value = to_int(raw, PACKAGE_LABELS[field])
+            limit = 1_000_000 if field == "weight_grams" else 1000
+            if value < 0:
+                raise ValueError(f"{PACKAGE_LABELS[field]} tidak boleh negatif.")
+            if value > limit:
+                raise ValueError(f"{PACKAGE_LABELS[field]} terlalu besar.")
+            setattr(obj, field, value or None)
+
+
 def _variation_row(p: Product, v: ProductVariation):
     v.product = p
     info = price_info(p, v)
@@ -512,6 +533,8 @@ def _variation_row(p: Product, v: ProductVariation):
         "promo_name": info.promo_name,
         "stock": v.stock,
         "image_url": v.image_url,
+        **{f: getattr(v, f) for f in PACKAGE_FIELDS},
+        "package": package_info(p, v),
     }
 
 
@@ -524,6 +547,8 @@ def _product_detail(p: Product):
         "base_price": rupiah(p.price),
         "base_final_price": rupiah(info.final) if info else None,
         "variation_list": [_variation_row(p, v) for v in p.buyable_variations()],
+        **{f: getattr(p, f) for f in PACKAGE_FIELDS},
+        "package": package_info(p),
         "promos": [
             {"id": it.price_cut_id, "name": it.price_cut.name, "variation": it.variation.name if it.variation_id else "",
              "promo_price": rupiah(it.promo_price) if it.promo_price is not None else None,
@@ -614,6 +639,7 @@ def product_detail(request, pk):
                 product.image_url = str(d["image_url"] or "").strip() or None
             if "is_active" in d:
                 product.is_active = bool(d["is_active"])
+            _set_package(product, d)
         except ValueError as exc:
             return bad(str(exc))
         product.save()
@@ -639,6 +665,7 @@ def variation_detail(request, pk):
             variation.stock = to_int(d["stock"], "Stok")
         if "image_url" in d:
             variation.image_url = str(d["image_url"] or "").strip()
+        _set_package(variation, d)
     except ValueError as exc:
         return bad(str(exc))
     variation.save()
@@ -728,7 +755,13 @@ def products_bulk(request):
 
 
 TEMPLATE_HEADER = ["product_id", "variation_id", "SKU", "Nama produk", "Varian", "Harga normal", "Stok",
-                   "Link Shopee", "Aktif (ya/tidak)"]
+                   "Link Shopee", "Aktif (ya/tidak)", "Berat (gram)", "Panjang (cm)", "Lebar (cm)", "Tinggi (cm)"]
+PACKAGE_COLUMNS = (("weight_grams", "berat (gram)", "berat"), ("length_cm", "panjang (cm)", "panjang"),
+                   ("width_cm", "lebar (cm)", "lebar"), ("height_cm", "tinggi (cm)", "tinggi"))
+
+
+def _pkg_cells(obj):
+    return [getattr(obj, f) or "" for f in PACKAGE_FIELDS]
 
 
 @staff(["GET"])
@@ -741,19 +774,22 @@ def products_template(request):
         if variations:
             for i, v in enumerate(variations):
                 rows.append([p.id, v.id, v.sku or p.sku, p.name, v.name, rupiah(v.price), v.stock,
-                             (p.shopee_url or "") if i == 0 else "", active if i == 0 else ""])
+                             (p.shopee_url or "") if i == 0 else "", active if i == 0 else "",
+                             *[getattr(v, f) or getattr(p, f) or "" for f in PACKAGE_FIELDS]])
         else:
-            rows.append([p.id, "", p.sku, p.name, "", rupiah(p.price), p.stock, p.shopee_url or "", active])
+            rows.append([p.id, "", p.sku, p.name, "", rupiah(p.price), p.stock, p.shopee_url or "", active, *_pkg_cells(p)])
     info = [
         ["Cara pakai"],
         ["1. Ubah kolom Harga normal, Stok, Link Shopee, atau Aktif. Kolom lain jangan diubah."],
         ["2. Baris yang tidak berubah boleh dibiarkan atau dihapus."],
         ["3. Link Shopee & Aktif berlaku untuk produk (diisi di baris varian pertama)."],
         ["4. Upload file ini di Seller Center > Mass update, cek pratinjau, lalu klik Terapkan."],
+        ["5. Berat dalam gram, ukuran paket dalam cm (angka bulat). Ekspedisi memakai yang lebih besar: berat asli atau P×L×T/6000."],
+        ["   Ketik - untuk mengosongkan. Di baris varian, isi hanya bila ukurannya beda dari produk."],
         ["Harga promo diatur di menu Promo, bukan di file ini."],
     ]
     stamp = timezone.now().astimezone(WIB).strftime("%Y%m%d-%H%M")
-    widths = {"Produk": [10, 12, 18, 48, 22, 14, 8, 40, 14], "Cara pakai": [90]}
+    widths = {"Produk": [10, 12, 18, 48, 22, 14, 8, 40, 14, 12, 12, 12, 12], "Cara pakai": [90]}
     return xlsx_response(build_xlsx({"Produk": rows, "Cara pakai": info}, widths), f"mass-update-produk-{stamp}.xlsx")
 
 
@@ -797,6 +833,7 @@ def products_import(request):
     c_pid, c_vid, c_sku = col("product_id"), col("variation_id"), col("sku")
     c_price, c_stock = col("harga normal", "harga"), col("stok", "stock")
     c_shopee, c_active = col("link shopee"), col("aktif (ya/tidak)", "aktif")
+    c_pkg = {field: col(*names) for field, *names in PACKAGE_COLUMNS}
     if c_pid is None and c_sku is None:
         return bad("Kolom product_id atau SKU tidak ditemukan. Pakai template dari Seller Center.")
 
@@ -855,6 +892,20 @@ def products_import(request):
                     if active != product.is_active:
                         diff["Aktif"] = ("ya" if product.is_active else "tidak", "ya" if active else "tidak")
                         product.is_active = active
+                for field, idx in c_pkg.items():
+                    text = cell(row, idx)
+                    if not text:
+                        continue
+                    if variation is not None:
+                        # baris varian: nilai sama dengan induk = ikut induk (tidak disimpan terpisah)
+                        if text != "-" and to_int(text, PACKAGE_LABELS[field]) == (getattr(product, field) or 0):
+                            text = "-"
+                    new = None if text == "-" else to_int(text, PACKAGE_LABELS[field])
+                    if new is not None and not (0 < new <= (1_000_000 if field == "weight_grams" else 1000)):
+                        raise ValueError(f"{PACKAGE_LABELS[field]} tidak masuk akal.")
+                    if new != getattr(target, field):
+                        diff[PACKAGE_LABELS[field]] = (getattr(target, field) or "-", new or "-")
+                        setattr(target, field, new)
             except ValueError as exc:
                 errors.append(f"Baris {line_no} ({label}): {exc}")
                 continue

@@ -52,6 +52,12 @@ class Product(models.Model):
         blank=True,
         help_text="Link produk ini di Shopee. Kosongkan untuk memakai link toko di Pengaturan toko.",
     )
+    weight_grams = models.PositiveIntegerField(
+        "Berat (gram)", null=True, blank=True, help_text="Berat setelah dikemas, dalam gram."
+    )
+    length_cm = models.PositiveIntegerField("Panjang paket (cm)", null=True, blank=True)
+    width_cm = models.PositiveIntegerField("Lebar paket (cm)", null=True, blank=True)
+    height_cm = models.PositiveIntegerField("Tinggi paket (cm)", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -183,6 +189,13 @@ class ProductVariation(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     image_url = models.URLField("Gambar varian", max_length=500, blank=True)
+    # Kosongkan = ikut berat & ukuran produk induk
+    weight_grams = models.PositiveIntegerField(
+        "Berat (gram)", null=True, blank=True, help_text="Berat setelah dikemas, dalam gram."
+    )
+    length_cm = models.PositiveIntegerField("Panjang paket (cm)", null=True, blank=True)
+    width_cm = models.PositiveIntegerField("Lebar paket (cm)", null=True, blank=True)
+    height_cm = models.PositiveIntegerField("Tinggi paket (cm)", null=True, blank=True)
 
     class Meta:
         verbose_name = "Varian"
@@ -279,6 +292,10 @@ class Order(models.Model):
         help_text="True bila stok pesanan ini sedang dipotong (dikembalikan otomatis saat gagal/kedaluwarsa).",
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_weight_grams = models.PositiveIntegerField(
+        "Total berat kirim (gram)", default=0,
+        help_text="Jumlah berat kirim semua barang (berat asli atau berat volume, mana yang lebih besar).",
+    )
     shipping_address = models.TextField()
     shipping_service = models.CharField(
         "Pilihan pengiriman pembeli", max_length=30, blank=True,
@@ -341,6 +358,14 @@ class OrderItem(models.Model):
     sku = models.CharField("SKU", max_length=100, blank=True)
     price_snapshot = models.DecimalField(max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField()
+    weight_grams = models.PositiveIntegerField(
+        "Berat kirim per barang (gram)", null=True, blank=True,
+        help_text="Yang lebih besar antara berat asli dan berat volume (P×L×T/6000).",
+    )
+    flash_item = models.ForeignKey(
+        "PriceCutItem", related_name="order_items", on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name="Kuota flash sale",
+    )
 
     def __str__(self):
         return (
@@ -379,6 +404,10 @@ class PriceCut(models.Model):
     starts_at = models.DateTimeField("Mulai", null=True, blank=True, help_text="Kosongkan = langsung berlaku.")
     ends_at = models.DateTimeField("Selesai", null=True, blank=True, help_text="Kosongkan = berlaku sampai dimatikan.")
     is_active = models.BooleanField("Aktif", default=True)
+    is_flash_sale = models.BooleanField(
+        "Flash sale", default=False,
+        help_text="Tampil sebagai Flash Sale di beranda (hitung mundur + sisa kuota). Isi kuota per produk.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -427,6 +456,10 @@ class PriceCutItem(models.Model):
     )
     discount_percent = models.DecimalField(
         "Potongan (%)", max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    quota = models.PositiveIntegerField(
+        "Kuota", null=True, blank=True,
+        help_text="Jumlah barang dengan harga promo ini. Kosongkan = tanpa batas. Habis = harga kembali normal.",
     )
 
     class Meta:

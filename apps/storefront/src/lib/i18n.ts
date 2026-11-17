@@ -588,6 +588,13 @@ const EN: Record<string, string> = {
   'Baca semua ulasan di Shopee': 'Read all reviews on Shopee',
   'Lihat ulasan di toko Shopee': 'See reviews on our Shopee store',
   // ---------- Navigasi & lain-lain ----------
+  'Flash Sale': 'Flash Sale',
+  'Sisa waktu': 'Time left',
+  'Segera habis! Tersisa {n}': 'Almost gone! {n} left',
+  'Tersisa {n}': '{n} left',
+  'Berat kirim {w}': 'Shipping weight {w}',
+  'berat volume': 'volumetric weight',
+  'Perkiraan berat kirim': 'Estimated shipping weight',
   'Masukkan ke keranjang': 'Add to cart',
   'Pilih produk dan varian yang kamu mau.': 'Choose the product and variant you want.',
   'Pilih "Pesan via WhatsApp"': 'Choose "Order via WhatsApp"',

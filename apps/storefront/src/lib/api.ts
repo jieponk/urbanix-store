@@ -1,4 +1,17 @@
 import { getLang } from '@/lib/lang-server';
+/** Berat (gram) & ukuran paket (cm). ship_weight = terbesar dari berat asli & berat volume (P×L×T/6000). */
+export type Package = {
+  weight_grams: number | null;
+  length_cm: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
+  volume_weight_grams: number | null;
+  ship_weight_grams: number | null;
+};
+
+/** Flash sale yang sedang berjalan untuk produk/varian ini. left = sisa kuota (null = tanpa batas). */
+export type Flash = { name: string; ends_at: string | null; quota: number | null; left: number | null };
+
 export type Variation = {
   variation_id: string;
   name: string;
@@ -9,6 +22,8 @@ export type Variation = {
   discount_percent?: number;
   stock: number;
   image_url?: string;
+  package?: Package;
+  flash?: Flash | null;
 };
 
 export type Product = {
@@ -31,6 +46,8 @@ export type Product = {
   discount_percent?: number;
   promo_name?: string;
   promo_ends_at?: string | null;
+  package?: Package;
+  flash?: Flash | null;
   is_active: boolean;
 };
 

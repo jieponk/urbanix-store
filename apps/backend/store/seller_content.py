@@ -28,7 +28,7 @@ from .models import (
     Voucher,
 )
 from .images import MAX_BANNER, ImageError, to_webp
-from .pricing import price_info
+from .pricing import price_info, sold_count
 from .seller_api import bad, paginate, rupiah, staff
 
 
@@ -87,7 +87,7 @@ class PriceCutSerializer(CleanModelSerializer):
 
     class Meta:
         model = PriceCut
-        fields = ["id", "name", "starts_at", "ends_at", "is_active", "status", "items_count", "created_at"]
+        fields = ["id", "name", "starts_at", "ends_at", "is_active", "is_flash_sale", "status", "items_count", "created_at"]
         read_only_fields = ["created_at"]
 
     def get_status(self, obj):
@@ -119,6 +119,8 @@ def _promo_item(item: PriceCutItem):
         "discount_percent": float(item.discount_percent) if item.discount_percent is not None else None,
         "final_price": rupiah(final),
         "stock": variation.stock if variation else product.stock,
+        "quota": item.quota,
+        "sold": sold_count(item),
     }
 
 
@@ -167,6 +169,15 @@ def promo_items(request, pk):
         )
         price = row.get("promo_price")
         percent = row.get("discount_percent")
+        if "quota" in row:
+            q = row.get("quota")
+            try:
+                item.quota = int(q) if q not in (None, "") else None
+            except (TypeError, ValueError):
+                errors.append(f"{product.name}: kuota harus angka.")
+                continue
+            if item.quota is not None and item.quota < 1:
+                item.quota = None
         try:
             item.promo_price = Decimal(str(price)) if price not in (None, "") else None
             item.discount_percent = Decimal(str(percent).replace(",", ".")) if percent not in (None, "") else None

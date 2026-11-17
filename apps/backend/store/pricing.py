@@ -9,7 +9,7 @@ Harga akhir = harga terendah dari:
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Sum
 from django.utils import timezone
 
 from .models import PriceCutItem, Product, ProductVariation
@@ -22,6 +22,32 @@ def running_items_queryset(now=None):
         .filter(Q(price_cut__starts_at__isnull=True) | Q(price_cut__starts_at__lte=now))
         .filter(Q(price_cut__ends_at__isnull=True) | Q(price_cut__ends_at__gte=now))
         .select_related("price_cut")
+        # Kuota terpakai = barang di pesanan yang tidak dibatalkan
+        .annotate(
+            quota_used=Sum(
+                "order_items__quantity",
+                filter=~Q(order_items__order__status="CANCELLED"),
+            )
+        )
+    )
+
+
+def quota_left(item) -> int | None:
+    """Sisa kuota item promo (None = tanpa batas)."""
+    if item.quota is None:
+        return None
+    used = getattr(item, "quota_used", None)
+    if used is None:
+        used = sold_count(item)
+    return max(0, item.quota - (used or 0))
+
+
+def sold_count(item) -> int:
+    from .models import OrderItem
+
+    return (
+        OrderItem.objects.filter(flash_item=item).exclude(order__status="CANCELLED").aggregate(n=Sum("quantity"))["n"]
+        or 0
     )
 
 
@@ -36,6 +62,10 @@ class PriceInfo:
     final: Decimal
     promo_name: str = ""
     promo_ends_at: object = None
+    item: object = None  # PriceCutItem yang dipakai (untuk kuota)
+    is_flash: bool = False
+    quota: int | None = None
+    quota_left: int | None = None
 
     @property
     def discount_percent(self) -> int:
@@ -60,6 +90,9 @@ def price_info(product: Product, variation: ProductVariation | None = None) -> P
         best.final = product.discount_price
 
     for item in _promo_items(product):
+        left = quota_left(item)
+        if left is not None and left <= 0:
+            continue  # kuota habis: harga kembali normal
         if item.variation_id and (variation is None or item.variation_id != variation.pk):
             continue
         if item.promo_price is not None:
@@ -76,5 +109,9 @@ def price_info(product: Product, variation: ProductVariation | None = None) -> P
                 final=candidate,
                 promo_name=item.price_cut.name,
                 promo_ends_at=item.price_cut.ends_at,
+                item=item,
+                is_flash=item.price_cut.is_flash_sale,
+                quota=item.quota,
+                quota_left=left,
             )
     return best

@@ -97,6 +97,17 @@ export default function ProductEditPage({ params }: { params: { id: string } }) 
             </form>
           </Card>
 
+          <Card title="Berat & ukuran paket">
+            <PackageForm
+              key={`p-${data.id}-${data.weight_grams}-${data.length_cm}-${data.width_cm}-${data.height_cm}`}
+              initial={data}
+              info={data.package}
+              busy={saving}
+              onSave={(pkg) => save(pkg, 'Berat & ukuran disimpan.')}
+              hint="Ukuran paket setelah dikemas. Ekspedisi memakai yang lebih besar: berat asli atau berat volume (P×L×T/6000)."
+            />
+          </Card>
+
           {hasVariations && (
             <Card title={`Varian (${data.variation_list.length})`} padded={false}>
               <p className="border-b border-slate-200 px-4 py-2.5 text-xs text-slate-500 sm:px-5">Ubah harga/stok lalu klik Simpan di baris itu. Stok induk = total stok varian.</p>
@@ -166,6 +177,85 @@ function VariationRow({ v, onSaved }: { v: any; onSaved: (d: any) => void }) {
       </Field>
       <Field label="Stok"><input className={inputCls} inputMode="numeric" value={row.stock} onChange={(e) => setRow({ ...row, stock: e.target.value })} /></Field>
       <button type="button" disabled={!dirty || busy} onClick={save} className={`${btn.primary} sm:mb-0`}>{busy ? '…' : 'Simpan'}</button>
+      <details className="col-span-2 sm:col-span-6">
+        <summary className="cursor-pointer text-xs font-bold text-slate-500 hover:text-ink">
+          Berat & ukuran khusus varian {v.weight_grams || v.length_cm ? '(diisi)' : '(ikut produk)'}
+        </summary>
+        <div className="mt-2">
+          <PackageForm
+            key={`v-${v.id}-${v.weight_grams}-${v.length_cm}-${v.width_cm}-${v.height_cm}`}
+            initial={v}
+            info={v.package}
+            busy={busy}
+            compact
+            hint="Kosongkan = ikut berat & ukuran produk."
+            onSave={async (pkg) => {
+              setBusy(true);
+              try {
+                onSaved(await sellerApi(`variations/${v.id}`, { method: 'PATCH', body: pkg }));
+                notify('Berat & ukuran varian disimpan.');
+              } catch (err) {
+                notify((err as Error).message, 'error');
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        </div>
+      </details>
     </li>
+  );
+}
+
+const PKG_FIELDS = [
+  { key: 'weight_grams', label: 'Berat', unit: 'gram' },
+  { key: 'length_cm', label: 'Panjang', unit: 'cm' },
+  { key: 'width_cm', label: 'Lebar', unit: 'cm' },
+  { key: 'height_cm', label: 'Tinggi', unit: 'cm' },
+] as const;
+
+function kg(grams: number | null | undefined) {
+  if (!grams) return '-';
+  return grams < 1000 ? `${grams} g` : `${(grams / 1000).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} kg`;
+}
+
+/** Isian berat (gram) & P×L×T (cm) + hitungan berat volume langsung saat diketik. */
+function PackageForm({ initial, info, onSave, busy, hint, compact = false }: {
+  initial: any; info: any; onSave: (pkg: Record<string, string>) => void; busy: boolean; hint: string; compact?: boolean;
+}) {
+  const [f, setF] = useState<Record<string, string>>(() =>
+    Object.fromEntries(PKG_FIELDS.map(({ key }) => [key, initial[key] ? String(initial[key]) : '']))
+  );
+  const num = (k: string) => Number(f[k]) || 0;
+  const volume = num('length_cm') && num('width_cm') && num('height_cm')
+    ? Math.round((num('length_cm') * num('width_cm') * num('height_cm')) / 6000 * 1000)
+    : 0;
+  const actual = num('weight_grams');
+  const charge = Math.max(actual, volume);
+  const dirty = PKG_FIELDS.some(({ key }) => f[key] !== (initial[key] ? String(initial[key]) : ''));
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onSave(f); }}>
+      <div className={`grid grid-cols-2 gap-3 ${compact ? 'sm:grid-cols-4' : 'sm:grid-cols-4'}`}>
+        {PKG_FIELDS.map(({ key, label, unit }) => (
+          <Field key={key} label={`${label} (${unit})`}>
+            <input
+              className={inputCls}
+              inputMode="numeric"
+              value={f[key]}
+              placeholder={!compact ? undefined : info?.[key] ? String(info[key]) : ''}
+              onChange={(e) => setF({ ...f, [key]: e.target.value.replace(/[^0-9]/g, '') })}
+            />
+          </Field>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-mist px-3 py-2.5 text-xs text-slate-600">
+        <span>Berat asli: <b className="text-ink">{kg(actual)}</b></span>
+        <span>Berat volume: <b className="text-ink">{kg(volume)}</b></span>
+        <span>Dipakai ekspedisi: <b className="text-sale-600">{kg(charge)}</b>{volume > actual && actual > 0 ? ' (volume)' : ''}</span>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">{hint}</p>
+      <button type="submit" disabled={!dirty || busy} className={`${btn.primary} mt-3`}>{busy ? 'Menyimpan…' : 'Simpan berat & ukuran'}</button>
+    </form>
   );
 }

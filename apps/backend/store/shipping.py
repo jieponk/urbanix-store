@@ -18,3 +18,46 @@ SHIPPING_LABELS = dict(SHIPPING_CHOICES)
 
 def shipping_label(code: str) -> str:
     return SHIPPING_LABELS.get(code or "", "")
+
+
+# ---------------------------------------------------------------- berat kirim
+VOLUME_DIVISOR = 6000  # standar ekspedisi: (P × L × T dalam cm) / 6000 = kg
+
+
+def package_info(product, variation=None) -> dict:
+    """Berat & ukuran paket. Varian memakai isiannya sendiri; yang kosong ikut produk induk.
+
+    Hasil (gram, None bila belum diisi):
+      weight_grams        berat asli
+      volume_weight_grams P×L×T/6000 (kg) → gram
+      ship_weight_grams   yang dipakai ekspedisi = terbesar dari keduanya
+    """
+
+    def pick(field):
+        value = getattr(variation, field, None) if variation is not None else None
+        return value if value else getattr(product, field, None)
+
+    weight = pick("weight_grams")
+    length, width, height = pick("length_cm"), pick("width_cm"), pick("height_cm")
+    volume = None
+    if length and width and height:
+        volume = int(round(length * width * height / VOLUME_DIVISOR * 1000))
+    candidates = [v for v in (weight, volume) if v]
+    return {
+        "weight_grams": weight or None,
+        "length_cm": length or None,
+        "width_cm": width or None,
+        "height_cm": height or None,
+        "volume_weight_grams": volume,
+        "ship_weight_grams": max(candidates) if candidates else None,
+    }
+
+
+def weight_text(grams) -> str:
+    """1200 -> '1,2 kg', 350 -> '350 g'."""
+    if not grams:
+        return ""
+    if grams < 1000:
+        return f"{grams} g"
+    kg = f"{grams / 1000:.2f}".rstrip("0").rstrip(".")
+    return f"{kg.replace('.', ',')} kg"

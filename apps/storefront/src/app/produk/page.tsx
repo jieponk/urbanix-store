@@ -1,6 +1,7 @@
 import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
 import PromoCategoryFilter from '@/components/PromoCategoryFilter';
+import { Bolt, Countdown } from '@/components/FlashSale';
 import {
   API,
   fetchAll,
@@ -9,7 +10,7 @@ import {
 } from '@/lib/api';
 import { getT } from '@/lib/lang-server';
 
-type SearchParams = { category?: string; q?: string; promo?: string };
+type SearchParams = { category?: string; q?: string; promo?: string; flash?: string };
 
 export async function generateMetadata({
   searchParams,
@@ -31,6 +32,13 @@ export async function generateMetadata({
         alternates: { canonical: `/produk?category=${category.id}` },
       };
     }
+  }
+  if (params.flash === '1') {
+    return {
+      title: 'Flash Sale Kamera & Gear Kreator',
+      description: 'Flash sale Urbanix Store: harga spesial dengan kuota terbatas untuk kamera, lensa, drone, audio, dan aksesori original.',
+      alternates: { canonical: '/produk?flash=1' },
+    };
   }
   if (params.promo === '1') {
     return {
@@ -55,7 +63,8 @@ export default async function CatalogPage({
   const params = await searchParams;
   const selectedCategory = params?.category || '';
   const searchQuery = (params?.q || '').trim().toLowerCase();
-  const promoOnly = params?.promo === '1';
+  const flashOnly = params?.flash === '1';
+  const promoOnly = params?.promo === '1' || flashOnly;
 
   const [productResult, categories] = await Promise.all([
     fetchAll<Product>('products').then(
@@ -83,7 +92,7 @@ export default async function CatalogPage({
             .includes(word)
         );
 
-    const matchesPromo = !promoOnly || (product.discount_percent ?? 0) > 0;
+    const matchesPromo = flashOnly ? Boolean(product.flash) : !promoOnly || (product.discount_percent ?? 0) > 0;
 
     return matchesCategory && matchesSearch && matchesPromo;
   });
@@ -91,6 +100,10 @@ export default async function CatalogPage({
   if (promoOnly) {
     filteredProducts.sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
   }
+
+  const flashEnds = flashOnly
+    ? filteredProducts.map((p) => p.flash?.ends_at).filter((d): d is string => Boolean(d)).sort()[0] ?? null
+    : null;
 
   const selectedCategoryName = categories.find(
     (category) => String(category.id) === selectedCategory
@@ -109,7 +122,9 @@ export default async function CatalogPage({
   const promoTotal = promoOnly ? activeProducts.filter((p) => (p.discount_percent ?? 0) > 0).length : 0;
   const chipHref = (cat: string) => `/produk?promo=1${cat ? `&category=${cat}` : ''}${params?.q ? `&q=${encodeURIComponent(params.q)}` : ''}`;
 
-  const title = promoOnly
+  const title = flashOnly
+    ? t('Flash Sale')
+    : promoOnly
     ? selectedCategoryName
       ? t('Promo {name}', { name: selectedCategoryName })
       : t('Produk promo')
@@ -124,9 +139,16 @@ export default async function CatalogPage({
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              {flashOnly && <Bolt size={26} />}
               {title}
             </h1>
+            {flashOnly && flashEnds && (
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
+                {t('Berakhir dalam')}
+                <Countdown endsAt={flashEnds} tone="light" />
+              </p>
+            )}
           </div>
           <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
             {t('{n} produk', { n: filteredProducts.length })}
@@ -141,7 +163,7 @@ export default async function CatalogPage({
           {selectedCategory && (
             <input type="hidden" name="category" value={selectedCategory} />
           )}
-          {promoOnly && <input type="hidden" name="promo" value="1" />}
+          {promoOnly && <input type="hidden" name={flashOnly ? 'flash' : 'promo'} value="1" />}
 
           <input
             type="search"
@@ -160,7 +182,7 @@ export default async function CatalogPage({
           </button>
         </form>
 
-        {promoCats.length > 0 && (
+        {promoCats.length > 0 && !flashOnly && (
           <PromoCategoryFilter
             selected={selectedCategory}
             options={[

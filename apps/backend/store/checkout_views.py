@@ -178,6 +178,7 @@ def order_detail(request, order_number):
             "shipping_service": shipping_label(order.shipping_service),
             "tracking_number": order.tracking_number,
             "shipping_cost": str(order.shipping_cost) if order.shipping_cost is not None else None,
+            "total_weight_grams": order.total_weight_grams,
             "updated_at": order.updated_at,
             "tax_note": "Harga sudah termasuk PPN.",
             "shipping_note": "Ongkos kirim dikonfirmasi penjual.",

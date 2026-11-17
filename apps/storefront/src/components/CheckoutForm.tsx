@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { money } from '@/lib/money';
+import { money, weightText } from '@/lib/money';
 import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
 import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
@@ -35,6 +35,8 @@ type QuoteItem = {
 type Quote = {
   items: QuoteItem[];
   subtotal: string;
+  total_weight_grams?: number;
+  weight_complete?: boolean;
   shipping_note: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
   vouchers: {
@@ -692,6 +694,15 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
             <dt className="text-slate-500">{t('Ongkos kirim')}</dt>
             <dd className="text-right text-slate-500">{t('Dikonfirmasi penjual')}</dd>
           </div>
+          {quote.total_weight_grams ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-500">{t('Perkiraan berat kirim')}</dt>
+              <dd className="text-right text-slate-500">
+                {quote.weight_complete ? '' : '± '}
+                {weightText(quote.total_weight_grams)}
+              </dd>
+            </div>
+          ) : null}
           {quote.vouchers.applied
             .filter((a) => a.kind === 'discount')
             .map((a) => (

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { UrbanixLogoStacked } from '@/components/BrandSvg';
 import PrintButton from '@/components/PrintButton';
 import { API, money } from '@/lib/api';
+import { weightText } from '@/lib/money';
 import { siteConfig } from '@/lib/siteConfig';
 import { ArrowLeft } from '@/components/inspirasi/InspoIcons';
 
@@ -19,6 +20,7 @@ type Invoice = {
   shipping_service?: string;
   tracking_number: string;
   shipping_cost: string | null;
+  total_weight_grams?: number;
   payment_method: 'MIDTRANS' | 'WHATSAPP' | '';
   payment_status: 'UNPAID' | 'PAID' | 'FAILED' | 'EXPIRED';
   status: string;
@@ -139,6 +141,9 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
               <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">Pengiriman</p>
               <p className="mt-1 text-[#4b5563]">Kurir: <b className="text-[#1c2030]">{o.shipping_courier || o.shipping_service || 'Dikonfirmasi admin'}</b></p>
               <p className="break-all text-[#4b5563]">No. resi: <b className="text-[#1c2030]">{o.tracking_number || '-'}</b></p>
+              {o.total_weight_grams ? (
+                <p className="text-[#4b5563]">Berat kirim: <b className="text-[#1c2030]">{weightText(o.total_weight_grams)}</b></p>
+              ) : null}
             </div>
           </section>
 

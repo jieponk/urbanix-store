@@ -23,8 +23,8 @@ from django.db.models import F
 from django.utils import timezone
 
 from . import vouchers as voucher_engine
-from .pricing import prefetch_running_promos, price_info
-from .shipping import shipping_label
+from .pricing import prefetch_running_promos, price_info, quota_left
+from .shipping import package_info, shipping_label, weight_text
 from .models import (
     AuditLog,
     Order,
@@ -114,6 +114,27 @@ class QuoteLine:
         info = price_info(self.product, self.variation)
         return info.final < info.normal
 
+    @property
+    def info(self):
+        return price_info(self.product, self.variation)
+
+    @property
+    def ship_weight(self) -> int | None:
+        """Berat kirim per barang (gram): terbesar dari berat asli & berat volume."""
+        return package_info(self.product, self.variation)["ship_weight_grams"]
+
+
+def total_weight(lines) -> tuple[int, bool]:
+    """(total gram, semua barang sudah punya berat?)"""
+    total, complete = 0, True
+    for line in lines:
+        w = line.ship_weight
+        if w:
+            total += w * line.quantity
+        else:
+            complete = False
+    return total, complete
+
 
 def build_lines(raw_items) -> list[QuoteLine]:
     """Gabungkan item duplikat, validasi produk/varian dan jumlah. Harga SELALU dari database."""
@@ -167,6 +188,7 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
     lines = build_lines(raw_items)
     vouchers = voucher_engine.evaluate(voucher_codes, lines, payment_method, phone)
     subtotal = sum((l.subtotal for l in lines), Decimal("0"))
+    weight, weight_complete = total_weight(lines)
     return {
         "items": [
             {
@@ -182,11 +204,15 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
                 "stock": line.stock,
                 "in_stock": line.stock >= line.quantity,
                 "is_promo": line.is_promo,
+                "ship_weight_grams": line.ship_weight,
+                "flash_left": line.info.quota_left if line.info.is_flash else None,
                 "shopee_url": line.product.shopee_url or store.shopee_store_url,
             }
             for line in lines
         ],
         "subtotal": str(subtotal),
+        "total_weight_grams": weight,
+        "weight_complete": weight_complete,
         "vouchers": vouchers.as_dict(),
         "total": str(subtotal - vouchers.discount_amount),
         "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
@@ -194,6 +220,35 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
         "methods": available_methods(store),
         "available_vouchers": [voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()],
     }
+
+
+# ---------------------------------------------------------------- kuota promo / flash sale
+def claim_flash_quota(lines: list[QuoteLine]) -> dict:
+    """Kunci item promo berkuota & pastikan sisa kuota cukup (aman dari pesanan bersamaan).
+
+    Dipanggil di dalam transaksi pembuatan pesanan. Kuota "terpakai" dihitung dari barang
+    di pesanan yang tidak dibatalkan, jadi pesanan batal otomatis mengembalikan kuota.
+    Hasil: {id(line): PriceCutItem}
+    """
+    from .models import PriceCutItem
+
+    used: dict[int, int] = {}
+    result = {}
+    for line in lines:
+        item = line.info.item
+        if item is None or item.quota is None:
+            continue
+        PriceCutItem.objects.select_for_update().filter(pk=item.pk).first()
+        item.quota_used = None  # hitung ulang dari database setelah dikunci
+        left = (quota_left(item) or 0) - used.get(item.pk, 0)
+        if line.quantity > left:
+            label = line.display_name
+            if left <= 0:
+                raise CheckoutError(f"Kuota promo {label} sudah habis. Muat ulang keranjang untuk harga terbaru.")
+            raise CheckoutError(f"Kuota promo {label} tinggal {left}. Kurangi jumlahnya lalu coba lagi.")
+        used[item.pk] = used.get(item.pk, 0) + line.quantity
+        result[id(line)] = item
+    return result
 
 
 # ---------------------------------------------------------------- stok
@@ -285,6 +340,8 @@ def whatsapp_message(order: Order) -> str:
     )
     if order.shipping_service:
         lines.append(f"Pengiriman: {shipping_label(order.shipping_service)} (mohon info ongkirnya)")
+    if order.total_weight_grams:
+        lines.append(f"Perkiraan berat kirim: {weight_text(order.total_weight_grams)}")
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
     lines.append(f"Cek status & invoice: {frontend_url('/pesanan/' + order.order_number)}")
@@ -456,6 +513,8 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
                 raise CheckoutError(
                     f"Stok {line.display_name} tidak mencukupi (tersedia: {line.stock})."
                 )
+    flash_items = claim_flash_quota(lines)
+    weight, _complete = total_weight(lines)
     order = Order.objects.create(
         order_number=generate_order_number(),
         customer_name=customer["name"],
@@ -470,6 +529,7 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),
         total_amount=subtotal - vouchers.discount_amount,
+        total_weight_grams=weight,
         discount_amount=vouchers.discount_amount,
         discount_note=vouchers.note[:255],
         voucher_codes=",".join(vouchers.codes),
@@ -486,6 +546,8 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
             sku=line.sku,
             price_snapshot=line.unit_price,
             quantity=line.quantity,
+            weight_grams=line.ship_weight,
+            flash_item=flash_items.get(id(line)),
         )
         for line in lines
     )

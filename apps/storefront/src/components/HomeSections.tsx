@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { money, type Category, type Product, type Review, type StoreSettings } from '@/lib/api';
 import { productImg } from '@/lib/img';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
+import { Bolt, Countdown, QuotaBar } from '@/components/FlashSale';
 import { getT } from '@/lib/lang-server';
 
 /* ------------------------------------------------------------ Kategori */
@@ -73,7 +74,11 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
 
 /* ------------------------------------------------------------ Flash sale */
 
-export function FlashSale({ products, promoName }: { products: Product[]; promoName: string }) {
+/**
+ * Deretan produk promo. Bila ada flash sale berjalan (flash=true): judul petir + hitung mundur,
+ * dan tiap kartu punya bar sisa kuota.
+ */
+export function FlashSale({ products, promoName, flash = false, endsAt = null }: { products: Product[]; promoName: string; flash?: boolean; endsAt?: string | null }) {
   const t = getT();
   if (products.length === 0) return null;
 
@@ -83,13 +88,20 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 id="judul-flash" className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              <span aria-hidden="true" className="h-6 w-1.5 bg-sun-400" />
-              {promoName}
+              {flash ? <Bolt size={26} /> : <span aria-hidden="true" className="h-6 w-1.5 bg-sun-400" />}
+              {flash ? t('Flash Sale') : promoName}
             </h2>
-            <p className="mt-1 text-sm font-medium text-white/65">{t('Potongan terbesar tampil paling depan.')}</p>
+            {flash && endsAt ? (
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-white/70">
+                {t('Berakhir dalam')}
+                <Countdown endsAt={endsAt} />
+              </p>
+            ) : (
+              <p className="mt-1 text-sm font-medium text-white/65">{t('Potongan terbesar tampil paling depan.')}</p>
+            )}
           </div>
           <Link
-            href="/produk?promo=1"
+            href={flash ? '/produk?flash=1' : '/produk?promo=1'}
             className="group inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-4 py-2 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
           >
             {t('Lihat semua')}
@@ -116,7 +128,13 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                     <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{product.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
                     <span className="mt-2 text-base font-extrabold text-sale-600">{money(final)}</span>
                     <span className="text-xs text-slate-400 line-through">{money(normal)}</span>
-                    <span className="mt-auto pt-2 text-xs font-bold text-sale-600">{t('Hemat {x}', { x: money(normal - final) })}</span>
+                    {product.flash?.quota != null ? (
+                      <span className="mt-auto block pt-2.5">
+                        <QuotaBar flash={product.flash} />
+                      </span>
+                    ) : (
+                      <span className="mt-auto pt-2 text-xs font-bold text-sale-600">{t('Hemat {x}', { x: money(normal - final) })}</span>
+                    )}
                   </span>
                 </Link>
               </li>

@@ -439,3 +439,8 @@ body {
   .wa-ring, .wa-float, .wa-pop, .wa-flow, .wa-drop, .wa-check, .wa-pulse, .wa-dot { animation: none !important; }
   .wa-drop { opacity: 1; transform: translateY(10px); }
 }
+
+/* Petir flash sale berkedip pelan */
+@keyframes flash-bolt { 0%, 86%, 100% { opacity: 1; transform: none; } 90% { opacity: 0.35; transform: scale(0.9) rotate(-8deg); } 95% { opacity: 1; transform: scale(1.12); } }
+.flash-bolt { animation: flash-bolt 3s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .flash-bolt { animation: none !important; } }

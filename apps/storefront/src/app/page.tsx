@@ -137,6 +137,16 @@ export default async function HomePage({
     .sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0))
     .slice(0, 12);
 
+  // Flash sale berjalan: diutamakan di deretan promo (hitung mundur ke yang paling cepat selesai)
+  const flashProducts = allProducts
+    .filter((p) => p.flash && (p.flash.left == null || p.flash.left > 0))
+    .sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0))
+    .slice(0, 12);
+  const flashEnds = flashProducts
+    .map((p) => p.flash?.ends_at)
+    .filter((d): d is string => Boolean(d))
+    .sort()[0] ?? null;
+
   const waPercent = Number(settings?.whatsapp_discount_percent) || 0;
   const waNumber = settings?.whatsapp_number ?? '';
   const waOnPromo = settings?.whatsapp_discount_on_promo ?? false;
@@ -203,7 +213,11 @@ export default async function HomePage({
       </div>
 
       {/* 3. Produk promo, potongan terbesar dulu */}
-      {promo && <FlashSale products={promoProducts} promoName={promo.name} />}
+      {flashProducts.length > 0 ? (
+        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
+      ) : (
+        promo && <FlashSale products={promoProducts} promoName={promo.name} />
+      )}
 
       {/* 4. Cara pesan via WhatsApp + diskon */}
       <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
