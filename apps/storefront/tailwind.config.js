@@ -10,7 +10,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Palet "Charcoal merah" (17 Nov 2026): merah #E30220, merah tua #BE0000, charcoal #252024,
+        // Palet "Hitam keabuan + merah" (17 Nov 2026): merah #E30220, merah tua #BE0000, hitam keabuan #191919,
         // abu #DDDDDD, putih keabuan #F3F4F6. Identitas Urbanix tetap hitam-putih (sesuai logo). "brand" = warna tombol utama:
         // hitam di mode terang, putih di mode gelap. Teks di atasnya pakai `text-onbrand`.
         brand: {
@@ -19,18 +19,18 @@ module.exports = {
           500: 'rgb(var(--brand-500) / <alpha-value>)',
           600: 'rgb(var(--brand-600) / <alpha-value>)',
           700: 'rgb(var(--brand-700) / <alpha-value>)',
-          dark: '#252024',
+          dark: '#191919',
           accent: 'rgb(var(--brand-500) / <alpha-value>)',
         },
         onbrand: 'rgb(var(--onbrand) / <alpha-value>)',
         // Panel gelap (footer, header atas, kotak promo): hitam netral, sama di kedua mode
         cobalt: {
-          700: '#3b353a',
-          800: '#2e292d',
-          900: '#252024',
+          700: '#2e2e2e',
+          800: '#222222',
+          900: '#191919',
         },
         // Sorotan (dulu kuning): merah terang, dipakai di atas panel hitam
-        // 400 = merah palet (lencana/ikon besar); 300 = versi terang untuk TEKS kecil di atas panel charcoal
+        // 400 = merah palet (lencana/ikon besar); 300 = versi terang untuk TEKS kecil di atas panel gelap
         sun: {
           100: '#fdebed',
           300: '#ff5a6e',
