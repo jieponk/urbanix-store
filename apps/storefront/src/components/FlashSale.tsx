@@ -50,7 +50,7 @@ export function QuotaBar({ flash, tone = 'light' }: { flash: Flash; tone?: 'dark
   const label = flash.left <= 0 ? t('Habis') : flash.left <= Math.max(1, Math.ceil(flash.quota * 0.2)) ? t('Segera habis! Tersisa {n}', { n: flash.left }) : t('Tersisa {n}', { n: flash.left });
   return (
     <span className={`relative block h-5 overflow-hidden rounded-full ${tone === 'dark' ? 'bg-white/15' : 'bg-sale-50'}`}>
-      <span className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sun-500 to-sale-600" style={{ width: `${Math.max(8, pct)}%` }} />
+      <span className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sun-400 to-sale-600" style={{ width: `${Math.max(8, pct)}%` }} />
       <span className={`relative flex h-full items-center justify-center text-[11px] font-extrabold ${pct > 55 || tone === 'dark' ? 'text-white' : 'text-sale-600'}`}>{label}</span>
     </span>
   );

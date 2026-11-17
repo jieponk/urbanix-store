@@ -185,7 +185,7 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
   const bar = (key: string) => (
     <span
       aria-hidden="true"
-      className={`absolute top-0 h-0.5 rounded-full bg-sun-500 transition-all duration-300 ${active(key) ? 'w-6 opacity-100' : 'w-0 opacity-0'}`}
+      className={`absolute top-0 h-0.5 rounded-full bg-sun-400 transition-all duration-300 ${active(key) ? 'w-6 opacity-100' : 'w-0 opacity-0'}`}
     />
   );
   const row =

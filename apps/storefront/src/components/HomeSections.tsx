@@ -180,7 +180,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                 </span>
               </span>
               {percent > 0 && (
-                <span className="wa-pop rounded-full bg-sun-500 px-3 py-1 text-sm font-extrabold text-white">
+                <span className="wa-pop rounded-full bg-sun-400 px-3 py-1 text-sm font-extrabold text-white">
                   {t('Hemat {n}%', { n: percent })}
                 </span>
               )}
@@ -221,7 +221,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
               <li key={i} className="relative flex gap-4 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 sm:flex-col sm:gap-3 sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
                 <span className="relative mx-0 flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:mx-auto">
                   {step.icon}
-                  <span className="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-sun-500 text-xs font-extrabold text-white ring-4 ring-cobalt-900">
+                  <span className="absolute -left-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-sun-400 text-[13px] font-extrabold text-white shadow-md ring-4 ring-cobalt-900">
                     {i + 1}
                   </span>
                 </span>
