@@ -587,6 +587,25 @@ const EN: Record<string, string> = {
   'Coba muat ulang sebentar lagi. Kalau masih terjadi, hubungi kami lewat WhatsApp.': 'Try reloading in a moment. If it keeps happening, contact us on WhatsApp.',
   'Baca semua ulasan di Shopee': 'Read all reviews on Shopee',
   'Lihat ulasan di toko Shopee': 'See reviews on our Shopee store',
+  // ---------- Navigasi & lain-lain ----------
+  'Lainnya': 'More',
+  'Artikel': 'Articles',
+  'Navigasi utama': 'Main navigation',
+  'Reguler': 'Regular',
+  'Kargo': 'Cargo',
+  'Instan': 'Instant',
+  'Ke seluruh Indonesia, tarif resmi JNE / J&T.': 'Nationwide, official JNE / J&T rates.',
+  'Untuk paket besar atau berat, lebih hemat.': 'For large or heavy packages, cheaper.',
+  'Sampai hari ini, untuk alamat yang terjangkau dari Jakarta.': 'Same-day, for addresses reachable from Jakarta.',
+  'Kota/kabupaten wajib diisi.': 'City/regency is required.',
+  'GIF tidak bisa dimuat.': 'Could not load GIFs.',
+  'GIF terlalu lama dimuat.': 'GIFs took too long to load.',
+  'Memuat…': 'Loading…',
+  'Admin Responsif': 'Responsive Admin',
+  'Bingung memilih gear? Admin siap membantu sesuai kebutuhanmu.': 'Not sure which gear to pick? Our admin is happy to help with your needs.',
+  'Packing Rapi & Aman': 'Neat & Safe Packing',
+  'Setiap barang dikemas dengan hati-hati sebelum dikirim.': 'Every item is packed carefully before shipping.',
+  'Senin–Sabtu, kecuali libur nasional': 'Monday–Saturday, except public holidays',
 };
 /* eslint-enable quote-props */
 

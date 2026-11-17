@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import BrandMarquee, { topBrands } from '@/components/BrandMarquee';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
+import { MobileNav } from '@/components/HeaderMenu';
 import { LangProvider } from '@/components/LangProvider';
 import { getLang } from '@/lib/lang-server';
 import { themeScript } from '@/components/ThemeToggle';
@@ -86,6 +87,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <>
               <BrandMarquee brands={topBrands()} />
               <Footer categories={categories} settings={settings} />
+              <MobileNav
+                categories={categories.map(({ id, name }) => ({ id, name }))}
+                whatsappNumber={settings?.whatsapp_number ?? ''}
+                showPromo={Boolean(promo)}
+              />
             </>
           }
         >

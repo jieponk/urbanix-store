@@ -250,7 +250,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
       e.phone = t('Nomor HP tidak valid. Contoh: 081234567890.');
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = t('Email tidak valid.');
     if (form.address.trim().length < 10) e.address = t('Tulis alamat lengkap (jalan, nomor, RT/RW, kelurahan).');
-    if (!form.city.trim()) e.city = 'Kota/kabupaten wajib diisi.';
+    if (!form.city.trim()) e.city = t('Kota/kabupaten wajib diisi.');
     if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = t('Kode pos harus 5 angka.');
     if (!form.service) e.service = t('Pilih jasa pengiriman.');
     return e;
@@ -607,7 +607,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                 {SHIPPING_GROUPS.map((group) => (
                   <div key={group.name}>
                     <p className="text-sm font-extrabold text-ink">
-                      {group.name} <span className="font-normal text-slate-500">· {group.note}</span>
+                      {t(group.name)} <span className="font-normal text-slate-500">· {t(group.note)}</span>
                     </p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       {group.options.map((o) => {

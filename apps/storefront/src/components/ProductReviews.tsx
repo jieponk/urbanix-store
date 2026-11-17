@@ -133,7 +133,7 @@ export default function ProductReviews({ productId, initial }: { productId: numb
               disabled={loading}
               className="mt-6 rounded-full bg-mist px-5 py-2.5 text-sm font-bold text-ink hover:bg-slate-200 disabled:opacity-50"
             >
-              {loading ? 'Memuat…' : t('Lihat ulasan lainnya')}
+              {loading ? t('Memuat…') : t('Lihat ulasan lainnya')}
             </button>
           )}
         </div>

@@ -218,7 +218,7 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
         setState('ok');
       } catch (e) {
         if (ctrl.signal.aborted && !timedOut) return; // pencarian diganti: abaikan
-        setError(timedOut ? 'GIF terlalu lama dimuat.' : e instanceof Error ? e.message : 'GIF tidak bisa dimuat.');
+        setError(timedOut ? t('GIF terlalu lama dimuat.') : t(e instanceof Error ? e.message : 'GIF tidak bisa dimuat.'));
         setState('error');
       } finally {
         clearTimeout(timeout);

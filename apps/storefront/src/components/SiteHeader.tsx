@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import CategoryMenu from '@/components/CategoryMenu';
-import HeaderMenu from '@/components/HeaderMenu';
+import HeaderActions from '@/components/HeaderMenu';
 import SearchBox from '@/components/SearchBox';
 import { iconBtn, slideLabel } from '@/components/headerLabel';
 import { NewsIcon } from '@/components/Icons';
@@ -73,18 +73,11 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
               <span className={`${slideLabel} font-bold`}>{t('Inspirasi')}</span>
             </Link>
           </div>
-          <SearchBox className="hidden flex-1 md:flex" />
-
-          {/* Satu tombol menu: keranjang, cek pesanan, inspirasi, chat, bahasa, tema meluncur ke kiri */}
-          <div className="ml-auto md:ml-0">
-            <HeaderMenu whatsappNumber={whatsappNumber} />
-          </div>
-        </div>
-
-        {/* HP: kategori + pencarian di baris kedua */}
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 pb-2.5 sm:px-6 md:hidden">
-          <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
+          {/* Pencarian: di HP satu baris dengan logo */}
           <SearchBox className="flex min-w-0 flex-1" />
+
+          {/* Desktop: cek pesanan, keranjang, ID/EN, tema. HP: pindah ke bar navigasi bawah */}
+          <HeaderActions />
         </div>
       </div>
     </header>
