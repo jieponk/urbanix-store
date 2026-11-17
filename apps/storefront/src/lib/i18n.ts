@@ -588,6 +588,7 @@ const EN: Record<string, string> = {
   'Baca semua ulasan di Shopee': 'Read all reviews on Shopee',
   'Lihat ulasan di toko Shopee': 'See reviews on our Shopee store',
   // ---------- Navigasi & lain-lain ----------
+  'Kategori promo': 'Deal category',
   'Lihat semua kategori': 'See all categories',
   'Promo {name}': '{name} deals',
   'Promo per kategori': 'Deals by category',
