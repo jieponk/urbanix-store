@@ -9,6 +9,7 @@
   --ed: 200 16 46;
   --mist: 245 245 245;
   --surface: 255 255 255;
+  --page: 255 255 255;
   --brand-50: 244 244 244;
   --brand-500: 17 17 17;
   --brand-600: 17 17 17;
@@ -33,6 +34,7 @@
   --ed: 255 99 115;
   --mist: 10 10 10;
   --surface: 22 22 22;
+  --page: 10 10 10;
   --brand-50: 38 38 38;
   --brand-500: 240 240 240;
   --brand-600: 240 240 240;
@@ -64,7 +66,8 @@
 .dark .text-amber-900 { color: #fcd27b; }
 
 body {
-  background-color: rgb(var(--mist));
+  /* Mode terang: putih bersih supaya foto produk (latar putih) menyatu dengan halaman */
+  background-color: rgb(var(--page));
   color: rgb(var(--ink));
   font-family: var(--font-jakarta), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;

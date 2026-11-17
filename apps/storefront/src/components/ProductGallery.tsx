@@ -37,7 +37,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
 
   if (count === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-surface">
+      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-white">
         <p className="text-sm text-slate-400">Gambar produk tidak tersedia</p>
       </div>
     );

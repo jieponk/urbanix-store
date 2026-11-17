@@ -23,7 +23,7 @@ export default function ProductCard({ product }: { product: Product }) {
       href={`/produk/${product.id}`}
       className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60"
     >
-      <div className="relative aspect-square overflow-hidden bg-[#f7f7f7] p-3 sm:p-5">
+      <div className="relative aspect-square overflow-hidden bg-white p-3 sm:p-5">
         {product.image_url ? (
           <img
             src={productImg(product.image_url, 450)}

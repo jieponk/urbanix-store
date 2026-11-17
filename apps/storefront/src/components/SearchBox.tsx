@@ -148,7 +148,7 @@ export default function SearchBox({ className }: { className: string }) {
                       onMouseEnter={() => setActive(i)}
                       className={`flex items-center gap-3 px-4 py-2.5 ${i === active ? 'bg-mist' : ''}`}
                     >
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#f7f7f7] p-1">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-1">
                         {h.image && <img src={productImg(h.image, 120)} alt="" className="h-full w-full object-contain" />}
                       </span>
                       <span className="min-w-0 flex-1">

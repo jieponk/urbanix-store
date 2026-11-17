@@ -13,7 +13,7 @@ export default function ProductEmbed({ product }: { product?: Product }) {
   return (
     <aside className="not-prose my-9 overflow-hidden rounded-xl border border-slate-200 bg-surface">
       <div className="flex flex-col sm:flex-row">
-        <Link href={`/produk/${product.id}`} className="relative flex aspect-square shrink-0 items-center justify-center bg-[#f7f7f7] p-5 sm:aspect-auto sm:w-52">
+        <Link href={`/produk/${product.id}`} className="relative flex aspect-square shrink-0 items-center justify-center bg-white p-5 sm:aspect-auto sm:w-52">
           {product.image_url && (
             <img src={productImg(product.image_url, 450)} alt={product.name} loading="lazy" className="h-full max-h-48 w-full object-contain" />
           )}
