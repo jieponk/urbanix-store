@@ -5,6 +5,7 @@ import ProductCard from '@/components/ProductCard';
 import ArticleBody from '@/components/inspirasi/ArticleBody';
 import ArticleCard, { CategoryBadge, Cover, articleDate } from '@/components/inspirasi/ArticleCard';
 import TableOfContents from '@/components/inspirasi/TableOfContents';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { ArrowRight, Calendar, Chat, ChevronRight, Clock, Home, ListIcon, Tag } from '@/components/inspirasi/InspoIcons';
 import CommentSection from '@/components/inspirasi/CommentSection';
 import ArticleEnhancer from '@/components/inspirasi/ArticleEnhancer';
@@ -81,7 +82,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
       {/* Kepala artikel (gaya editorial: putih, judul besar, garis tipis) */}
       <header className="px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="relative isolate mx-auto max-w-6xl">
+          <GearBackdrop className="bottom-[86px] opacity-70" />
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
             <Link href="/" className="inline-flex items-center hover:text-ink" aria-label="Beranda">
               <Home size={14} />

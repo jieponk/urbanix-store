@@ -399,3 +399,14 @@ body {
 .group:hover .ico-nudge { transform: translateX(3px); }
 .ico-nudge { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .ico-draw path, path.ico-draw { animation: none; } .ico-x, .ico-nudge { transition: none; } }
+
+/* Aksen latar kepala halaman (GearBackdrop) */
+.gear-dots {
+  background-image: radial-gradient(rgb(var(--ink) / 0.13) 1px, transparent 1.3px);
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to left, #000 20%, transparent 85%);
+  mask-image: linear-gradient(to left, #000 20%, transparent 85%);
+}
+@keyframes gear-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.gear-float { animation: gear-float 7s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .gear-float { animation: none; } }

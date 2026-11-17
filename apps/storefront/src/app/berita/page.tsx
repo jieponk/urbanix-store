@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import NewsCard from '@/components/NewsCard';
 import Pagination from '@/components/Pagination';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { Globe, Newspaper } from '@/components/inspirasi/InspoIcons';
 import { getNews } from '@/lib/api';
 
@@ -40,7 +41,8 @@ export default async function NewsPage({
   return (
     <div className="ed px-4 pb-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="pt-6 sm:pt-10">
+        <header className="relative isolate pt-6 sm:pt-10">
+          <GearBackdrop className="bottom-[54px]" />
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
             <Link href="/" className="hover:text-ink">Beranda</Link>
             <span aria-hidden="true">/</span>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import NewsCard, { NewsHero, NewsRow } from '@/components/NewsCard';
 import Pagination from '@/components/Pagination';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import ArticleCard, { CompactArticle, FeaturedArticle } from '@/components/inspirasi/ArticleCard';
 import { ArrowRight, CategoryIcon, Newspaper, Sparkle, Tag, XIcon } from '@/components/inspirasi/InspoIcons';
 import { getArticleCategories, getArticles, getNews } from '@/lib/api';
@@ -110,7 +111,8 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {/* ---------- Kepala (gaya koran) ---------- */}
-          <header className="pt-6 sm:pt-10">
+          <header className="relative isolate pt-6 sm:pt-10">
+            <GearBackdrop className="bottom-[54px]" />
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
               <Link href="/" className="hover:text-ink">Beranda</Link>
               <span aria-hidden="true">/</span>
