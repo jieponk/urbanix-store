@@ -81,7 +81,6 @@ export default function PromoCategoryFilter({ options, selected }: { options: Op
               >
                 <span className="min-w-0 flex-1 truncate">{o.name}</span>
                 <span className="text-xs text-slate-400">{o.count}</span>
-                {o.max > 0 && <span className="w-16 text-right text-xs font-bold text-sale-600">{t('s/d {n}%', { n: o.max })}</span>}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`shrink-0 ${on ? 'text-ink' : 'invisible'}`} aria-hidden="true">
                   <path d="m5 12 5 5 9-10" />
                 </svg>
