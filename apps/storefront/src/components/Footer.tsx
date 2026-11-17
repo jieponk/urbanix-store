@@ -15,6 +15,10 @@ function displayPhone(number: string) {
   return local.replace(/(\d{4})(\d{4})(\d+)/, '$1-$2-$3');
 }
 
+/** Logo pembayaran & kurir: abu-abu seragam, berwarna saat disorot (PC) atau disentuh (HP), seperti logo merek. */
+const LOGO_MONO =
+  'opacity-60 grayscale transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0 group-active/logo:opacity-100 group-active/logo:grayscale-0';
+
 export default function Footer({
   categories,
   settings,
@@ -123,7 +127,7 @@ export default function Footer({
           <ul className="mt-3 grid max-w-[260px] grid-cols-3 gap-2">
             {payments.map((method) => (
               <li key={method.name}>
-                <span title={method.name} className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white px-2">
+                <span title={method.name} tabIndex={0} className="group/logo flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white px-2 outline-none transition focus-visible:ring-2 focus-visible:ring-white/60">
                   {method.src && (
                     <img
                       src={method.src}
@@ -131,11 +135,11 @@ export default function Footer({
                       loading="lazy"
                       width={60}
                       height={20}
-                      className={method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'}
+                      className={`${method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'} ${LOGO_MONO}`}
                     />
                   )}
                   {(!method.src || method.showName) && (
-                    <span className="truncate text-[11px] font-black text-cobalt-900">{method.name}</span>
+                    <span className="truncate text-[11px] font-black text-slate-500 transition group-hover/logo:text-cobalt-900 group-focus/logo:text-cobalt-900">{method.name}</span>
                   )}
                 </span>
               </li>
@@ -153,10 +157,11 @@ export default function Footer({
               <li key={b.logo}>
                 <span
                   title={`${b.name} · ${b.services}`}
-                  className="flex h-9 items-center justify-center rounded-lg bg-white px-2"
+                  tabIndex={0}
+                  className="group/logo flex h-9 items-center justify-center rounded-lg bg-white px-2 outline-none transition focus-visible:ring-2 focus-visible:ring-white/60"
                 >
                   {logos[b.logo] ? (
-                    <img src={logos[b.logo]} alt={b.name} loading="lazy" width={60} height={20} className="h-5 w-full object-contain" />
+                    <img src={logos[b.logo]} alt={b.name} loading="lazy" width={60} height={20} className={`h-5 w-full object-contain ${LOGO_MONO}`} />
                   ) : (
                     <span className="truncate text-[11px] font-black text-slate-700">{b.name}</span>
                   )}
