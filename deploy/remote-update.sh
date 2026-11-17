@@ -72,6 +72,15 @@ if ! diff -rq "$APP.old/deploy/Caddyfile" "$APP/deploy/Caddyfile" >/dev/null 2>&
 fi
 docker image prune -f >/dev/null
 
+# Pemanasan sampul artikel: buat semua sampul sekali di latar belakang supaya pengunjung pertama tidak menunggu.
+SITE="${SITE_URL:-https://urbanix.id}"
+(
+  sleep 25
+  for PAGE in 1 2 3; do curl -fsS "$SITE/inspirasi?hal=$PAGE" 2>/dev/null; done \
+    | grep -oE '/inspirasi/[a-z0-9-]+/sampul\.png\?v=[a-z0-9-]+' | sort -u \
+    | while read -r U; do curl -fsS -o /dev/null "$SITE$U" || true; done
+) >/dev/null 2>&1 &
+
 echo "==> Jadwal otomatis: berita tiap 2 jam, backup tiap hari 02:30"
 CRON_NEWS="15 */2 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py ambil_berita >> $BASE/cron.log 2>&1"
 CRON_BACKUP="30 2 * * * bash $APP/deploy/backup.sh >> $BASE/cron.log 2>&1"

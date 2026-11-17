@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { ImageResponse } from 'next/og';
 import { getArticle } from '@/lib/api';
@@ -46,28 +47,41 @@ function iconBody(name: string): string {
 
 const FALLBACK = ['#5bb5f9', '#a78bfa', '#ff6b6b', '#ffa94d', '#f06eaa', '#4fd1c5', '#8bcb4a', '#7c83fd'];
 
-/** Font untuk label kecil (Plus Jakarta Sans); bila gagal diunduh, pakai font bawaan. */
-const fonts = new Map<number, Promise<ArrayBuffer | null>>();
-function font(weight: number) {
-  if (!fonts.has(weight)) {
-    fonts.set(
-      weight,
-      (async () => {
-        try {
-          const css = await (
-            await fetch(`https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@${weight}`)
-          ).text();
-          const url = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1];
-          return url ? await (await fetch(url)).arrayBuffer() : null;
-        } catch {
-          return null;
-        }
-      })()
-    );
-  }
-  return fonts.get(weight)!;
+/**
+ * Sampul disimpan di disk setelah dibuat sekali (membuatnya ±3 detik; membaca file < 50 ms).
+ * Kunci = slug + versi (?v=...), jadi sampul otomatis dibuat ulang bila artikel/desain berubah.
+ */
+const CACHE_DIRS = [path.join(process.cwd(), '.cache', 'sampul'), path.join(os.tmpdir(), 'urbanix-sampul')];
+function cacheFile(slug: string, version: string) {
+  const safe = `${slug}-${version}`.replace(/[^a-z0-9._-]/gi, '_').slice(0, 200);
+  return CACHE_DIRS.map((dir) => path.join(dir, `${safe}.png`));
 }
-
+function readCache(files: string[]): Buffer | null {
+  for (const f of files) {
+    try {
+      return fs.readFileSync(f);
+    } catch {
+      /* belum ada */
+    }
+  }
+  return null;
+}
+function writeCache(files: string[], data: Buffer) {
+  for (const f of files) {
+    try {
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.writeFileSync(f, data);
+      return;
+    } catch {
+      /* coba folder berikutnya */
+    }
+  }
+}
+const pngHeaders = (immutable: boolean) => ({
+  'Content-Type': 'image/png',
+  // Alamat sampul selalu berversi (?v=...), jadi aman disimpan lama di browser.
+  'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=86400',
+});
 
 /** Gelapkan warna hex (untuk bayangan panjang). */
 function shade(hex: string, amount = 0.16) {
@@ -118,7 +132,12 @@ function coverSvg(color: string, body: string) {
  * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
  * Gaya ikon kategori: warna cerah datar, ikon sesuai topik + bayangan panjang, tanpa kotak & tulisan minimal.
  */
-export async function GET(_req: Request, { params }: { params: { slug: string } }) {
+export async function GET(req: Request, { params }: { params: { slug: string } }) {
+  const version = new URL(req.url).searchParams.get('v') || '';
+  const files = version ? cacheFile(params.slug, version) : [];
+  const cached = files.length ? readCache(files) : null;
+  if (cached) return new Response(new Uint8Array(cached), { headers: pngHeaders(true) });
+
   const article = await getArticle(params.slug);
   if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
 
@@ -131,12 +150,9 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
     { ...DEFAULT_TOPIC, color: FALLBACK[article.id % FALLBACK.length] };
   const color = topic.color;
 
-  const bold = await font(800);
-  const family = bold ? 'Jakarta' : undefined;
-
-  return new ImageResponse(
+  const image = new ImageResponse(
     (
-      <div style={{ width: W, height: H, display: 'flex', position: 'relative', fontFamily: family }}>
+      <div style={{ width: W, height: H, display: 'flex', position: 'relative' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={coverSvg(color, iconBody(topic.icon))} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
         <div
@@ -146,7 +162,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
             bottom: 40,
             display: 'flex',
             fontSize: 26,
-            fontWeight: 800,
+            fontWeight: 400,
             letterSpacing: 8,
             color: isLight(color) ? 'rgba(17,17,17,0.75)' : 'rgba(255,255,255,0.9)',
           }}
@@ -158,8 +174,9 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
     {
       width: W,
       height: H,
-      fonts: bold ? [{ name: 'Jakarta', data: bold, weight: 800 as const, style: 'normal' as const }] : undefined,
-      headers: { 'Cache-Control': 'public, max-age=86400, s-maxage=604800' },
     }
   );
+  const data = Buffer.from(await image.arrayBuffer());
+  if (files.length) writeCache(files, data);
+  return new Response(new Uint8Array(data), { headers: pngHeaders(Boolean(version)) });
 }

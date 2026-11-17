@@ -6,6 +6,7 @@ import NewsCard from '@/components/NewsCard';
 import ProductCard from '@/components/ProductCard';
 import RevealGrid from '@/components/RevealGrid';
 import PromoCountdown from '@/components/PromoCountdown';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { VoucherStrip } from '@/components/VoucherCard';
 import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
 import {
@@ -155,7 +156,9 @@ export default async function HomePage({
         />
       )}
 
-      {/* 1. Banner + panel promo */}
+      {/* 1. Banner + panel promo (latar: siluet gear & logo U, terlihat di sela-sela) */}
+      <div className="relative isolate pb-2">
+      <GearBackdrop className="-bottom-10" />
       <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
         <div className={`grid gap-4 ${promo ? 'lg:grid-cols-[1.75fr_1fr]' : ''}`}>
           {slides.length > 0 ? (
@@ -189,8 +192,13 @@ export default async function HomePage({
         </section>
       )}
 
+      </div>
+
       {/* 2. Kategori bergambar */}
-      <CategoryStrip categories={categories} products={allProducts} />
+      <div className="relative isolate">
+        <GearBackdrop />
+        <CategoryStrip categories={categories} products={allProducts} />
+      </div>
 
       {/* 3. Produk promo, potongan terbesar dulu */}
       {promo && <FlashSale products={promoProducts} promoName={promo.name} />}
@@ -262,7 +270,8 @@ export default async function HomePage({
       )}
 
       {/* 7. Keunggulan toko: daftar ringkas, bukan kartu */}
-      <section aria-labelledby="judul-keunggulan" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section aria-labelledby="judul-keunggulan" className="relative isolate mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <GearBackdrop />
         <h2 id="judul-keunggulan" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
           {featuresTitle}
         </h2>

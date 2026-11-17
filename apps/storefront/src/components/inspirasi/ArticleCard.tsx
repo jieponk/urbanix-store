@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ArticleCard as Card } from '@/lib/api';
 import { DEFAULT_COVER } from '@/lib/markdown';
-import { ArrowRight, Calendar, CategoryIcon, Chat, Clock, Pin } from '@/components/inspirasi/InspoIcons';
+import { ArrowRight, Calendar, CategoryIcon, Chat, Pin } from '@/components/inspirasi/InspoIcons';
 
 export function articleDate(iso: string | null, short = false) {
   if (!iso) return '';
@@ -61,23 +61,25 @@ export function PinnedBadge() {
   );
 }
 
-/** Baris info: tanggal · durasi baca · jumlah komentar. */
+/** Baris info kartu: penulis · tanggal · jumlah komentar. */
 export function ArticleMeta({ article, className = '' }: { article: Card; className?: string }) {
+  const comments = article.comment_count || 0;
   return (
-    <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs font-medium text-slate-500 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-500 ${className}`}>
+      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] font-extrabold text-surface">
+          {article.author_name.slice(0, 1).toUpperCase()}
+        </span>
+        {article.author_name}
+      </span>
       {article.published_at && (
         <time dateTime={article.published_at} className="inline-flex items-center gap-1.5">
           <Calendar size={13} /> {articleDate(article.published_at, true)}
         </time>
       )}
-      <span className="inline-flex items-center gap-1.5">
-        <Clock size={13} /> {article.reading_minutes} menit baca
+      <span className="inline-flex items-center gap-1.5" title={`${comments} komentar`}>
+        <Chat size={13} /> {comments} komentar
       </span>
-      {!!article.comment_count && (
-        <span className="inline-flex items-center gap-1.5" title={`${article.comment_count} komentar`}>
-          <Chat size={13} /> {article.comment_count}
-        </span>
-      )}
     </div>
   );
 }
@@ -99,7 +101,6 @@ export default function ArticleCard({ article, index = 0 }: { article: Card; ind
             {article.title}
           </Link>
         </h3>
-        {article.excerpt && <p className="mt-2 line-clamp-2 text-[15px] leading-7 text-slate-600">{article.excerpt}</p>}
         <ArticleMeta article={article} className="mt-auto pt-4" />
       </div>
     </article>
@@ -123,12 +124,8 @@ export function FeaturedArticle({ article }: { article: Card }) {
             {article.title}
           </Link>
         </h2>
-        {article.excerpt && <p className="mt-4 line-clamp-3 text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{article.excerpt}</p>}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-          <div className="text-sm">
-            <p className="font-bold text-ink">{article.author_name}</p>
-            <ArticleMeta article={article} className="mt-0.5" />
-          </div>
+          <ArticleMeta article={article} className="text-sm" />
           <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ed">
             Baca artikel <ArrowRight size={16} />
           </span>
