@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { useT } from '@/components/LangProvider';
 
 /** Tampil kalau terjadi error tak terduga di halaman toko (bukan 404). */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const t = useT();
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -12,17 +14,17 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   return (
     <div className="px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-5xl font-extrabold text-cobalt-800 dark:text-white">Oops</p>
-        <h1 className="mt-4 text-2xl font-extrabold text-ink">Halaman sedang bermasalah</h1>
+        <p className="text-5xl font-extrabold text-cobalt-800 dark:text-white">{t('Oops')}</p>
+        <h1 className="mt-4 text-2xl font-extrabold text-ink">{t('Halaman sedang bermasalah')}</h1>
         <p className="mt-3 text-slate-600">
-          Coba muat ulang sebentar lagi. Kalau masih terjadi, hubungi kami lewat WhatsApp.
+          {t('Coba muat ulang sebentar lagi. Kalau masih terjadi, hubungi kami lewat WhatsApp.')}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm font-bold">
           <button type="button" onClick={reset} className="rounded-xl bg-ink px-5 py-3 text-surface hover:bg-slate-800">
-            Coba lagi
+            {t('Coba lagi')}
           </button>
           <Link href="/" className="rounded-xl bg-surface px-5 py-3 text-ink ring-1 ring-slate-200 hover:bg-mist">
-            Ke beranda
+            {t('Ke beranda')}
           </Link>
         </div>
         {error.digest && <p className="mt-6 text-xs text-slate-400">Kode: {error.digest}</p>}

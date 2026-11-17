@@ -55,6 +55,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Terjemahan isi (nama/deskripsi produk, artikel) untuk ?lang=en
+    'store.content_i18n.ContentLanguageMiddleware',
 ]
 
 ROOT_URLCONF = 'urbanix_core.urls'

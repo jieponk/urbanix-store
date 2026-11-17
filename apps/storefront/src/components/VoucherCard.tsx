@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { VOUCHER_EVENT, claimVoucher, getClaimed, voucherEndText, type VoucherInfo } from '@/lib/vouchers';
 import { Check } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
 
 function useClaimed(code: string) {
   const [claimed, setClaimed] = useState(false);
@@ -33,6 +34,7 @@ function TicketIcon({ shipping }: { shipping: boolean }) {
 
 /** Kartu voucher bergaya tiket dengan tombol Klaim. */
 export default function VoucherCard({ voucher, compact = false }: { voucher: VoucherInfo; compact?: boolean }) {
+  const t = useT();
   const claimed = useClaimed(voucher.code);
   const [showTerms, setShowTerms] = useState(false);
   const shipping = voucher.type === 'FREE_SHIPPING';
@@ -47,7 +49,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
         }`}
       >
         <TicketIcon shipping={shipping} />
-        <span className="text-[10px] font-bold leading-tight">{shipping ? 'Ongkir' : 'Diskon'}</span>
+        <span className="text-[10px] font-bold leading-tight">{shipping ? t('Ongkir') : t('Diskon')}</span>
         <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-mist" aria-hidden="true" />
       </div>
 
@@ -61,7 +63,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
             className="-my-2 min-w-[24px] py-2 text-[11px] font-semibold text-slate-500 underline-offset-2 hover:text-ink hover:underline"
             aria-expanded={showTerms}
           >
-            S&K{ends ? ` · s/d ${ends}` : ''}
+            {t('S&K')}{ends ? ` · ${t('s/d {date}', { date: ends })}` : ''}
           </button>
           <button
             type="button"
@@ -71,7 +73,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
               claimed ? 'bg-mist text-slate-500' : 'bg-ink text-surface hover:bg-slate-800'
             }`}
           >
-            {claimed ? <span className="inline-flex items-center gap-1">Diklaim <Check size={13} /></span> : 'Klaim'}
+            {claimed ? <span className="inline-flex items-center gap-1">{t('Diklaim')} <Check size={13} /></span> : t('Klaim')}
           </button>
         </div>
         {showTerms && (
@@ -80,7 +82,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
               <li key={t}>{t}</li>
             ))}
             <li>
-              Kode: <b className="text-ink">{voucher.code}</b>
+              {t('Kode:')} <b className="text-ink">{voucher.code}</b>
             </li>
           </ul>
         )}
@@ -100,10 +102,11 @@ export function VoucherStrip({
   /** true = tersusun ke bawah (kolom sempit, mis. halaman produk) */
   stacked?: boolean;
 }) {
+  const t = useT();
   if (vouchers.length === 0) return null;
   return (
     <div>
-      {title && <p className="mb-2 text-sm font-bold text-ink">{title}</p>}
+      {title && <p className="mb-2 text-sm font-bold text-ink">{t(title)}</p>}
       <div
         className={
           stacked

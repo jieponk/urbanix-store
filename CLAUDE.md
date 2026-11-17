@@ -19,6 +19,7 @@ Toko online kamera/foto/video **https://urbanix.id** (PT Koolsnap Multi Retailin
 - **Jangan** membaca, menampilkan, atau meng-commit isi `~/urbanix/.env` di server maupun kunci/API key apa pun. `.env.example` tanpa nilai rahasia.
 - **Selalu minta konfirmasi** sebelum perintah yang mengubah server produksi (deploy, restart, migrasi, hapus data).
 - Commit hanya bila diminta; jalankan tes backend (dan `npm run build` bila menyentuh storefront) sebelum push.
+- **Dua bahasa (ID/EN)**: teks UI ditulis Bahasa Indonesia lalu dibungkus `t('...')` (server: `const t = getT()` dari `@/lib/lang-server`; browser: `const t = useT()` dari `@/components/LangProvider`) dan terjemahan Inggrisnya ditambahkan di kamus `src/lib/i18n.ts`. Pilihan bahasa disimpan di cookie `urbanix-lang`. Isi database (produk, kategori, artikel, voucher) diterjemahkan backend lewat DeepL (`store/content_i18n.py`, perintah `terjemahkan_konten`, tiap 3 jam). Pesan WhatsApp ke admin, invoice, S&K/Privasi, dan Seller Center tetap Bahasa Indonesia.
 - Teks UI dalam Bahasa Indonesia, gaya rapi (bukan "polosan"), mendukung mode terang & gelap (warna lewat variabel: `ink`, `mist`, `surface`, `slate-*`, `brand-*`, `cobalt-*`, `sun-*`).
 - Gambar unggahan otomatis jadi WebP (`store/images.py`).
 - SEO/Google: data terstruktur harus jujur. **Jangan** pasang rating/ulasan palsu atau salinan ulasan Shopee sebagai `aggregateRating`; bintang hanya dari model `ProductReview` (pembeli terverifikasi).

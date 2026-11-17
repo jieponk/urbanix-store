@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { findPublicImage } from '@/lib/assets';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 /** Merek unggulan di atas footer (urutan sesuai tampilan). Logo: public/brands/<slug>.svg|png|webp. */
 const TOP_BRANDS = ['DJI', 'Insta360', 'Sony', 'Canon', 'Nikon', 'Fujifilm', 'Hollyland', 'Kodak'];
@@ -13,6 +14,7 @@ export function topBrands() {
 
 /** Deretan merek unggulan yang berjalan pelan + tautan ke semua produk. Kotak berukuran tetap agar logo tidak bertabrakan. */
 export default function BrandMarquee({ brands }: { brands: { name: string; logo: string | null }[] }) {
+  const t = getT();
   const row = (hidden: boolean) => (
     <ul className="flex shrink-0 items-center gap-3 pr-3" aria-hidden={hidden || undefined}>
       {brands.map((b) => (
@@ -20,7 +22,7 @@ export default function BrandMarquee({ brands }: { brands: { name: string; logo:
           <Link
             href={`/produk?q=${encodeURIComponent(b.name)}`}
             tabIndex={hidden ? -1 : undefined}
-            title={`Produk ${b.name}`}
+            title={t('Produk {name}', { name: b.name })}
             className="group flex h-16 w-40 items-center justify-center overflow-hidden rounded-2xl bg-surface px-5 ring-1 ring-slate-200 transition hover:ring-slate-300"
           >
             {b.logo ? (
@@ -42,7 +44,7 @@ export default function BrandMarquee({ brands }: { brands: { name: string; logo:
   );
 
   return (
-    <section aria-label="Merek unggulan" className="border-t border-slate-200 bg-mist py-8">
+    <section aria-label={t('Merek unggulan')} className="border-t border-slate-200 bg-mist py-8">
       <div className="marquee relative overflow-hidden">
         <div className="marquee-inner flex w-max">
           {row(false)}
@@ -55,7 +57,7 @@ export default function BrandMarquee({ brands }: { brands: { name: string; logo:
       </div>
       <div className="mx-auto mt-4 flex max-w-7xl justify-end px-4 sm:px-6 lg:px-8">
         <Link href="/produk" className="group inline-flex items-center gap-1 text-sm font-bold text-ink hover:underline">
-          Semua merek <ArrowRight size={16} />
+          {t('Semua merek')} <ArrowRight size={16} />
         </Link>
       </div>
     </section>

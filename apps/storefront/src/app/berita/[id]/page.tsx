@@ -16,6 +16,8 @@ import {
   Quote,
 } from '@/components/inspirasi/InspoIcons';
 import { getNewsDetail } from '@/lib/api';
+import { getLang, getT } from '@/lib/lang-server';
+import { dateLocale } from '@/lib/i18n';
 
 type Params = { id: string };
 
@@ -47,6 +49,7 @@ function FullText({ text }: { text: string }) {
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<Params> | Params }) {
+  const t = getT();
   const { id } = await params;
   const article = await getNewsDetail(id);
 
@@ -57,17 +60,17 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
           <span className="text-slate-400">
             <Newspaper size={26} />
           </span>
-          <h1 className="mt-4 text-xl font-extrabold text-ink">Berita tidak ditemukan</h1>
-          <p className="mt-2 text-sm text-slate-500">Berita ini mungkin sudah lama atau disembunyikan.</p>
+          <h1 className="mt-4 text-xl font-extrabold text-ink">{t('Berita tidak ditemukan')}</h1>
+          <p className="mt-2 text-sm text-slate-500">{t('Berita ini mungkin sudah lama atau disembunyikan.')}</p>
           <Link href="/berita" className="group mt-6 inline-flex items-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-ed hover:text-white">
-            Lihat berita lain <ArrowRight size={16} />
+            {t('Lihat berita lain')} <ArrowRight size={16} />
           </Link>
         </div>
       </div>
     );
   }
 
-  const date = new Date(article.published_at).toLocaleDateString('id-ID', {
+  const date = new Date(article.published_at).toLocaleDateString(dateLocale(getLang()), {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta',
   });
   const ai = article.ai;
@@ -78,19 +81,19 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
       {/* ---------- Kepala ---------- */}
       <header className="px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
-            <Link href="/" aria-label="Beranda" className="hover:text-ink"><Home size={14} /></Link>
+          <nav aria-label={t('Breadcrumb')} className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Link href="/" aria-label={t('Beranda')} className="hover:text-ink"><Home size={14} /></Link>
             <ChevronRight size={12} className="opacity-60" />
-            <Link href="/inspirasi" className="hover:text-ink">Inspirasi</Link>
+            <Link href="/inspirasi" className="hover:text-ink">{t('Inspirasi')}</Link>
             <ChevronRight size={12} className="opacity-60" />
-            <Link href="/berita" className="hover:text-ink">Berita</Link>
+            <Link href="/berita" className="hover:text-ink">{t('Berita')}</Link>
           </nav>
           <div className="mt-8 max-w-4xl">
             <div className="flex flex-wrap items-center gap-4 border-t-[3px] border-ed pt-2">
               <span className="ed-kicker inline-flex items-center gap-1.5"><Globe size={13} /> {article.source}</span>
               {ai && (
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
-                  <AiSpark size={13} /> Ada ringkasan
+                  <AiSpark size={13} /> {t('Ada ringkasan')}
                 </span>
               )}
             </div>
@@ -113,7 +116,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
             <figure className="inspo-reveal overflow-hidden rounded-md bg-mist">
               <NewsImage src={article.image_url} alt={article.title} className="aspect-[16/9] w-full" />
             </figure>
-            {article.image_url && <p className="mt-2 text-xs text-slate-500">Foto: {article.source}</p>}
+            {article.image_url && <p className="mt-2 text-xs text-slate-500">{t('Foto: {s}', { s: article.source })}</p>}
 
             <div className="max-w-[720px]">
               {(ai?.conclusion || article.summary) && (
@@ -123,7 +126,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
               {ai && ai.points.length > 0 && (
                 <section aria-labelledby="inti-berita" className="mt-10">
                   <h2 id="inti-berita" className="flex items-center gap-2.5 border-t-[3px] border-ink pt-4 text-xl font-extrabold text-ink">
-                    <CheckCircle size={20} className="text-ed" /> Inti beritanya
+                    <CheckCircle size={20} className="text-ed" /> {t('Inti beritanya')}
                   </h2>
                   <ol className="mt-5 divide-y divide-slate-200">
                     {ai.points.map((point, i) => (
@@ -139,11 +142,11 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
               {ai?.opinion && (
                 <section aria-labelledby="kata-urbanix" className="mt-10 border-l-[3px] border-ed bg-mist px-5 py-5 sm:px-7">
                   <h2 id="kata-urbanix" className="flex items-center gap-2 text-lg font-extrabold text-ink">
-                    <Quote size={18} className="text-ed" /> Kata Urbanix
+                    <Quote size={18} className="text-ed" /> {t('Kata Urbanix')}
                   </h2>
                   <p className="mt-3 text-[15.5px] leading-7 text-slate-700 sm:text-base sm:leading-8">{ai.opinion}</p>
                   <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-slate-500">
-                    <AiSpark size={13} /> Ringkasan dan pendapat dibuat dengan bantuan AI, bisa keliru. Cek sumber aslinya untuk detail.
+                    <AiSpark size={13} /> {t('Ringkasan dan pendapat dibuat dengan bantuan AI, bisa keliru. Cek sumber aslinya untuk detail.')}
                   </p>
                 </section>
               )}
@@ -153,8 +156,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
               <div className="mt-10 border-t-[3px] border-ink pt-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm leading-6 text-slate-600">
-                    <p className="font-extrabold text-ink">Sumber: {article.source}</p>
-                    {translatedTitle && <p className="mt-0.5">Judul asli: “{article.original_title}”</p>}
+                    <p className="font-extrabold text-ink">{t('Sumber: {s}', { s: article.source })}</p>
+                    {translatedTitle && <p className="mt-0.5">{t('Judul asli: “{x}”', { x: article.original_title })}</p>}
                   </div>
                   <a
                     href={article.url}
@@ -162,13 +165,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                     rel="noopener noreferrer"
                     className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-surface transition hover:bg-ed hover:text-white"
                   >
-                    {article.body ? 'Buka di' : 'Baca lengkap di'} {article.source} <External size={16} />
+                    {t(article.body ? 'Buka di {s}' : 'Baca lengkap di {s}', { s: article.source })} <External size={16} />
                   </a>
                 </div>
                 <p className="mt-4 text-xs leading-5 text-slate-500">
-                  {translatedTitle ? 'Judul diterjemahkan otomatis. ' : ''}
-                  {ai ? 'Inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya. ' : ''}
-                  Foto dan hak cipta artikel asli milik {article.source}.
+                  {translatedTitle ? t('Judul diterjemahkan otomatis.') + ' ' : ''}
+                  {ai ? t('Inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya.') + ' ' : ''}
+                  {t('Foto dan hak cipta artikel asli milik {s}.', { s: article.source })}
                 </p>
               </div>
             </div>
@@ -178,9 +181,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
           {article.related_products.length > 0 && (
             <aside aria-labelledby="judul-produk-terkait" className="lg:sticky lg:top-28 lg:mt-0 lg:self-start">
               <div className="border-t-[3px] border-ink pt-4">
-                <p className="ed-kicker">Ada di Urbanix</p>
+                <p className="ed-kicker">{t('Ada di Urbanix')}</p>
                 <h2 id="judul-produk-terkait" className="mt-1 text-lg font-extrabold text-ink">
-                  {article.related_brand ? `Produk ${article.related_brand}` : 'Produk pilihan'}
+                  {article.related_brand ? t('Produk {name}', { name: article.related_brand }) : t('Produk pilihan')}
                 </h2>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {article.related_products.map((product) => (
@@ -192,7 +195,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                     href={`/produk?q=${encodeURIComponent(article.related_brand)}`}
                     className="group mt-4 flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-bold text-ink hover:text-ed"
                   >
-                    Semua produk {article.related_brand} <ArrowRight size={15} />
+                    {t('Semua produk {name}', { name: article.related_brand })} <ArrowRight size={15} />
                   </Link>
                 )}
               </div>
@@ -205,9 +208,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
         <section aria-labelledby="judul-berita-lain" className="mt-16 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="flex items-end justify-between gap-4 border-t-[3px] border-ink pt-5">
-              <h2 id="judul-berita-lain" className="text-2xl font-extrabold tracking-tight text-ink">Berita lainnya</h2>
+              <h2 id="judul-berita-lain" className="text-2xl font-extrabold tracking-tight text-ink">{t('Berita lainnya')}</h2>
               <Link href="/berita" className="group inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-ed">
-                Semua berita <ArrowRight size={16} />
+                {t('Semua berita')} <ArrowRight size={16} />
               </Link>
             </div>
             <div className="mt-7 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">

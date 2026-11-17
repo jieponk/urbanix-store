@@ -7,8 +7,10 @@ import { siteConfig } from '@/lib/siteConfig';
 import ProductGallery from '@/components/ProductGallery';
 import { VoucherStrip } from '@/components/VoucherCard';
 import { ChevronRight, Ticket } from '@/components/inspirasi/InspoIcons';
-import { money, type Product, type Variation } from '@/lib/api';
+import type { Product, Variation } from '@/lib/api';
+import { money } from '@/lib/money';
 import type { VoucherInfo } from '@/lib/vouchers';
+import { useT } from '@/components/LangProvider';
 
 type Props = {
   product: Product;
@@ -33,6 +35,7 @@ function promoEndText(iso: string | null | undefined) {
 
 /** Bagian atas halaman detail: galeri + judul + harga headline + pilihan varian + tombol beli. */
 export default function ProductHero({ product, variants, whatsappNumber, vouchers = [] }: Props) {
+  const t = useT();
   const hasVariants = variants.length > 0;
   const [variationId, setVariationId] = useState<string | null>(() => {
     const available = variants.filter((v) => v.stock > 0);
@@ -92,7 +95,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         {sku && (
           <p className="mt-3 text-xs text-slate-400">
             SKU: {sku}
-            {selected?.name.trim() && <> · Varian: {selected.name.trim()}</>}
+            {selected?.name.trim() && <> · {t('Varian')}: {selected.name.trim()}</>}
           </p>
         )}
 
@@ -100,7 +103,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           {product.promo_name && maxDiscount > 0 && (
             <p className="mb-2 inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
               {product.promo_name}
-              {promoEnds && <span className="font-medium text-red-600">s/d {promoEnds}</span>}
+              {promoEnds && <span className="font-medium text-red-600">{t('s/d {date}', { date: promoEnds })}</span>}
             </p>
           )}
 
@@ -114,18 +117,18 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
           )}
 
           <p className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
-            {priceVaries && <span className="mr-1.5 text-sm font-semibold text-slate-500">Mulai</span>}
+            {priceVaries && <span className="mr-1.5 text-sm font-semibold text-slate-500">{t('Mulai')}</span>}
             {money(priceVaries ? Math.min(...finals) : finalPrice)}
           </p>
 
-          <p className="mt-1 text-xs text-slate-500">Harga sudah termasuk PPN</p>
+          <p className="mt-1 text-xs text-slate-500">{t('Harga sudah termasuk PPN')}</p>
 
           <p className={`mt-3 text-sm font-semibold ${stock > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
             {stock > 0
-              ? `Stok ${selected ? 'varian ini' : 'tercatat'} tersedia (${stock})`
+              ? t(selected ? 'Stok varian ini tersedia ({n})' : 'Stok tercatat tersedia ({n})', { n: stock })
               : selected
-                ? 'Stok varian ini habis'
-                : 'Stok tercatat habis'}
+                ? t('Stok varian ini habis')
+                : t('Stok tercatat habis')}
           </p>
         </div>
 
@@ -150,7 +153,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
                 <Ticket size={16} />
               </span>
               <span className="min-w-0 flex-1">
-                <b className="block text-ink">{vouchers.length} voucher toko tersedia</b>
+                <b className="block text-ink">{t('{n} voucher toko tersedia', { n: vouchers.length })}</b>
                 <span className="block truncate text-xs text-slate-500">{vouchers.map((v) => v.headline).join(' · ')}</span>
               </span>
               <ChevronRight size={16} className="rotate-90 text-slate-500 transition-transform duration-300 group-open:-rotate-90" />
@@ -164,19 +167,19 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         {/* Info pembayaran, pengiriman & retur di dekat tombol beli (juga syarat Google Merchant Center) */}
         <ul className="mt-5 grid gap-3 border-t border-slate-200 pt-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
           <li>
-            <b className="block text-ink">Pembayaran</b>
+            <b className="block text-ink">{t('Pembayaran')}</b>
             {siteConfig.paymentMethods.map((m) => m.name).join(', ')}.{' '}
-            <Link href="/syarat-ketentuan#pembayaran" className="font-semibold text-ink underline">Detail</Link>
+            <Link href="/syarat-ketentuan#pembayaran" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
           <li>
-            <b className="block text-ink">Pengiriman</b>
-            Reguler & kargo (JNE/J&T), instan (GoSend/Grab). Dikirim maks. {siteConfig.legal.shipProcessing} setelah bayar.{' '}
-            <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">Detail</Link>
+            <b className="block text-ink">{t('Pengiriman')}</b>
+            {t('Reguler & kargo (JNE/J&T), instan (GoSend/Grab). Dikirim maks. {d} setelah bayar.', { d: t(siteConfig.legal.shipProcessing) })}{' '}
+            <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
           <li>
-            <b className="block text-ink">Retur & garansi</b>
-            Maks. {siteConfig.legal.returnWindow} dengan video unboxing; ganti barang atau uang kembali.{' '}
-            <Link href="/syarat-ketentuan#pembatalan-retur" className="font-semibold text-ink underline">Detail</Link>
+            <b className="block text-ink">{t('Retur & garansi')}</b>
+            {t('Maks. {d} dengan video unboxing; ganti barang atau uang kembali.', { d: t(siteConfig.legal.returnWindow) })}{' '}
+            <Link href="/syarat-ketentuan#pembatalan-retur" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
         </ul>
       </section>

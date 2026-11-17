@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { money, type Variation } from '@/lib/api';
+import type { Variation } from '@/lib/api';
+import { money } from '@/lib/money';
 import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
 import { CartIcon } from '@/components/Icons';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
 
 type Props = {
   id: string;
@@ -36,6 +38,7 @@ export default function ProductBuyButtons({
   onVariationChange,
   whatsappNumber,
 }: Props) {
+  const t = useT();
   const router = useRouter();
   const hasVariants = variations.length > 0;
 
@@ -83,7 +86,7 @@ export default function ProductBuyButtons({
     const item = buildItem();
     if (!item) return;
     addToCart(item);
-    setMessage('Produk berhasil ditambahkan ke keranjang.');
+    setMessage(t('Produk berhasil ditambahkan ke keranjang.'));
   }
 
   function buyNow() {
@@ -110,12 +113,12 @@ export default function ProductBuyButtons({
       {hasVariants && (
         <div>
           <p className={`mb-2 text-sm font-semibold ${needVariant ? 'text-red-600' : 'text-slate-700'}`}>
-            {needVariant ? 'Pilih varian dulu ya' : 'Pilih varian'}
-            <span className="font-normal text-slate-400"> ({variations.length} pilihan)</span>
+            {needVariant ? t('Pilih varian dulu ya') : t('Pilih varian')}
+            <span className="font-normal text-slate-400"> ({t('{n} pilihan', { n: variations.length })})</span>
           </p>
           <div
             role="radiogroup"
-            aria-label="Pilih varian"
+            aria-label={t('Pilih varian')}
             id="pilih-varian"
             className={`grid grid-cols-2 gap-2 ${needVariant ? 'rounded-xl ring-2 ring-red-300 ring-offset-2' : ''}`}
           >
@@ -147,7 +150,7 @@ export default function ProductBuyButtons({
                       {money(variation.final_price ?? variation.price)}
                     </span>
                     {' · '}
-                    {soldOut ? 'Habis' : `Stok ${variation.stock}`}
+                    {soldOut ? t('Habis') : t('Stok {n}', { n: variation.stock })}
                   </span>
                 </button>
               );
@@ -158,7 +161,7 @@ export default function ProductBuyButtons({
 
 
       <div className="flex items-center gap-4">
-        <span className="text-sm font-semibold text-slate-700">Jumlah</span>
+        <span className="text-sm font-semibold text-slate-700">{t('Jumlah')}</span>
 
         <div className="flex items-center rounded-xl border border-slate-300">
           <button
@@ -166,7 +169,7 @@ export default function ProductBuyButtons({
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             disabled={quantity <= 1}
             className="px-4 py-2 text-lg disabled:opacity-30"
-            aria-label="Kurangi jumlah"
+            aria-label={t('Kurangi jumlah')}
           >
             −
           </button>
@@ -176,14 +179,14 @@ export default function ProductBuyButtons({
             onClick={() => setQuantity((q) => Math.min(Math.max(1, currentStock), q + 1))}
             disabled={quantity >= currentStock}
             className="px-4 py-2 text-lg disabled:opacity-30"
-            aria-label="Tambah jumlah"
+            aria-label={t('Tambah jumlah')}
           >
             +
           </button>
         </div>
 
         <span className="text-xs text-slate-500">
-          {hasVariants && !selected ? 'Pilih varian untuk melihat stok' : `Stok: ${currentStock}`}
+          {hasVariants && !selected ? t('Pilih varian untuk melihat stok') : t('Stok: {n}', { n: currentStock })}
         </span>
       </div>
 
@@ -195,7 +198,7 @@ export default function ProductBuyButtons({
           className="group inline-flex items-center justify-center gap-2 rounded-lg border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CartIcon size={18} className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
-          Tambah ke Keranjang
+          {t('Tambah ke Keranjang')}
         </button>
         <button
           type="button"
@@ -203,7 +206,7 @@ export default function ProductBuyButtons({
           disabled={!hasVariants && !canBuy}
           className="group inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3.5 text-sm font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Beli Sekarang
+          {t('Beli Sekarang')}
           <ArrowRight size={18} />
         </button>
       </div>
@@ -212,7 +215,7 @@ export default function ProductBuyButtons({
         <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
           {message}{' '}
           <button type="button" onClick={() => router.push('/cart')} className="font-bold underline">
-            Lihat Keranjang
+            {t('Lihat Keranjang')}
           </button>
         </div>
       )}
@@ -225,14 +228,14 @@ export default function ProductBuyButtons({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600 px-5 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
           >
             <ChatIcon />
-            Tanya produk ini ke admin (WhatsApp)
+            {t('Tanya produk ini ke admin (WhatsApp)')}
           </button>
 
           {/* Tombol chat melayang: selalu terlihat saat pembeli menggulir deskripsi */}
           <button
             type="button"
             onClick={openChat}
-            aria-label="Chat admin lewat WhatsApp"
+            aria-label={t('Chat admin lewat WhatsApp')}
             className="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-emerald-600 sm:flex px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
           >
             <span className="relative flex h-2.5 w-2.5">
@@ -240,7 +243,7 @@ export default function ProductBuyButtons({
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
             </span>
             <ChatIcon />
-            <span>Chat Admin</span>
+            <span>{t('Chat Admin')}</span>
           </button>
         </>
       )}
@@ -250,7 +253,7 @@ export default function ProductBuyButtons({
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] text-slate-500">
-              {hasVariants ? (selected ? selected.name.trim() || 'Standar' : 'Pilih varian dulu') : 'Harga'}
+              {hasVariants ? (selected ? selected.name.trim() || t('Standar') : t('Pilih varian dulu')) : t('Harga')}
             </p>
             <p className="truncate text-base font-extrabold text-ink">{money(currentPrice)}</p>
           </div>
@@ -258,7 +261,7 @@ export default function ProductBuyButtons({
             <button
               type="button"
               onClick={openChat}
-              aria-label="Tanya admin lewat WhatsApp"
+              aria-label={t('Tanya admin lewat WhatsApp')}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-600 text-emerald-700"
             >
               <ChatIcon />
@@ -268,7 +271,7 @@ export default function ProductBuyButtons({
             type="button"
             onClick={addProduct}
             disabled={!hasVariants && !canBuy}
-            aria-label="Tambah ke keranjang"
+            aria-label={t('Tambah ke keranjang')}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-ink text-ink disabled:opacity-40"
           >
             <CartIcon size={20} />
@@ -279,14 +282,14 @@ export default function ProductBuyButtons({
             disabled={!hasVariants && !canBuy}
             className="h-11 shrink-0 rounded-xl bg-brand-600 px-4 text-sm font-bold text-onbrand disabled:opacity-50"
           >
-            {!hasVariants && !canBuy ? 'Stok habis' : 'Beli Sekarang'}
+            {!hasVariants && !canBuy ? t('Stok habis') : t('Beli Sekarang')}
           </button>
         </div>
         {message && (
           <p className="mt-1.5 text-center text-xs font-semibold text-emerald-700">
-            Masuk keranjang.{' '}
+            {t('Masuk keranjang.')}{' '}
             <button type="button" onClick={() => router.push('/cart')} className="underline">
-              Lihat
+              {t('Lihat')}
             </button>
           </p>
         )}

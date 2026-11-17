@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.utils.html import format_html
 
 from .models import (
+    ContentTranslation,
     Banner,
     Category,
     NewsArticle,
@@ -343,3 +344,22 @@ class NewsArticleAdmin(admin.ModelAdmin):
 class BannerAdmin(admin.ModelAdmin):
     list_display = ("title", "link_url", "sort_order", "starts_at", "ends_at", "is_active")
     list_editable = ("sort_order", "is_active")
+
+
+@admin.register(ContentTranslation)
+class ContentTranslationAdmin(admin.ModelAdmin):
+    """Terjemahan isi ke Bahasa Inggris. Teks bisa dikoreksi manual; ubah status ke Menunggu untuk menerjemahkan ulang."""
+
+    list_display = ("short_source", "short_text", "lang", "status", "updated_at")
+    list_filter = ("lang", "status")
+    search_fields = ("source", "text")
+    readonly_fields = ("key", "source", "created_at", "updated_at")
+    fields = ("lang", "status", "source", "text", "key", "created_at", "updated_at")
+
+    @admin.display(description="Teks asli")
+    def short_source(self, obj):
+        return obj.source[:80]
+
+    @admin.display(description="Terjemahan")
+    def short_text(self, obj):
+        return obj.text[:80]

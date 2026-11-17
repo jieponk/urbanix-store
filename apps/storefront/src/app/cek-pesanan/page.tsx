@@ -2,6 +2,7 @@ import Link from 'next/link';
 import FeatureIcon, { type FeatureIconName } from '@/components/FeatureIcon';
 import OrderLookup from '@/components/OrderLookup';
 import { siteConfig } from '@/lib/siteConfig';
+import { getT } from '@/lib/lang-server';
 
 export const metadata = {
   title: 'Cek Pesanan',
@@ -16,14 +17,15 @@ const features: { icon: FeatureIconName; title: string; text: string }[] = [
 ];
 
 export default function CheckOrderPage() {
+  const t = getT();
   const wa = siteConfig.contact.whatsappNumber.replace(/\D/g, '');
   return (
     <div>
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-32 sm:pt-16 lg:px-8">
         <div className="relative mx-auto max-w-2xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">Cek pesanan</p>
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">Lacak pesanan &amp; unduh invoice</h1>
-          <p className="mt-4 text-lg leading-8 text-white/75">Masukkan nomor pesananmu untuk melihat status, resi, dan invoice.</p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">{t('Cek pesanan')}</p>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">{t('Lacak pesanan & unduh invoice')}</h1>
+          <p className="mt-4 text-lg leading-8 text-white/75">{t('Masukkan nomor pesananmu untuk melihat status, resi, dan invoice.')}</p>
         </div>
       </section>
 
@@ -40,21 +42,21 @@ export default function CheckOrderPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15">
                 <FeatureIcon name={f.icon} size={20} />
               </span>
-              <p className="mt-3 font-extrabold text-ink">{f.title}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{f.text}</p>
+              <p className="mt-3 font-extrabold text-ink">{t(f.title)}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{t(f.text)}</p>
             </div>
           ))}
         </div>
         <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-slate-600">
-          Lupa nomor pesanan?{' '}
+          {t('Lupa nomor pesanan?')}{' '}
           {wa ? (
             <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline">
-              Tanya admin lewat WhatsApp
+              {t('Tanya admin lewat WhatsApp')}
             </a>
           ) : (
-            <Link href="/kontak" className="font-bold text-ink underline">Hubungi kami</Link>
+            <Link href="/kontak" className="font-bold text-ink underline">{t('Hubungi kami')}</Link>
           )}{' '}
-          dengan menyebutkan nama dan nomor HP yang dipakai saat memesan.
+          {t('dengan menyebutkan nama dan nomor HP yang dipakai saat memesan.')}
         </p>
       </section>
     </div>

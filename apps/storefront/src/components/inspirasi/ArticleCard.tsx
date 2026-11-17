@@ -1,11 +1,14 @@
 import Link from 'next/link';
+import { dateLocale } from '@/lib/i18n';
+import { getLang } from '@/lib/lang-server';
 import type { ArticleCard as Card } from '@/lib/api';
 import { DEFAULT_COVER } from '@/lib/markdown';
 import { ArrowRight, Calendar, CategoryIcon, Chat, Pin } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 export function articleDate(iso: string | null, short = false) {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('id-ID', {
+  return new Date(iso).toLocaleDateString(dateLocale(getLang()), {
     day: 'numeric',
     month: short ? 'short' : 'long',
     year: 'numeric',
@@ -54,15 +57,17 @@ export function CategoryBadge({ category, className = '' }: { category: Card['ca
 }
 
 export function PinnedBadge() {
+  const t = getT();
   return (
     <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
-      <Pin size={12} /> Disematkan
+      <Pin size={12} /> {t('Disematkan')}
     </span>
   );
 }
 
 /** Baris info kartu: penulis · tanggal · jumlah komentar. */
 export function ArticleMeta({ article, className = '' }: { article: Card; className?: string }) {
+  const t = getT();
   const comments = article.comment_count || 0;
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-500 ${className}`}>
@@ -77,8 +82,8 @@ export function ArticleMeta({ article, className = '' }: { article: Card; classN
           <Calendar size={13} /> {articleDate(article.published_at, true)}
         </time>
       )}
-      <span className="inline-flex items-center gap-1.5" title={`${comments} komentar`}>
-        <Chat size={13} /> {comments} komentar
+      <span className="inline-flex items-center gap-1.5" title={t('{n} komentar', { n: comments })}>
+        <Chat size={13} /> {t('{n} komentar', { n: comments })}
       </span>
     </div>
   );
@@ -109,6 +114,7 @@ export default function ArticleCard({ article, index = 0 }: { article: Card; ind
 
 /** Artikel utama: foto besar di kiri, teks di kanan (HP: foto di atas). Teks tidak ditumpuk di atas gambar. */
 export function FeaturedArticle({ article }: { article: Card }) {
+  const t = getT();
   return (
     <article className="inspo-reveal group relative grid gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
       <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
@@ -127,7 +133,7 @@ export function FeaturedArticle({ article }: { article: Card }) {
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
           <ArticleMeta article={article} className="text-sm" />
           <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ed">
-            Baca artikel <ArrowRight size={16} />
+            {t('Baca artikel')} <ArrowRight size={16} />
           </span>
         </div>
       </div>

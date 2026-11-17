@@ -813,3 +813,27 @@ class ProductReview(models.Model):
 
     def __str__(self):
         return f"{self.rating}★ {self.product_id} oleh {self.name}"
+
+
+class ContentTranslation(models.Model):
+    """Cache terjemahan isi toko (nama/deskripsi produk, artikel, voucher) ke bahasa lain.
+
+    Satu teks asli cukup diterjemahkan sekali (hemat kuota DeepL). Teks baru masuk antrean
+    (status pending) saat pertama kali diminta, lalu diisi oleh perintah `terjemahkan_konten`.
+    """
+
+    STATUS = [("pending", "Menunggu"), ("done", "Selesai"), ("failed", "Gagal")]
+    key = models.CharField(max_length=64, unique=True)  # sha256(lang + teks asli)
+    lang = models.CharField(max_length=5, default="en")
+    source = models.TextField()
+    text = models.TextField(blank=True)
+    status = models.CharField(max_length=8, choices=STATUS, default="pending", db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Terjemahan isi"
+        verbose_name_plural = "Terjemahan isi"
+
+    def __str__(self):
+        return f"[{self.lang}] {self.source[:60]}"

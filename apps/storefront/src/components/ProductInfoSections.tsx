@@ -8,6 +8,7 @@ import {
   type Block,
   type Section,
 } from '@/lib/productDescription';
+import { getT } from '@/lib/lang-server';
 
 /**
  * Susunan tetap untuk semua produk:
@@ -156,6 +157,7 @@ export default function ProductInfoSections({
   description?: string | null;
   variations?: Variation[];
 }) {
+  const t = getT();
   const parsed = parseDescription(description);
 
   const warrantySections = parsed.warranty;
@@ -173,12 +175,12 @@ export default function ProductInfoSections({
   return (
     <div className="space-y-4">
       {/* 1. Deskripsi */}
-      <Card icon="doc" title="Deskripsi Produk">
+      <Card icon="doc" title={t('Deskripsi Produk')}>
         {hasDescription ? (
           <Blocks blocks={parsed.description} />
         ) : (
           <p className="text-sm text-slate-500">
-            Deskripsi produk belum tersedia.
+            {t('Deskripsi produk belum tersedia.')}
           </p>
         )}
       </Card>
@@ -187,13 +189,13 @@ export default function ProductInfoSections({
       {(warrantySections.length > 0 || showNameWarranty) && (
         <Card
           icon="shield"
-          title={warrantyIsOfficial ? 'Garansi Resmi' : 'Garansi'}
+          title={warrantyIsOfficial ? t('Garansi Resmi') : t('Garansi')}
           caption="Sesuai data supplier"
         >
           {showNameWarranty ? (
             <p className="text-sm leading-7 text-slate-600">
-              Produk ini tercantum dengan Garansi Resmi pada judul produk.
-              Rincian masa garansi mengikuti informasi dari supplier.
+              {t('Produk ini tercantum dengan Garansi Resmi pada judul produk.')}
+              {t('Rincian masa garansi mengikuti informasi dari supplier.')}
             </p>
           ) : (
             warrantySections.map((section, index) => (
@@ -212,28 +214,28 @@ export default function ProductInfoSections({
 
       {/* 3. Key feature */}
       {hasContent(parsed.features) && (
-        <Card icon="bolt" title="Key Feature">
+        <Card icon="bolt" title={t('Key Feature')}>
           <Groups sections={parsed.features} />
         </Card>
       )}
 
       {/* 4. Spesifikasi */}
       {hasContent(parsed.specs) && (
-        <Card icon="list" title="Spesifikasi">
+        <Card icon="list" title={t('Spesifikasi')}>
           <Groups sections={parsed.specs} keyValue />
         </Card>
       )}
 
       {/* 5. Isi dalam paket */}
       {hasContent(parsed.included) && (
-        <Card icon="box" title="Isi dalam Paket">
+        <Card icon="box" title={t('Isi dalam Paket')}>
           <Groups sections={parsed.included} />
         </Card>
       )}
 
       {/* 6. Varian tersedia */}
       {(hasVariations || variantNames.length > 0) && (
-        <Card icon="tag" title="Varian Tersedia">
+        <Card icon="tag" title={t('Varian Tersedia')}>
           {hasVariations ? (
             <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-100">
               {variations.map((variation) => (
@@ -243,7 +245,7 @@ export default function ProductInfoSections({
                 >
                   <div className="min-w-0">
                     <p className="break-words text-sm font-bold text-slate-800">
-                      {variation.name || 'Varian standar'}
+                      {variation.name || t('Varian standar')}
                     </p>
                     {variation.sku && (
                       <p className="text-xs text-slate-400">
@@ -263,8 +265,8 @@ export default function ProductInfoSections({
                       }`}
                     >
                       {variation.stock > 0
-                        ? `Stok tercatat ${variation.stock}`
-                        : 'Stok tercatat habis'}
+                        ? t('Stok tercatat {n}', { n: variation.stock })
+                        : t('Stok tercatat habis')}
                     </p>
                   </div>
                 </li>
@@ -289,7 +291,7 @@ export default function ProductInfoSections({
       {hasContent(parsed.extras) && (
         <details className="group rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-slate-900 sm:text-lg">
-            Informasi Lainnya
+            {t('Informasi Lainnya')}
             <svg
               width="18"
               height="18"

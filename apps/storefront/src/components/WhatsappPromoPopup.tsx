@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { loadMotion, prefersReducedMotion } from '@/lib/motion';
 import { claimVoucher, type VoucherInfo } from '@/lib/vouchers';
+import { useT } from '@/components/LangProvider';
 
 const STORAGE_KEY = 'urbanix-wa-popup-closed';
 const HIDE_DAYS = 3;
@@ -27,6 +28,7 @@ function closedRecently() {
 
 /** Popup "Pesan via WhatsApp, hemat X%". Muncul sekali, lalu disembunyikan 3 hari setelah ditutup. */
 export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToPromo, voucher }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const backdrop = useRef<HTMLDivElement | null>(null);
@@ -112,7 +114,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
           ref={closeButton}
           type="button"
           onClick={close}
-          aria-label="Tutup"
+          aria-label={t('Tutup')}
           className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:rotate-90 hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -121,35 +123,35 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
         </button>
 
         <div className="relative bg-cobalt-900 px-6 pb-6 pt-7">
-          <p className="text-sm font-bold text-white/70">Khusus pesan lewat WhatsApp</p>
+          <p className="text-sm font-bold text-white/70">{t('Khusus pesan lewat WhatsApp')}</p>
           <p className="mt-1 flex items-end gap-2 leading-none text-white">
             <span className="text-[5.5rem] font-extrabold tracking-[-0.06em] text-sun-400">{percent}%</span>
-            <span className="pb-3 text-lg font-extrabold">lebih hemat</span>
+            <span className="pb-3 text-lg font-extrabold">{t('lebih hemat')}</span>
           </p>
         </div>
 
         <div className="px-6 pb-6 pt-5">
           <h2 id="wa-popup-title" className="text-xl font-extrabold tracking-tight text-ink">
-            Pesan via WhatsApp, potongan {percent}% langsung terhitung
+            {t('Pesan via WhatsApp, potongan {n}% langsung terhitung', { n: percent })}
           </h2>
           {voucher && (
             <p className="mt-3 flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-slate-300 px-3 py-2 text-sm">
-              <span className="text-slate-500">Kode voucher</span>
+              <span className="text-slate-500">{t('Kode voucher')}</span>
               <b className="tracking-wider text-ink">{voucher.code}</b>
             </p>
           )}
           <ol className="mt-4 space-y-2.5 text-sm text-slate-600">
             <li className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">1</span>
-              Masukkan produk ke keranjang.
+              {t('Masukkan produk ke keranjang.')}
             </li>
             <li className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">2</span>
-              Di halaman checkout, pilih <b className="text-ink">Pesan via WhatsApp</b>.
+              {t('Di halaman checkout, pilih')} <b className="text-ink">{t('Pesan via WhatsApp')}</b>.
             </li>
             <li className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-surface">3</span>
-              {voucher ? 'Pakai voucher di checkout, lalu kirim chat pesanan ke admin.' : `Kirim chat pesanan ke admin. Totalnya sudah dipotong ${percent}%.`}
+              {voucher ? t('Pakai voucher di checkout, lalu kirim chat pesanan ke admin.') : t('Kirim chat pesanan ke admin. Totalnya sudah dipotong {n}%.', { n: percent })}
             </li>
           </ol>
           {voucher ? (
@@ -160,7 +162,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
             </ul>
           ) : (
             !appliesToPromo && (
-              <p className="mt-4 text-xs text-slate-500">Tidak berlaku untuk produk yang sedang ikut promo potong harga.</p>
+              <p className="mt-4 text-xs text-slate-500">{t('Tidak berlaku untuk produk yang sedang ikut promo potong harga.')}</p>
             )
           )}
 
@@ -170,7 +172,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
               onClick={startShopping}
               className="rounded-full bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
             >
-              {voucher ? 'Klaim & mulai belanja' : 'Mulai belanja'}
+              {voucher ? t('Klaim & mulai belanja') : t('Mulai belanja')}
             </button>
             <a
               href={`https://wa.me/${whatsappNumber}?text=${chatText}`}
@@ -179,7 +181,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
               onClick={close}
               className="rounded-full border-2 border-ink px-5 py-2.5 text-center text-sm font-bold text-ink hover:bg-mist"
             >
-              Tanya admin dulu
+              {t('Tanya admin dulu')}
             </a>
           </div>
         </div>

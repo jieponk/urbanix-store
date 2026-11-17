@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { ListIcon } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
 
 type Heading = { id: string; text: string; level: number };
 
 /** Daftar isi yang menandai bagian yang sedang dibaca (desktop: menempel di samping). */
 export default function TableOfContents({ headings }: { headings: Heading[] }) {
+  const t = useT();
   const [active, setActive] = useState(headings[0]?.id || '');
 
   useEffect(() => {
@@ -28,9 +30,9 @@ export default function TableOfContents({ headings }: { headings: Heading[] }) {
 
   return (
     // Tidak sticky sendiri: wadahnya (aside) yang menempel, supaya tombol di bawahnya ikut & tidak tertimpa.
-    <nav aria-label="Daftar isi" className="flex min-h-0 flex-col border-t-[3px] border-ink pt-4">
+    <nav aria-label={t('Daftar isi')} className="flex min-h-0 flex-col border-t-[3px] border-ink pt-4">
       <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-ink">
-        <ListIcon size={15} /> Daftar isi
+        <ListIcon size={15} /> {t('Daftar isi')}
       </p>
       <div className="mt-3 h-0.5 shrink-0 bg-slate-200">
         <div className="h-full bg-ed transition-[width] duration-500" style={{ width: `${pct}%` }} />

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { money, type Category, type Product, type Review, type StoreSettings } from '@/lib/api';
 import { productImg } from '@/lib/img';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
+import { getT } from '@/lib/lang-server';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -20,6 +21,7 @@ function categorySlug(category: Category) {
 }
 
 export function CategoryStrip({ categories, products }: { categories: Category[]; products: Product[] }) {
+  const t = getT();
   // Sampul kategori = ilustrasi di public/categories/<slug>.svg
   const tiles = categories
     .map((category) => ({
@@ -35,7 +37,7 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
   return (
     <section aria-labelledby="judul-kategori" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <h2 id="judul-kategori" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-        Belanja per kategori
+        {t('Belanja per kategori')}
       </h2>
       <ul className="scroll-row -mx-4 mt-5 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible sm:px-0 lg:grid-cols-7">
         {tiles.map((tile) => (
@@ -55,7 +57,7 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
               <span className="mt-2 text-[13px] font-bold leading-tight text-ink group-hover:underline sm:text-sm">
                 {tile.name}
               </span>
-              <span className="mt-0.5 text-[11px] text-slate-500">{tile.count} produk</span>
+              <span className="mt-0.5 text-[11px] text-slate-500">{t('{n} produk', { n: tile.count })}</span>
             </Link>
           </li>
         ))}
@@ -67,6 +69,7 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
 /* ------------------------------------------------------------ Flash sale */
 
 export function FlashSale({ products, promoName }: { products: Product[]; promoName: string }) {
+  const t = getT();
   if (products.length === 0) return null;
 
   return (
@@ -78,13 +81,13 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
               <span aria-hidden="true" className="h-6 w-1.5 bg-sun-400" />
               {promoName}
             </h2>
-            <p className="mt-1 text-sm font-medium text-white/65">Potongan terbesar tampil paling depan.</p>
+            <p className="mt-1 text-sm font-medium text-white/65">{t('Potongan terbesar tampil paling depan.')}</p>
           </div>
           <Link
             href="/produk?promo=1"
             className="group inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-4 py-2 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
           >
-            Lihat semua
+            {t('Lihat semua')}
           </Link>
         </div>
 
@@ -108,7 +111,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                     <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{product.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
                     <span className="mt-2 text-base font-extrabold text-sale-600">{money(final)}</span>
                     <span className="text-xs text-slate-400 line-through">{money(normal)}</span>
-                    <span className="mt-auto pt-2 text-xs font-bold text-sale-600">Hemat {money(normal - final)}</span>
+                    <span className="mt-auto pt-2 text-xs font-bold text-sale-600">{t('Hemat {x}', { x: money(normal - final) })}</span>
                   </span>
                 </Link>
               </li>
@@ -123,11 +126,12 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
 /* ------------------------------------------------------------ Cara pesan via WhatsApp */
 
 export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { percent: number; whatsappNumber: string; appliesToPromo: boolean }) {
+  const t = getT();
   if (!whatsappNumber) return null;
   const steps = [
-    'Masukkan produk ke keranjang.',
-    'Di checkout, pilih Pesan via WhatsApp.',
-    percent > 0 ? `Kirim chat ke admin. Total sudah dipotong ${percent}%.` : 'Kirim chat ke admin untuk konfirmasi ongkir.',
+    t('Masukkan produk ke keranjang.'),
+    t('Di checkout, pilih Pesan via WhatsApp.'),
+    percent > 0 ? t('Kirim chat ke admin. Total sudah dipotong {n}%.', { n: percent }) : t('Kirim chat ke admin untuk konfirmasi ongkir.'),
   ];
 
   return (
@@ -135,11 +139,11 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
       <div className="grid gap-6 rounded-xl bg-cobalt-900 p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
         <div>
           <h2 id="judul-wa" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            {percent > 0 ? `Pesan via WhatsApp, hemat ${percent}%` : 'Pesan via WhatsApp'}
+            {percent > 0 ? t('Pesan via WhatsApp, hemat {n}%', { n: percent }) : t('Pesan via WhatsApp')}
           </h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-white/80">
-            Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.
-            {percent > 0 && !appliesToPromo && ' Potongan tidak berlaku untuk produk yang sedang promo.'}
+            {t('Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.')}
+            {percent > 0 && !appliesToPromo && ' ' + t('Potongan tidak berlaku untuk produk yang sedang promo.')}
           </p>
           <a
             href={`https://wa.me/${whatsappNumber}`}
@@ -147,7 +151,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             rel="noopener noreferrer"
             className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-white/85"
           >
-            Chat admin sekarang
+            {t('Chat admin sekarang')}
           </a>
         </div>
         <ol className="grid gap-3 sm:grid-cols-3">
@@ -185,12 +189,14 @@ export function Stars({ value, size = 16 }: { value: number; size?: number }) {
 export function ReviewsSection({
   reviews,
   settings,
-  title = 'Kata pembeli kami',
+  title: titleProp,
 }: {
   reviews: Review[];
   settings: StoreSettings | null;
   title?: string;
 }) {
+  const t = getT();
+  const title = titleProp ?? t('Kata pembeli kami');
   const rating = Number(settings?.shopee_rating) || 0;
   const url = settings?.shopee_reviews_url;
   if (reviews.length === 0 && !rating && !url && !settings?.shopee_store_url) return null;
@@ -205,9 +211,9 @@ export function ReviewsSection({
               <span className="text-2xl font-extrabold text-ink">{rating.toFixed(1)}</span>
               <Stars value={rating} />
               {settings?.shopee_rating_count ? (
-                <span>dari {settings.shopee_rating_count.toLocaleString('id-ID')} penilaian di Shopee</span>
+                <span>{t('dari {n} penilaian di Shopee', { n: settings.shopee_rating_count.toLocaleString('id-ID') })}</span>
               ) : (
-                <span>rating toko di Shopee</span>
+                <span>{t('rating toko di Shopee')}</span>
               )}
             </p>
           )}

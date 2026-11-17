@@ -8,6 +8,7 @@ import {
   getCategories,
   type Product,
 } from '@/lib/api';
+import { getT } from '@/lib/lang-server';
 
 type SearchParams = { category?: string; q?: string; promo?: string };
 
@@ -51,6 +52,7 @@ export default async function CatalogPage({
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
 }) {
+  const t = getT();
   const params = await searchParams;
   const selectedCategory = params?.category || '';
   const searchQuery = (params?.q || '').trim().toLowerCase();
@@ -96,12 +98,12 @@ export default async function CatalogPage({
   )?.name;
 
   const title = promoOnly
-    ? 'Produk promo'
+    ? t('Produk promo')
     : selectedCategory
-    ? selectedCategoryName || 'Produk kategori'
+    ? selectedCategoryName || t('Produk kategori')
     : searchQuery
-      ? 'Hasil pencarian'
-      : 'Semua produk';
+      ? t('Hasil pencarian')
+      : t('Semua produk');
 
   return (
     <div className="text-ink">
@@ -113,7 +115,7 @@ export default async function CatalogPage({
             </h1>
           </div>
           <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-            {filteredProducts.length} produk
+            {t('{n} produk', { n: filteredProducts.length })}
           </span>
         </div>
 
@@ -131,30 +133,30 @@ export default async function CatalogPage({
             type="search"
             name="q"
             defaultValue={params?.q || ''}
-            placeholder="Cari kamera, lensa, aksesoris..."
+            placeholder={t('Cari kamera, lensa, aksesoris...')}
             className="min-w-0 flex-1 bg-transparent px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
-            aria-label="Cari produk"
+            aria-label={t('Cari produk')}
           />
 
           <button
             type="submit"
             className="shrink-0 rounded-xl bg-ink px-4 py-3 text-xs font-bold text-surface transition hover:bg-slate-800 sm:px-6 sm:text-sm"
           >
-            Cari
+            {t('Cari')}
           </button>
         </form>
 
         {(selectedCategory || searchQuery || promoOnly) && (
           <div className="mt-3">
-            <BackLink href="/produk">Tampilkan semua produk</BackLink>
+            <BackLink href="/produk">{t('Tampilkan semua produk')}</BackLink>
           </div>
         )}
 
         {!productResult.ok ? (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-            <p className="font-bold text-red-700">Produk gagal dimuat</p>
+            <p className="font-bold text-red-700">{t('Produk gagal dimuat')}</p>
             <p className="mt-2 text-sm text-slate-600">
-              Pastikan backend Django berjalan dan API produk dapat diakses.
+              {t('Pastikan backend Django berjalan dan API produk dapat diakses.')}
             </p>
             <p className="mt-2 break-all text-xs text-slate-500">
               API: {API}/products/
@@ -162,9 +164,9 @@ export default async function CatalogPage({
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
-            <p className="font-bold">Produk belum ditemukan</p>
+            <p className="font-bold">{t('Produk belum ditemukan')}</p>
             <p className="mt-2 text-sm text-slate-500">
-              Coba kata kunci atau kategori yang berbeda.
+              {t('Coba kata kunci atau kategori yang berbeda.')}
             </p>
           </div>
         ) : (

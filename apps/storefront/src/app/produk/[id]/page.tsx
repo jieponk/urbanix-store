@@ -17,6 +17,7 @@ import {
   type Product,
 } from '@/lib/api';
 import { SITE_URL, breadcrumbJsonLd, cleanProductName, detectBrand, jsonLd, plainText, shorten } from '@/lib/seo';
+import { getT } from '@/lib/lang-server';
 
 const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
@@ -152,6 +153,7 @@ export default async function ProductPage({
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
+  const t = getT();
   const { id } = await params;
   const [product, storeSettings] = await Promise.all([
     getProduct(id),
@@ -163,17 +165,16 @@ export default async function ProductPage({
       <div className="bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
           <h1 className="text-xl font-black text-slate-900">
-            Produk tidak ditemukan
+            {t('Produk tidak ditemukan')}
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Produk ini mungkin sudah tidak tersedia, atau server produk sedang
-            tidak dapat diakses.
+            {t('Produk ini mungkin sudah tidak tersedia, atau server produk sedang tidak dapat diakses.')}
           </p>
           <Link
             href="/produk"
             className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
           >
-            Lihat semua produk
+            {t('Lihat semua produk')}
           </Link>
         </div>
       </div>
@@ -190,7 +191,7 @@ export default async function ProductPage({
   return (
     <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <BackLink href="/produk">Kembali ke katalog</BackLink>
+        <BackLink href="/produk">{t('Kembali ke katalog')}</BackLink>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={jsonLd(productJsonLd(product, buyerReviews))}
@@ -219,7 +220,7 @@ export default async function ProductPage({
           href="/cart"
           className="mt-4 inline-flex items-center text-sm font-semibold text-slate-600 underline"
         >
-          Lihat Keranjang Belanja
+          {t('Lihat Keranjang Belanja')}
         </Link>
 
         {/* Informasi produk: susunan sama untuk semua produk */}
@@ -237,7 +238,7 @@ export default async function ProductPage({
 
         {reviews.length > 0 && (
           <div className="-mx-4 sm:-mx-6 lg:-mx-8">
-            <ReviewsSection reviews={reviews} settings={storeSettings} title="Ulasan produk ini di Shopee" />
+            <ReviewsSection reviews={reviews} settings={storeSettings} title={t('Ulasan produk ini di Shopee')} />
           </div>
         )}
       </div>

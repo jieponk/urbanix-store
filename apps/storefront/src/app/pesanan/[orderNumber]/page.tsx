@@ -3,6 +3,7 @@ import GoogleReviewsOptIn from '@/components/GoogleReviewsOptIn';
 import CopyText from '@/components/CopyText';
 import { API, money } from '@/lib/api';
 import { ArrowRight, Check } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Status Pesanan', robots: { index: false, follow: false } };
@@ -103,18 +104,19 @@ export default async function OrderPage({
   params: { orderNumber: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = getT();
   const order = await getOrder(params.orderNumber);
 
   if (!order) {
     return (
       <div className="bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
-          <h1 className="text-xl font-black text-slate-900">Pesanan tidak ditemukan</h1>
+          <h1 className="text-xl font-black text-slate-900">{t('Pesanan tidak ditemukan')}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Periksa kembali nomor pesanan, atau server toko sedang tidak dapat diakses.
+            {t('Periksa kembali nomor pesanan, atau server toko sedang tidak dapat diakses.')}
           </p>
           <Link href="/" className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800">
-            Kembali ke beranda
+            {t('Kembali ke beranda')}
           </Link>
         </div>
       </div>
@@ -133,7 +135,7 @@ export default async function OrderPage({
       <GoogleReviewsOptIn orderNumber={order.order_number} />
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="rounded-2xl border border-dashed border-brand-500 bg-surface p-5">
-          <p className="text-sm text-slate-500">Nomor pesanan</p>
+          <p className="text-sm text-slate-500">{t('Nomor pesanan')}</p>
           <div className="mt-1 flex items-center gap-3">
             <h1 className="min-w-0 flex-1 break-all font-mono text-xl font-black text-ink sm:text-2xl">{order.order_number}</h1>
             <CopyText text={order.order_number} remember />
@@ -142,24 +144,23 @@ export default async function OrderPage({
             {created} · a.n. {order.customer_name}
           </p>
           <p className="mt-3 text-xs leading-5 text-slate-600">
-            Simpan nomor ini untuk <Link href="/cek-pesanan" className="font-bold text-ink underline">cek pesanan</Link> dan
-            invoice.
+            {t('Simpan nomor ini untuk')} <Link href="/cek-pesanan" className="font-bold text-ink underline">{t('cek pesanan')}</Link> {t('dan invoice.')}
             {order.email_enabled && order.customer_email_masked
-              ? ` Salinannya juga kami kirim ke email ${order.customer_email_masked}.`
-              : ' Nomor ini juga tercantum di chat WhatsApp pesananmu.'}
+              ? ' ' + t('Salinannya juga kami kirim ke email {e}.', { e: order.customer_email_masked })
+              : ' ' + t('Nomor ini juga tercantum di chat WhatsApp pesananmu.')}
           </p>
         </div>
 
         <div className={`rounded-2xl border p-5 ${TONES[info.tone]}`}>
-          <p className="font-bold">{info.title}</p>
-          <p className="mt-1 text-sm">{info.text}</p>
+          <p className="font-bold">{t(info.title)}</p>
+          <p className="mt-1 text-sm">{t(info.text)}</p>
 
           {order.payment_method === 'WHATSAPP' && order.whatsapp_url && order.status === 'PENDING' && (
             <a
               href={order.whatsapp_url}
               className="mt-4 block rounded-xl bg-emerald-600 px-5 py-4 text-center font-bold text-white hover:bg-emerald-700"
             >
-              Kirim Pesanan ke WhatsApp
+              {t('Kirim Pesanan ke WhatsApp')}
             </a>
           )}
           {order.payment_method === 'MIDTRANS' && order.payment_url && order.payment_status === 'UNPAID' && (
@@ -167,7 +168,7 @@ export default async function OrderPage({
               href={order.payment_url}
               className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-onbrand hover:bg-brand-700"
             >
-              Lanjutkan Pembayaran
+              {t('Lanjutkan Pembayaran')}
             </a>
           )}
         </div>
@@ -178,8 +179,8 @@ export default async function OrderPage({
             className="flex items-center justify-between gap-4 rounded-2xl bg-cobalt-900 p-5 text-white shadow-sm transition hover:brightness-105"
           >
             <span>
-              <span className="block font-extrabold">Barang sudah sampai? Beri ulasan ⭐</span>
-              <span className="mt-0.5 block text-sm text-white/90">Bantu pembeli lain, hanya 1 menit.</span>
+              <span className="block font-extrabold">{t('Barang sudah sampai? Beri ulasan ⭐')}</span>
+              <span className="mt-0.5 block text-sm text-white/90">{t('Bantu pembeli lain, hanya 1 menit.')}</span>
             </span>
             <ArrowRight size={24} />
           </a>
@@ -187,7 +188,7 @@ export default async function OrderPage({
 
         {order.status !== 'CANCELLED' && (
           <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-            <h2 className="font-black text-ink">Lacak pesanan</h2>
+            <h2 className="font-black text-ink">{t('Lacak pesanan')}</h2>
             <ol className="mt-4 grid grid-cols-4 gap-1 text-center text-[11px] font-semibold sm:text-xs">
               {STEPS.map((step, i) => {
                 const current = Math.max(0, STEPS.findIndex((x) => x.key === order.status));
@@ -204,7 +205,7 @@ export default async function OrderPage({
                     >
                       {done ? <Check size={14} /> : i + 1}
                     </span>
-                    <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{step.label}</span>
+                    <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{t(step.label)}</span>
                   </li>
                 );
               })}
@@ -213,14 +214,14 @@ export default async function OrderPage({
             {order.tracking_number ? (
               <div className="space-y-3 text-sm">
                 <p className="text-slate-600">
-                  Kurir: <b className="text-ink">{order.shipping_courier || '-'}</b>
+                  {t('Kurir:')} <b className="text-ink">{order.shipping_courier || '-'}</b>
                 </p>
                 <div className="flex items-center gap-3 rounded-xl bg-mist p-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-slate-500">No. resi</p>
+                    <p className="text-xs text-slate-500">{t('No. resi')}</p>
                     <p className="break-all font-mono font-bold text-ink">{order.tracking_number}</p>
                   </div>
-                  <CopyText text={order.tracking_number} label="Salin resi" />
+                  <CopyText text={order.tracking_number} label={t('Salin resi')} />
                 </div>
                 <a
                   href={`https://cekresi.com/?noresi=${encodeURIComponent(order.tracking_number)}`}
@@ -228,21 +229,21 @@ export default async function OrderPage({
                   rel="noopener noreferrer"
                   className="inline-block font-bold text-ink underline"
                 >
-                  Lacak paket di cekresi.com <ArrowRight size={14} className="inline" />
+                  {t('Lacak paket di cekresi.com')} <ArrowRight size={14} className="inline" />
                 </a>
               </div>
             ) : (
               <p className="text-sm text-slate-600">
                 {order.status === 'COMPLETED'
-                  ? 'Pesanan sudah selesai.'
-                  : `Nomor resi akan muncul di sini setelah paket dikirim admin.${order.shipping_service ? ` Pengiriman dipilih: ${order.shipping_service}.` : ''}`}
+                  ? t('Pesanan sudah selesai.')
+                  : t('Nomor resi akan muncul di sini setelah paket dikirim admin.') + (order.shipping_service ? ' ' + t('Pengiriman dipilih: {s}.', { s: order.shipping_service }) : '')}
               </p>
             )}
           </section>
         )}
 
         <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-          <h2 className="font-black text-slate-900">Rincian</h2>
+          <h2 className="font-black text-slate-900">{t('Rincian')}</h2>
           <ul className="mt-3 divide-y divide-slate-100">
             {order.items.map((item, i) => (
               <li key={i} className="flex justify-between gap-4 py-3 text-sm">
@@ -271,13 +272,13 @@ export default async function OrderPage({
           </ul>
           {Number(order.discount_amount) > 0 && (
             <div className="mt-2 flex justify-between border-t border-slate-200 pt-3 text-sm text-emerald-700">
-              <span>{order.discount_note || 'Potongan'}</span>
+              <span>{order.discount_note || t('Potongan')}</span>
               <span className="font-semibold">-{money(order.discount_amount || 0)}</span>
             </div>
           )}
           {Number(order.shipping_discount_max) > 0 && (
             <div className="mt-2 flex justify-between text-sm text-emerald-700">
-              <span>Potongan ongkir</span>
+              <span>{t('Potongan ongkir')}</span>
               <span className="font-semibold">s/d {money(order.shipping_discount_max || 0)}</span>
             </div>
           )}
@@ -285,12 +286,12 @@ export default async function OrderPage({
             <p className="mt-1 text-xs text-slate-500">Voucher: {order.voucher_codes.split(',').join(', ')}</p>
           )}
           <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
-            <span className="font-bold">Total produk</span>
+            <span className="font-bold">{t('Total produk')}</span>
             <span className="font-black">{money(order.total_amount)}</span>
           </div>
           <p className="mt-1 text-right text-xs text-slate-500">
-            {order.tax_note || 'Harga sudah termasuk PPN.'} {order.shipping_note}
-            {Number(order.shipping_discount_max) > 0 && ' Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.'}
+            {t(order.tax_note || 'Harga sudah termasuk PPN.')} {order.shipping_note && t(order.shipping_note)}
+            {Number(order.shipping_discount_max) > 0 && ' ' + t('Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.')}
           </p>
         </section>
 
@@ -299,12 +300,12 @@ export default async function OrderPage({
             href={`/pesanan/${order.order_number}/invoice`}
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-surface px-5 py-3.5 text-sm font-bold text-ink hover:border-ink"
           >
-            Lihat / unduh invoice
+            {t('Lihat / unduh invoice')}
           </Link>
         )}
 
         <Link href="/produk" className="block text-center text-sm font-semibold text-ink hover:underline">
-          Lanjut belanja
+          {t('Lanjut belanja')}
         </Link>
       </div>
     </div>

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ArticleComment } from '@/lib/api';
 import { EMOJIS, REACTIONS, emojiUrl, splitEmoji } from '@/lib/emoji';
+import { useLang, useT } from '@/components/LangProvider';
+import { dateLocale, type Lang, type T } from '@/lib/i18n';
 
 type C = ArticleComment;
 export type Gif = { id: string; title: string; url: string; preview: string; width: number; height: number };
@@ -30,14 +32,14 @@ function visitorId() {
   return id;
 }
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: T, lang: Lang) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'baru saja';
-  if (s < 3600) return `${Math.floor(s / 60)} mnt`;
-  if (s < 86400) return `${Math.floor(s / 3600)} j`;
-  if (s < 604800) return `${Math.floor(s / 86400)} h`;
-  if (s < 2419200) return `${Math.floor(s / 604800)} mgg`;
-  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
+  if (s < 60) return t('baru saja');
+  if (s < 3600) return t('{n} mnt', { n: Math.floor(s / 60) });
+  if (s < 86400) return t('{n} j', { n: Math.floor(s / 3600) });
+  if (s < 604800) return t('{n} h', { n: Math.floor(s / 86400) });
+  if (s < 2419200) return t('{n} mgg', { n: Math.floor(s / 604800) });
+  return new Date(iso).toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 }
 
 const AVATAR_COLORS = [
@@ -145,13 +147,14 @@ function useOutside(ref: { current: HTMLElement | null }, onOutside: () => void,
 
 // ------------------------------------------------------------------ reaksi
 function ReactionPicker({ mine, onPick, onClose }: { mine?: string; onPick: (e: string) => void; onClose: () => void }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   useOutside(ref, onClose, true);
   return (
     <div
       ref={ref}
       role="menu"
-      aria-label="Pilih reaksi"
+      aria-label={t('Pilih reaksi')}
       className="animate-pop absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full bg-surface px-2 py-1.5 shadow-xl ring-1 ring-slate-200"
     >
       {REACTIONS.map((e) => (
@@ -159,7 +162,7 @@ function ReactionPicker({ mine, onPick, onClose }: { mine?: string; onPick: (e: 
           key={e}
           type="button"
           role="menuitem"
-          aria-label={`Reaksi ${e}`}
+          aria-label={t('Reaksi {e}', { e })}
           onClick={() => onPick(e)}
           className={`rounded-full p-1 transition hover:-translate-y-1 hover:scale-125 ${mine === e ? 'bg-brand-50 dark:bg-white/10' : ''}`}
         >
@@ -188,6 +191,7 @@ export function ReactionChips({ c }: { c: C }) {
 
 // ------------------------------------------------------------------ GIF
 export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClose: () => void }) {
+  const t = useT();
   const [q, setQ] = useState('');
   const [items, setItems] = useState<Gif[]>([]);
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -199,7 +203,7 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
 
   useEffect(() => {
     const ctrl = new AbortController();
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setState('loading');
       let timedOut = false;
       const timeout = setTimeout(() => {
@@ -221,7 +225,7 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
       }
     }, q ? 400 : 0);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctrl.abort();
     };
   }, [q, attempt]);
@@ -232,7 +236,7 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
         autoFocus
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Cari GIF… (mis. wow, keren, ngakak)"
+        placeholder={t('Cari GIF… (mis. wow, keren, ngakak)')}
         className="w-full rounded-xl bg-mist px-4 py-2.5 text-base text-ink outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500"
       />
       <div className="mt-3 h-64 overflow-y-auto overscroll-contain">
@@ -247,11 +251,11 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
           <div className="py-10 text-center text-sm text-slate-500">
             <p>{error}</p>
             <button type="button" onClick={() => setAttempt((n) => n + 1)} className="mt-3 rounded-full bg-mist px-4 py-2 font-bold text-ink hover:bg-slate-200">
-              Coba lagi
+              {t('Coba lagi')}
             </button>
           </div>
         )}
-        {state === 'ok' && items.length === 0 && <p className="py-10 text-center text-sm text-slate-500">GIF tidak ditemukan.</p>}
+        {state === 'ok' && items.length === 0 && <p className="py-10 text-center text-sm text-slate-500">{t('GIF tidak ditemukan.')}</p>}
         {state === 'ok' && (
           <div className="grid grid-cols-3 gap-2">
             {items.map((g) => (
@@ -274,6 +278,7 @@ export function GifPicker({ onPick, onClose }: { onPick: (g: Gif) => void; onClo
 }
 
 export function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; onClose: () => void }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   useOutside(ref, onClose, true);
   return (
@@ -313,6 +318,7 @@ function Composer({
   onDone: (comment: C | null, message: string, held: boolean) => void;
   onCancel?: () => void;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [editName, setEditName] = useState(false);
   const [body, setBody] = useState(replyTo ? `@${replyTo.replace(/\s+/g, '')} ` : '');
@@ -364,7 +370,7 @@ function Composer({
     if (!ready || sending) {
       if (name.trim().length < 2) {
         setEditName(true);
-        setError('Isi nama dulu (minimal 2 huruf).');
+        setError(t('Isi nama dulu (minimal 2 huruf).'));
       }
       return;
     }
@@ -378,7 +384,7 @@ function Composer({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(res.status === 429 ? 'Terlalu cepat. Tunggu sebentar lalu coba lagi.' : data.error || 'Gagal mengirim komentar.');
+        setError(res.status === 429 ? t('Terlalu cepat. Tunggu sebentar lalu coba lagi.') : data.error || t('Gagal mengirim komentar.'));
         return;
       }
       store('urbanix_comment_name', name.trim());
@@ -388,7 +394,7 @@ function Composer({
       setPanel('');
       onDone(data.comment || null, data.message || '', Boolean(data.held));
     } catch {
-      setError('Koneksi terputus. Coba lagi.');
+      setError(t('Koneksi terputus. Coba lagi.'));
     } finally {
       setSending(false);
     }
@@ -409,15 +415,15 @@ function Composer({
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
-              placeholder="Nama kamu"
+              placeholder={t('Nama kamu')}
               autoComplete="name"
               className="mb-2 w-full rounded-xl bg-mist px-4 py-2.5 text-base font-semibold text-ink outline-none placeholder:font-normal placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 sm:max-w-xs"
             />
           ) : (
             <p className="mb-1.5 text-xs text-slate-500">
-              Sebagai <b className="text-ink">{name}</b>{' '}
+              {t('Sebagai')} <b className="text-ink">{name}</b>{' '}
               <button type="button" onClick={() => setEditName(true)} className="font-semibold text-sky-600 hover:underline dark:text-sky-400">
-                ganti
+                {t('ganti')}
               </button>
             </p>
           )}
@@ -438,8 +444,8 @@ function Composer({
               onKeyDown={(e: { key: string; ctrlKey: boolean; metaKey: boolean }) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(e as unknown as React.FormEvent);
               }}
-              placeholder={parent ? `Balas ${replyTo}…` : 'Tambahkan komentar…'}
-              aria-label={parent ? `Balas ${replyTo}` : 'Tulis komentar'}
+              placeholder={parent ? t('Balas {name}…', { name: replyTo ?? '' }) : t('Tambahkan komentar…')}
+              aria-label={parent ? t('Balas {name}', { name: replyTo ?? '' }) : t('Tulis komentar')}
               className="block w-full resize-none bg-transparent text-[15px] leading-6 text-ink outline-none placeholder:text-slate-400"
             />
             {gif && (
@@ -448,7 +454,7 @@ function Composer({
                 <button
                   type="button"
                   onClick={() => setGif(null)}
-                  aria-label="Hapus GIF"
+                  aria-label={t('Hapus GIF')}
                   className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-sm font-bold text-white"
                 >
                   ✕
@@ -458,7 +464,7 @@ function Composer({
           </div>
 
           <div className="mt-2 flex items-center gap-1">
-            <button type="button" aria-label="Emoji" onClick={() => setPanel(panel === 'emoji' ? '' : 'emoji')} className={iconBtn(panel === 'emoji')}>
+            <button type="button" aria-label={t('Emoji')} onClick={() => setPanel(panel === 'emoji' ? '' : 'emoji')} className={iconBtn(panel === 'emoji')}>
               <Emoji char="😀" className="h-5 w-5" />
             </button>
             {gifEnabled && (
@@ -469,7 +475,7 @@ function Composer({
             <span className="ml-auto flex items-center gap-2">
               {onCancel && (
                 <button type="button" onClick={onCancel} className="rounded-full px-3 py-2 text-sm font-semibold text-slate-500 hover:text-ink">
-                  Batal
+                  {t('Batal')}
                 </button>
               )}
               <button
@@ -477,7 +483,7 @@ function Composer({
                 disabled={!ready || sending}
                 className="rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-onbrand shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {sending ? 'Mengirim…' : parent ? 'Balas' : 'Kirim'}
+                {sending ? t('Mengirim…') : parent ? t('Balas') : t('Kirim')}
               </button>
             </span>
           </div>
@@ -515,6 +521,8 @@ function Item({
   onReact: (id: number, emoji: string) => void;
   onReply: (c: C) => void;
 }) {
+  const t = useT();
+  const lang = useLang();
   const [picker, setPicker] = useState(false);
   const [pop, setPop] = useState(false);
   const press = useRef<ReturnType<typeof setTimeout>>();
@@ -532,13 +540,13 @@ function Item({
       <Avatar name={c.name} staff={c.is_staff_reply} small={reply} />
       <div className="min-w-0 flex-1">
         {c.is_pinned && !reply && (
-          <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">📌 Disematkan admin</p>
+          <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">📌 {t('Disematkan admin')}</p>
         )}
         <p className="break-words text-[15px] leading-6 text-slate-700">
           <b className="mr-1.5 text-ink">{c.name}</b>
           {c.is_staff_reply && (
             <span className="mr-1.5 inline-flex translate-y-[-1px] items-center gap-0.5 rounded-full bg-sky-500 px-1.5 py-0.5 align-middle text-[10px] font-bold text-white">
-              ✓ Admin
+              ✓ {t('Admin')}
             </span>
           )}
           <span className="whitespace-pre-line">
@@ -550,15 +558,15 @@ function Item({
         )}
         <div className="relative mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
           <time dateTime={c.created_at} title={new Date(c.created_at).toLocaleString('id-ID')}>
-            {timeAgo(c.created_at)}
+            {timeAgo(c.created_at, t, lang)}
           </time>
           <button type="button" onClick={() => onReply(c)} className="hover:text-ink">
-            Balas
+            {t('Balas')}
           </button>
           <button type="button" onClick={() => setPicker((v) => !v)} className="hover:text-ink" aria-expanded={picker}>
             {c.my_reaction && !liked ? (
               <span className="inline-flex items-center gap-1 text-ink">
-                <Emoji char={c.my_reaction} className="h-4 w-4" /> Reaksimu
+                <Emoji char={c.my_reaction} className="h-4 w-4" /> {t('Reaksimu')}
               </span>
             ) : (
               'Reaksi'
@@ -567,7 +575,7 @@ function Item({
           <ReactionChips c={c} />
           {c.staff_reaction && (
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-              <Emoji char={c.staff_reaction} className="h-4 w-4" /> oleh admin
+              <Emoji char={c.staff_reaction} className="h-4 w-4" /> {t('oleh admin')}
             </span>
           )}
           {picker && (
@@ -584,7 +592,7 @@ function Item({
       </div>
       <button
         type="button"
-        aria-label={liked ? 'Batal suka' : 'Suka'}
+        aria-label={liked ? t('Batal suka') : t('Suka')}
         aria-pressed={liked}
         onClick={quick}
         onPointerDown={() => {
@@ -610,6 +618,7 @@ function Item({
 // ------------------------------------------------------------------ utama
 /** Komentar ala Instagram: langsung tampil, reaksi emoji bergerak, balasan 1 tingkat, GIF. */
 export default function CommentSection({ slug, comments: initial, open }: { slug: string; comments: C[]; open: boolean }) {
+  const t = useT();
   const [comments, setComments] = useState<C[]>(initial);
   const [gifEnabled, setGifEnabled] = useState(false);
   const [replying, setReplying] = useState<{ root: number; to: string } | null>(null);
@@ -633,8 +642,8 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
 
   useEffect(() => {
     if (!notice) return;
-    const t = setTimeout(() => setNotice(''), 5000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setNotice(''), 5000);
+    return () => clearTimeout(timer);
   }, [notice]);
 
   const patch = useCallback((id: number, fn: (c: C) => C) => {
@@ -673,7 +682,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
 
   function posted(comment: C | null, message: string, held: boolean, root?: number) {
     if (held || !comment) {
-      setNotice(message || 'Komentarmu sedang dicek admin.');
+      setNotice(message || t('Komentarmu sedang dicek admin.'));
     } else if (root) {
       setComments((list) => list.map((c) => (c.id === root ? { ...c, replies: [...(c.replies || []), comment] } : c)));
     } else {
@@ -686,7 +695,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
     <section id="komentar" className="scroll-mt-28" aria-labelledby="komentar-heading">
       <div className="flex items-baseline gap-2">
         <h2 id="komentar-heading" className="text-2xl font-extrabold tracking-tight text-ink">
-          Komentar
+          {t('Komentar')}
         </h2>
         {total > 0 && <span className="rounded-full bg-mist px-2.5 py-0.5 text-sm font-bold text-slate-600">{total}</span>}
       </div>
@@ -695,7 +704,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
         {open ? (
           <Composer slug={slug} gifEnabled={gifEnabled} onDone={(c, m, h) => posted(c, m, h)} />
         ) : (
-          <p className="text-sm text-slate-600">Komentar untuk artikel ini ditutup.</p>
+          <p className="text-sm text-slate-600">{t('Komentar untuk artikel ini ditutup.')}</p>
         )}
 
         {notice && (
@@ -708,8 +717,8 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
           {comments.length === 0 && (
             <div className="py-6 text-center">
               <Emoji char="🤩" className="h-12 w-12" />
-              <p className="mt-2 font-bold text-ink">Belum ada komentar</p>
-              <p className="text-sm text-slate-500">Jadilah yang pertama berkomentar!</p>
+              <p className="mt-2 font-bold text-ink">{t('Belum ada komentar')}</p>
+              <p className="text-sm text-slate-500">{t('Jadilah yang pertama berkomentar!')}</p>
             </div>
           )}
           {comments.map((c) => {
@@ -752,7 +761,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
       </div>
 
       <p className="mt-3 text-[11px] text-slate-400">
-        Emoji bergerak: Noto Emoji Animation © Google, lisensi CC BY 4.0.
+        {t('Emoji bergerak: Noto Emoji Animation © Google, lisensi CC BY 4.0.')}
       </p>
     </section>
   );

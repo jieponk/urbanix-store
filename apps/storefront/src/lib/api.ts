@@ -1,3 +1,4 @@
+import { getLang } from '@/lib/lang-server';
 export type Variation = {
   variation_id: string;
   name: string;
@@ -50,12 +51,18 @@ export const API = (
   process.env.API_URL || 'http://127.0.0.1:8000/api/v1'
 ).replace(/\/+$/, '');
 
-export const money = (value: string | number) =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
+export { money } from '@/lib/money';
+
+/**
+ * Bahasa pilihan pengunjung (cookie, dibaca di server). Bila Inggris, permintaan ke API diberi ?lang=en
+ * supaya nama/deskripsi produk & artikel datang dalam versi terjemahan (lihat backend content_i18n.py).
+ */
+function langSuffix(url: string) {
+  return getLang() === 'en' && url.startsWith(API) && !/[?&]lang=/.test(url) ? `${url.includes('?') ? '&' : '?'}lang=en` : '';
+}
+function apiFetch(url: string, init?: RequestInit) {
+  return fetch(url + langSuffix(url), init);
+}
 
 export async function fetchAll<T>(
   endpoint: string,
@@ -66,7 +73,7 @@ export async function fetchAll<T>(
   let pageCount = 0;
 
   while (next && pageCount < 100) {
-    const response: Response = await fetch(next, init);
+    const response: Response = await apiFetch(next, init);
 
     if (!response.ok) {
       throw new Error(`API ${endpoint} gagal: HTTP ${response.status}`);
@@ -156,7 +163,7 @@ export async function getReviews(params: { product?: number; limit?: number } = 
   if (params.product) query.set('product', String(params.product));
   if (params.limit) query.set('limit', String(params.limit));
   try {
-    const response = await fetch(`${API}/reviews/?${query}`, { next: { revalidate: 120 } } as RequestInit);
+    const response = await apiFetch(`${API}/reviews/?${query}`, { next: { revalidate: 120 } } as RequestInit);
     return response.ok ? ((await response.json()) as Review[]) : [];
   } catch {
     return [];
@@ -186,7 +193,7 @@ export type ProductReviewPage = {
 /** Ulasan pembeli terverifikasi (pesanan di urbanix.id) untuk satu produk. */
 export async function getProductReviews(productId: number, page = 1): Promise<ProductReviewPage | null> {
   try {
-    const response = await fetch(`${API}/products/${productId}/reviews/?page=${page}&size=10`, {
+    const response = await apiFetch(`${API}/products/${productId}/reviews/?page=${page}&size=10`, {
       next: { revalidate: 120 },
     } as RequestInit);
     return response.ok ? ((await response.json()) as ProductReviewPage) : null;
@@ -215,7 +222,7 @@ export function promoSummary(products: Product[]) {
 /** Pengaturan toko dari admin Django (nomor WhatsApp, dll.). Dicache 60 detik. */
 export async function getStoreSettings(): Promise<StoreSettings | null> {
   try {
-    const response = await fetch(`${API}/store-settings/`, {
+    const response = await apiFetch(`${API}/store-settings/`, {
       next: { revalidate: 60 },
     } as RequestInit);
     return response.ok ? ((await response.json()) as StoreSettings) : null;
@@ -227,7 +234,7 @@ export async function getStoreSettings(): Promise<StoreSettings | null> {
 /** Voucher publik yang sedang berlaku (untuk diklaim). */
 export async function getVouchers(): Promise<import('./vouchers').VoucherInfo[]> {
   try {
-    const response = await fetch(`${API}/vouchers/`, { next: { revalidate: 60 } } as RequestInit);
+    const response = await apiFetch(`${API}/vouchers/`, { next: { revalidate: 60 } } as RequestInit);
     return response.ok ? await response.json() : [];
   } catch {
     return [];
@@ -263,7 +270,7 @@ export async function getNews(params: { page?: number; limit?: number; source?: 
   if (params.limit) query.set('limit', String(params.limit));
   if (params.source) query.set('source', params.source);
   try {
-    const response = await fetch(`${API}/news/?${query}`, { next: { revalidate: 300 } } as RequestInit);
+    const response = await apiFetch(`${API}/news/?${query}`, { next: { revalidate: 300 } } as RequestInit);
     return response.ok ? await response.json() : null;
   } catch {
     return null;
@@ -283,7 +290,7 @@ export type NewsDetail = NewsArticle & {
 export async function getNewsDetail(id: string): Promise<NewsDetail | null> {
   if (!/^\d+$/.test(id)) return null;
   try {
-    const response = await fetch(`${API}/news/${id}/`, { next: { revalidate: 300 } } as RequestInit);
+    const response = await apiFetch(`${API}/news/${id}/`, { next: { revalidate: 300 } } as RequestInit);
     return response.ok ? await response.json() : null;
   } catch {
     return null;
@@ -295,7 +302,7 @@ export type ApiBanner = { id: number; title: string; image: string; mobile_image
 /** Banner beranda dari Seller Center (gambar disajikan lewat /media/... di storefront). */
 export async function getBanners(): Promise<ApiBanner[]> {
   try {
-    const response = await fetch(`${API}/banners/`, { next: { revalidate: 60 } } as RequestInit);
+    const response = await apiFetch(`${API}/banners/`, { next: { revalidate: 60 } } as RequestInit);
     return response.ok ? await response.json() : [];
   } catch {
     return [];
@@ -350,7 +357,7 @@ export async function getArticles(
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v) query.set(k, String(v));
   try {
-    const response = await fetch(`${API}/articles/?${query}`, { next: { revalidate: 60 } } as RequestInit);
+    const response = await apiFetch(`${API}/articles/?${query}`, { next: { revalidate: 60 } } as RequestInit);
     return response.ok ? await response.json() : null;
   } catch {
     return null;
@@ -359,7 +366,7 @@ export async function getArticles(
 
 export async function getArticleCategories(): Promise<{ name: string; slug: string; count: number }[]> {
   try {
-    const response = await fetch(`${API}/article-categories/`, { next: { revalidate: 300 } } as RequestInit);
+    const response = await apiFetch(`${API}/article-categories/`, { next: { revalidate: 300 } } as RequestInit);
     return response.ok ? await response.json() : [];
   } catch {
     return [];
@@ -368,7 +375,7 @@ export async function getArticleCategories(): Promise<{ name: string; slug: stri
 
 export async function getArticle(slug: string): Promise<ArticleDetail | null> {
   try {
-    const response = await fetch(`${API}/articles/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
+    const response = await apiFetch(`${API}/articles/${encodeURIComponent(slug)}/`, { cache: 'no-store' });
     return response.ok ? await response.json() : null;
   } catch {
     return null;

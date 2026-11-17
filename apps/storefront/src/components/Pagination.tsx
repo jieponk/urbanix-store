@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 /** Daftar nomor halaman dengan elipsis: 1 … 4 5 6 … 12 */
 export function pageList(current: number, total: number, around = 1): (number | '…')[] {
@@ -26,6 +27,7 @@ export default function Pagination({
   href: (page: number) => string;
   label?: string;
 }) {
+  const t = getT();
   if (pages <= 1) return null;
   const nums = pageList(page, pages);
   const step =
@@ -34,16 +36,16 @@ export default function Pagination({
     'inline-flex h-11 min-w-11 items-center justify-center rounded-md px-3 text-sm font-bold tabular-nums transition duration-200';
 
   return (
-    <nav aria-label={label} className="mt-12 flex flex-col items-center gap-3">
+    <nav aria-label={t(label)} className="mt-12 flex flex-col items-center gap-3">
       <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-center">
         {page > 1 ? (
           <Link href={href(page - 1)} rel="prev" className={`${step} bg-surface text-ink ring-slate-200 hover:-translate-x-0.5 hover:ring-ink`}>
             <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />
-            <span>Sebelumnya</span>
+            <span>{t('Sebelumnya')}</span>
           </Link>
         ) : (
           <span className={`${step} cursor-not-allowed bg-mist text-slate-400 ring-transparent`} aria-hidden="true">
-            <ArrowLeft size={16} /> <span>Sebelumnya</span>
+            <ArrowLeft size={16} /> <span>{t('Sebelumnya')}</span>
           </span>
         )}
 
@@ -58,7 +60,7 @@ export default function Pagination({
                     {n}
                   </span>
                 ) : (
-                  <Link href={href(n)} aria-label={`${label} ${n}`} className={`${num} text-slate-600 hover:-translate-y-0.5 hover:bg-surface hover:text-ed hover:ring-1 hover:ring-slate-300`}>
+                  <Link href={href(n)} aria-label={`${t(label)} ${n}`} className={`${num} text-slate-600 hover:-translate-y-0.5 hover:bg-surface hover:text-ed hover:ring-1 hover:ring-slate-300`}>
                     {n}
                   </Link>
                 )}
@@ -74,17 +76,17 @@ export default function Pagination({
 
         {page < pages ? (
           <Link href={href(page + 1)} rel="next" className={`${step} bg-ink text-surface ring-ink hover:bg-ed hover:ring-ed hover:text-white`}>
-            <span>Berikutnya</span>
+            <span>{t('Berikutnya')}</span>
             <ArrowRight size={16} />
           </Link>
         ) : (
           <span className={`${step} cursor-not-allowed bg-mist text-slate-400 ring-transparent`} aria-hidden="true">
-            <span>Berikutnya</span> <ArrowRight size={16} />
+            <span>{t('Berikutnya')}</span> <ArrowRight size={16} />
           </span>
         )}
       </div>
       <p className="text-xs text-slate-500">
-        {label} {page} dari {pages}
+        {t('{label} {page} dari {pages}', { label: t(label), page, pages })}
       </p>
     </nav>
   );

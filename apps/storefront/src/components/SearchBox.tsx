@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { productImg } from '@/lib/img';
+import { useT } from '@/components/LangProvider';
 
 type Hit = {
   id: number;
@@ -19,6 +20,7 @@ const rupiah = (n: number) =>
 
 /** Kotak cari header: saran produk muncul otomatis saat pembeli mengetik. */
 export default function SearchBox({ className }: { className: string }) {
+  const t = useT();
   const router = useRouter();
   const listId = useId();
   const boxRef = useRef<HTMLFormElement>(null);
@@ -118,8 +120,8 @@ export default function SearchBox({ className }: { className: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Cari kamera, lensa, mic…"
-          aria-label="Cari produk"
+          placeholder={t('Cari kamera, lensa, mic…')}
+          aria-label={t('Cari produk')}
           autoComplete="off"
           role="combobox"
           aria-expanded={showPanel}
@@ -127,7 +129,7 @@ export default function SearchBox({ className }: { className: string }) {
           className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 md:text-sm"
         />
         {loading && (
-          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" role="status" aria-label="Mencari" />
+          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" role="status" aria-label={t('Mencari')} />
         )}
       </label>
 
@@ -138,7 +140,7 @@ export default function SearchBox({ className }: { className: string }) {
         >
           {hits.length > 0 ? (
             <>
-              <p className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-wider text-slate-500">Produk</p>
+              <p className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t('Produk')}</p>
               <ul role="listbox" className="max-h-[60vh] overflow-y-auto pb-1">
                 {hits.map((h, i) => (
                   <li key={h.id} role="option" aria-selected={i === active}>
@@ -168,17 +170,17 @@ export default function SearchBox({ className }: { className: string }) {
                 onClick={() => setOpen(false)}
                 className="block border-t border-slate-200 px-4 py-3 text-center text-sm font-bold text-brand-600 hover:bg-mist"
               >
-                Lihat semua {total} hasil untuk “{q}”
+                {t('Lihat semua {n} hasil untuk “{q}”', { n: total, q })}
               </Link>
             </>
           ) : (
             !loading && (
               <p className="px-4 py-5 text-center text-sm text-slate-500">
-                Tidak ada produk untuk “{q}”. Coba kata lain, misalnya merek atau jenis produk.
+                {t('Tidak ada produk untuk “{q}”. Coba kata lain, misalnya merek atau jenis produk.', { q })}
               </p>
             )
           )}
-          {hits.length === 0 && loading && <p className="px-4 py-5 text-center text-sm text-slate-500">Mencari…</p>}
+          {hits.length === 0 && loading && <p className="px-4 py-5 text-center text-sm text-slate-500">{t('Mencari…')}</p>}
         </div>
       )}
     </form>

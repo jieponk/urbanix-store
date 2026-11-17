@@ -6,6 +6,8 @@ import { siteConfig } from '@/lib/siteConfig';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 import { courierLogos } from '@/lib/courierLogos';
 import { SHIPPING_BRANDS } from '@/lib/shipping';
+import { LangLinks } from '@/components/HeaderMenu';
+import { getT } from '@/lib/lang-server';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -20,6 +22,7 @@ export default function Footer({
   categories: Category[];
   settings: StoreSettings | null;
 }) {
+  const t = getT();
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
   const logos = courierLogos();
@@ -32,10 +35,10 @@ export default function Footer({
     <footer className="bg-cobalt-900 text-white/75">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:px-8">
         <div>
-          <Link href="/" aria-label="Urbanix Store, ke beranda" className="inline-block">
+          <Link href="/" aria-label={t('Urbanix Store, ke beranda')} className="inline-block">
             <BrandLogo tone="light" size="lg" />
           </Link>
-          <p className="mt-4 max-w-xs text-sm leading-6">{motto}</p>
+          <p className="mt-4 max-w-xs text-sm leading-6">{t(motto)}</p>
           {whatsapp && (
             <a
               href={`https://wa.me/${whatsapp}`}
@@ -43,16 +46,16 @@ export default function Footer({
               rel="noopener noreferrer"
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
             >
-              Chat admin di WhatsApp
+              {t('Chat admin di WhatsApp')}
             </a>
           )}
         </div>
 
         <div>
-          <h2 className="text-sm font-bold text-white">Belanja</h2>
+          <h2 className="text-sm font-bold text-white">{t('Belanja')}</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/produk?promo=1" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Produk promo</Link></li>
-            <li><Link href="/produk" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Semua produk</Link></li>
+            <li><Link href="/produk?promo=1" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Produk promo')}</Link></li>
+            <li><Link href="/produk" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Semua produk')}</Link></li>
             {categories.slice(0, 6).map((category) => (
               <li key={category.id}>
                 <Link href={`/produk?category=${category.id}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4">
@@ -64,34 +67,35 @@ export default function Footer({
         </div>
 
         <div>
-          <h2 className="text-sm font-bold text-white">Bantuan</h2>
+          <h2 className="text-sm font-bold text-white">{t('Bantuan')}</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cara pesan via WhatsApp</Link></li>
-            <li><Link href="/cart" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Keranjang belanja</Link></li>
-            <li><Link href="/berita" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Berita kamera &amp; fotografi</Link></li>
-            <li><Link href="/tentang-kami" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Tentang kami</Link></li>
-            <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Kontak</Link></li>
-            <li><Link href="/cek-pesanan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cek pesanan</Link></li>
-            <li><Link href="/syarat-ketentuan#pembayaran" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cara pembayaran</Link></li>
-            <li><Link href="/syarat-ketentuan#pengiriman" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Pengiriman</Link></li>
-            <li><Link href="/syarat-ketentuan#pembatalan-retur" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Pengembalian &amp; garansi</Link></li>
-            <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Syarat &amp; Ketentuan</Link></li>
-            <li><Link href="/kebijakan-privasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Kebijakan Privasi</Link></li>
+            <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cara pesan via WhatsApp')}</Link></li>
+            <li><Link href="/cart" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Keranjang belanja')}</Link></li>
+            <li><Link href="/inspirasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Inspirasi: tips & review')}</Link></li>
+            <li><Link href="/berita" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Berita kamera & fotografi')}</Link></li>
+            <li><Link href="/tentang-kami" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Tentang kami')}</Link></li>
+            <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kontak')}</Link></li>
+            <li><Link href="/cek-pesanan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cek pesanan')}</Link></li>
+            <li><Link href="/syarat-ketentuan#pembayaran" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cara pembayaran')}</Link></li>
+            <li><Link href="/syarat-ketentuan#pengiriman" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Pengiriman')}</Link></li>
+            <li><Link href="/syarat-ketentuan#pembatalan-retur" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Pengembalian & garansi')}</Link></li>
+            <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Syarat & Ketentuan')}</Link></li>
+            <li><Link href="/kebijakan-privasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kebijakan Privasi')}</Link></li>
             {(settings?.shopee_reviews_url || settings?.shopee_store_url) && (
               <li>
                 <ShopeeReviewsLink
                   reviewsUrl={settings?.shopee_reviews_url}
                   storeUrl={settings?.shopee_store_url}
                   className="transition-colors hover:text-white hover:underline hover:underline-offset-4"
-                  desktopLabel="Ulasan pembeli di Shopee"
-                  mobileLabel="Ulasan pembeli di Shopee"
+                  desktopLabel={t('Ulasan pembeli di Shopee')}
+                  mobileLabel={t('Ulasan pembeli di Shopee')}
                 />
               </li>
             )}
             {settings?.shopee_store_url && (
               <li>
                 <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">
-                  Toko kami di Shopee
+                  {t('Toko kami di Shopee')}
                 </a>
               </li>
             )}
@@ -99,7 +103,7 @@ export default function Footer({
         </div>
 
         <div>
-          <h2 className="text-sm font-bold text-white">Kontak</h2>
+          <h2 className="text-sm font-bold text-white">{t('Kontak')}</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li className="text-white">{contact.person}</li>
             {whatsapp && (
@@ -112,10 +116,10 @@ export default function Footer({
             <li>
               <a href={`mailto:${contact.email}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{contact.email}</a>
             </li>
-            <li>{contact.hours}</li>
+            <li>{t(contact.hours)}</li>
           </ul>
 
-          <h2 className="mt-7 text-sm font-bold text-white">Pembayaran</h2>
+          <h2 className="mt-7 text-sm font-bold text-white">{t('Pembayaran')}</h2>
           <ul className="mt-3 grid max-w-[260px] grid-cols-3 gap-2">
             {payments.map((method) => (
               <li key={method.name}>
@@ -139,9 +143,9 @@ export default function Footer({
           </ul>
 
           <div className="mt-7 flex items-baseline gap-3">
-            <h2 className="text-sm font-bold text-white">Pengiriman</h2>
+            <h2 className="text-sm font-bold text-white">{t('Pengiriman')}</h2>
             <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-white hover:underline">
-              Detail
+              {t('Detail')}
             </Link>
           </div>
           <ul className="mt-3 grid max-w-[260px] grid-cols-3 gap-2">
@@ -164,9 +168,12 @@ export default function Footer({
       </div>
 
       <div className="border-t border-white/10">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/65 sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} {name} · {siteConfig.legal.company}. Seluruh hak cipta dilindungi.
+        <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <p className="text-xs text-white/65">
+          © {new Date().getFullYear()} {name} · {siteConfig.legal.company}. {t('Seluruh hak cipta dilindungi.')}
         </p>
+        <LangLinks />
+        </div>
       </div>
     </footer>
   );

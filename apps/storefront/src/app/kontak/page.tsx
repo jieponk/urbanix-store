@@ -3,6 +3,7 @@ import FeatureIcon, { type FeatureIconName } from '@/components/FeatureIcon';
 import { getStoreSettings } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 export const metadata = {
   title: 'Kontak',
@@ -35,6 +36,7 @@ const faqs = [
 ];
 
 export default async function ContactPage() {
+  const t = getT();
   const settings = await getStoreSettings();
   const { contact, legal } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
@@ -80,20 +82,20 @@ export default async function ContactPage() {
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-24 pt-12 text-white sm:px-6 sm:pb-32 sm:pt-16 lg:px-8">
         <div className="relative mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
-            <Link href="/" className="hover:text-white">Beranda</Link>
+            <Link href="/" className="hover:text-white">{t('Beranda')}</Link>
             <span className="mx-2">/</span>
-            <span className="text-white/90">Kontak</span>
+            <span className="text-white/90">{t('Kontak')}</span>
           </nav>
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-400">Hubungi kami</p>
+          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-400">{t('Hubungi kami')}</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Ada pertanyaan? Admin kami siap membantu.
+            {t('Ada pertanyaan? Admin kami siap membantu.')}
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-8 text-white/75">
-            Tanya stok, minta rekomendasi gear, atau cek pesanan. Pilih cara yang paling nyaman untukmu.
+            {t('Tanya stok, minta rekomendasi gear, atau cek pesanan. Pilih cara yang paling nyaman untukmu.')}
           </p>
           <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-sm text-white/85 ring-1 ring-white/15">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            {contact.hours}
+            {t(contact.hours)}
           </p>
         </div>
       </section>
@@ -112,11 +114,11 @@ export default async function ContactPage() {
               <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${c.accent}`}>
                 <FeatureIcon name={c.icon} size={24} />
               </span>
-              <span className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-500">{c.label}</span>
-              <span className="mt-1 break-all text-xl font-extrabold text-ink">{c.value}</span>
-              <span className="mt-2 flex-1 text-sm leading-6 text-slate-600">{c.note}</span>
+              <span className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-500">{t(c.label)}</span>
+              <span className="mt-1 break-all text-xl font-extrabold text-ink">{t(c.value)}</span>
+              <span className="mt-2 flex-1 text-sm leading-6 text-slate-600">{t(c.note)}</span>
               <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-ink">
-                {c.cta}
+                {t(c.cta)}
                 <ArrowRight size={16} />
               </span>
             </a>
@@ -137,7 +139,7 @@ export default async function ContactPage() {
             />
             <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-slate-500">Kantor</p>
+                <p className="text-sm font-bold uppercase tracking-wider text-slate-500">{t('Kantor')}</p>
                 <p className="mt-1 text-lg font-extrabold text-ink">{legal.company}</p>
                 <p className="mt-1 max-w-md leading-7 text-slate-600">{legal.address}</p>
               </div>
@@ -147,7 +149,7 @@ export default async function ContactPage() {
                 rel="noopener noreferrer"
                 className="shrink-0 rounded-xl bg-mist px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 hover:ring-ink"
               >
-                Buka di Google Maps
+                {t('Buka di Google Maps')}
               </a>
             </div>
           </div>
@@ -158,11 +160,11 @@ export default async function ContactPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-mist text-ink">
                   <FeatureIcon name="bolt" size={20} />
                 </span>
-                <p className="text-lg font-extrabold text-ink">Jam operasional admin</p>
+                <p className="text-lg font-extrabold text-ink">{t('Jam operasional admin')}</p>
               </div>
-              <p className="mt-4 text-2xl font-extrabold text-ink">{contact.hours}</p>
+              <p className="mt-4 text-2xl font-extrabold text-ink">{t(contact.hours)}</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Pesan di luar jam ini tetap bisa dikirim dan akan dibalas pada jam kerja berikutnya.
+                {t('Pesan di luar jam ini tetap bisa dikirim dan akan dibalas pada jam kerja berikutnya.')}
               </p>
             </div>
 
@@ -171,12 +173,11 @@ export default async function ContactPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">
                   <FeatureIcon name="shield" size={20} />
                 </span>
-                <p className="text-lg font-extrabold text-amber-900">Waspada penipuan</p>
+                <p className="text-lg font-extrabold text-amber-900">{t('Waspada penipuan')}</p>
               </div>
               <p className="mt-3 text-sm leading-6 text-amber-900">
-                Info rekening hanya diberikan lewat WhatsApp resmi {whatsapp ? displayPhone(whatsapp) : 'kami'}, atas
-                nama <b>{legal.company}</b>. Kami tidak pernah meminta transfer ke rekening pribadi atau dari nomor
-                lain. Ragu? Tanyakan dulu ke admin.
+                {t('Info rekening hanya diberikan lewat WhatsApp resmi {wa}, atas nama', { wa: whatsapp ? displayPhone(whatsapp) : t('kami') })}{' '}
+                <b>{legal.company}</b>{t('. Kami tidak pernah meminta transfer ke rekening pribadi atau dari nomor lain. Ragu? Tanyakan dulu ke admin.')}
               </p>
             </div>
           </div>
@@ -186,24 +187,24 @@ export default async function ContactPage() {
       {/* Pertanyaan umum */}
       <section className="bg-mist px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Pertanyaan yang sering ditanyakan</h2>
+          <h2 className="text-center text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Pertanyaan yang sering ditanyakan')}</h2>
           <div className="mt-8 space-y-3">
             {faqs.map((f) => (
               <details key={f.q} className="group rounded-2xl bg-surface ring-1 ring-slate-200 open:ring-ink">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
-                  {f.q}
+                  {t(f.q)}
                   <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mist text-lg transition group-open:rotate-45">
                     +
                   </span>
                 </summary>
-                <p className="px-5 pb-5 leading-7 text-slate-600">{f.a}</p>
+                <p className="px-5 pb-5 leading-7 text-slate-600">{t(f.a)}</p>
               </details>
             ))}
           </div>
           <p className="mt-8 text-center text-sm text-slate-600">
             Baca juga{' '}
-            <Link href="/syarat-ketentuan" className="font-bold text-ink underline">Syarat &amp; Ketentuan</Link> dan{' '}
-            <Link href="/kebijakan-privasi" className="font-bold text-ink underline">Kebijakan Privasi</Link>.
+            <Link href="/syarat-ketentuan" className="font-bold text-ink underline">{t('Syarat & Ketentuan')}</Link> dan{' '}
+            <Link href="/kebijakan-privasi" className="font-bold text-ink underline">{t('Kebijakan Privasi')}</Link>.
           </p>
         </div>
       </section>

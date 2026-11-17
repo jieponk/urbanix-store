@@ -1,19 +1,24 @@
 import Link from 'next/link';
+import { dateLocale } from '@/lib/i18n';
+import { getLang } from '@/lib/lang-server';
 import NewsImage from '@/components/NewsImage';
 import type { NewsArticle } from '@/lib/api';
 import { AiSpark, ArrowRight, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 /** "3 jam lalu", "Kemarin", "8 Nov 2026". */
 export function newsDate(iso: string, now = Date.now()) {
   const date = new Date(iso);
   const hours = Math.floor((now - date.getTime()) / 3_600_000);
-  if (hours < 1) return 'Baru saja';
-  if (hours < 24) return `${hours} jam lalu`;
-  if (hours < 48) return 'Kemarin';
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
+  const t = getT();
+  if (hours < 1) return t('Baru saja');
+  if (hours < 24) return t('{n} jam lalu', { n: hours });
+  if (hours < 48) return t('Kemarin');
+  return date.toLocaleDateString(dateLocale(getLang()), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 }
 
 function SourceLine({ article, light = false }: { article: NewsArticle; light?: boolean }) {
+  const t = getT();
   return (
     <div className={`flex items-center gap-3 text-xs font-semibold ${light ? 'text-white/75' : 'text-slate-500'}`}>
       <span className={`inline-flex min-w-0 items-center gap-1.5 font-bold ${light ? 'text-white' : 'text-ink'}`}>
@@ -26,7 +31,7 @@ function SourceLine({ article, light = false }: { article: NewsArticle; light?: 
       {!article.is_translated && (
         <span
           className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wide ${light ? 'bg-white/15 text-white' : 'bg-mist text-slate-600'}`}
-          title="Belum diterjemahkan"
+          title={t('Belum diterjemahkan')}
         >
           EN
         </span>
@@ -45,6 +50,7 @@ export default function NewsCard({
   compact?: boolean;
   index?: number;
 }) {
+  const t = getT();
   return (
     <article
       className="inspo-reveal group relative flex h-full flex-col"
@@ -54,12 +60,12 @@ export default function NewsCard({
         <NewsImage src={article.image_url} alt="" className="h-full w-full transition duration-700 ease-out group-hover:scale-[1.03]" />
         {article.is_pinned && (
           <span className="absolute left-0 top-0 inline-flex items-center gap-1 bg-ed px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
-            <Sparkle size={11} /> Pilihan
+            <Sparkle size={11} /> {t('Pilihan')}
           </span>
         )}
         {article.has_ai && (
           <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/75 px-2 py-1 text-[11px] font-bold text-white">
-            <AiSpark size={12} /> Ada ringkasan
+            <AiSpark size={12} /> {t('Ada ringkasan')}
           </span>
         )}
       </div>
@@ -74,7 +80,7 @@ export default function NewsCard({
         {article.summary && !compact && <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{article.summary}</p>}
         {!compact && (
           <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-[13px] font-bold text-ed">
-            Baca ringkasan <ArrowRight size={15} />
+            {t('Baca ringkasan')} <ArrowRight size={15} />
           </span>
         )}
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Camera, Check, XIcon } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
 
 type Item = {
   product_id: number;
@@ -33,11 +34,12 @@ async function shrink(file: File): Promise<Blob> {
 }
 
 function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const t = useT();
   const [hover, setHover] = useState(0);
   const shown = hover || value;
   return (
     <div>
-      <div className="flex gap-1" role="radiogroup" aria-label="Beri bintang">
+      <div className="flex gap-1" role="radiogroup" aria-label={t('Beri bintang')}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
@@ -59,7 +61,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (n: number) 
           </button>
         ))}
       </div>
-      <p className="mt-1 h-5 text-sm font-semibold text-slate-600">{LABELS[shown]}</p>
+      <p className="mt-1 h-5 text-sm font-semibold text-slate-600">{t(LABELS[shown])}</p>
     </div>
   );
 }
@@ -71,6 +73,7 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
   initialRating: number;
   onDone: (review: Item['review']) => void;
 }) {
+  const t = useT();
   const [rating, setRating] = useState(initialRating);
   const [body, setBody] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
@@ -86,7 +89,7 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
   }, [photo]);
 
   async function submit() {
-    if (!rating) return setError('Pilih bintang dulu.');
+    if (!rating) return setError(t('Pilih bintang dulu.'));
     setSending(true);
     setError('');
     try {
@@ -98,10 +101,10 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
       if (photo) fd.append('photo', await shrink(photo), 'foto.jpg');
       const res = await fetch(`/api/order-reviews/${encodeURIComponent(token)}`, { method: 'POST', body: fd });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Gagal mengirim ulasan.');
+      if (!res.ok) throw new Error(data.error || t('Gagal mengirim ulasan.'));
       onDone(data.review);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Gagal mengirim ulasan.');
+      setError(e instanceof Error ? e.message : t('Gagal mengirim ulasan.'));
     } finally {
       setSending(false);
     }
@@ -115,21 +118,21 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
         onChange={(e) => setBody(e.target.value)}
         maxLength={2000}
         rows={4}
-        placeholder="Ceritakan pengalamanmu: kualitas barang, kesesuaian dengan deskripsi, pengemasan, pengiriman…"
+        placeholder={t('Ceritakan pengalamanmu: kualitas barang, kesesuaian dengan deskripsi, pengemasan, pengiriman…')}
         className="w-full rounded-2xl bg-mist px-4 py-3 text-base text-ink outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500"
       />
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-mist px-4 py-2.5 text-sm font-bold text-ink hover:bg-slate-200">
-          <Camera size={16} /> {photo ? 'Ganti foto' : 'Tambah foto (opsional)'}
+          <Camera size={16} /> {photo ? t('Ganti foto') : t('Tambah foto (opsional)')}
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
         </label>
         {preview && (
           <span className="relative">
-            <img src={preview} alt="Pratinjau foto" className="h-16 w-16 rounded-xl object-cover" />
+            <img src={preview} alt={t('Pratinjau foto')} className="h-16 w-16 rounded-xl object-cover" />
             <button
               type="button"
               onClick={() => setPhoto(null)}
-              aria-label="Hapus foto"
+              aria-label={t('Hapus foto')}
               className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white"
             >
               <XIcon size={14} />
@@ -144,13 +147,14 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
         disabled={sending || !rating}
         className="w-full rounded-2xl bg-brand-600 px-5 py-3.5 text-base font-bold text-onbrand shadow-sm hover:bg-brand-700 disabled:opacity-40 sm:w-auto"
       >
-        {sending ? 'Mengirim…' : 'Kirim ulasan'}
+        {sending ? 'Mengirim…' : t('Kirim ulasan')}
       </button>
     </div>
   );
 }
 
 export default function ReviewForm({ token, initialStars }: { token: string; initialStars: number }) {
+  const t = useT();
   const [data, setData] = useState<OrderData | null>(null);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
@@ -159,7 +163,7 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
     fetch(`/api/order-reviews/${encodeURIComponent(token)}`, { cache: 'no-store' })
       .then(async (r) => {
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Link ulasan tidak valid.');
+        if (!r.ok) throw new Error(d.error || t('Link ulasan tidak valid.'));
         setData(d);
         setName(d.customer_name || '');
       })
@@ -170,8 +174,8 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
     return (
       <div className="rounded-3xl bg-surface p-8 text-center ring-1 ring-slate-200">
         <p className="text-lg font-extrabold text-ink">{error}</p>
-        <p className="mt-2 text-sm text-slate-500">Pastikan link dibuka lengkap dari email, atau hubungi admin lewat WhatsApp.</p>
-        <Link href="/" className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface">Ke beranda</Link>
+        <p className="mt-2 text-sm text-slate-500">{t('Pastikan link dibuka lengkap dari email, atau hubungi admin lewat WhatsApp.')}</p>
+        <Link href="/" className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface">{t('Ke beranda')}</Link>
       </div>
     );
   }
@@ -183,30 +187,30 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-surface p-6 ring-1 ring-slate-200">
-        <p className="text-sm text-slate-500">Pesanan {data.order_number}</p>
+        <p className="text-sm text-slate-500">{t('Pesanan {no}', { no: data.order_number })}</p>
         <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">
-          {allDone ? 'Terima kasih atas ulasanmu!' : 'Bagaimana barangnya?'}
+          {allDone ? t('Terima kasih atas ulasanmu!') : t('Bagaimana barangnya?')}
         </h1>
         <p className="mt-2 text-sm text-slate-600">
           {allDone
-            ? 'Ulasanmu sudah tampil di halaman produk dan membantu pembeli lain.'
-            : 'Beri bintang dan ulasan singkat untuk setiap produk. Hanya 1 menit.'}
+            ? t('Ulasanmu sudah tampil di halaman produk dan membantu pembeli lain.')
+            : t('Beri bintang dan ulasan singkat untuk setiap produk. Hanya 1 menit.')}
         </p>
         {!data.can_review && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-            Ulasan bisa diberikan setelah pesanan dikirim.
+            {t('Ulasan bisa diberikan setelah pesanan dikirim.')}
           </p>
         )}
         {data.can_review && !allDone && (
           <label className="mt-4 block text-sm">
-            <span className="font-semibold text-ink">Nama yang ditampilkan</span>
+            <span className="font-semibold text-ink">{t('Nama yang ditampilkan')}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
               className="mt-1 w-full rounded-xl bg-mist px-4 py-2.5 text-base text-ink outline-none focus:ring-2 focus:ring-brand-500 sm:max-w-xs"
             />
-            <span className="mt-1 block text-xs text-slate-500">Nama lengkap & data pesananmu tidak ditampilkan.</span>
+            <span className="mt-1 block text-xs text-slate-500">{t('Nama lengkap & data pesananmu tidak ditampilkan.')}</span>
           </label>
         )}
       </div>
@@ -221,12 +225,12 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
             )}
             <div className="min-w-0">
               <Link href={`/produk/${item.product_id}`} className="line-clamp-2 font-bold text-ink hover:underline">{item.name}</Link>
-              {item.variation_name && <p className="text-xs text-slate-500">Varian: {item.variation_name}</p>}
+              {item.variation_name && <p className="text-xs text-slate-500">{t('Varian')}: {item.variation_name}</p>}
             </div>
           </div>
           {item.review ? (
             <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
-              <Check size={14} className="inline" /> Sudah diulas ({item.review.rating} bintang). Terima kasih!
+              <Check size={14} className="inline" /> {t('Sudah diulas ({n} bintang). Terima kasih!', { n: item.review.rating })}
             </p>
           ) : data.can_review ? (
             <ItemForm

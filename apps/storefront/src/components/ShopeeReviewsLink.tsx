@@ -1,3 +1,5 @@
+import { getT } from '@/lib/lang-server';
+
 /**
  * Link "baca ulasan di Shopee".
  * Link halaman penilaian (shopee.co.id/buyer/.../rating) hanya benar di website Shopee (PC).
@@ -17,16 +19,17 @@ export default function ShopeeReviewsLink({
   desktopLabel?: string;
   mobileLabel?: string;
 }) {
+  const t = getT();
   if (!reviewsUrl && !storeUrl) return null;
   const mobileHref = storeUrl || reviewsUrl!;
   const desktopHref = reviewsUrl || storeUrl!;
   return (
     <>
       <a href={mobileHref} target="_blank" rel="noopener noreferrer" className={`${className ?? ''} md:hidden`}>
-        {mobileLabel}
+        {t(mobileLabel)}
       </a>
       <a href={desktopHref} target="_blank" rel="noopener noreferrer" className={`${className ?? ''} hidden md:inline`}>
-        {desktopLabel}
+        {t(desktopLabel)}
       </a>
     </>
   );

@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { money, type Product } from '@/lib/api';
 import { productImg } from '@/lib/img';
+import { getT } from '@/lib/lang-server';
 
 /** Kartu produk yang disisipkan di tengah artikel ([[produk:ID]]). */
 export default function ProductEmbed({ product }: { product?: Product }) {
+  const t = getT();
   if (!product) return null;
   const normal = Number(product.price) || 0;
   const final = Number(product.final_price ?? product.discount_price) || normal;
@@ -22,7 +24,7 @@ export default function ProductEmbed({ product }: { product?: Product }) {
           )}
         </Link>
         <div className="flex flex-1 flex-col justify-center gap-3 p-5 sm:p-6">
-          <p className="ed-kicker">Produk di artikel ini</p>
+          <p className="ed-kicker">{t('Produk di artikel ini')}</p>
           <Link href={`/produk/${product.id}`} className="line-clamp-2 text-lg font-extrabold leading-snug text-ink hover:underline">
             {product.name}
           </Link>
@@ -32,9 +34,9 @@ export default function ProductEmbed({ product }: { product?: Product }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href={`/produk/${product.id}`} className="rounded-lg bg-ink px-5 py-2.5 text-sm font-bold text-surface transition hover:bg-ed hover:text-white">
-              Lihat produk
+              {t('Lihat produk')}
             </Link>
-            {product.stock <= 0 && <span className="self-center text-sm font-semibold text-slate-500">Stok sedang habis</span>}
+            {product.stock <= 0 && <span className="self-center text-sm font-semibold text-slate-500">{t('Stok sedang habis')}</span>}
           </div>
         </div>
       </div>

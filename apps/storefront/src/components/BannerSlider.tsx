@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '@/components/LangProvider';
 
 export type BannerSlide = {
   src: string;
@@ -17,6 +18,7 @@ const INTERVAL_MS = 5500;
 const SWIPE_PX = 40;
 
 export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
+  const t = useT();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [autoplay, setAutoplay] = useState(false);
@@ -53,7 +55,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
       }}
       role="region"
       aria-roledescription="carousel"
-      aria-label="Banner promo"
+      aria-label={t('Banner promo')}
     >
       <div className="relative aspect-[16/9] overflow-hidden sm:aspect-[21/9] lg:aspect-auto lg:h-full lg:min-h-[360px]">
         <div
@@ -108,7 +110,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
           <button
             type="button"
             onClick={() => go(index - 1)}
-            aria-label="Banner sebelumnya"
+            aria-label={t('Banner sebelumnya')}
             className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 sm:left-3 sm:h-10 sm:w-10"
           >
             <svg
@@ -127,7 +129,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
           <button
             type="button"
             onClick={() => go(index + 1)}
-            aria-label="Banner berikutnya"
+            aria-label={t('Banner berikutnya')}
             className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 sm:right-3 sm:h-10 sm:w-10"
           >
             <svg
@@ -149,7 +151,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 key={slide.src}
                 type="button"
                 onClick={() => setIndex(i)}
-                aria-label={`Tampilkan banner ${i + 1}`}
+                aria-label={t('Tampilkan banner {n}', { n: i + 1 })}
                 aria-current={i === index}
                 className="flex h-7 min-w-[28px] items-center justify-center px-1"
               >

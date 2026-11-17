@@ -23,6 +23,7 @@ import {
 } from '@/lib/api';
 import { listPublicImages, publicUrl } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
+import { getT } from '@/lib/lang-server';
 
 const PER_PAGE = 8;
 
@@ -58,6 +59,7 @@ function PageLink({
   page: number;
   direction: 'prev' | 'next';
 }) {
+  const t = getT();
   const isNext = direction === 'next';
 
   return (
@@ -79,7 +81,7 @@ function PageLink({
           <path d="m15 6-6 6 6 6" />
         </svg>
       )}
-      {isNext ? 'Berikutnya' : 'Sebelumnya'}
+      {isNext ? t('Berikutnya') : t('Sebelumnya')}
       {isNext && (
         <svg
           width="18"
@@ -102,6 +104,7 @@ export default async function HomePage({
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
 }) {
+  const t = getT();
   const params = await searchParams;
 
   let allProducts: Product[] = [];
@@ -166,10 +169,10 @@ export default async function HomePage({
           ) : (
             <div className="flex flex-col justify-center rounded-xl bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
               <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">
-                Kamera, lensa, dan gear kreator dalam satu toko.
+                {t('Kamera, lensa, dan gear kreator dalam satu toko.')}
               </h1>
               <Link href="/produk" className="mt-6 w-fit rounded-full bg-ink px-6 py-3 text-sm font-bold text-surface hover:bg-slate-800">
-                Belanja sekarang
+                {t('Belanja sekarang')}
               </Link>
             </div>
           )}
@@ -183,11 +186,11 @@ export default async function HomePage({
       {vouchers.length > 0 && (
         <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
           <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-            Voucher toko
+            {t('Voucher toko')}
           </h2>
           <VoucherStrip vouchers={vouchers} />
           <p className="mt-2 text-xs text-slate-500">
-            Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.
+            {t('Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.')}
           </p>
         </section>
       )}
@@ -209,22 +212,22 @@ export default async function HomePage({
       {/* 5. Produk pilihan: 8 produk (4 + 4) dengan tombol halaman */}
       <section id="produk-pilihan" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-3">
-          <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Produk pilihan</h2>
+          <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Produk pilihan')}</h2>
           <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:text-slate-900">
-            Lihat semua produk
+            {t('Lihat semua produk')}
           </Link>
         </div>
 
         {productError ? (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-            <p className="font-bold text-red-700">Produk gagal dimuat</p>
+            <p className="font-bold text-red-700">{t('Produk gagal dimuat')}</p>
             <p className="mt-2 text-sm text-slate-600">Pastikan backend Django berjalan dan API produk dapat diakses.</p>
             <p className="mt-2 break-all text-xs text-slate-500">API: {API}/products/</p>
           </div>
         ) : products.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
-            <p className="font-bold">Produk belum tersedia</p>
-            <p className="mt-2 text-sm text-slate-500">Silakan cek kembali sebentar lagi.</p>
+            <p className="font-bold">{t('Produk belum tersedia')}</p>
+            <p className="mt-2 text-sm text-slate-500">{t('Silakan cek kembali sebentar lagi.')}</p>
           </div>
         ) : (
           <>
@@ -235,7 +238,7 @@ export default async function HomePage({
             </RevealGrid>
 
             {totalPages > 1 && (
-              <nav aria-label="Halaman produk" className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <nav aria-label={t('Halaman produk')} className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 {page > 1 && <PageLink page={page - 1} direction="prev" />}
                 <span className="px-2 text-sm font-semibold text-slate-500">
                   Halaman {page} dari {totalPages}
@@ -255,10 +258,10 @@ export default async function HomePage({
         <section aria-labelledby="judul-berita" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-3">
             <h2 id="judul-berita" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-              Berita kamera & fotografi
+              {t('Berita kamera & fotografi')}
             </h2>
             <Link href="/berita" className="shrink-0 text-sm font-bold text-ink hover:underline">
-              Lihat semua
+              {t('Lihat semua')}
             </Link>
           </div>
           <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
@@ -273,7 +276,7 @@ export default async function HomePage({
       <section aria-labelledby="judul-keunggulan" className="relative isolate mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <GearBackdrop />
         <h2 id="judul-keunggulan" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-          {featuresTitle}
+          {t(featuresTitle)}
         </h2>
         <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -282,8 +285,8 @@ export default async function HomePage({
                 <FeatureIcon name={feature.icon} size={22} />
               </span>
               <span>
-                <span className="block font-bold text-ink">{feature.title}</span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">{feature.text}</span>
+                <span className="block font-bold text-ink">{t(feature.title)}</span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">{t(feature.text)}</span>
               </span>
             </li>
           ))}

@@ -6,6 +6,7 @@ import ArticleCard, { CompactArticle, FeaturedArticle } from '@/components/inspi
 import { ArrowRight, CategoryIcon, Newspaper, Sparkle, Tag, XIcon } from '@/components/inspirasi/InspoIcons';
 import { getArticleCategories, getArticles, getNews } from '@/lib/api';
 import { SITE_URL, breadcrumbJsonLd, jsonLd } from '@/lib/seo';
+import { getT } from '@/lib/lang-server';
 
 const PER_PAGE = 12;
 
@@ -50,6 +51,7 @@ export async function generateMetadata({
 }
 
 export default async function InspirationPage({ searchParams }: { searchParams?: SearchParams | Promise<SearchParams> }) {
+  const t = getT();
   const { kategori, label, page } = clean((await searchParams) || {});
   const filtered = Boolean(kategori || label);
 
@@ -68,7 +70,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
   const activeCat = categories.find((c) => c.slug === kategori);
   const total = categories.reduce((n, c) => n + c.count, 0);
 
-  const heading = activeCat ? activeCat.name : label ? `#${label}` : magazine ? 'Artikel terbaru' : 'Semua artikel';
+  const heading = activeCat ? activeCat.name : label ? `#${label}` : magazine ? t('Artikel terbaru') : t('Semua artikel');
 
   const collectionLd = {
     '@context': 'https://schema.org',
@@ -113,37 +115,37 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
           {/* ---------- Kepala (gaya koran) ---------- */}
           <header className="relative isolate pt-6 sm:pt-10">
             <GearBackdrop className="bottom-[54px]" />
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-              <Link href="/" className="hover:text-ink">Beranda</Link>
+            <nav aria-label={t('Breadcrumb')} className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <Link href="/" className="hover:text-ink">{t('Beranda')}</Link>
               <span aria-hidden="true">/</span>
               {activeCat ? (
                 <>
-                  <Link href="/inspirasi" className="hover:text-ink">Inspirasi</Link>
+                  <Link href="/inspirasi" className="hover:text-ink">{t('Inspirasi')}</Link>
                   <span aria-hidden="true">/</span>
                   <span className="text-ink">{activeCat.name}</span>
                 </>
               ) : (
-                <span className="text-ink">Inspirasi</span>
+                <span className="text-ink">{t('Inspirasi')}</span>
               )}
             </nav>
             <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-3 border-b-[3px] border-ink pb-4">
               <div>
                 <span aria-hidden="true" className="block h-1.5 w-14 bg-ed" />
                 <h1 className="mt-4 text-[2.6rem] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-6xl">
-                  {activeCat ? activeCat.name : 'Inspirasi'}
+                  {activeCat ? activeCat.name : t('Inspirasi')}
                 </h1>
               </div>
               <p className="max-w-md text-[15px] leading-7 text-slate-600 sm:text-right">
-                Tips memotret, panduan beli, review jujur, dan kabar terbaru dunia kamera dari tim Urbanix.
+                {t('Tips memotret, panduan beli, review jujur, dan kabar terbaru dunia kamera dari tim Urbanix.')}
               </p>
             </div>
 
             {/* Tab kategori */}
             {categories.length > 0 && (
-              <nav aria-label="Kategori artikel" className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
+              <nav aria-label={t('Kategori artikel')} className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
                 <Link href={href({ label })} className={tab(!kategori)} aria-current={!kategori ? 'page' : undefined}>
                   <CategoryIcon slug="" size={15} />
-                  Semua
+                  {t('Semua')}
                   {total > 0 && <span className="text-xs font-semibold tabular-nums text-slate-400">{total}</span>}
                 </Link>
                 {categories.map((c) => (
@@ -159,11 +161,11 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
 
           {/* ---------- Artikel utama (halaman 1) ---------- */}
           {featured && (
-            <section aria-label="Artikel utama" className="mt-8 grid gap-8 border-b border-slate-200 pb-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:gap-10">
+            <section aria-label={t('Artikel utama')} className="mt-8 grid gap-8 border-b border-slate-200 pb-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:gap-10">
               <FeaturedArticle article={featured} />
               <div className="lg:border-l lg:border-slate-200 lg:pl-8">
                 <h2 className="ed-kicker flex items-center gap-2">
-                  <Sparkle size={13} /> Pilihan editor
+                  <Sparkle size={13} /> {t('Pilihan editor')}
                 </h2>
                 <div className="mt-1 divide-y divide-slate-200">
                   {side.map((a, i) => (
@@ -171,7 +173,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
                   ))}
                 </div>
                 <Link href="/berita" className="group mt-2 flex items-center justify-between border-t border-slate-200 pt-4 text-sm font-bold text-ink hover:text-ed">
-                  <span className="inline-flex items-center gap-2"><Newspaper size={16} /> Berita kamera hari ini</span>
+                  <span className="inline-flex items-center gap-2"><Newspaper size={16} /> {t('Berita kamera hari ini')}</span>
                   <ArrowRight size={16} />
                 </Link>
               </div>
@@ -190,7 +192,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
                   <Link href={href({ kategori })} className="group inline-flex items-center gap-1.5 border border-slate-300 px-3 py-1.5 text-sm font-bold text-ink transition hover:border-ink">
                     <Tag size={14} /> {label}
                     <XIcon size={13} className="ml-0.5 text-slate-400 group-hover:text-ed" />
-                    <span className="sr-only">hapus filter label</span>
+                    <span className="sr-only">{t('hapus filter label')}</span>
                   </Link>
                 )}
                 {data && data.count > 0 && <span className="text-sm text-slate-500">{data.count} artikel</span>}
@@ -207,16 +209,16 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
               !featured && (
                 <div className="mt-7 flex flex-col items-center border-y border-slate-200 px-5 py-16 text-center">
                   <span className="text-slate-400"><CategoryIcon slug={kategori} size={30} /></span>
-                  <p className="mt-4 font-extrabold text-ink">Belum ada artikel di sini</p>
-                  <p className="mt-1 text-sm text-slate-500">Artikel baru segera hadir. Coba kategori lain dulu, ya.</p>
+                  <p className="mt-4 font-extrabold text-ink">{t('Belum ada artikel di sini')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t('Artikel baru segera hadir. Coba kategori lain dulu, ya.')}</p>
                   <Link href="/inspirasi" className="group mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-ed">
-                    Lihat semua artikel <ArrowRight size={16} />
+                    {t('Lihat semua artikel')} <ArrowRight size={16} />
                   </Link>
                 </div>
               )
             )}
 
-            {data && <Pagination page={data.page} pages={data.pages} href={(p) => href({ kategori, label, hal: p })} label="Halaman artikel" />}
+            {data && <Pagination page={data.page} pages={data.pages} href={(p) => href({ kategori, label, hal: p })} label={t('Halaman artikel')} />}
           </section>
 
           {/* ---------- Berita kamera ---------- */}
@@ -224,11 +226,11 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
             <section className="mt-20 border-t-[3px] border-ink pt-6" aria-labelledby="berita-heading">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="ed-kicker flex items-center gap-1.5"><Newspaper size={14} /> Dari berbagai media</p>
-                  <h2 id="berita-heading" className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Berita Kamera</h2>
+                  <p className="ed-kicker flex items-center gap-1.5"><Newspaper size={14} /> {t('Dari berbagai media')}</p>
+                  <h2 id="berita-heading" className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Berita Kamera')}</h2>
                 </div>
                 <Link href="/berita" className="group inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-ed">
-                  Semua berita <ArrowRight size={16} />
+                  {t('Semua berita')} <ArrowRight size={16} />
                 </Link>
               </div>
               <div className="mt-6 grid gap-8 lg:grid-cols-[1.3fr_1fr]">

@@ -81,11 +81,12 @@ SITE="${SITE_URL:-https://urbanix.id}"
     | while read -r U; do curl -fsS -o /dev/null "$SITE$U" || true; done
 ) >/dev/null 2>&1 &
 
-echo "==> Jadwal otomatis: berita tiap 2 jam, backup tiap hari 02:30"
+echo "==> Jadwal otomatis: berita tiap 2 jam, terjemahan isi tiap 3 jam, backup tiap hari 02:30"
 CRON_NEWS="15 */2 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py ambil_berita >> $BASE/cron.log 2>&1"
 CRON_BACKUP="30 2 * * * bash $APP/deploy/backup.sh >> $BASE/cron.log 2>&1"
 CRON_REMIND="5 * * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py kirim_pengingat >> $BASE/cron.log 2>&1"
-{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; echo "$CRON_REMIND # urbanix"; } | crontab -
+CRON_I18N="40 */3 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py terjemahkan_konten >> $BASE/cron.log 2>&1"
+{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; echo "$CRON_REMIND # urbanix"; echo "$CRON_I18N # urbanix"; } | crontab -
 
 echo
 echo "Selesai. Pantau build:  cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml logs -f storefront"

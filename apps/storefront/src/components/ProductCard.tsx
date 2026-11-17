@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { money, type Product } from '@/lib/api';
 import { productImg } from '@/lib/img';
+import { getT } from '@/lib/lang-server';
 
 export default function ProductCard({ product }: { product: Product }) {
+  const t = getT();
   const originalPrice = Number(product.price) || 0;
   // final_price sudah termasuk promo "Potong harga" (dihitung di backend).
   const discountedPrice =
@@ -33,7 +35,7 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center text-center text-xs text-slate-400">
-            Gambar tidak tersedia
+            {t('Gambar tidak tersedia')}
           </div>
         )}
 
@@ -52,13 +54,13 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {product.stock > 0 && product.stock <= 3 && (
           <span className="absolute right-2 top-2 rounded-md bg-sale-600 px-1.5 py-0.5 text-[10px] font-bold text-white sm:right-3 sm:top-3">
-            Sisa {product.stock}
+            {t('Sisa {n}', { n: product.stock })}
           </span>
         )}
 
         {product.stock <= 0 && (
           <span className="absolute inset-x-2 bottom-2 rounded-lg bg-black/75 px-2 py-2 text-center text-[10px] font-bold text-white sm:inset-x-3 sm:bottom-3">
-            Stok habis
+            {t('Stok habis')}
           </span>
         )}
       </div>
@@ -92,7 +94,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 : 'bg-slate-100 text-slate-500'
             }`}
           >
-            {product.stock > 0 ? 'Lihat produk' : 'Lihat detail'}
+            {product.stock > 0 ? t('Lihat produk') : t('Lihat detail')}
           </span>
         </div>
       </div>

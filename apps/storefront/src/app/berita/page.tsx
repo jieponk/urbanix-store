@@ -4,6 +4,7 @@ import Pagination from '@/components/Pagination';
 import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { Globe, Newspaper } from '@/components/inspirasi/InspoIcons';
 import { getNews } from '@/lib/api';
+import { getT } from '@/lib/lang-server';
 
 export const metadata = {
   title: 'Berita Kamera & Fotografi',
@@ -28,6 +29,7 @@ export default async function NewsPage({
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
 }) {
+  const t = getT();
   const params = await searchParams;
   const source = /^\d+$/.test(params?.sumber ?? '') ? (params?.sumber as string) : '';
   const page = Math.max(1, parseInt(params?.hal || '1', 10) || 1);
@@ -43,27 +45,27 @@ export default async function NewsPage({
       <div className="mx-auto max-w-7xl">
         <header className="relative isolate pt-6 sm:pt-10">
           <GearBackdrop className="bottom-[54px]" />
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            <Link href="/" className="hover:text-ink">Beranda</Link>
+          <nav aria-label={t('Breadcrumb')} className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Link href="/" className="hover:text-ink">{t('Beranda')}</Link>
             <span aria-hidden="true">/</span>
-            <Link href="/inspirasi" className="hover:text-ink">Inspirasi</Link>
+            <Link href="/inspirasi" className="hover:text-ink">{t('Inspirasi')}</Link>
             <span aria-hidden="true">/</span>
-            <span className="text-ink">Berita</span>
+            <span className="text-ink">{t('Berita')}</span>
           </nav>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-3 border-b-[3px] border-ink pb-4">
             <div>
               <span aria-hidden="true" className="block h-1.5 w-14 bg-ed" />
-              <h1 className="mt-4 text-[2.6rem] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-6xl">Berita Kamera</h1>
+              <h1 className="mt-4 text-[2.6rem] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-6xl">{t('Berita Kamera')}</h1>
             </div>
             <p className="max-w-md text-[15px] leading-7 text-slate-600 sm:text-right">
-              Kabar terbaru seputar kamera, lensa, dan dunia fotografi dari berbagai media, dirangkum dalam Bahasa Indonesia.
+              {t('Kabar terbaru seputar kamera, lensa, dan dunia fotografi dari berbagai media, dirangkum dalam Bahasa Indonesia.')}
             </p>
           </div>
 
           {data && data.sources.length > 1 && (
-            <nav aria-label="Filter sumber berita" className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
+            <nav aria-label={t('Filter sumber berita')} className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
               <Link href="/berita" className={tab(!source)} aria-current={!source ? 'page' : undefined}>
-                <Newspaper size={15} /> Semua
+                <Newspaper size={15} /> {t('Semua')}
               </Link>
               {data.sources.map((s) => (
                 <Link key={s.id} href={pageHref(String(s.id), 1)} className={tab(source === String(s.id))} aria-current={source === String(s.id) ? 'page' : undefined}>
@@ -76,14 +78,14 @@ export default async function NewsPage({
 
         {!data ? (
           <div className="mt-8 border-l-[3px] border-ed bg-mist p-5">
-            <p className="font-bold text-ink">Berita gagal dimuat</p>
-            <p className="mt-1 text-sm text-slate-600">Coba muat ulang halaman ini sebentar lagi.</p>
+            <p className="font-bold text-ink">{t('Berita gagal dimuat')}</p>
+            <p className="mt-1 text-sm text-slate-600">{t('Coba muat ulang halaman ini sebentar lagi.')}</p>
           </div>
         ) : data.results.length === 0 ? (
           <div className="mt-8 flex flex-col items-center border-y border-slate-200 px-5 py-16 text-center">
             <span className="text-slate-400"><Newspaper size={30} /></span>
-            <p className="mt-4 font-extrabold text-ink">Berita sedang disiapkan</p>
-            <p className="mt-1 text-sm text-slate-500">Berita terbaru sedang diambil. Coba muat ulang 1–2 menit lagi.</p>
+            <p className="mt-4 font-extrabold text-ink">{t('Berita sedang disiapkan')}</p>
+            <p className="mt-1 text-sm text-slate-500">{t('Berita terbaru sedang diambil. Coba muat ulang 1–2 menit lagi.')}</p>
           </div>
         ) : (
           <>
@@ -92,13 +94,12 @@ export default async function NewsPage({
                 <NewsCard key={article.id} article={article} index={i} />
               ))}
             </div>
-            <Pagination page={data.page} pages={data.pages} href={(p) => pageHref(source, p)} label="Halaman berita" />
+            <Pagination page={data.page} pages={data.pages} href={(p) => pageHref(source, p)} label={t('Halaman berita')} />
           </>
         )}
 
         <p className="mt-12 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
-          Judul dan ringkasan diterjemahkan otomatis dari media aslinya; sumber selalu dicantumkan di tiap berita.
-          Artikel lengkap, foto, dan hak ciptanya milik masing-masing media.
+          {t('Judul dan ringkasan diterjemahkan otomatis dari media aslinya; sumber selalu dicantumkan di tiap berita. Artikel lengkap, foto, dan hak ciptanya milik masing-masing media.')}
         </p>
       </div>
     </div>

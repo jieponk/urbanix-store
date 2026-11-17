@@ -4,6 +4,8 @@ import Footer from '@/components/Footer';
 import BrandMarquee, { topBrands } from '@/components/BrandMarquee';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
+import { LangProvider } from '@/components/LangProvider';
+import { getLang } from '@/lib/lang-server';
 import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
 import { SITE_URL, jsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
@@ -54,9 +56,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     getActiveProducts().catch(() => []),
   ]);
   const promo = promoSummary(products);
+  const lang = getLang();
 
   return (
-    <html lang="id" className={jakarta.variable} suppressHydrationWarning>
+    <html lang={lang} className={jakarta.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {/* Identitas toko & nama situs untuk Google */}
@@ -69,6 +72,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd())} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
+        <LangProvider lang={lang}>
         <ShopChrome
           header={
             <SiteHeader
@@ -87,6 +91,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           {children}
         </ShopChrome>
+        </LangProvider>
       </body>
     </html>
   );
