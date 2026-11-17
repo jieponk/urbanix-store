@@ -28,21 +28,19 @@ const TOPICS: { match: RegExp; color: string; icon: string }[] = [
 ];
 const DEFAULT_TOPIC = { color: '#5bb5f9', icon: 'kamera' };
 
-/** Ambil gambar objek dari ikon kategori (bulatan & bayangan bawaannya dibuang), diperbesar. */
-function topicIcon(name: string): string | null {
+/** Isi gambar objek dari ikon kategori (bulatan & bayangan bawaannya dibuang). */
+function iconBody(name: string): string {
   try {
     const raw = fs.readFileSync(path.join(process.cwd(), 'public', 'categories', `${name}.svg`), 'utf8');
-    const body = raw
+    return raw
       .replace(/<\?xml[^>]*>/, '')
       .replace(/<svg[^>]*>/, '')
       .replace('</svg>', '')
       .replace(/<defs>[\s\S]*?<\/defs>/, '')
       .replace(/<circle cx="60" cy="60" r="58"[^>]*\/>/, '')
       .replace(/<polygon[^>]*clip-path="url\(#c\)"[^>]*\/>/, '');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 84 84">${body}</svg>`;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
   } catch {
-    return null;
+    return '';
   }
 }
 
@@ -83,31 +81,42 @@ function isLight(hex: string) {
   return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.68;
 }
 
-/** Ukuran kartu putih tempat foto produk. */
-const CARD = 400;
-const CARD_R = 44;
+/** Ukuran ikon di tengah sampul. */
+const ICON = 420;
 
 /**
- * Latar gaya ikon datar: warna penuh + satu kartu putih bersudut tumpul + bayangan panjang miring.
- * Dibuat sebagai SVG supaya bayangannya rapi.
+ * Sampul gaya ikon datar: latar satu warna + ikon besar di tengah + bayangan panjang miring
+ * yang jatuh dari bentuk ikon itu sendiri (siluet digeser 45° berulang kali).
  */
-function backdropSvg(color: string) {
-  const x = (W - CARD) / 2;
-  const y = (H - CARD) / 2;
-  const L = 900;
-  // Bayangan: sisi kanan-atas & kiri-bawah kartu ditarik 45° ke kanan bawah
-  const shadow = `${x + CARD},${y} ${x + CARD + L},${y + L} ${x + L},${y + CARD + L} ${x},${y + CARD}`;
+function coverSvg(color: string, body: string) {
+  const x = (W - ICON) / 2;
+  const y = (H - ICON) / 2;
+  // Bayangan dibuat dengan penggandaan: tiap langkah menyalin hasil sebelumnya sejauh 2× → 7 langkah = 128 lapis
+  // (hemat memori dibanding 128 lapis terpisah).
+  const STEP = 8;
+  const levels = Array.from({ length: 7 }, (_, i) => i);
+  const icon = `<svg x="${x}" y="${y}" width="${ICON}" height="${ICON}" viewBox="18 18 84 84">${body}</svg>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs><filter id="ls" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+    <feFlood flood-color="${shade(color)}"/><feComposite in2="SourceAlpha" operator="in" result="s"/>
+    <feOffset in="s" dx="${STEP}" dy="${STEP}" result="r0"/>
+    ${levels
+      .slice(1)
+      .map((i) => {
+        const d = STEP * 2 ** (i - 1);
+        return `<feOffset in="r${i - 1}" dx="${d}" dy="${d}" result="m${i}"/><feMerge result="r${i}"><feMergeNode in="r${i - 1}"/><feMergeNode in="m${i}"/></feMerge>`;
+      })
+      .join('')}
+  </filter></defs>
   <rect width="${W}" height="${H}" fill="${color}"/>
-  <polygon points="${shadow}" fill="${shade(color)}"/>
-  <rect x="${x}" y="${y}" width="${CARD}" height="${CARD}" rx="${CARD_R}" fill="#ffffff"/>
+  ${body ? `<g filter="url(#ls)">${icon}</g>${icon}` : ''}
 </svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`; // isi SVG hanya ASCII
 }
 
 /**
  * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
- * Gaya ikon kategori: warna cerah datar + bayangan panjang, ilustrasi ikon sesuai topik di kartu putih, tulisan minimal.
+ * Gaya ikon kategori: warna cerah datar, ikon sesuai topik + bayangan panjang, tanpa kotak & tulisan minimal.
  */
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
@@ -121,42 +130,27 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
     TOPICS.find((t) => t.match.test(article.tags.join(' '))) ||
     { ...DEFAULT_TOPIC, color: FALLBACK[article.id % FALLBACK.length] };
   const color = topic.color;
-  const icon = topicIcon(topic.icon);
 
   const bold = await font(800);
   const family = bold ? 'Jakarta' : undefined;
-  const PHOTO = CARD - 70;
 
   return new ImageResponse(
     (
       <div style={{ width: W, height: H, display: 'flex', position: 'relative', fontFamily: family }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={backdropSvg(color)} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
-        {icon && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={icon} width={PHOTO} height={PHOTO} style={{ position: 'absolute', left: (W - PHOTO) / 2, top: (H - PHOTO) / 2 }} />
-        )}
-
-        {/* label kecil: kategori artikel & logo */}
-        {article.category?.name && (
-          <div
-            style={{
-              position: 'absolute',
-              left: 48,
-              bottom: 44,
-              display: 'flex',
-              padding: '12px 24px',
-              borderRadius: 9999,
-              background: '#ffffff',
-              color: '#111111',
-              fontSize: 26,
-              fontWeight: 800,
-            }}
-          >
-            {article.category.name}
-          </div>
-        )}
-        <div style={{ position: 'absolute', right: 52, bottom: 50, display: 'flex', fontSize: 30, fontWeight: 800, letterSpacing: 8, color: isLight(color) ? '#111111' : '#ffffff' }}>
+        <img src={coverSvg(color, iconBody(topic.icon))} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
+        <div
+          style={{
+            position: 'absolute',
+            right: 48,
+            bottom: 40,
+            display: 'flex',
+            fontSize: 26,
+            fontWeight: 800,
+            letterSpacing: 8,
+            color: isLight(color) ? 'rgba(17,17,17,0.75)' : 'rgba(255,255,255,0.9)',
+          }}
+        >
           URBANIX
         </div>
       </div>
