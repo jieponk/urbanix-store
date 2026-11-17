@@ -134,43 +134,135 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
   const t = getT();
   if (!whatsappNumber) return null;
   const steps = [
-    t('Masukkan produk ke keranjang.'),
-    t('Di checkout, pilih Pesan via WhatsApp.'),
-    percent > 0 ? t('Kirim chat ke admin. Total sudah dipotong {n}%.', { n: percent }) : t('Kirim chat ke admin untuk konfirmasi ongkir.'),
+    { icon: <StepCart />, title: t('Masukkan ke keranjang'), text: t('Pilih produk dan varian yang kamu mau.') },
+    { icon: <StepForm />, title: t('Pilih "Pesan via WhatsApp"'), text: t('Di checkout, isi alamat lalu pilih cara pesan ini.') },
+    {
+      icon: <StepChat />,
+      title: t('Kirim chat ke admin'),
+      text: percent > 0 ? t('Total otomatis dipotong {n}%. Admin konfirmasi ongkir & pembayaran.', { n: percent }) : t('Admin konfirmasi ongkir & pembayaran.'),
+    },
   ];
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="grid gap-6 rounded-xl bg-cobalt-900 p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
-        <div>
-          <h2 id="judul-wa" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            {percent > 0 ? t('Pesan via WhatsApp, hemat {n}%', { n: percent }) : t('Pesan via WhatsApp')}
-          </h2>
-          <p className="mt-2 max-w-md text-sm leading-6 text-white/80">
-            {t('Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.')}
-            {percent > 0 && !appliesToPromo && ' ' + t('Potongan tidak berlaku untuk produk yang sedang promo.')}
-          </p>
-          <a
-            href={`https://wa.me/${whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-white/85"
-          >
-            {t('Chat admin sekarang')}
-          </a>
-        </div>
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {steps.map((step, i) => (
-            <li key={step} className="rounded-2xl bg-cobalt-900/60 p-4 ring-1 ring-white/10">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-extrabold text-cobalt-900">
-                {i + 1}
+      <div className="relative isolate overflow-hidden rounded-2xl bg-cobalt-900 p-6 text-white sm:p-8 lg:p-10">
+        {/* Aksen latar: gelembung chat samar */}
+        <svg aria-hidden="true" viewBox="0 0 200 200" className="wa-float pointer-events-none absolute -right-10 -top-10 -z-10 h-56 w-56 text-white/[0.04] sm:h-72 sm:w-72">
+          <path fill="currentColor" d="M100 10a90 90 0 0 0-78 135L10 190l46-12A90 90 0 1 0 100 10z" />
+        </svg>
+
+        <div className="grid gap-8 lg:grid-cols-[1fr_1.45fr] lg:items-center">
+          <div>
+            <div className="flex items-center gap-4">
+              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+                <span aria-hidden="true" className="wa-ring absolute inset-0 rounded-full bg-emerald-500/40" />
+                <span aria-hidden="true" className="wa-ring wa-ring-2 absolute inset-0 rounded-full bg-emerald-500/30" />
+                <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40">
+                  <WaLogo />
+                </span>
               </span>
-              <p className="mt-3 text-sm font-semibold leading-6">{step}</p>
-            </li>
-          ))}
-        </ol>
+              {percent > 0 && (
+                <span className="wa-pop rounded-full bg-sun-500 px-3 py-1 text-sm font-extrabold text-white">
+                  {t('Hemat {n}%', { n: percent })}
+                </span>
+              )}
+            </div>
+            <h2 id="judul-wa" className="mt-5 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+              {percent > 0 ? (
+                <>
+                  {t('Pesan via WhatsApp,')} <span className="text-sun-400">{t('lebih hemat {n}%', { n: percent })}</span>
+                </>
+              ) : (
+                t('Pesan via WhatsApp')
+              )}
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-white/75">
+              {t('Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.')}
+              {percent > 0 && !appliesToPromo && ' ' + t('Potongan tidak berlaku untuk produk yang sedang promo.')}
+            </p>
+            <a
+              href={`https://wa.me/${whatsappNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-600"
+            >
+              <WaLogo size={18} />
+              {t('Chat admin sekarang')}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          </div>
+
+          <ol className="relative grid gap-4 sm:grid-cols-3 sm:gap-5">
+            {/* Garis penghubung yang "mengalir" */}
+            <svg aria-hidden="true" className="pointer-events-none absolute left-[16%] right-[16%] top-9 hidden h-2 sm:block" preserveAspectRatio="none" viewBox="0 0 100 2">
+              <line x1="0" y1="1" x2="100" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" className="wa-flow text-white/25" />
+            </svg>
+            {steps.map((step, i) => (
+              <li key={i} className="relative flex gap-4 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 sm:flex-col sm:gap-3 sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
+                <span className="relative mx-0 flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:mx-auto">
+                  {step.icon}
+                  <span className="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-sun-500 text-xs font-extrabold text-white ring-4 ring-cobalt-900">
+                    {i + 1}
+                  </span>
+                </span>
+                <span>
+                  <span className="block text-sm font-extrabold">{step.title}</span>
+                  <span className="mt-1 block text-[13px] leading-5 text-white/65">{step.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
+  );
+}
+
+/** Ikon chat generik (bukan logo WhatsApp; logo bermerek hanya dari file resmi). */
+function WaLogo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-white">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
+      <path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" strokeWidth="2.6" />
+    </svg>
+  );
+}
+
+/* Ikon langkah: bergerak halus terus-menerus (mati otomatis bila pengguna memilih kurangi gerakan) */
+const stepSvg = { width: 40, height: 40, viewBox: '0 0 48 48', fill: 'none', stroke: 'currentColor', strokeWidth: 2.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+
+function StepCart() {
+  return (
+    <svg {...stepSvg}>
+      <rect className="wa-drop" x="20" y="6" width="10" height="10" rx="2" fill="#ff3b4e" stroke="none" />
+      <path d="M5 12h5l4.5 20h21L40 18H16" />
+      <circle cx="18" cy="39" r="2.6" />
+      <circle cx="32" cy="39" r="2.6" />
+    </svg>
+  );
+}
+
+function StepForm() {
+  return (
+    <svg {...stepSvg}>
+      <rect x="9" y="5" width="30" height="38" rx="4" />
+      <path d="M16 15h16M16 22h10" />
+      <circle cx="24" cy="33" r="6" fill="#22c55e" stroke="none" className="wa-pulse" />
+      <path d="m21 33 2.2 2.2L27.5 31" stroke="#fff" strokeWidth="2.4" pathLength={1} className="wa-check" />
+    </svg>
+  );
+}
+
+function StepChat() {
+  return (
+    <svg {...stepSvg}>
+      <path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H20l-8 7v-7H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3z" />
+      <circle className="wa-dot" cx="16" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
+      <circle className="wa-dot wa-dot-2" cx="24" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
+      <circle className="wa-dot wa-dot-3" cx="32" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
+    </svg>
   );
 }
 
