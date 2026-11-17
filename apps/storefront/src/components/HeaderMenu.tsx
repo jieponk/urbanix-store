@@ -137,6 +137,36 @@ export default function HeaderActions() {
 type Cat = { id: number; name: string };
 
 /**
+ * true saat pembeli scroll ke bawah (bar disembunyikan), false saat scroll ke atas,
+ * dekat bagian atas halaman, atau sudah mentok di bawah (footer terlihat).
+ */
+function useHideOnScroll(pathname: string) {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    setHidden(false);
+    let last = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const delta = y - last;
+        const nearBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 80;
+        if (y < 80 || nearBottom) setHidden(false);
+        else if (delta > 6) setHidden(true);
+        else if (delta < -6) setHidden(false);
+        if (Math.abs(delta) > 6) last = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
+  return hidden;
+}
+
+/**
  * HP (<768px): bar navigasi bawah — Beranda, Kategori, Artikel, Keranjang, Lainnya.
  * Kategori & Lainnya membuka panel yang meluncur dari bawah.
  * Disembunyikan di halaman detail produk (sudah ada bar "Beli" di bawah).
@@ -163,6 +193,8 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
     };
   }, [sheet]);
 
+  const hidden = useHideOnScroll(pathname) && !sheet;
+
   if (/^\/produk\/[^/]+/.test(pathname)) return null;
 
   const active = (key: string) =>
@@ -179,13 +211,16 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
               : false;
 
   const tab = (key: string) =>
-    `relative flex flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 text-[11px] font-semibold transition-colors ${
+    `relative z-0 flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10.5px] font-semibold transition-colors duration-300 ${
       active(key) ? 'text-ink' : 'text-slate-500'
     }`;
+  // Sorotan tab aktif: kapsul lembut di belakang ikon + label (gaya iOS terbaru)
   const bar = (key: string) => (
     <span
       aria-hidden="true"
-      className={`absolute top-0 h-0.5 rounded-full bg-sun-400 transition-all duration-300 ${active(key) ? 'w-6 opacity-100' : 'w-0 opacity-0'}`}
+      className={`absolute inset-y-0.5 inset-x-0.5 -z-10 rounded-full bg-ink/[0.08] transition-all duration-300 ease-out dark:bg-white/[0.12] ${
+        active(key) ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+      }`}
     />
   );
   const row =
@@ -194,7 +229,7 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
   return (
     <>
       {/* Ruang kosong agar isi paling bawah (footer) tidak tertutup bar */}
-      <div aria-hidden="true" className="h-[calc(3.6rem+env(safe-area-inset-bottom))] bg-cobalt-900 md:hidden" />
+      <div aria-hidden="true" className="h-[calc(5rem+env(safe-area-inset-bottom))] bg-cobalt-900 md:hidden" />
 
       {/* Panel dari bawah */}
       <div
@@ -207,7 +242,7 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
         aria-modal="true"
         aria-label={sheet === 'cat' ? t('Kategori') : t('Lainnya')}
         aria-hidden={!sheet}
-        className={`fixed inset-x-0 bottom-0 z-[56] max-h-[75vh] overflow-y-auto rounded-t-3xl bg-surface px-4 pb-[calc(4.6rem+env(safe-area-inset-bottom))] pt-2 shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-[56] max-h-[75vh] overflow-y-auto rounded-t-3xl bg-surface px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-2 shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none md:hidden ${
           sheet ? 'translate-y-0' : 'pointer-events-none translate-y-full'
         }`}
       >
@@ -266,9 +301,12 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
       </div>
 
       {/* Bar navigasi bawah */}
+      {/* Kapsul mengambang: hilang saat scroll ke bawah, muncul lagi saat scroll ke atas */}
       <nav
         aria-label={t('Navigasi utama')}
-        className="fixed inset-x-0 bottom-0 z-[57] flex border-t border-slate-200 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur print:hidden md:hidden"
+        className={`fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-[57] flex rounded-full bg-surface/75 p-1 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-xl backdrop-saturate-150 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none print:hidden dark:ring-white/10 md:hidden ${
+          hidden ? 'pointer-events-none translate-y-[calc(100%+1.5rem)] opacity-0' : 'translate-y-0 opacity-100'
+        }`}
       >
         <Link href="/" className={tab('home')} aria-current={pathname === '/' ? 'page' : undefined}>
           {bar('home')}
