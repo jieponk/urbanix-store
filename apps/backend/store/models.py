@@ -622,6 +622,15 @@ class NewsSource(models.Model):
     sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
     last_fetched_at = models.DateTimeField("Terakhir diambil", null=True, blank=True)
     last_error = models.CharField("Error terakhir", max_length=255, blank=True)
+    full_text_allowed = models.BooleanField(
+        "Boleh tampilkan teks penuh", default=False,
+        help_text="Centang HANYA untuk siaran pers resmi atau media yang memberi izin tertulis.",
+    )
+    required_keywords = models.CharField(
+        "Kata kunci wajib", max_length=300, blank=True,
+        help_text="Pisahkan koma. Kalau diisi, hanya berita yang judul/cuplikannya memuat salah satu kata ini "
+                  "yang diambil (berguna untuk feed siaran pers yang campur).",
+    )
 
     class Meta:
         ordering = ["sort_order", "name"]
@@ -633,7 +642,7 @@ class NewsSource(models.Model):
 
 
 class NewsArticle(models.Model):
-    """Ringkasan berita (judul + cuplikan pendek + link). Isi artikel tetap dibaca di situs sumber."""
+    """Ringkasan berita (judul + cuplikan + link) + inti berita buatan AI. Teks penuh hanya untuk sumber berizin."""
 
     source = models.ForeignKey(NewsSource, on_delete=models.CASCADE, related_name="articles", verbose_name="Sumber")
     guid = models.CharField(max_length=500, unique=True)
@@ -648,6 +657,15 @@ class NewsArticle(models.Model):
     is_visible = models.BooleanField("Tampil", default=True)
     is_pinned = models.BooleanField("Sematkan di atas", default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Teks penuh hanya untuk sumber berizin (lihat NewsSource.full_text_allowed).
+    body = models.TextField("Teks penuh (sumber berizin)", blank=True)
+    # Inti berita buatan AI (tulisan baru, bukan salinan).
+    AI_STATUS = [("pending", "Menunggu"), ("done", "Selesai"), ("skip", "Dilewati"), ("failed", "Gagal")]
+    ai_status = models.CharField("Status AI", max_length=8, choices=AI_STATUS, default="pending", db_index=True)
+    ai_points = models.JSONField("Inti berita (AI)", default=list, blank=True)
+    ai_conclusion = models.TextField("Kesimpulan (AI)", blank=True)
+    ai_opinion = models.TextField("Pendapat Urbanix (AI)", blank=True)
+    ai_generated_at = models.DateTimeField("Dibuat AI pada", null=True, blank=True)
 
     class Meta:
         ordering = ["-is_pinned", "-published_at"]

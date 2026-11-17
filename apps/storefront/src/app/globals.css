@@ -357,3 +357,5 @@ body {
   .inspo-reveal, .inspo-glow, .inspo-rings, .ico-sparkle { animation: none !important; }
   .ico-arrow *, .ico-clock *, .ico-cat, .ico-pin { transition: none !important; }
 }
+.ico-ext { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.group:hover .ico-ext { transform: translate(2px, -2px); }

@@ -271,6 +271,9 @@ def fetch_source(source) -> int:
     items.sort(key=lambda i: i.published_at, reverse=True)
     cutoff = timezone.now() - timedelta(days=KEEP_DAYS)
     created = []
+    keywords = [k.strip().lower() for k in (source.required_keywords or "").split(",") if k.strip()]
+    if keywords:
+        items = [i for i in items if any(k in f"{i.title} {i.summary}".lower() for k in keywords)]
     for item in items[: source.max_items]:
         if item.published_at < cutoff:
             continue
@@ -309,6 +312,13 @@ def refresh_all(force: bool = False) -> dict:
     # Coba lagi terjemahan yang dulu gagal (mis. kuota DeepL habis / kunci baru diisi).
     if deepl_key():
         translate_articles(list(NewsArticle.objects.filter(is_translated=False, source__language="en")[:40]))
+    # Inti berita + opini AI (dibatasi per pembaruan supaya biaya terkendali).
+    from .news_ai import process_pending
+
+    try:
+        report["_ai"] = process_pending()
+    except Exception:  # noqa: BLE001
+        log.exception("Inti berita AI gagal")
     NewsArticle.objects.filter(published_at__lt=now - timedelta(days=KEEP_DAYS), is_pinned=False).delete()
     return report
 

@@ -261,8 +261,8 @@ class VoucherAdmin(admin.ModelAdmin):
 
 @admin.register(NewsSource)
 class NewsSourceAdmin(admin.ModelAdmin):
-    list_display = ("name", "language", "is_active", "article_count", "last_fetched_at", "status")
-    list_editable = ("is_active",)
+    list_display = ("name", "language", "is_active", "full_text_allowed", "article_count", "last_fetched_at", "status")
+    list_editable = ("is_active", "full_text_allowed")
     readonly_fields = ("last_fetched_at", "last_error")
     actions = ("fetch_now",)
 
@@ -292,17 +292,28 @@ class NewsSourceAdmin(admin.ModelAdmin):
 
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
-    list_display = ("title", "source", "published_at", "is_translated", "is_visible", "is_pinned")
+    list_display = ("title", "source", "published_at", "is_translated", "ai_status", "is_visible", "is_pinned")
     list_editable = ("is_visible", "is_pinned")
-    list_filter = ("source", "is_translated", "is_visible", "is_pinned")
+    list_filter = ("source", "is_translated", "ai_status", "is_visible", "is_pinned")
     search_fields = ("title", "original_title")
     date_hierarchy = "published_at"
     readonly_fields = ("original_title", "original_summary", "link", "preview", "created_at")
     fields = (
         "source", "link", "published_at", "image_url", "preview", "original_title", "original_summary",
         "title", "summary", "is_translated", "is_visible", "is_pinned", "created_at",
+        "ai_status", "ai_points", "ai_conclusion", "ai_opinion", "ai_generated_at", "body",
     )
-    actions = ("translate_selected",)
+    actions = ("translate_selected", "ai_selected")
+
+    @admin.action(description="Buat ulang inti berita AI")
+    def ai_selected(self, request, queryset):
+        from .news_ai import api_key, process_article
+
+        if not api_key():
+            self.message_user(request, "ANTHROPIC_API_KEY belum diisi di server.", level="error")
+            return
+        done = sum(process_article(a) == "done" for a in queryset.select_related("source")[:20])
+        self.message_user(request, f"{done} berita selesai dirangkum AI (maks. 20 sekali jalan).")
 
     @admin.display(description="Artikel asli")
     def link(self, obj):

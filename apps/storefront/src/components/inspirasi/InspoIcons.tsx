@@ -179,3 +179,32 @@ export function categoryTone(slug?: string) {
   if (/promo|event/.test(s)) return 'bg-rose-500/10 text-rose-700 ring-rose-500/25 dark:text-rose-300';
   return 'bg-sky-500/10 text-sky-700 ring-sky-500/25 dark:text-sky-300';
 }
+
+export const CheckCircle = ({ size = 18, className }: P) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="m8.5 12.2 2.3 2.3 4.7-4.9" />
+  </svg>
+);
+
+/** Ikon AI: kilau dua bintang, berkelip pelan. */
+export const AiSpark = ({ size = 18, className }: P) => (
+  <svg {...base(size, `ico-sparkle ${className ?? ''}`)}>
+    <path d="M10 3.5 11.6 8.4 16.5 10l-4.9 1.6L10 16.5 8.4 11.6 3.5 10l4.9-1.6z" />
+    <path d="M18 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
+  </svg>
+);
+
+export const Quote = ({ size = 18, className }: P) => (
+  <svg {...base(size, className)}>
+    <path d="M9.5 7.5H6a1.5 1.5 0 0 0-1.5 1.5v3A1.5 1.5 0 0 0 6 13.5h3.5V16a3 3 0 0 1-3 3M19.5 7.5H16a1.5 1.5 0 0 0-1.5 1.5v3a1.5 1.5 0 0 0 1.5 1.5h3.5V16a3 3 0 0 1-3 3" />
+  </svg>
+);
+
+export const External = ({ size = 16, className }: P) => (
+  <svg {...base(size, `ico-ext ${className ?? ''}`)}>
+    <path d="M14 4.5h5.5V10" />
+    <path d="M19.5 4.5 11 13" />
+    <path d="M17 13.5V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V8.5A1.5 1.5 0 0 1 6 7h4.5" />
+  </svg>
+);

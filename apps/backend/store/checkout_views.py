@@ -228,6 +228,7 @@ def _article(a):
         "published_at": a.published_at,
         "is_translated": a.is_translated or a.source.language == "id",
         "is_pinned": a.is_pinned,
+        "has_ai": a.ai_status == "done",
     }
 
 
@@ -307,5 +308,12 @@ def news_detail(request, pk):
         "original_title": article.original_title,
         "related_brand": brand,
         "related_products": products,
+        "ai": {
+            "points": article.ai_points,
+            "conclusion": article.ai_conclusion,
+            "opinion": article.ai_opinion,
+            "generated_at": article.ai_generated_at,
+        } if article.ai_status == "done" else None,
+        "body": article.body if article.source.full_text_allowed else "",
         "more": [_article(a) for a in more],
     })

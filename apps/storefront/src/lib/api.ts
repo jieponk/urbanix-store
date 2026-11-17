@@ -245,6 +245,7 @@ export type NewsArticle = {
   published_at: string;
   is_translated: boolean;
   is_pinned: boolean;
+  has_ai?: boolean;
 };
 
 export type NewsPage = {
@@ -275,6 +276,8 @@ export type NewsDetail = NewsArticle & {
   related_brand: string;
   related_products: Product[];
   more: NewsArticle[];
+  ai: { points: string[]; conclusion: string; opinion: string; generated_at: string | null } | null;
+  body: string;
 };
 
 export async function getNewsDetail(id: string): Promise<NewsDetail | null> {

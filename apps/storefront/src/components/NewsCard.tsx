@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import NewsImage from '@/components/NewsImage';
 import type { NewsArticle } from '@/lib/api';
-import { ArrowRight, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
+import { AiSpark, ArrowRight, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
 
 /** "3 jam lalu", "Kemarin", "8 Nov 2026". */
 export function newsDate(iso: string, now = Date.now()) {
@@ -55,6 +55,11 @@ export default function NewsCard({
         {article.is_pinned && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-sun-400 px-2.5 py-1 text-[11px] font-extrabold text-cobalt-900 shadow-sm">
             <Sparkle size={11} /> Pilihan
+          </span>
+        )}
+        {article.has_ai && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-cobalt-900/85 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm backdrop-blur">
+            <AiSpark size={12} className="text-sun-400" /> Ada ringkasan
           </span>
         )}
       </div>
