@@ -6,7 +6,19 @@ import { ArrowRight, Check } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Status Pesanan', robots: { index: false, follow: false } };
+/** Judul & deskripsi pratinjau link (WhatsApp). Tanpa data pribadi; gambar dari opengraph-image.tsx. */
+export function generateMetadata({ params }: { params: { orderNumber: string } }) {
+  const no = decodeURIComponent(params.orderNumber || '').toUpperCase();
+  const title = `Pesanan ${no} · Urbanix Store`;
+  const description = 'Cek status pesanan, total, dan invoice belanjamu di Urbanix Store.';
+  return {
+    title: `Pesanan ${no}`,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: { title, description, type: 'website', siteName: 'Urbanix Store' },
+    twitter: { card: 'summary_large_image', title, description },
+  };
+}
 
 type OrderDetail = {
   order_number: string;
