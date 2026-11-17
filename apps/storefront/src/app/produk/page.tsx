@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
+import { categoryArt } from '@/components/HomeSections';
 import {
   API,
   fetchAll,
@@ -101,7 +102,7 @@ export default async function CatalogPage({
     ? categories
         .map((c) => {
           const items = activeProducts.filter((p) => String(p.category) === String(c.id) && (p.discount_percent ?? 0) > 0);
-          return { id: String(c.id), name: c.name, count: items.length, max: Math.max(0, ...items.map((p) => p.discount_percent ?? 0)) };
+          return { id: String(c.id), name: c.name, art: categoryArt(c), count: items.length, max: Math.max(0, ...items.map((p) => p.discount_percent ?? 0)) };
         })
         .filter((c) => c.count > 0)
         .sort((a, b) => b.count - a.count)
@@ -161,31 +162,63 @@ export default async function CatalogPage({
         </form>
 
         {promoCats.length > 0 && (
-          <nav aria-label={t('Promo per kategori')} className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-            <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-              {[{ id: '', name: t('Semua promo'), count: promoTotal, max: 0 }, ...promoCats].map((c) => {
+          <nav aria-label={t('Promo per kategori')} className="mt-5">
+            <ul className="grid grid-cols-4 gap-x-1 gap-y-3 sm:grid-cols-6 lg:grid-cols-9">
+              {[{ id: '', name: t('Semua'), count: promoTotal, max: 0, art: '' }, ...promoCats].map((c, i) => {
                 const on = selectedCategory === c.id;
                 return (
-                  <li key={c.id || 'all'}>
-                    <Link
-                      href={chipHref(c.id)}
-                      aria-current={on ? 'page' : undefined}
-                      className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors ${
-                        on ? 'border-ink bg-ink text-surface' : 'border-slate-200 bg-surface text-ink hover:border-slate-400'
-                      }`}
-                    >
-                      {c.name}
-                      <span className={`text-xs ${on ? 'text-surface/70' : 'text-slate-500'}`}>{c.count}</span>
-                      {c.max > 0 && (
-                        <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${on ? 'bg-sun-500 text-white' : 'bg-sale-50 text-sale-600'}`}>
-                          {t('s/d {n}%', { n: c.max })}
-                        </span>
-                      )}
+                  <li key={c.id || 'all'} className={i >= 8 && !on ? 'hidden sm:block' : ''}>
+                    <Link href={chipHref(c.id)} aria-current={on ? 'page' : undefined} title={`${c.name} (${c.count})`} className="group flex flex-col items-center gap-1.5 text-center">
+                      <span
+                        className={`relative flex h-14 w-14 items-center justify-center rounded-2xl transition-colors sm:h-16 sm:w-16 ${
+                          on ? 'bg-ink ring-2 ring-ink' : 'bg-slate-100 group-hover:bg-slate-200'
+                        }`}
+                      >
+                        {c.art ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.art} alt="" className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
+                        ) : (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={on ? 'text-surface' : 'text-ink'} aria-hidden="true">
+                            <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+                            <circle cx="7.5" cy="7.5" r="1.5" />
+                          </svg>
+                        )}
+                        {c.max > 0 && (
+                          <span className="absolute -right-1.5 -top-1.5 rounded-full bg-sale-600 px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-white ring-2 ring-surface">
+                            -{c.max}%
+                          </span>
+                        )}
+                      </span>
+                      <span className={`line-clamp-2 text-[11px] leading-tight sm:text-xs ${on ? 'font-extrabold text-ink' : 'font-semibold text-slate-600'}`}>{c.name}</span>
                     </Link>
                   </li>
                 );
               })}
             </ul>
+            {promoCats.length + 1 > 8 && (
+              <details className="group/more mt-3 sm:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-center gap-1 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">
+                  <span className="group-open/more:hidden">{t('Lihat semua kategori')}</span>
+                  <span className="hidden group-open/more:inline">{t('Tutup')}</span>
+                </summary>
+                <ul className="mt-3 grid grid-cols-4 gap-x-1 gap-y-3">
+                  {promoCats.slice(7).filter((c) => c.id !== selectedCategory).map((c) => (
+                    <li key={c.id}>
+                      <Link href={chipHref(c.id)} className="flex flex-col items-center gap-1.5 text-center">
+                        <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={c.art} alt="" className="h-9 w-9 object-contain" />
+                          {c.max > 0 && (
+                            <span className="absolute -right-1.5 -top-1.5 rounded-full bg-sale-600 px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-white ring-2 ring-surface">-{c.max}%</span>
+                          )}
+                        </span>
+                        <span className="line-clamp-2 text-[11px] font-semibold leading-tight text-slate-600">{c.name}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </nav>
         )}
 

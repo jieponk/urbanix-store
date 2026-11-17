@@ -12,6 +12,11 @@ const CATEGORY_ART = new Set([
   'webcam-komputer', 'lainnya',
 ]);
 
+/** Ilustrasi kategori di public/categories (dipakai juga di halaman promo). */
+export function categoryArt(category: Category) {
+  return `/categories/${categorySlug(category)}.svg`;
+}
+
 /** "Audio & Mic" -> "audio-mic" (sama dengan slug kategori di backend). */
 function categorySlug(category: Category) {
   const slug =
