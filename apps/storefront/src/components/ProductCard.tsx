@@ -23,7 +23,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/produk/${product.id}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface md:transition md:duration-200 md:hover:-translate-y-1 md:hover:border-slate-300 md:hover:shadow-xl md:hover:shadow-slate-200/60"
     >
       <div className="relative aspect-square overflow-hidden bg-white p-3 sm:p-5">
         {product.image_url ? (
@@ -31,7 +31,7 @@ export default function ProductCard({ product }: { product: Product }) {
             src={productImg(product.image_url, 450)}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+            className="h-full w-full object-contain md:transition md:duration-300 md:group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-center text-xs text-slate-400">

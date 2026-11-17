@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { BackLink } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
-import RevealGrid from '@/components/RevealGrid';
 import {
   API,
   fetchAll,
@@ -97,8 +96,23 @@ export default async function CatalogPage({
     (category) => String(category.id) === selectedCategory
   )?.name;
 
+  // Promo: kategori yang punya produk diskon (jumlah + diskon terbesar), untuk pilihan cepat
+  const promoCats = promoOnly
+    ? categories
+        .map((c) => {
+          const items = activeProducts.filter((p) => String(p.category) === String(c.id) && (p.discount_percent ?? 0) > 0);
+          return { id: String(c.id), name: c.name, count: items.length, max: Math.max(0, ...items.map((p) => p.discount_percent ?? 0)) };
+        })
+        .filter((c) => c.count > 0)
+        .sort((a, b) => b.count - a.count)
+    : [];
+  const promoTotal = promoOnly ? activeProducts.filter((p) => (p.discount_percent ?? 0) > 0).length : 0;
+  const chipHref = (cat: string) => `/produk?promo=1${cat ? `&category=${cat}` : ''}${params?.q ? `&q=${encodeURIComponent(params.q)}` : ''}`;
+
   const title = promoOnly
-    ? t('Produk promo')
+    ? selectedCategoryName
+      ? t('Promo {name}', { name: selectedCategoryName })
+      : t('Produk promo')
     : selectedCategory
     ? selectedCategoryName || t('Produk kategori')
     : searchQuery
@@ -146,6 +160,35 @@ export default async function CatalogPage({
           </button>
         </form>
 
+        {promoCats.length > 0 && (
+          <nav aria-label={t('Promo per kategori')} className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+            <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+              {[{ id: '', name: t('Semua promo'), count: promoTotal, max: 0 }, ...promoCats].map((c) => {
+                const on = selectedCategory === c.id;
+                return (
+                  <li key={c.id || 'all'}>
+                    <Link
+                      href={chipHref(c.id)}
+                      aria-current={on ? 'page' : undefined}
+                      className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors ${
+                        on ? 'border-ink bg-ink text-surface' : 'border-slate-200 bg-surface text-ink hover:border-slate-400'
+                      }`}
+                    >
+                      {c.name}
+                      <span className={`text-xs ${on ? 'text-surface/70' : 'text-slate-500'}`}>{c.count}</span>
+                      {c.max > 0 && (
+                        <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${on ? 'bg-sun-500 text-white' : 'bg-sale-50 text-sale-600'}`}>
+                          {t('s/d {n}%', { n: c.max })}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        )}
+
         {(selectedCategory || searchQuery || promoOnly) && (
           <div className="mt-3">
             <BackLink href="/produk">{t('Tampilkan semua produk')}</BackLink>
@@ -170,11 +213,11 @@ export default async function CatalogPage({
             </p>
           </div>
         ) : (
-          <RevealGrid className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </RevealGrid>
+          </div>
         )}
       </div>
     </div>
