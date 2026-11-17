@@ -578,6 +578,7 @@ const EN: Record<string, string> = {
   'Pesanan {no}': 'Order {no}',
   'Sudah diulas ({n} bintang). Terima kasih!': 'Reviewed ({n} stars). Thank you!',
   // ---------- 404 & error ----------
+  'Video YouTube': 'YouTube video',
   'Halaman tidak ditemukan': 'Page not found',
   'Link yang kamu buka mungkin salah ketik, atau produknya sudah tidak tersedia.': 'The link may be mistyped, or the product is no longer available.',
   'Cari kamera, lensa, drone…': 'Search cameras, lenses, drones…',

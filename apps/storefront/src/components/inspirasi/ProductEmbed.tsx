@@ -1,11 +1,14 @@
 import Link from 'next/link';
-import { money, type Product } from '@/lib/api';
+import type { Product } from '@/lib/api';
+import { money } from '@/lib/money';
 import { productImg } from '@/lib/img';
-import { getT } from '@/lib/lang-server';
 
 /** Kartu produk yang disisipkan di tengah artikel ([[produk:ID]]). */
-export default function ProductEmbed({ product }: { product?: Product }) {
-  const t = getT();
+type T = (text: string, vars?: Record<string, string | number>) => string;
+const asIs: T = (text, vars) => (vars ? text.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? '')) : text);
+
+/** `t` dikirim dari halaman (server); di pratinjau Seller Center tetap Bahasa Indonesia. */
+export default function ProductEmbed({ product, t = asIs }: { product?: Product; t?: T }) {
   if (!product) return null;
   const normal = Number(product.price) || 0;
   const final = Number(product.final_price ?? product.discount_price) || normal;

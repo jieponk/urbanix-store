@@ -172,7 +172,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
               </details>
             )}
 
-            <ArticleBody blocks={blocks} products={article.products} />
+            <ArticleBody blocks={blocks} products={article.products} t={t} />
             <ArticleEnhancer targetId="isi-artikel" />
 
             {/* Label */}
