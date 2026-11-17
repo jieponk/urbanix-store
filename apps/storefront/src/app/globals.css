@@ -318,3 +318,42 @@ body {
 /* Garis progres banner: saat selesai, banner berganti (lihat BannerSlider) */
 @keyframes banner-progress { from { width: 0%; } to { width: 100%; } }
 .banner-progress { animation-name: banner-progress; animation-timing-function: linear; animation-fill-mode: forwards; }
+
+/* ===== Inspirasi & Berita: animasi halus ===== */
+@keyframes inspo-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.inspo-reveal { animation: inspo-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes inspo-float { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-24px, 18px) scale(1.06); } }
+.inspo-glow { animation: inspo-float 14s ease-in-out infinite; }
+@keyframes inspo-spin { to { transform: translateY(-50%) rotate(360deg); } }
+.inspo-rings { animation: inspo-spin 80s linear infinite; }
+.inspo-scroll { scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); mask-image: linear-gradient(90deg, #000 92%, transparent); }
+.inspo-scroll::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { .inspo-scroll { -webkit-mask-image: none; mask-image: none; flex-wrap: wrap; } }
+
+/* Panah: kepala meluncur, batang memanjang */
+.ico-arrow .ico-arrow-head, .ico-arrow .ico-arrow-line { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.ico-arrow .ico-arrow-line { transform-origin: 4px 12px; }
+.group:hover .ico-arrow .ico-arrow-head { transform: translateX(3px); }
+.group:hover .ico-arrow .ico-arrow-line { transform: scaleX(1.2); }
+.group:hover .ico-arrow-l { transform: translateX(-3px); transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+/* Jam: jarum berputar */
+.ico-clock .ico-clock-hand { transform-origin: 12px 12px; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.group:hover .ico-clock .ico-clock-hand { transform: rotate(120deg); }
+/* Ikon kategori: memantul kecil */
+.ico-cat { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.group:hover .ico-cat { transform: translateY(-1px) rotate(-8deg) scale(1.12); }
+/* Pin & bintang */
+.ico-pin { transform-origin: 12px 21px; transition: transform 0.4s ease; }
+.group:hover .ico-pin { transform: rotate(-14deg); }
+@keyframes ico-twinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(0.75) rotate(45deg); opacity: 0.7; } }
+.ico-sparkle { transform-origin: center; animation: ico-twinkle 2.8s ease-in-out infinite; }
+
+/* Daftar isi: penanda bagian yang sedang dibaca */
+.toc-link[aria-current='true'] { color: rgb(var(--ink)); background: rgb(var(--mist)); }
+.toc-link[aria-current='true']::before { transform: scaleY(1); opacity: 1; }
+.toc-link::before { content: ''; position: absolute; left: 0; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 999px; background: linear-gradient(#ff5b14, #ffc93c); transform: scaleY(0); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .inspo-reveal, .inspo-glow, .inspo-rings, .ico-sparkle { animation: none !important; }
+  .ico-arrow *, .ico-clock *, .ico-cat, .ico-pin { transition: none !important; }
+}
