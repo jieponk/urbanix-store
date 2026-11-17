@@ -410,3 +410,7 @@ body {
 @keyframes gear-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .gear-float { animation: gear-float 7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .gear-float { animation: none; } }
+/* Daftar isi: scrollbar tipis */
+.toc-scroll { scrollbar-width: thin; scrollbar-color: rgb(var(--slate-300)) transparent; }
+.toc-scroll::-webkit-scrollbar { width: 4px; }
+.toc-scroll::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); border-radius: 4px; }

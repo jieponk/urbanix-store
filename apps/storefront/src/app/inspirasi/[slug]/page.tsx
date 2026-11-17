@@ -158,10 +158,10 @@ export default async function ArticlePage({ params }: { params: { slug: string }
                 <ol className="border-t border-slate-200 pb-2">
                   {headings
                     .filter((h) => h.level === 2)
-                    .map((h, i) => (
+                    .map((h) => (
                       <li key={h.id} className="border-b border-slate-200 last:border-0">
                         <a href={`#${h.id}`} className="flex gap-3 py-3 text-[15px] font-semibold leading-snug text-slate-700 active:text-ed">
-                          <span className="w-5 shrink-0 text-xs font-extrabold leading-6 tabular-nums text-ed">{String(i + 1).padStart(2, '0')}</span>
+                          <span aria-hidden="true" className="mt-2.5 h-1.5 w-1.5 shrink-0 bg-ed" />
                           {h.text}
                         </a>
                       </li>
@@ -215,10 +215,12 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
           {headings.length >= 3 && (
             <aside className="hidden lg:block">
+              <div className="sticky top-28 flex max-h-[calc(100vh-8.5rem)] flex-col">
               <TableOfContents headings={headings} />
-              <a href="#komentar" className="group mt-3 flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2.5 text-sm font-bold text-ink transition hover:border-ed hover:text-ed">
+              <a href="#komentar" className="group mt-3 flex shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 bg-surface px-3 py-2.5 text-sm font-bold text-ink transition hover:border-ed hover:text-ed">
                 <Chat size={15} /> Ke komentar
               </a>
+              </div>
             </aside>
           )}
         </div>
