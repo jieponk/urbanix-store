@@ -12,9 +12,13 @@ class ArticleTests(SellerTestBase):
         r = APIClient().get("/api/v1/articles/")
         self.assertEqual(r.status_code, 200)
         slugs = [a["slug"] for a in r.data["results"]]
-        self.assertEqual(slugs[0], "selamat-datang-di-inspirasi-urbanix")  # disematkan tampil pertama
-        self.assertIn("tes-tampilan-artikel", slugs)
-        self.assertEqual(r.data["results"][0]["tags"], ["urbanix", "inspirasi", "kreator"])
+        self.assertIn("selamat-datang-di-inspirasi-urbanix", slugs)
+        # 0026: artikel uji tampilan disembunyikan (draf) & artikel sambutan tidak lagi disematkan
+        self.assertNotIn("tes-tampilan-artikel", slugs)
+        self.assertEqual(Article.objects.get(slug="tes-tampilan-artikel").status, "DRAFT")
+        self.assertFalse(Article.objects.get(slug="selamat-datang-di-inspirasi-urbanix").is_pinned)
+        welcome = next(a for a in r.data["results"] if a["slug"] == "selamat-datang-di-inspirasi-urbanix")
+        self.assertEqual(welcome["tags"], ["urbanix", "inspirasi", "kreator"])
         by_label = APIClient().get("/api/v1/articles/?label=kreator").data["results"]
         self.assertEqual([a["slug"] for a in by_label], ["selamat-datang-di-inspirasi-urbanix"])
 
@@ -118,7 +122,7 @@ class ArticleTests(SellerTestBase):
 
     def test_comment_spam_guards(self):
         pub = APIClient()
-        slug = "tes-tampilan-artikel"
+        slug = "selamat-datang-di-inspirasi-urbanix"
         # honeypot: diterima tapi tidak disimpan
         pub.post(f"/api/v1/articles/{slug}/comments/", {"name": "Bot", "body": "spam", "website": "x"}, format="json")
         self.assertFalse(ArticleComment.objects.filter(name="Bot").exists())
