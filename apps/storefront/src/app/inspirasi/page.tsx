@@ -2,7 +2,7 @@ import Link from 'next/link';
 import NewsCard, { NewsHero, NewsRow } from '@/components/NewsCard';
 import Pagination from '@/components/Pagination';
 import ArticleCard, { CompactArticle, FeaturedArticle } from '@/components/inspirasi/ArticleCard';
-import { ArrowRight, CategoryIcon, Newspaper, Sparkle, Tag } from '@/components/inspirasi/InspoIcons';
+import { ArrowRight, CategoryIcon, Newspaper, Sparkle, Tag, XIcon } from '@/components/inspirasi/InspoIcons';
 import { getArticleCategories, getArticles, getNews } from '@/lib/api';
 import { SITE_URL, breadcrumbJsonLd, jsonLd } from '@/lib/seo';
 
@@ -187,7 +187,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
                 {label && (
                   <Link href={href({ kategori })} className="group inline-flex items-center gap-1.5 border border-slate-300 px-3 py-1.5 text-sm font-bold text-ink transition hover:border-ink">
                     <Tag size={14} /> {label}
-                    <span aria-hidden="true" className="ml-0.5 text-slate-400 transition group-hover:rotate-90 group-hover:text-ed">✕</span>
+                    <XIcon size={13} className="ml-0.5 text-slate-400 group-hover:text-ed" />
                     <span className="sr-only">hapus filter label</span>
                   </Link>
                 )}

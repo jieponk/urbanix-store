@@ -2,6 +2,7 @@ import Link from 'next/link';
 import GoogleReviewsOptIn from '@/components/GoogleReviewsOptIn';
 import CopyText from '@/components/CopyText';
 import { API, money } from '@/lib/api';
+import { ArrowRight, Check } from '@/components/inspirasi/InspoIcons';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Status Pesanan', robots: { index: false, follow: false } };
@@ -164,7 +165,7 @@ export default async function OrderPage({
           {order.payment_method === 'MIDTRANS' && order.payment_url && order.payment_status === 'UNPAID' && (
             <a
               href={order.payment_url}
-              className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
+              className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-onbrand hover:bg-brand-700"
             >
               Lanjutkan Pembayaran
             </a>
@@ -174,13 +175,13 @@ export default async function OrderPage({
         {order.review_url && (
           <a
             href={order.review_url}
-            className="flex items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-brand-600 to-sun-400 p-5 text-white shadow-sm transition hover:brightness-105"
+            className="flex items-center justify-between gap-4 rounded-2xl bg-cobalt-900 p-5 text-white shadow-sm transition hover:brightness-105"
           >
             <span>
               <span className="block font-extrabold">Barang sudah sampai? Beri ulasan ⭐</span>
               <span className="mt-0.5 block text-sm text-white/90">Bantu pembeli lain, hanya 1 menit.</span>
             </span>
-            <span aria-hidden="true" className="text-2xl">→</span>
+            <ArrowRight size={24} />
           </a>
         )}
 
@@ -201,7 +202,7 @@ export default async function OrderPage({
                         done ? 'bg-emerald-700 text-white' : 'bg-mist text-slate-500 ring-1 ring-slate-200'
                       }`}
                     >
-                      {done ? '✓' : i + 1}
+                      {done ? <Check size={14} /> : i + 1}
                     </span>
                     <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{step.label}</span>
                   </li>
@@ -227,7 +228,7 @@ export default async function OrderPage({
                   rel="noopener noreferrer"
                   className="inline-block font-bold text-ink underline"
                 >
-                  Lacak paket di cekresi.com →
+                  Lacak paket di cekresi.com <ArrowRight size={14} className="inline" />
                 </a>
               </div>
             ) : (

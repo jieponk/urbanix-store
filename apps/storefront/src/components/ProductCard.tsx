@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         {product.stock > 0 && product.stock <= 3 && (
-          <span className="absolute right-2 top-2 rounded-md bg-sun-400 px-1.5 py-0.5 text-[10px] font-bold text-cobalt-900 sm:right-3 sm:top-3">
+          <span className="absolute right-2 top-2 rounded-md bg-sale-600 px-1.5 py-0.5 text-[10px] font-bold text-white sm:right-3 sm:top-3">
             Sisa {product.stock}
           </span>
         )}

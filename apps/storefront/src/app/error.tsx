@@ -12,7 +12,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   return (
     <div className="px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-5xl font-extrabold text-cobalt-800 dark:text-sky-300">Oops</p>
+        <p className="text-5xl font-extrabold text-cobalt-800 dark:text-white">Oops</p>
         <h1 className="mt-4 text-2xl font-extrabold text-ink">Halaman sedang bermasalah</h1>
         <p className="mt-3 text-slate-600">
           Coba muat ulang sebentar lagi. Kalau masih terjadi, hubungi kami lewat WhatsApp.

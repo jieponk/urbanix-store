@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { forgetOrder, getRecentOrders, normalizeOrderNumber, type RecentOrder } from '@/lib/recentOrders';
+import { XIcon } from '@/components/inspirasi/InspoIcons';
 
 /** Form cek pesanan + daftar pesanan terakhir di perangkat ini. */
 export default function OrderLookup() {
@@ -64,7 +65,7 @@ export default function OrderLookup() {
           <button
             type="submit"
             disabled={busy}
-            className="rounded-xl bg-brand-600 px-6 py-3.5 font-bold text-white hover:bg-brand-700 disabled:opacity-60"
+            className="rounded-xl bg-brand-600 px-6 py-3.5 font-bold text-onbrand hover:bg-brand-700 disabled:opacity-60"
           >
             {busy ? 'Mencari…' : 'Cek pesanan'}
           </button>
@@ -107,7 +108,7 @@ export default function OrderLookup() {
                   aria-label={`Hapus ${o.no} dari daftar`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-mist hover:text-ink"
                 >
-                  ×
+                  <XIcon size={14} />
                 </button>
               </li>
             ))}

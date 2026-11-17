@@ -3,6 +3,7 @@ import { UrbanixLogoStacked } from '@/components/BrandSvg';
 import PrintButton from '@/components/PrintButton';
 import { API, money } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
+import { ArrowLeft } from '@/components/inspirasi/InspoIcons';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Invoice', robots: { index: false, follow: false } };
@@ -86,7 +87,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
       {/* Tombol (tidak ikut tercetak) */}
       <div className="mx-auto mb-4 flex max-w-3xl flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={`/pesanan/${o.order_number}`} className="text-sm font-bold text-ink hover:underline">
-          ← Kembali ke status pesanan
+          <ArrowLeft size={15} className="inline" /> Kembali ke status pesanan
         </Link>
         <PrintButton className="rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-surface hover:opacity-90">
           Cetak / Simpan PDF
@@ -95,7 +96,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
 
       {/* Lembar invoice: selalu putih, juga di mode gelap */}
       <article className="invoice-sheet mx-auto max-w-3xl overflow-hidden rounded-2xl bg-white text-[#1c2030] shadow-xl shadow-slate-900/10 print:max-w-none print:rounded-none print:shadow-none">
-        <div className="h-2 bg-[#ff5b14]" />
+        <div className="h-2 bg-[#111111]" />
         <div className="p-6 sm:p-10">
           {/* Kepala */}
           <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -208,7 +209,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           </div>
 
           {/* Catatan */}
-          <footer className="mt-10 rounded-xl bg-[#f3f5fa] p-5 text-xs leading-5 text-[#4b5563]">
+          <footer className="mt-10 rounded-xl bg-[#f4f4f4] p-5 text-xs leading-5 text-[#4b5563]">
             <p className="font-bold text-[#1c2030]">Catatan pembayaran</p>
             <p className="mt-1">
               Pembayaran hanya ke rekening resmi atas nama <b>{legal.company}</b> yang diinformasikan lewat WhatsApp

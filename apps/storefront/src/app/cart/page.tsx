@@ -149,7 +149,7 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="mt-5 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
+                className="mt-5 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-onbrand hover:bg-brand-700"
               >
                 Lanjut ke Checkout
               </Link>

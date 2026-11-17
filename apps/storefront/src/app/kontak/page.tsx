@@ -2,6 +2,7 @@ import Link from 'next/link';
 import FeatureIcon, { type FeatureIconName } from '@/components/FeatureIcon';
 import { getStoreSettings } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 
 export const metadata = {
   title: 'Kontak',
@@ -69,7 +70,7 @@ export default async function ContactPage() {
       note: 'Lebih nyaman belanja di Shopee? Produk yang sama tersedia di sana.',
       href: settings.shopee_store_url,
       cta: 'Kunjungi toko',
-      accent: 'bg-brand-600 text-white',
+      accent: 'bg-brand-600 text-onbrand',
     });
   }
 
@@ -77,8 +78,6 @@ export default async function ContactPage() {
     <div>
       {/* Pembuka */}
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-24 pt-12 text-white sm:px-6 sm:pb-32 sm:pt-16 lg:px-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/4 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl" />
         <div className="relative mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
             <Link href="/" className="hover:text-white">Beranda</Link>
@@ -118,7 +117,7 @@ export default async function ContactPage() {
               <span className="mt-2 flex-1 text-sm leading-6 text-slate-600">{c.note}</span>
               <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-ink">
                 {c.cta}
-                <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
+                <ArrowRight size={16} />
               </span>
             </a>
           ))}

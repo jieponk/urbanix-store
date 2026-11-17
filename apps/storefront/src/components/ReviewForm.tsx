@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Camera, Check, XIcon } from '@/components/inspirasi/InspoIcons';
 
 type Item = {
   product_id: number;
@@ -119,7 +120,7 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
       />
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-mist px-4 py-2.5 text-sm font-bold text-ink hover:bg-slate-200">
-          📷 {photo ? 'Ganti foto' : 'Tambah foto (opsional)'}
+          <Camera size={16} /> {photo ? 'Ganti foto' : 'Tambah foto (opsional)'}
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
         </label>
         {preview && (
@@ -131,7 +132,7 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
               aria-label="Hapus foto"
               className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white"
             >
-              ✕
+              <XIcon size={14} />
             </button>
           </span>
         )}
@@ -141,7 +142,7 @@ function ItemForm({ token, item, name, initialRating, onDone }: {
         type="button"
         onClick={submit}
         disabled={sending || !rating}
-        className="w-full rounded-2xl bg-brand-600 px-5 py-3.5 text-base font-bold text-white shadow-sm hover:bg-brand-700 disabled:opacity-40 sm:w-auto"
+        className="w-full rounded-2xl bg-brand-600 px-5 py-3.5 text-base font-bold text-onbrand shadow-sm hover:bg-brand-700 disabled:opacity-40 sm:w-auto"
       >
         {sending ? 'Mengirim…' : 'Kirim ulasan'}
       </button>
@@ -184,7 +185,7 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
       <div className="rounded-3xl bg-surface p-6 ring-1 ring-slate-200">
         <p className="text-sm text-slate-500">Pesanan {data.order_number}</p>
         <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">
-          {allDone ? 'Terima kasih atas ulasanmu! 🙏' : 'Bagaimana barangnya?'}
+          {allDone ? 'Terima kasih atas ulasanmu!' : 'Bagaimana barangnya?'}
         </h1>
         <p className="mt-2 text-sm text-slate-600">
           {allDone
@@ -225,7 +226,7 @@ export default function ReviewForm({ token, initialStars }: { token: string; ini
           </div>
           {item.review ? (
             <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
-              ✓ Sudah diulas ({item.review.rating} bintang). Terima kasih!
+              <Check size={14} className="inline" /> Sudah diulas ({item.review.rating} bintang). Terima kasih!
             </p>
           ) : data.can_review ? (
             <ItemForm

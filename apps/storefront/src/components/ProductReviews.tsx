@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ProductReview, ProductReviewPage } from '@/lib/api';
+import { ShieldCheck } from '@/components/inspirasi/InspoIcons';
 
 function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
@@ -25,7 +26,7 @@ function ReviewItem({ r, onPhoto }: { r: ProductReview; onPhoto: (url: string) =
   return (
     <li className="py-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-sun-400 text-sm font-black text-white">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-black text-surface">
           {r.name.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0 flex-1">
@@ -33,7 +34,7 @@ function ReviewItem({ r, onPhoto }: { r: ProductReview; onPhoto: (url: string) =
             <b className="text-ink">{r.name}</b>
             {r.verified && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                ✓ Pembeli terverifikasi
+                <ShieldCheck size={14} className="inline -mt-0.5" /> Pembeli terverifikasi
               </span>
             )}
           </div>
@@ -106,7 +107,7 @@ export default function ProductReviews({ productId, initial }: { productId: numb
                   <span className="w-3 text-right font-bold">{star}</span>
                   <span aria-hidden="true" className="text-[#ffc93c]">★</span>
                   <span className="h-2 flex-1 overflow-hidden rounded-full bg-mist">
-                    <span className="block h-full rounded-full bg-[#ffc93c]" style={{ width: `${count ? (n / count) * 100 : 0}%` }} />
+                    <span className="block h-full rounded-full bg-ink" style={{ width: `${count ? (n / count) * 100 : 0}%` }} />
                   </span>
                   <span className="w-6 text-right">{n}</span>
                 </li>

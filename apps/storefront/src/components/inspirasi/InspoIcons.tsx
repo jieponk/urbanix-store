@@ -141,7 +141,7 @@ const Ticket = ({ size, className }: P) => (
   </svg>
 );
 
-const Camera = ({ size, className }: P) => (
+export const Camera = ({ size, className }: P) => (
   <svg {...base(size, className)}>
     <path d="M4 8.5A2 2 0 0 1 6 6.5h1.8l1.4-2h5.6l1.4 2H18a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
     <circle cx="12" cy="13" r="3.5" />
@@ -197,5 +197,26 @@ export const External = ({ size = 16, className }: P) => (
     <path d="M14 4.5h5.5V10" />
     <path d="M19.5 4.5 11 13" />
     <path d="M17 13.5V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V8.5A1.5 1.5 0 0 1 6 7h4.5" />
+  </svg>
+);
+
+/** Centang: garisnya "tergambar" saat muncul (kelas ico-draw). */
+export const Check = ({ size = 16, className }: P) => (
+  <svg {...base(size, `ico-draw ${className ?? ''}`)} strokeWidth={2.5}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" pathLength={1} />
+  </svg>
+);
+
+/** Silang: berputar seperempat saat hover. */
+export const XIcon = ({ size = 16, className }: P) => (
+  <svg {...base(size, `ico-x ${className ?? ''}`)} strokeWidth={2.5}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
+export const ShieldCheck = ({ size = 16, className }: P) => (
+  <svg {...base(size, className)}>
+    <path d="M12 3.5 19 6v5.5c0 4.3-2.9 7.6-7 9-4.1-1.4-7-4.7-7-9V6z" />
+    <path className="ico-draw" d="m8.8 12 2.2 2.2 4.3-4.4" pathLength={1} />
   </svg>
 );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check } from '@/components/inspirasi/InspoIcons';
 
 /** Bagikan artikel: WhatsApp, Facebook, X, salin link. */
 export default function ShareButtons({ url, title }: { url: string; title: string }) {
@@ -39,7 +40,7 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         }}
         className={`h-10 rounded-full px-4 text-sm font-bold ring-1 transition ${copied ? 'bg-emerald-700 text-white ring-emerald-700' : 'bg-surface text-ink ring-slate-200 hover:ring-ink'}`}
       >
-        {copied ? 'Link tersalin ✓' : 'Salin link'}
+        {copied ? <span className="inline-flex items-center gap-1">Link tersalin <Check size={13} /></span> : 'Salin link'}
       </button>
     </div>
   );

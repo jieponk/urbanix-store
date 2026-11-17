@@ -113,17 +113,17 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
           type="button"
           onClick={close}
           aria-label="Tutup"
-          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-cobalt-900/10 text-cobalt-900 transition hover:bg-cobalt-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cobalt-900/50"
+          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:rotate-90 hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
 
-        <div className="relative bg-sun-400 px-6 pb-6 pt-7">
-          <p className="text-sm font-bold text-cobalt-800">Khusus pesan lewat WhatsApp</p>
-          <p className="mt-1 flex items-end gap-2 leading-none text-cobalt-900">
-            <span className="text-[5.5rem] font-extrabold tracking-[-0.06em]">{percent}%</span>
+        <div className="relative bg-cobalt-900 px-6 pb-6 pt-7">
+          <p className="text-sm font-bold text-white/70">Khusus pesan lewat WhatsApp</p>
+          <p className="mt-1 flex items-end gap-2 leading-none text-white">
+            <span className="text-[5.5rem] font-extrabold tracking-[-0.06em] text-sun-400">{percent}%</span>
             <span className="pb-3 text-lg font-extrabold">lebih hemat</span>
           </p>
         </div>

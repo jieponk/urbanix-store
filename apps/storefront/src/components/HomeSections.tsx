@@ -70,18 +70,19 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
   if (products.length === 0) return null;
 
   return (
-    <section aria-labelledby="judul-flash" className="mt-10 bg-sun-400">
+    <section aria-labelledby="judul-flash" className="mt-10 bg-cobalt-900">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 id="judul-flash" className="text-2xl font-extrabold tracking-tight text-cobalt-900 sm:text-3xl">
+            <h2 id="judul-flash" className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+              <span aria-hidden="true" className="h-6 w-1.5 bg-sun-400" />
               {promoName}
             </h2>
-            <p className="mt-1 text-sm font-medium text-cobalt-800">Potongan terbesar tampil paling depan.</p>
+            <p className="mt-1 text-sm font-medium text-white/65">Potongan terbesar tampil paling depan.</p>
           </div>
           <Link
             href="/produk?promo=1"
-            className="shrink-0 rounded-full bg-cobalt-800 px-4 py-2 text-sm font-bold text-white hover:bg-cobalt-900"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-4 py-2 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
           >
             Lihat semua
           </Link>
@@ -107,7 +108,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                     <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{product.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
                     <span className="mt-2 text-base font-extrabold text-sale-600">{money(final)}</span>
                     <span className="text-xs text-slate-400 line-through">{money(normal)}</span>
-                    <span className="mt-auto pt-2 text-xs font-bold text-cobalt-700 dark:text-sky-300">Hemat {money(normal - final)}</span>
+                    <span className="mt-auto pt-2 text-xs font-bold text-sale-600">Hemat {money(normal - final)}</span>
                   </span>
                 </Link>
               </li>
@@ -144,7 +145,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-sun-100"
+            className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-white/85"
           >
             Chat admin sekarang
           </a>
@@ -152,7 +153,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
         <ol className="grid gap-3 sm:grid-cols-3">
           {steps.map((step, i) => (
             <li key={step} className="rounded-2xl bg-cobalt-900/60 p-4 ring-1 ring-white/10">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sun-400 text-sm font-extrabold text-cobalt-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-extrabold text-cobalt-900">
                 {i + 1}
               </span>
               <p className="mt-3 text-sm font-semibold leading-6">{step}</p>

@@ -33,8 +33,6 @@ export default function LegalPage({
     <div>
       {/* Pembuka */}
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-20 pt-12 text-white sm:px-6 sm:pb-28 sm:pt-16 lg:px-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-sky-400/15 blur-3xl" />
         <div className="relative mx-auto max-w-6xl">
           <nav aria-label="Breadcrumb" className="text-sm text-white/60">
             <Link href="/" className="hover:text-white">Beranda</Link>
@@ -96,7 +94,7 @@ export default function LegalPage({
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 block rounded-xl bg-brand-600 text-white px-4 py-2.5 text-center text-sm font-bold hover:brightness-95"
+                  className="mt-4 block rounded-xl bg-brand-600 text-onbrand px-4 py-2.5 text-center text-sm font-bold hover:brightness-95"
                 >
                   Chat admin
                 </a>
@@ -145,7 +143,7 @@ export default function LegalPage({
                   href={`https://wa.me/${wa}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 rounded-xl bg-brand-600 px-6 py-3 text-center font-bold text-white hover:brightness-95"
+                  className="shrink-0 rounded-xl bg-brand-600 px-6 py-3 text-center font-bold text-onbrand hover:brightness-95"
                 >
                   Chat admin via WhatsApp
                 </a>

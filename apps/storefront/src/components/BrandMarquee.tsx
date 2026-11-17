@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { findPublicImage } from '@/lib/assets';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 
 /** Merek unggulan di atas footer (urutan sesuai tampilan). Logo: public/brands/<slug>.svg|png|webp. */
 const TOP_BRANDS = ['DJI', 'Insta360', 'Sony', 'Canon', 'Nikon', 'Fujifilm', 'Hollyland', 'Kodak'];
@@ -54,7 +55,7 @@ export default function BrandMarquee({ brands }: { brands: { name: string; logo:
       </div>
       <div className="mx-auto mt-4 flex max-w-7xl justify-end px-4 sm:px-6 lg:px-8">
         <Link href="/produk" className="group inline-flex items-center gap-1 text-sm font-bold text-ink hover:underline">
-          Semua merek <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
+          Semua merek <ArrowRight size={16} />
         </Link>
       </div>
     </section>

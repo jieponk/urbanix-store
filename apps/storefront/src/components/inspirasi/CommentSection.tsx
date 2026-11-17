@@ -475,7 +475,7 @@ function Composer({
               <button
                 type="submit"
                 disabled={!ready || sending}
-                className="rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-onbrand shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {sending ? 'Mengirim…' : parent ? 'Balas' : 'Kirim'}
               </button>

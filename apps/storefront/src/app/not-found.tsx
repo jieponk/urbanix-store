@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <div className="px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-xl text-center">
-        <p className="text-7xl font-extrabold tracking-tight text-cobalt-800 dark:text-sky-300 sm:text-8xl">404</p>
+        <p className="text-7xl font-extrabold tracking-tight text-cobalt-800 dark:text-white sm:text-8xl">404</p>
         <h1 className="mt-4 text-2xl font-extrabold text-ink sm:text-3xl">Halaman tidak ditemukan</h1>
         <p className="mt-3 text-slate-600">
           Link yang kamu buka mungkin salah ketik, atau produknya sudah tidak tersedia.

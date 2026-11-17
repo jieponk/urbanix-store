@@ -20,7 +20,6 @@ export default function CheckOrderPage() {
   return (
     <div>
       <section className="relative overflow-hidden bg-cobalt-900 px-4 pb-28 pt-12 text-white sm:px-6 sm:pb-32 sm:pt-16 lg:px-8">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
         <div className="relative mx-auto max-w-2xl text-center">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">Cek pesanan</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">Lacak pesanan &amp; unduh invoice</h1>

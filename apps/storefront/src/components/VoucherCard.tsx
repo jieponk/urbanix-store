@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { VOUCHER_EVENT, claimVoucher, getClaimed, voucherEndText, type VoucherInfo } from '@/lib/vouchers';
+import { Check } from '@/components/inspirasi/InspoIcons';
 
 function useClaimed(code: string) {
   const [claimed, setClaimed] = useState(false);
@@ -70,7 +71,7 @@ export default function VoucherCard({ voucher, compact = false }: { voucher: Vou
               claimed ? 'bg-mist text-slate-500' : 'bg-ink text-surface hover:bg-slate-800'
             }`}
           >
-            {claimed ? 'Diklaim ✓' : 'Klaim'}
+            {claimed ? <span className="inline-flex items-center gap-1">Diklaim <Check size={13} /></span> : 'Klaim'}
           </button>
         </div>
         {showTerms && (

@@ -180,7 +180,7 @@ function AddProducts({ open, onClose, onSave }: { open: boolean; onClose: () => 
                 <span className="text-xs text-slate-500">{p.sku} · {rp(p.price)}{p.variations > 0 && ` · ${p.variations} varian`}</span>
               </span>
               {p.variations === 0 ? (
-                <input type="checkbox" className="h-5 w-5 accent-[#1b2559]" checked={Boolean(picked[`${p.id}-`])} onChange={() => expand(p)} aria-label={`Pilih ${p.name}`} />
+                <input type="checkbox" className="h-5 w-5 accent-[#111111]" checked={Boolean(picked[`${p.id}-`])} onChange={() => expand(p)} aria-label={`Pilih ${p.name}`} />
               ) : !p.variation_list ? (
                 <button type="button" className={btn.small} onClick={() => expand(p)}>Pilih varian</button>
               ) : null}
@@ -194,7 +194,7 @@ function AddProducts({ open, onClose, onSave }: { open: boolean; onClose: () => 
                   const key = `${p.id}-${v.id}`;
                   return (
                     <li key={v.id} className="flex flex-wrap items-center gap-2 text-sm">
-                      <input type="checkbox" className="h-4 w-4 accent-[#1b2559]" checked={Boolean(picked[key])}
+                      <input type="checkbox" className="h-4 w-4 accent-[#111111]" checked={Boolean(picked[key])}
                         onChange={() => togglePick(key, { product_id: p.id, variation_id: v.id, label: v.name, normal: v.price })} aria-label={`Pilih ${v.name}`} />
                       <span className="flex-1">{v.name} <span className="text-xs text-slate-500">· {rp(v.price)} · stok {v.stock}</span></span>
                       {mode === 'price' && picked[key] && (

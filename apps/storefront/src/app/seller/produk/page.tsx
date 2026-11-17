@@ -104,7 +104,7 @@ export default function ProductsPage() {
                 aria-label="Pilih semua di halaman ini"
                 checked={allOnPage}
                 onChange={() => setSelected((s) => (allOnPage ? s.filter((id) => !ids.includes(id)) : Array.from(new Set([...s, ...ids]))))}
-                className="h-4 w-4 accent-[#1b2559]"
+                className="h-4 w-4 accent-[#111111]"
               />
               <span className="flex-1">Produk</span>
               <span className="hidden w-32 text-right sm:block">Harga</span>
@@ -114,7 +114,7 @@ export default function ProductsPage() {
             <ul className="divide-y divide-slate-200">
               {data.results.map((p: any) => (
                 <li key={p.id} className={`flex items-center gap-3 px-4 py-3 sm:px-5 ${selected.includes(p.id) ? 'bg-sky-50 dark:bg-sky-950/30' : ''}`}>
-                  <input type="checkbox" aria-label={`Pilih ${p.name}`} checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-4 w-4 accent-[#1b2559]" />
+                  <input type="checkbox" aria-label={`Pilih ${p.name}`} checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-4 w-4 accent-[#111111]" />
                   <Thumb src={p.image_url} />
                   <Link href={`/seller/produk/${p.id}`} className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-ink hover:underline">{p.name}</span>

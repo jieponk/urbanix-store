@@ -10,27 +10,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Urbanix Orange: tombol utama & identitas toko
+        // Identitas Urbanix = hitam-putih (sesuai logo). "brand" = warna tombol utama:
+        // hitam di mode terang, putih di mode gelap. Teks di atasnya pakai `text-onbrand`.
         brand: {
-          50: '#fff4ed',
-          100: '#ffe4d3',
-          500: '#ff5b14',
-          600: '#cf4309', // tombol: kontras teks putih ≥ 4.5
-          700: '#b03905',
-          dark: '#1b2559',
-          accent: '#ff5b14',
+          50: 'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-50) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
+          dark: '#111111',
+          accent: 'rgb(var(--brand-500) / <alpha-value>)',
         },
-        // Cobalt Night: panel promo, footer
+        onbrand: 'rgb(var(--onbrand) / <alpha-value>)',
+        // Panel gelap (footer, header atas, kotak promo): hitam netral, sama di kedua mode
         cobalt: {
-          700: '#24307a',
-          800: '#1b2559',
-          900: '#121a42',
+          700: '#2a2a2a',
+          800: '#1a1a1a',
+          900: '#0f0f0f',
         },
-        // Shutter Yellow: angka hitung mundur & sorotan promo
+        // Sorotan (dulu kuning): merah terang, dipakai di atas panel hitam
         sun: {
-          100: '#fff4cc',
-          300: '#ffdb6e',
-          400: '#ffc93c',
+          100: '#fdecee',
+          300: '#ff6b7a',
+          400: '#ff3b4e',
         },
         // Sale Red: label diskon
         sale: {

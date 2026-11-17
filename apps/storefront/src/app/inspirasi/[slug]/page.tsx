@@ -147,18 +147,23 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_260px]">
           <div id="isi-artikel" className="mx-auto w-full min-w-0 max-w-[720px]">
             {headings.length >= 3 && (
-              <details className="group mb-8 overflow-hidden rounded-md border border-slate-200 lg:hidden">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-extrabold text-ink [&::-webkit-details-marker]:hidden">
-                  <span className="inline-flex items-center gap-2"><ListIcon size={17} /> Daftar isi</span>
-                  <span className="text-xs font-bold text-slate-500">{headings.length} bagian</span>
+              <details className="group mb-10 border-y-[3px] border-ink lg:hidden">
+                <summary className="flex cursor-pointer list-none items-center gap-2 py-3.5 text-sm font-extrabold uppercase tracking-[0.12em] text-ink [&::-webkit-details-marker]:hidden">
+                  <ListIcon size={16} /> Daftar isi
+                  <span className="ml-auto text-xs font-semibold normal-case tracking-normal text-slate-500">{headings.filter((h) => h.level === 2).length} bagian</span>
                   <ChevronRight size={16} className="rotate-90 transition-transform duration-300 group-open:-rotate-90" />
                 </summary>
-                <ol className="space-y-2 border-t border-slate-200 px-4 pb-4 pt-3 text-sm">
-                  {headings.map((h) => (
-                    <li key={h.id} className={h.level === 3 ? 'pl-4' : ''}>
-                      <a href={`#${h.id}`} className="text-slate-600 hover:text-ink">{h.text}</a>
-                    </li>
-                  ))}
+                <ol className="border-t border-slate-200 pb-2">
+                  {headings
+                    .filter((h) => h.level === 2)
+                    .map((h, i) => (
+                      <li key={h.id} className="border-b border-slate-200 last:border-0">
+                        <a href={`#${h.id}`} className="flex gap-3 py-3 text-[15px] font-semibold leading-snug text-slate-700 active:text-ed">
+                          <span className="w-5 shrink-0 text-xs font-extrabold leading-6 tabular-nums text-ed">{String(i + 1).padStart(2, '0')}</span>
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
                 </ol>
               </details>
             )}

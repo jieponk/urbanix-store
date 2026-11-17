@@ -11,6 +11,7 @@ import { productImg } from '@/lib/img';
 import { rememberOrder } from '@/lib/recentOrders';
 import { SHIPPING_GROUPS, type LogoKey } from '@/lib/shipping';
 import CourierBadge from '@/components/CourierBadge';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -515,7 +516,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
             )}
 
             {quote.available_vouchers.length > 1 && (
-              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">Geser untuk melihat voucher lain →</p>
+              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">Geser untuk melihat voucher lain <ArrowRight size={12} className="inline" /></p>
             )}
 
             {!showCodeInput ? (
@@ -623,7 +624,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                               value={o.code}
                               checked={on}
                               onChange={() => update('service', o.code)}
-                              className="h-4 w-4 accent-[#cf4309]"
+                              className="h-4 w-4 accent-[#111111]"
                             />
                             <CourierBadge courier={o.courier} logo={courierLogos[o.logo]} label={o.label} />
                             <span className="text-sm font-bold text-ink">{o.short}</span>
@@ -732,7 +733,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
         <button
           type="submit"
           disabled={!method || submitting || blocked}
-          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? 'Memproses…'

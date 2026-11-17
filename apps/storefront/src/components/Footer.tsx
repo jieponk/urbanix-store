@@ -41,7 +41,7 @@ export default function Footer({
               href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 hover:bg-sun-100"
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
             >
               Chat admin di WhatsApp
             </a>
@@ -51,11 +51,11 @@ export default function Footer({
         <div>
           <h2 className="text-sm font-bold text-white">Belanja</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/produk?promo=1" className="hover:text-sun-400">Produk promo</Link></li>
-            <li><Link href="/produk" className="hover:text-sun-400">Semua produk</Link></li>
+            <li><Link href="/produk?promo=1" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Produk promo</Link></li>
+            <li><Link href="/produk" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Semua produk</Link></li>
             {categories.slice(0, 6).map((category) => (
               <li key={category.id}>
-                <Link href={`/produk?category=${category.id}`} className="hover:text-sun-400">
+                <Link href={`/produk?category=${category.id}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4">
                   {category.name}
                 </Link>
               </li>
@@ -66,23 +66,23 @@ export default function Footer({
         <div>
           <h2 className="text-sm font-bold text-white">Bantuan</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/#cara-pesan" className="hover:text-sun-400">Cara pesan via WhatsApp</Link></li>
-            <li><Link href="/cart" className="hover:text-sun-400">Keranjang belanja</Link></li>
-            <li><Link href="/berita" className="hover:text-sun-400">Berita kamera &amp; fotografi</Link></li>
-            <li><Link href="/tentang-kami" className="hover:text-sun-400">Tentang kami</Link></li>
-            <li><Link href="/kontak" className="hover:text-sun-400">Kontak</Link></li>
-            <li><Link href="/cek-pesanan" className="hover:text-sun-400">Cek pesanan</Link></li>
-            <li><Link href="/syarat-ketentuan#pembayaran" className="hover:text-sun-400">Cara pembayaran</Link></li>
-            <li><Link href="/syarat-ketentuan#pengiriman" className="hover:text-sun-400">Pengiriman</Link></li>
-            <li><Link href="/syarat-ketentuan#pembatalan-retur" className="hover:text-sun-400">Pengembalian &amp; garansi</Link></li>
-            <li><Link href="/syarat-ketentuan" className="hover:text-sun-400">Syarat &amp; Ketentuan</Link></li>
-            <li><Link href="/kebijakan-privasi" className="hover:text-sun-400">Kebijakan Privasi</Link></li>
+            <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cara pesan via WhatsApp</Link></li>
+            <li><Link href="/cart" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Keranjang belanja</Link></li>
+            <li><Link href="/berita" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Berita kamera &amp; fotografi</Link></li>
+            <li><Link href="/tentang-kami" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Tentang kami</Link></li>
+            <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Kontak</Link></li>
+            <li><Link href="/cek-pesanan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cek pesanan</Link></li>
+            <li><Link href="/syarat-ketentuan#pembayaran" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Cara pembayaran</Link></li>
+            <li><Link href="/syarat-ketentuan#pengiriman" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Pengiriman</Link></li>
+            <li><Link href="/syarat-ketentuan#pembatalan-retur" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Pengembalian &amp; garansi</Link></li>
+            <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Syarat &amp; Ketentuan</Link></li>
+            <li><Link href="/kebijakan-privasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">Kebijakan Privasi</Link></li>
             {(settings?.shopee_reviews_url || settings?.shopee_store_url) && (
               <li>
                 <ShopeeReviewsLink
                   reviewsUrl={settings?.shopee_reviews_url}
                   storeUrl={settings?.shopee_store_url}
-                  className="hover:text-sun-400"
+                  className="transition-colors hover:text-white hover:underline hover:underline-offset-4"
                   desktopLabel="Ulasan pembeli di Shopee"
                   mobileLabel="Ulasan pembeli di Shopee"
                 />
@@ -90,7 +90,7 @@ export default function Footer({
             )}
             {settings?.shopee_store_url && (
               <li>
-                <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
+                <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">
                   Toko kami di Shopee
                 </a>
               </li>
@@ -104,13 +104,13 @@ export default function Footer({
             <li className="text-white">{contact.person}</li>
             {whatsapp && (
               <li>
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">
                   WhatsApp {displayPhone(whatsapp)}
                 </a>
               </li>
             )}
             <li>
-              <a href={`mailto:${contact.email}`} className="hover:text-sun-400">{contact.email}</a>
+              <a href={`mailto:${contact.email}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{contact.email}</a>
             </li>
             <li>{contact.hours}</li>
           </ul>
@@ -140,7 +140,7 @@ export default function Footer({
 
           <div className="mt-7 flex items-baseline gap-3">
             <h2 className="text-sm font-bold text-white">Pengiriman</h2>
-            <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-sun-400">
+            <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-white hover:underline">
               Detail
             </Link>
           </div>
