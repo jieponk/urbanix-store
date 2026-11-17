@@ -110,7 +110,7 @@ export default function LegalPage({
                 className="scroll-mt-32 rounded-2xl bg-surface p-6 ring-1 ring-slate-200 sm:p-8"
               >
                 <div className="flex items-center gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cobalt-900 text-sm font-extrabold text-sun-400">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-extrabold text-ink ring-1 ring-slate-200">
                     {i + 1}
                   </span>
                   <h2 className="text-xl font-extrabold text-ink sm:text-2xl">{s.title}</h2>

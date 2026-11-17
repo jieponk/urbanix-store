@@ -112,7 +112,7 @@ function Avatar({ name, staff, small }: { name: string; staff?: boolean; small?:
   if (staff) {
     return (
       <span className={`relative flex ${size} shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-sun-400 via-brand-500 to-fuchsia-600 p-[2px]`}>
-        <span className="flex h-full w-full items-center justify-center rounded-full bg-cobalt-900 font-black text-sun-400">U</span>
+        <span className="flex h-full w-full items-center justify-center rounded-full bg-ink font-black text-surface">U</span>
       </span>
     );
   }

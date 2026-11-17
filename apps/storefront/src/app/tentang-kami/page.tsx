@@ -145,7 +145,7 @@ export default async function AboutPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
               <div key={f.title} className="rounded-2xl bg-surface p-6 ring-1 ring-slate-200">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cobalt-900 text-sun-400">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-ink ring-1 ring-slate-200">
                   <FeatureIcon name={f.icon} size={24} />
                 </span>
                 <h3 className="mt-4 text-lg font-extrabold text-ink">{t(f.title)}</h3>
