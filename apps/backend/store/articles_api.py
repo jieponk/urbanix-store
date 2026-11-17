@@ -77,7 +77,7 @@ def _cover(article: Article) -> str:
         count = article.related_products.count() if article.pk else 0
     if count:
         # "e2" = versi gaya sampul (ganti bila desain sampul berubah, supaya cache lama tidak dipakai)
-        return f"/inspirasi/{article.slug}/sampul.png?v=e2-{int(article.updated_at.timestamp())}"
+        return f"/inspirasi/{article.slug}/sampul.png?v=e3-{int(article.updated_at.timestamp())}"
     return ""
 
 
