@@ -38,7 +38,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-center text-xs leading-snug sm:text-[13px]">
             {promo && (
               <Link href="/produk?promo=1" className="font-semibold hover:underline">
-                <span className="text-sun-400">{promo.name}</span>
+                <span className="text-sun-300">{promo.name}</span>
                 {t('{promo}: hemat sampai {n}%', { promo: '', n: promo.maxDiscount })}
                 {ends && <> {t('sampai {date}', { date: ends })}</>}
               </Link>

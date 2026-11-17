@@ -62,7 +62,7 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
 
       <p className="mt-3 leading-none">
         <span className="block text-base font-semibold text-white/80">{t('Hemat sampai')}</span>
-        <span className="mt-1 block text-[clamp(4rem,11vw,6.5rem)] font-extrabold tracking-[-0.06em] text-sun-400">
+        <span className="mt-1 block text-[clamp(4rem,11vw,6.5rem)] font-extrabold tracking-[-0.06em] text-sun-300">
           {maxDiscount}%
         </span>
       </p>

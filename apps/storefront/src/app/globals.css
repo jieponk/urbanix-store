@@ -5,59 +5,60 @@
 /* Warna dasar mode terang & gelap (format "R G B" agar bisa dipakai dengan opasitas Tailwind) */
 :root {
   color-scheme: light;
-  --ink: 17 17 17;
-  --ed: 200 16 46;
-  --mist: 245 245 245;
+  /* Palet "Charcoal merah": teks & tombol charcoal #252024, latar bagian #F3F4F6, garis #DDDDDD, merah #E30220/#BE0000 */
+  --ink: 37 32 36;
+  --ed: 190 0 0;
+  --mist: 243 244 246;
   --surface: 255 255 255;
   --page: 255 255 255;
-  --brand-50: 244 244 244;
-  --brand-500: 17 17 17;
-  --brand-600: 17 17 17;
-  --brand-700: 0 0 0;
+  --brand-50: 243 244 246;
+  --brand-500: 37 32 36;
+  --brand-600: 37 32 36;
+  --brand-700: 20 17 19;
   --onbrand: 255 255 255;
-  --slate-50: 250 250 250;
-  --slate-100: 244 244 245;
-  --slate-200: 229 229 229;
-  --slate-300: 212 212 212;
-  --slate-400: 115 115 115;
-  --slate-500: 100 100 100;
-  --slate-600: 82 82 82;
-  --slate-700: 60 60 60;
-  --slate-800: 38 38 38;
-  --slate-900: 23 23 23;
-  --slate-950: 10 10 10;
+  --slate-50: 248 249 250;
+  --slate-100: 243 244 246;
+  --slate-200: 221 221 221;
+  --slate-300: 204 203 205;
+  --slate-400: 116 111 115;
+  --slate-500: 104 99 103;
+  --slate-600: 84 79 83;
+  --slate-700: 62 57 61;
+  --slate-800: 46 41 45;
+  --slate-900: 37 32 36;
+  --slate-950: 24 21 23;
 }
 
 .dark {
   color-scheme: dark;
-  --ink: 240 240 240;
-  --ed: 255 99 115;
-  --mist: 10 10 10;
-  --surface: 22 22 22;
-  --page: 10 10 10;
-  --brand-50: 38 38 38;
-  --brand-500: 240 240 240;
-  --brand-600: 240 240 240;
+  --ink: 243 244 246;
+  --ed: 255 90 110;
+  --mist: 22 19 21;
+  --surface: 34 30 33;
+  --page: 22 19 21;
+  --brand-50: 46 41 45;
+  --brand-500: 243 244 246;
+  --brand-600: 243 244 246;
   --brand-700: 255 255 255;
-  --onbrand: 17 17 17;
-  --slate-50: 20 20 20;
-  --slate-100: 30 30 30;
-  --slate-200: 46 46 46;
-  --slate-300: 64 64 64;
-  --slate-400: 140 140 140;
-  --slate-500: 160 160 160;
-  --slate-600: 180 180 180;
-  --slate-700: 200 200 200;
-  --slate-800: 225 225 225;
-  --slate-900: 240 240 240;
-  --slate-950: 248 248 248;
+  --onbrand: 37 32 36;
+  --slate-50: 28 25 27;
+  --slate-100: 40 36 39;
+  --slate-200: 56 51 55;
+  --slate-300: 76 70 74;
+  --slate-400: 145 140 144;
+  --slate-500: 165 160 164;
+  --slate-600: 186 182 185;
+  --slate-700: 206 203 205;
+  --slate-800: 228 226 228;
+  --slate-900: 243 244 246;
+  --slate-950: 250 250 250;
 }
 
 /* Kotak status berwarna muda: versi redup di mode gelap */
-.dark .bg-red-50, .dark .bg-sale-50 { background-color: rgb(229 36 59 / 0.14); }
+.dark .bg-red-50, .dark .bg-sale-50 { background-color: rgb(227 2 32 / 0.16); }
 .dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
 .dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
-.dark .bg-sun-100 { background-color: rgb(255 59 78 / 0.14); }
+.dark .bg-sun-100 { background-color: rgb(227 2 32 / 0.16); }
 .dark .border-red-200 { border-color: rgb(229 36 59 / 0.35); }
 .dark .border-emerald-200 { border-color: rgb(16 185 129 / 0.35); }
 .dark .border-amber-200 { border-color: rgb(245 158 11 / 0.35); }

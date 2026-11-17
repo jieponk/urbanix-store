@@ -125,7 +125,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
         <div className="relative bg-cobalt-900 px-6 pb-6 pt-7">
           <p className="text-sm font-bold text-white/70">{t('Khusus pesan lewat WhatsApp')}</p>
           <p className="mt-1 flex items-end gap-2 leading-none text-white">
-            <span className="text-[5.5rem] font-extrabold tracking-[-0.06em] text-sun-400">{percent}%</span>
+            <span className="text-[5.5rem] font-extrabold tracking-[-0.06em] text-sun-300">{percent}%</span>
             <span className="pb-3 text-lg font-extrabold">{t('lebih hemat')}</span>
           </p>
         </div>

@@ -41,7 +41,7 @@ export default async function AboutPage() {
       <section className="relative overflow-hidden bg-cobalt-900 px-4 py-16 text-white sm:px-6 sm:py-24 lg:px-8">
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-sun-400 ring-1 ring-white/15">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-sun-300 ring-1 ring-white/15">
               {t('Tentang Urbanix')}
             </p>
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
@@ -191,7 +191,7 @@ export default async function AboutPage() {
       <section className="px-4 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 rounded-3xl bg-cobalt-900 p-8 text-white sm:p-10 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-400">{t('Dikelola oleh')}</p>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-sun-300">{t('Dikelola oleh')}</p>
             <p className="mt-2 text-2xl font-extrabold">{legal.company}</p>
             <p className="mt-2 max-w-xl text-white/75">{legal.address}</p>
           </div>

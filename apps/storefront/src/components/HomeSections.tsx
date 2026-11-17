@@ -188,7 +188,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             <h2 id="judul-wa" className="mt-5 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
               {percent > 0 ? (
                 <>
-                  {t('Pesan via WhatsApp,')} <span className="text-sun-400">{t('lebih hemat {n}%', { n: percent })}</span>
+                  {t('Pesan via WhatsApp,')} <span className="text-sun-300">{t('lebih hemat {n}%', { n: percent })}</span>
                 </>
               ) : (
                 t('Pesan via WhatsApp')
@@ -254,7 +254,7 @@ const stepSvg = { width: 40, height: 40, viewBox: '0 0 48 48', fill: 'none', str
 function StepCart() {
   return (
     <svg {...stepSvg}>
-      <rect className="wa-drop" x="20" y="6" width="10" height="10" rx="2" fill="#ff3b4e" stroke="none" />
+      <rect className="wa-drop" x="20" y="6" width="10" height="10" rx="2" fill="#e30220" stroke="none" />
       <path d="M5 12h5l4.5 20h21L40 18H16" />
       <circle cx="18" cy="39" r="2.6" />
       <circle cx="32" cy="39" r="2.6" />

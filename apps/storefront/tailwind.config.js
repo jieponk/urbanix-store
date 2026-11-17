@@ -10,7 +10,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Identitas Urbanix = hitam-putih (sesuai logo). "brand" = warna tombol utama:
+        // Palet "Charcoal merah" (17 Nov 2026): merah #E30220, merah tua #BE0000, charcoal #252024,
+        // abu #DDDDDD, putih keabuan #F3F4F6. Identitas Urbanix tetap hitam-putih (sesuai logo). "brand" = warna tombol utama:
         // hitam di mode terang, putih di mode gelap. Teks di atasnya pakai `text-onbrand`.
         brand: {
           50: 'rgb(var(--brand-50) / <alpha-value>)',
@@ -18,27 +19,28 @@ module.exports = {
           500: 'rgb(var(--brand-500) / <alpha-value>)',
           600: 'rgb(var(--brand-600) / <alpha-value>)',
           700: 'rgb(var(--brand-700) / <alpha-value>)',
-          dark: '#111111',
+          dark: '#252024',
           accent: 'rgb(var(--brand-500) / <alpha-value>)',
         },
         onbrand: 'rgb(var(--onbrand) / <alpha-value>)',
         // Panel gelap (footer, header atas, kotak promo): hitam netral, sama di kedua mode
         cobalt: {
-          700: '#2a2a2a',
-          800: '#1a1a1a',
-          900: '#0f0f0f',
+          700: '#3b353a',
+          800: '#2e292d',
+          900: '#252024',
         },
         // Sorotan (dulu kuning): merah terang, dipakai di atas panel hitam
+        // 400 = merah palet (lencana/ikon besar); 300 = versi terang untuk TEKS kecil di atas panel charcoal
         sun: {
-          100: '#fdecee',
-          300: '#ff6b7a',
-          400: '#ff3b4e',
+          100: '#fdebed',
+          300: '#ff5a6e',
+          400: '#e30220',
         },
         // Sale Red: label diskon
         sale: {
-          50: '#fdecee',
-          600: '#e5243b',
-          700: '#c01a2f',
+          50: '#fdebed',
+          600: '#e30220',
+          700: '#be0000',
         },
         // Warna dasar yang berganti otomatis di mode gelap (lihat globals.css)
         // Merah editorial (Inspirasi & Berita); di mode gelap otomatis lebih terang

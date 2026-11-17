@@ -86,7 +86,7 @@ export default async function ContactPage() {
             <span className="mx-2">/</span>
             <span className="text-white/90">{t('Kontak')}</span>
           </nav>
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-400">{t('Hubungi kami')}</p>
+          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-300">{t('Hubungi kami')}</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">
             {t('Ada pertanyaan? Admin kami siap membantu.')}
           </h1>

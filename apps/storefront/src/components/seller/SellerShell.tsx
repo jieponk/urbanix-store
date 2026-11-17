@@ -119,7 +119,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
         <div className="px-6 pb-2 pt-5">
           <Link href="/seller" className="block">
             <span className="block text-lg font-extrabold tracking-tight text-white">URBANIX</span>
-            <span className="text-xs font-semibold text-sun-400">Seller Center</span>
+            <span className="text-xs font-semibold text-sun-300">Seller Center</span>
           </Link>
         </div>
         {nav}
@@ -137,7 +137,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
           <aside className="relative flex h-full w-72 flex-col bg-cobalt-900">
             <div className="px-6 pb-2 pt-5">
               <span className="block text-lg font-extrabold text-white">URBANIX</span>
-              <span className="text-xs font-semibold text-sun-400">Seller Center</span>
+              <span className="text-xs font-semibold text-sun-300">Seller Center</span>
             </div>
             {nav}
             <div className="border-t border-white/10 p-3">

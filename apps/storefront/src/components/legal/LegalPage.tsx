@@ -39,7 +39,7 @@ export default function LegalPage({
             <span className="mx-2">/</span>
             <span className="text-white/90">{title}</span>
           </nav>
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-400">{eyebrow}</p>
+          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-sun-300">{eyebrow}</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">{title}</h1>
           <p className="mt-4 max-w-2xl text-lg leading-8 text-white/75">{intro}</p>
           <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-sm text-white/85 ring-1 ring-white/15">
