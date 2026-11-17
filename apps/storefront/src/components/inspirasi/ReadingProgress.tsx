@@ -29,7 +29,7 @@ export default function ReadingProgress({ targetId }: { targetId: string }) {
   }, [targetId]);
   return (
     <div aria-hidden="true" className="fixed inset-x-0 top-0 z-[60] h-1 print:hidden">
-      <div className="h-full origin-left bg-gradient-to-r from-brand-500 to-sun-400" style={{ transform: `scaleX(${pct / 100})` }} />
+      <div className="h-full origin-left bg-ed" style={{ transform: `scaleX(${pct / 100})` }} />
     </div>
   );
 }

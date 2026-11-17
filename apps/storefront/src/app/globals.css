@@ -6,6 +6,7 @@
 :root {
   color-scheme: light;
   --ink: 28 32 48;
+  --ed: 200 16 46;
   --mist: 243 245 250;
   --surface: 255 255 255;
   --slate-50: 248 250 252;
@@ -24,6 +25,7 @@
 .dark {
   color-scheme: dark;
   --ink: 236 239 245;
+  --ed: 255 99 115;
   --mist: 13 16 27;
   --surface: 23 27 41;
   --slate-50: 21 26 40;
@@ -351,7 +353,7 @@ body {
 /* Daftar isi: penanda bagian yang sedang dibaca */
 .toc-link[aria-current='true'] { color: rgb(var(--ink)); background: rgb(var(--mist)); }
 .toc-link[aria-current='true']::before { transform: scaleY(1); opacity: 1; }
-.toc-link::before { content: ''; position: absolute; left: 0; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 999px; background: linear-gradient(#ff5b14, #ffc93c); transform: scaleY(0); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
+.toc-link::before { content: ''; position: absolute; left: 0; top: 0.4rem; bottom: 0.4rem; width: 3px; border-radius: 999px; background: rgb(var(--ed)); transform: scaleY(0); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   .inspo-reveal, .inspo-glow, .inspo-rings, .ico-sparkle { animation: none !important; }
@@ -359,3 +361,19 @@ body {
 }
 .ico-ext { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
 .group:hover .ico-ext { transform: translate(2px, -2px); }
+
+/* ===== Gaya editorial (Inspirasi & Berita): putih/hitam + merah, tanpa oranye ===== */
+.ed .article-prose { --accent: var(--ed); }
+.ed .article-prose a:not(.md-btn), .dark .ed .article-prose a:not(.md-btn) { color: rgb(var(--ed)); text-decoration-color: rgb(var(--ed) / 0.35); }
+.ed .article-prose a:not(.md-btn):hover { text-decoration-color: currentColor; }
+.ed .article-prose h2:not(.h-display)::before { background: rgb(var(--ed)); border-radius: 0; width: 0.22em; }
+.ed .article-prose :not(pre) > code, .dark .ed .article-prose :not(pre) > code { color: rgb(var(--ed)); }
+.ed .article-prose .md-badge { background: rgb(var(--ed)); }
+.ed .article-prose .md-btn { background: rgb(var(--ink)); color: rgb(var(--surface)); box-shadow: none; border-radius: 0.5rem; }
+.ed .article-prose .md-btn:hover { background: rgb(var(--ed)); color: #fff; }
+.ed .article-prose mark { background: linear-gradient(transparent 60%, rgb(var(--ed) / 0.22) 60%); }
+.ed .article-prose .tok-k { color: rgb(var(--ed)); }
+.ed-rule { border-top: 3px solid rgb(var(--ink)); }
+.ed-kicker { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--ed)); }
+.ed-title-link { background-image: linear-gradient(currentColor, currentColor); background-size: 0% 2px; background-position: 0 100%; background-repeat: no-repeat; transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.group:hover .ed-title-link { background-size: 100% 2px; }

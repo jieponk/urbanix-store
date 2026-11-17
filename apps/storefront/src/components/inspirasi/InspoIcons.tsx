@@ -170,15 +170,6 @@ export function CategoryIcon({ slug, size = 16, className = '' }: { slug?: strin
   return <Camera size={size} className={cls} />;
 }
 
-/** Warna aksen per kategori (latar lembut + teks), aman di mode gelap. */
-export function categoryTone(slug?: string) {
-  const s = slug || '';
-  if (/tips|tutorial/.test(s)) return 'bg-emerald-500/10 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300';
-  if (/panduan|beli/.test(s)) return 'bg-brand-500/10 text-brand-700 ring-brand-500/25 dark:text-brand-500';
-  if (/review/.test(s)) return 'bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-300';
-  if (/promo|event/.test(s)) return 'bg-rose-500/10 text-rose-700 ring-rose-500/25 dark:text-rose-300';
-  return 'bg-sky-500/10 text-sky-700 ring-sky-500/25 dark:text-sky-300';
-}
 
 export const CheckCircle = ({ size = 18, className }: P) => (
   <svg {...base(size, className)}>

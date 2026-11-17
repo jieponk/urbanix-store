@@ -87,15 +87,15 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
     },
   };
 
-  const chip = (active: boolean) =>
-    `group inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition duration-300 ${
+  const tab = (active: boolean) =>
+    `group relative inline-flex shrink-0 items-center gap-2 px-1 py-3.5 text-sm font-bold transition-colors ${
       active
-        ? 'bg-ink text-surface shadow-lg shadow-slate-900/15'
-        : 'bg-surface text-ink ring-1 ring-slate-200 hover:-translate-y-0.5 hover:ring-ink'
+        ? 'text-ink after:absolute after:inset-x-0 after:-bottom-px after:h-[3px] after:bg-ed'
+        : 'text-slate-500 hover:text-ink'
     }`;
 
   return (
-    <div className="pb-20">
+    <div className="ed pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(collectionLd)} />
       <script
         type="application/ld+json"
@@ -107,161 +107,107 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
         )}
       />
 
-      {/* ---------- Pembuka ---------- */}
-      <section className="relative isolate overflow-hidden bg-cobalt-900 px-4 pb-24 pt-10 text-white sm:px-6 sm:pb-32 sm:pt-14 lg:px-8">
-        <div aria-hidden="true" className="inspo-glow pointer-events-none absolute -right-40 -top-48 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#ff5b14] opacity-30 blur-[120px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -left-32 -z-10 h-[24rem] w-[24rem] rounded-full bg-[#4FB3FF] opacity-15 blur-[110px]" />
-        <div aria-hidden="true" className="inspo-rings pointer-events-none absolute -right-28 top-1/2 -z-10 hidden h-[26rem] w-[26rem] -translate-y-1/2 rounded-full border border-white/10 lg:block">
-          <div className="absolute inset-12 rounded-full border border-white/10" />
-          <div className="absolute inset-24 rounded-full border border-dashed border-white/15" />
-          <div className="absolute inset-[8.5rem] rounded-full bg-gradient-to-br from-white/90 to-white/40" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-semibold text-white/55">
-            <Link href="/" className="hover:text-white">Beranda</Link>
-            <span aria-hidden="true">/</span>
-            {activeCat ? (
-              <>
-                <Link href="/inspirasi" className="hover:text-white">Inspirasi</Link>
-                <span aria-hidden="true">/</span>
-                <span className="text-white/85">{activeCat.name}</span>
-              </>
-            ) : (
-              <span className="text-white/85">Inspirasi</span>
-            )}
-          </nav>
-          <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sun-400 ring-1 ring-white/15 backdrop-blur">
-            <Sparkle size={13} /> Inspirasi Urbanix
-          </p>
-          <h1 className="mt-4 max-w-3xl text-[2.1rem] font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-            {activeCat ? activeCat.name : (
-              <>
-                Belajar, pilih gear, <span className="bg-gradient-to-r from-[#FF5B14] to-[#FFC93C] bg-clip-text text-transparent">terus berkarya.</span>
-              </>
-            )}
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
-            Tips memotret, panduan beli, review jujur, dan kabar terbaru dunia kamera. Ditulis santai, buat para kreator.
-          </p>
-          {total > 0 && (
-            <div className="mt-7 flex flex-wrap gap-2.5 text-sm">
-              <span className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-3.5 py-2 font-bold ring-1 ring-white/15 backdrop-blur">
-                <span className="text-lg font-extrabold text-sun-400">{total}</span> artikel
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-3.5 py-2 font-bold ring-1 ring-white/15 backdrop-blur">
-                <span className="text-lg font-extrabold text-sun-400">{categories.filter((c) => c.count > 0).length}</span> kategori
-              </span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="relative -mt-14 px-4 sm:-mt-20 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          {/* ---------- Kategori ---------- */}
-          {categories.length > 0 && (
-            <nav
-              aria-label="Kategori artikel"
-              className="inspo-reveal rounded-3xl bg-surface/95 p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200 backdrop-blur"
-            >
-              <div className="inspo-scroll -mx-2 flex gap-2 overflow-x-auto px-2 py-0.5">
-                <Link href={href({ label })} className={chip(!kategori)} aria-current={!kategori ? 'page' : undefined}>
-                  <CategoryIcon slug="" size={16} />
+          {/* ---------- Kepala (gaya koran) ---------- */}
+          <header className="pt-6 sm:pt-10">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <Link href="/" className="hover:text-ink">Beranda</Link>
+              <span aria-hidden="true">/</span>
+              {activeCat ? (
+                <>
+                  <Link href="/inspirasi" className="hover:text-ink">Inspirasi</Link>
+                  <span aria-hidden="true">/</span>
+                  <span className="text-ink">{activeCat.name}</span>
+                </>
+              ) : (
+                <span className="text-ink">Inspirasi</span>
+              )}
+            </nav>
+            <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-3 border-b-[3px] border-ink pb-4">
+              <div>
+                <span aria-hidden="true" className="block h-1.5 w-14 bg-ed" />
+                <h1 className="mt-4 text-[2.6rem] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-6xl">
+                  {activeCat ? activeCat.name : 'Inspirasi'}
+                </h1>
+              </div>
+              <p className="max-w-md text-[15px] leading-7 text-slate-600 sm:text-right">
+                Tips memotret, panduan beli, review jujur, dan kabar terbaru dunia kamera dari tim Urbanix.
+              </p>
+            </div>
+
+            {/* Tab kategori */}
+            {categories.length > 0 && (
+              <nav aria-label="Kategori artikel" className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
+                <Link href={href({ label })} className={tab(!kategori)} aria-current={!kategori ? 'page' : undefined}>
+                  <CategoryIcon slug="" size={15} />
                   Semua
+                  {total > 0 && <span className="text-xs font-semibold tabular-nums text-slate-400">{total}</span>}
                 </Link>
                 {categories.map((c) => (
-                  <Link key={c.slug} href={href({ kategori: c.slug, label })} className={chip(kategori === c.slug)} aria-current={kategori === c.slug ? 'page' : undefined}>
-                    <CategoryIcon slug={c.slug} size={16} />
+                  <Link key={c.slug} href={href({ kategori: c.slug, label })} className={tab(kategori === c.slug)} aria-current={kategori === c.slug ? 'page' : undefined}>
+                    <CategoryIcon slug={c.slug} size={15} />
                     {c.name}
-                    {c.count > 0 && (
-                      <span className={`rounded-full px-1.5 py-0.5 text-[11px] leading-none tabular-nums ${kategori === c.slug ? 'bg-white/20' : 'bg-mist text-slate-500'}`}>
-                        {c.count}
-                      </span>
-                    )}
+                    {c.count > 0 && <span className="text-xs font-semibold tabular-nums text-slate-400">{c.count}</span>}
                   </Link>
                 ))}
-              </div>
-            </nav>
-          )}
+              </nav>
+            )}
+          </header>
 
-          {/* ---------- Sorotan (halaman 1) ---------- */}
+          {/* ---------- Artikel utama (halaman 1) ---------- */}
           {featured && (
-            <section aria-labelledby="sorotan" className="mt-10">
-              <h2 id="sorotan" className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-500">
-                <Sparkle size={14} /> Sorotan
-              </h2>
-              <div className="mt-4 grid gap-5 lg:grid-cols-[1.65fr_1fr]">
-                <FeaturedArticle article={featured} />
-                <div className="flex flex-col gap-4">
+            <section aria-label="Artikel utama" className="mt-8 grid gap-8 border-b border-slate-200 pb-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:gap-10">
+              <FeaturedArticle article={featured} />
+              <div className="lg:border-l lg:border-slate-200 lg:pl-8">
+                <h2 className="ed-kicker flex items-center gap-2">
+                  <Sparkle size={13} /> Pilihan editor
+                </h2>
+                <div className="mt-1 divide-y divide-slate-200">
                   {side.map((a, i) => (
                     <CompactArticle key={a.id} article={a} index={i} />
                   ))}
-                  {/* Jalan pintas kategori */}
-                  <div className="inspo-reveal flex-1 rounded-2xl bg-gradient-to-br from-cobalt-900 to-cobalt-800 p-5 text-white" style={{ animationDelay: '320ms' }}>
-                    <p className="text-sm font-extrabold">Lagi cari apa?</p>
-                    <ul className="mt-3 grid grid-cols-2 gap-2">
-                      {categories.filter((c) => c.count > 0).slice(0, 4).map((c) => (
-                        <li key={c.slug}>
-                          <Link
-                            href={href({ kategori: c.slug })}
-                            className="group flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-[13px] font-bold ring-1 ring-white/10 transition duration-300 hover:-translate-y-0.5 hover:bg-white/15 hover:ring-sun-400/50"
-                          >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sun-400 text-cobalt-900">
-                              <CategoryIcon slug={c.slug} size={15} />
-                            </span>
-                            <span className="truncate">{c.name}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
+                <Link href="/berita" className="group mt-2 flex items-center justify-between border-t border-slate-200 pt-4 text-sm font-bold text-ink hover:text-ed">
+                  <span className="inline-flex items-center gap-2"><Newspaper size={16} /> Berita kamera hari ini</span>
+                  <ArrowRight size={16} />
+                </Link>
               </div>
             </section>
           )}
 
           {/* ---------- Daftar artikel ---------- */}
-          <section id="artikel" aria-labelledby="judul-artikel" className="mt-14 scroll-mt-32">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-500">Ditulis tim Urbanix</p>
-                <h2 id="judul-artikel" className="mt-1 flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
-                  {activeCat && (
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-surface">
-                      <CategoryIcon slug={activeCat.slug} size={18} />
-                    </span>
-                  )}
-                  {heading}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
+          <section id="artikel" aria-labelledby="judul-artikel" className="mt-10 scroll-mt-32">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 id="judul-artikel" className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+                <span aria-hidden="true" className="h-5 w-1.5 bg-ed" />
+                {heading}
+              </h2>
+              <div className="flex items-center gap-3">
                 {label && (
-                  <Link href={href({ kategori })} className="group inline-flex items-center gap-1.5 rounded-full bg-mist px-3 py-1.5 text-sm font-bold text-ink ring-1 ring-slate-200 transition hover:ring-ink">
+                  <Link href={href({ kategori })} className="group inline-flex items-center gap-1.5 border border-slate-300 px-3 py-1.5 text-sm font-bold text-ink transition hover:border-ink">
                     <Tag size={14} /> {label}
-                    <span aria-hidden="true" className="ml-0.5 text-slate-400 transition group-hover:rotate-90 group-hover:text-ink">✕</span>
+                    <span aria-hidden="true" className="ml-0.5 text-slate-400 transition group-hover:rotate-90 group-hover:text-ed">✕</span>
                     <span className="sr-only">hapus filter label</span>
                   </Link>
                 )}
-                {data && data.count > 0 && <span className="text-sm font-semibold text-slate-500">{data.count} artikel</span>}
+                {data && data.count > 0 && <span className="text-sm text-slate-500">{data.count} artikel</span>}
               </div>
             </div>
 
             {grid.length > 0 ? (
-              <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-7">
+              <div className="mt-7 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {grid.map((a, i) => (
                   <ArticleCard key={a.id} article={a} index={i} />
                 ))}
               </div>
             ) : (
               !featured && (
-                <div className="mt-7 flex flex-col items-center rounded-3xl border border-dashed border-slate-300 px-5 py-16 text-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mist text-slate-500">
-                    <CategoryIcon slug={kategori} size={26} />
-                  </span>
+                <div className="mt-7 flex flex-col items-center border-y border-slate-200 px-5 py-16 text-center">
+                  <span className="text-slate-400"><CategoryIcon slug={kategori} size={30} /></span>
                   <p className="mt-4 font-extrabold text-ink">Belum ada artikel di sini</p>
                   <p className="mt-1 text-sm text-slate-500">Artikel baru segera hadir. Coba kategori lain dulu, ya.</p>
-                  <Link href="/inspirasi" className="group mt-5 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-sm font-bold text-surface">
+                  <Link href="/inspirasi" className="group mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-ed">
                     Lihat semua artikel <ArrowRight size={16} />
                   </Link>
                 </div>
@@ -273,30 +219,24 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
 
           {/* ---------- Berita kamera ---------- */}
           {news && news.results.length > 0 && (
-            <section className="mt-20 rounded-[2rem] bg-mist p-4 sm:p-8" aria-labelledby="berita-heading">
+            <section className="mt-20 border-t-[3px] border-ink pt-6" aria-labelledby="berita-heading">
               <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cobalt-900 text-white">
-                    <Newspaper size={22} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-500">Dari berbagai media</p>
-                    <h2 id="berita-heading" className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Berita Kamera</h2>
-                  </div>
+                <div>
+                  <p className="ed-kicker flex items-center gap-1.5"><Newspaper size={14} /> Dari berbagai media</p>
+                  <h2 id="berita-heading" className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Berita Kamera</h2>
                 </div>
-                <Link href="/berita" className="group inline-flex items-center gap-1.5 rounded-full bg-surface px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 transition hover:ring-ink">
+                <Link href="/berita" className="group inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-ed">
                   Semua berita <ArrowRight size={16} />
                 </Link>
               </div>
-              <div className="mt-6 grid gap-4 lg:grid-cols-[1.25fr_1fr] lg:gap-6">
+              <div className="mt-6 grid gap-8 lg:grid-cols-[1.3fr_1fr]">
                 <NewsHero article={news.results[0]} />
-                <div className="hidden flex-col gap-1 lg:flex">
+                <div className="hidden flex-col lg:flex">
                   {news.results.slice(1, 5).map((n, i) => (
                     <NewsRow key={n.id} article={n} index={i} />
                   ))}
                 </div>
-                {/* HP & tablet: kartu biasa */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:hidden">
+                <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:hidden">
                   {news.results.slice(1, 5).map((n, i) => (
                     <NewsCard key={n.id} article={n} compact index={i} />
                   ))}

@@ -6,8 +6,9 @@ export const dynamic = 'force-dynamic';
 
 const W = 1200;
 const H = 630;
-const NAVY = '#1B2559';
-const ACCENTS = ['#FF5B14', '#FFC93C', '#4FB3FF'];
+const INK = '#111111';
+const RED = '#C8102E';
+const PANEL = '#F2F2F2';
 
 /** Font tebal untuk judul (Plus Jakarta Sans); bila gagal diunduh, pakai font bawaan. */
 const fonts = new Map<number, Promise<ArrayBuffer | null>>();
@@ -34,160 +35,76 @@ function font(weight: number) {
 const abs = (src: string) => (src.startsWith('http') ? src : `${SITE_URL}${src}`);
 
 /**
- * Sampul otomatis artikel Inspirasi (1200×630, juga dipakai pratinjau link WA/IG/Google):
- * latar navy + aksen warna (berganti per artikel), judul, dan foto 1–3 produk terkait.
+ * Sampul otomatis artikel Inspirasi (1200×630, juga dipakai pratinjau link WA/IG/Google).
+ * Gaya editorial hitam-putih: latar putih, judul hitam, garis merah tipis, foto produk di panel abu-abu muda.
  */
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
   if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
 
-  const accent = ACCENTS[article.id % ACCENTS.length];
-  const darkText = accent === '#FFC93C';
   const images = (article.related_products || [])
     .map((p) => p.image_url || p.images?.[0] || '')
     .filter(Boolean)
     .slice(0, 3)
     .map(abs);
   const title = article.title;
-  const size = title.length > 90 ? 44 : title.length > 60 ? 52 : 60;
+  const hasImg = images.length > 0;
+  const size = hasImg ? (title.length > 80 ? 46 : title.length > 55 ? 54 : 62) : title.length > 80 ? 60 : 72;
   const [bold, semi] = await Promise.all([font(800), font(600)]);
   const family = bold ? 'Jakarta' : undefined;
-
-  // Posisi kartu produk: 1 besar, atau bertumpuk miring untuk 2–3 produk.
-  const layouts: Record<number, { x: number; y: number; s: number; r: number }[]> = {
-    1: [{ x: 70, y: 105, s: 400, r: -4 }],
-    2: [
-      { x: 30, y: 80, s: 300, r: -8 },
-      { x: 190, y: 220, s: 300, r: 6 },
-    ],
-    3: [
-      { x: 10, y: 60, s: 260, r: -10 },
-      { x: 220, y: 40, s: 240, r: 8 },
-      { x: 120, y: 270, s: 270, r: -2 },
-    ],
-  };
-  const spots = layouts[images.length] || [];
+  const PANEL_W = 540;
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: W,
-          height: H,
-          display: 'flex',
-          position: 'relative',
-          background: NAVY,
-          fontFamily: family,
-          overflow: 'hidden',
-        }}
-      >
-        {/* cahaya aksen */}
-        <div
-          style={{
-            position: 'absolute',
-            right: -160,
-            top: -160,
-            width: 760,
-            height: 760,
-            borderRadius: 9999,
-            background: accent,
-            opacity: 0.28,
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            left: -120,
-            bottom: -220,
-            width: 420,
-            height: 420,
-            borderRadius: 9999,
-            background: accent,
-            opacity: 0.12,
-            display: 'flex',
-          }}
-        />
-
+      <div style={{ width: W, height: H, display: 'flex', background: '#FFFFFF', fontFamily: family, borderTop: `14px solid ${INK}` }}>
         {/* teks */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            width: images.length ? 650 : 1080,
-            padding: '64px 0 56px 64px',
+            width: hasImg ? W - PANEL_W : W,
+            padding: '56px 56px 48px 64px',
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', width: 84, height: 8, background: RED }} />
             {article.category?.name && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignSelf: 'flex-start',
-                  padding: '10px 22px',
-                  borderRadius: 9999,
-                  background: accent,
-                  color: darkText ? NAVY : '#fff',
-                  fontSize: 24,
-                  fontWeight: 800,
-                  letterSpacing: 1,
-                  textTransform: 'uppercase',
-                }}
-              >
+              <div style={{ display: 'flex', marginTop: 22, color: RED, fontSize: 24, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>
                 {article.category.name}
               </div>
             )}
-            <div
-              style={{
-                display: 'flex',
-                marginTop: 28,
-                color: '#fff',
-                fontSize: size,
-                fontWeight: 800,
-                lineHeight: 1.12,
-                letterSpacing: -1,
-              }}
-            >
+            <div style={{ display: 'flex', marginTop: 16, color: INK, fontSize: size, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1.5 }}>
               {title}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ display: 'flex', fontSize: 34, fontWeight: 800, color: '#fff', letterSpacing: 8 }}>URBANIX</div>
-            <div style={{ display: 'flex', width: 6, height: 6, borderRadius: 9999, background: accent }} />
-            <div style={{ display: 'flex', fontSize: 24, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
-              urbanix.id/inspirasi
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, borderTop: '2px solid #E5E5E5', paddingTop: 22 }}>
+            <div style={{ display: 'flex', fontSize: 30, fontWeight: 800, color: INK, letterSpacing: 8 }}>URBANIX</div>
+            <div style={{ display: 'flex', fontSize: 22, fontWeight: 600, color: '#6B6B6B' }}>urbanix.id/inspirasi</div>
           </div>
         </div>
 
         {/* foto produk */}
-        {images.length > 0 && (
-          <div style={{ display: 'flex', position: 'relative', width: 550, height: H }}>
+        {hasImg && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: images.length === 2 ? 'column' : 'row',
+              flexWrap: 'wrap',
+              width: PANEL_W,
+              height: H - 14,
+              background: PANEL,
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 36,
+              gap: 20,
+            }}
+          >
             {images.map((src, i) => {
-              const p = spots[i];
+              const big = images.length === 1 ? 440 : images.length === 2 ? 250 : i === 0 ? 300 : 190;
               return (
-                <div
-                  key={src}
-                  style={{
-                    position: 'absolute',
-                    left: p.x,
-                    top: p.y,
-                    width: p.s,
-                    height: p.s,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#fff',
-                    borderRadius: 36,
-                    transform: `rotate(${p.r}deg)`,
-                    boxShadow: '0 30px 60px rgba(0,0,0,0.35)',
-                    padding: 18,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} width={p.s - 36} height={p.s - 36} style={{ objectFit: 'contain', borderRadius: 20 }} />
-                </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={src} src={src} width={big} height={big} style={{ objectFit: 'contain', width: big, height: big }} />
               );
             })}
           </div>

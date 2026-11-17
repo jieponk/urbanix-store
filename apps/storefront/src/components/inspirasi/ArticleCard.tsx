@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ArticleCard as Card } from '@/lib/api';
 import { DEFAULT_COVER } from '@/lib/markdown';
-import { ArrowRight, Calendar, CategoryIcon, Chat, Clock, Pin, categoryTone } from '@/components/inspirasi/InspoIcons';
+import { ArrowRight, Calendar, CategoryIcon, Chat, Clock, Pin } from '@/components/inspirasi/InspoIcons';
 
 export function articleDate(iso: string | null, short = false) {
   if (!iso) return '';
@@ -42,14 +42,11 @@ export function Cover({
   );
 }
 
-/** Lencana kategori dengan ikon. `solid` = versi di atas gambar. */
-export function CategoryBadge({ category, solid = false }: { category: Card['category']; solid?: boolean }) {
+/** Label kategori gaya koran: teks merah huruf kapital + ikon kecil. */
+export function CategoryBadge({ category, className = '' }: { category: Card['category']; solid?: boolean; className?: string }) {
   if (!category) return null;
-  const cls = solid
-    ? 'bg-white/95 text-cobalt-900 ring-white/40 shadow-sm backdrop-blur'
-    : categoryTone(category.slug);
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${cls}`}>
+    <span className={`ed-kicker inline-flex items-center gap-1.5 ${className}`}>
       <CategoryIcon slug={category.slug} size={13} />
       {category.name}
     </span>
@@ -58,7 +55,7 @@ export function CategoryBadge({ category, solid = false }: { category: Card['cat
 
 export function PinnedBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sun-400 px-2.5 py-1 text-[11px] font-extrabold text-cobalt-900 shadow-sm">
+    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
       <Pin size={12} /> Disematkan
     </span>
   );
@@ -67,94 +64,72 @@ export function PinnedBadge() {
 /** Baris info: tanggal · durasi baca · jumlah komentar. */
 export function ArticleMeta({ article, className = '' }: { article: Card; className?: string }) {
   return (
-    <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs font-semibold text-slate-500 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs font-medium text-slate-500 ${className}`}>
       {article.published_at && (
         <time dateTime={article.published_at} className="inline-flex items-center gap-1.5">
-          <Calendar size={14} /> {articleDate(article.published_at, true)}
+          <Calendar size={13} /> {articleDate(article.published_at, true)}
         </time>
       )}
       <span className="inline-flex items-center gap-1.5">
-        <Clock size={14} /> {article.reading_minutes} menit
+        <Clock size={13} /> {article.reading_minutes} menit baca
       </span>
       {!!article.comment_count && (
         <span className="inline-flex items-center gap-1.5" title={`${article.comment_count} komentar`}>
-          <Chat size={14} /> {article.comment_count}
+          <Chat size={13} /> {article.comment_count}
         </span>
       )}
     </div>
   );
 }
 
-/** Kartu artikel (grid). `index` untuk animasi muncul berurutan. */
+/** Kartu artikel (grid): foto, label merah, judul tebal, ringkasan, info. Datar, tanpa bayangan. */
 export default function ArticleCard({ article, index = 0 }: { article: Card; index?: number }) {
   return (
-    <article
-      className="inspo-reveal group relative flex h-full flex-col overflow-hidden rounded-3xl bg-surface ring-1 ring-slate-200 transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-slate-900/10 hover:ring-slate-300"
-      style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
-    >
-      <div className="relative aspect-[1200/630] overflow-hidden bg-cobalt-900">
-        <Cover src={article.cover} alt="" className="transition duration-700 ease-out group-hover:scale-[1.05]" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 sm:left-4 sm:top-4">
-          <CategoryBadge category={article.category} solid />
+    <article className="inspo-reveal group relative flex h-full flex-col" style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}>
+      <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
+        <Cover src={article.cover} alt="" className="transition duration-700 ease-out group-hover:scale-[1.03]" />
+      </div>
+      <div className="flex flex-1 flex-col pt-4">
+        <div className="flex items-center gap-3">
+          <CategoryBadge category={article.category} />
           {article.is_pinned && <PinnedBadge />}
         </div>
-      </div>
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <ArticleMeta article={article} />
-        <h3 className="mt-3 line-clamp-2 text-lg font-extrabold leading-snug tracking-tight text-ink transition-colors group-hover:text-brand-600 sm:text-[1.2rem] dark:group-hover:text-brand-500">
-          <Link href={`/inspirasi/${article.slug}`} className="after:absolute after:inset-0 after:rounded-3xl focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-brand-500">
+        <h3 className="mt-2 line-clamp-3 text-[1.15rem] font-extrabold leading-snug tracking-tight text-ink sm:text-xl">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ed">
             {article.title}
           </Link>
         </h3>
-        {article.excerpt && <p className="mt-2 line-clamp-3 text-[15px] leading-7 text-slate-600">{article.excerpt}</p>}
-        <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-bold text-ink">
-          Baca selengkapnya
-          <ArrowRight size={16} className="text-brand-600 dark:text-brand-500" />
-        </span>
+        {article.excerpt && <p className="mt-2 line-clamp-2 text-[15px] leading-7 text-slate-600">{article.excerpt}</p>}
+        <ArticleMeta article={article} className="mt-auto pt-4" />
       </div>
     </article>
   );
 }
 
-/** Kartu besar untuk artikel sorotan (disematkan / terbaru). */
+/** Artikel utama: foto besar di kiri, teks di kanan (HP: foto di atas). Teks tidak ditumpuk di atas gambar. */
 export function FeaturedArticle({ article }: { article: Card }) {
   return (
-    <article className="inspo-reveal group relative isolate flex min-h-[420px] flex-col justify-end overflow-hidden rounded-[2rem] bg-cobalt-900 shadow-2xl shadow-slate-900/20 sm:min-h-[460px] lg:h-full">
-      <div className="absolute inset-0 -z-10">
-        <Cover
-          src={article.cover}
-          alt=""
-          eager
-          sizes="(min-width: 1024px) 60vw, 100vw"
-          className="transition duration-[1200ms] ease-out group-hover:scale-[1.04]"
-        />
+    <article className="inspo-reveal group relative grid gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
+      <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
+        <Cover src={article.cover} alt="" eager sizes="(min-width: 1024px) 60vw, 100vw" className="transition duration-700 ease-out group-hover:scale-[1.03]" />
       </div>
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0b1236] via-[#0b1236]/75 to-[#0b1236]/5" />
-      <div className="p-6 text-white sm:p-9">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col justify-center">
+        <div className="flex items-center gap-3">
+          <CategoryBadge category={article.category} />
           {article.is_pinned && <PinnedBadge />}
-          <CategoryBadge category={article.category} solid />
         </div>
-        <h2 className="mt-4 max-w-2xl text-2xl font-extrabold leading-[1.15] tracking-tight sm:text-4xl">
-          <Link href={`/inspirasi/${article.slug}`} className="after:absolute after:inset-0 focus:outline-none focus-visible:after:ring-4 focus-visible:after:ring-sun-400">
+        <h2 className="mt-3 text-[1.75rem] font-extrabold leading-[1.12] tracking-tight text-ink sm:text-4xl">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
             {article.title}
           </Link>
         </h2>
-        {article.excerpt && (
-          <p className="mt-3 line-clamp-2 max-w-2xl text-[15px] leading-7 text-white/80 sm:text-base sm:leading-7">{article.excerpt}</p>
-        )}
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sun-400 text-sm font-extrabold text-cobalt-900">
-              {article.author_name.slice(0, 1).toUpperCase()}
-            </span>
-            <div className="text-sm">
-              <p className="font-bold">{article.author_name}</p>
-              <ArticleMeta article={article} className="!text-white/70" />
-            </div>
+        {article.excerpt && <p className="mt-4 line-clamp-3 text-base leading-7 text-slate-600 sm:text-[17px] sm:leading-8">{article.excerpt}</p>}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <div className="text-sm">
+            <p className="font-bold text-ink">{article.author_name}</p>
+            <ArticleMeta article={article} className="mt-0.5" />
           </div>
-          <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-extrabold text-cobalt-900 shadow-lg transition duration-300 group-hover:bg-sun-400">
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ed">
             Baca artikel <ArrowRight size={16} />
           </span>
         </div>
@@ -163,29 +138,21 @@ export function FeaturedArticle({ article }: { article: Card }) {
   );
 }
 
-/** Kartu ringkas horizontal (daftar samping sorotan & "baca juga"). */
+/** Kartu ringkas horizontal (kolom samping). */
 export function CompactArticle({ article, index = 0 }: { article: Card; index?: number }) {
   return (
-    <article
-      className="inspo-reveal group relative flex gap-4 rounded-2xl bg-surface p-3 ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-slate-300"
-      style={{ animationDelay: `${120 + index * 80}ms` }}
-    >
-      <div className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-xl bg-cobalt-900 sm:w-36">
-        <Cover src={article.cover} alt="" sizes="144px" className="transition duration-500 group-hover:scale-[1.06]" />
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col py-0.5">
-        {article.category && (
-          <span className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${categoryTone(article.category.slug)}`}>
-            <CategoryIcon slug={article.category.slug} size={11} />
-            {article.category.name}
-          </span>
-        )}
-        <h3 className="mt-1.5 line-clamp-2 text-[15px] font-extrabold leading-snug text-ink transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-500">
-          <Link href={`/inspirasi/${article.slug}`} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+    <article className="inspo-reveal group relative flex gap-4 py-4" style={{ animationDelay: `${120 + index * 80}ms` }}>
+      <div className="min-w-0 flex-1">
+        <CategoryBadge category={article.category} />
+        <h3 className="mt-1.5 line-clamp-3 text-base font-extrabold leading-snug text-ink">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
             {article.title}
           </Link>
         </h3>
-        <ArticleMeta article={article} className="mt-auto pt-2 !text-[11px]" />
+        <ArticleMeta article={article} className="mt-2" />
+      </div>
+      <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-md bg-mist sm:w-28">
+        <Cover src={article.cover} alt="" sizes="112px" className="transition duration-500 group-hover:scale-[1.05]" />
       </div>
     </article>
   );

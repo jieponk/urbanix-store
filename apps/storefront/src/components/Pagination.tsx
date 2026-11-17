@@ -29,9 +29,9 @@ export default function Pagination({
   if (pages <= 1) return null;
   const nums = pageList(page, pages);
   const step =
-    'group inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-bold ring-1 transition duration-200';
+    'group inline-flex h-11 items-center gap-2 rounded-md px-4 text-sm font-bold ring-1 transition duration-200';
   const num =
-    'inline-flex h-11 min-w-11 items-center justify-center rounded-full px-3 text-sm font-bold tabular-nums transition duration-200';
+    'inline-flex h-11 min-w-11 items-center justify-center rounded-md px-3 text-sm font-bold tabular-nums transition duration-200';
 
   return (
     <nav aria-label={label} className="mt-12 flex flex-col items-center gap-3">
@@ -54,11 +54,11 @@ export default function Pagination({
             ) : (
               <li key={n}>
                 {n === page ? (
-                  <span aria-current="page" className={`${num} bg-ink text-surface shadow-lg shadow-slate-900/15`}>
+                  <span aria-current="page" className={`${num} bg-ink text-surface `}>
                     {n}
                   </span>
                 ) : (
-                  <Link href={href(n)} aria-label={`${label} ${n}`} className={`${num} text-slate-600 hover:-translate-y-0.5 hover:bg-surface hover:text-ink hover:ring-1 hover:ring-slate-200`}>
+                  <Link href={href(n)} aria-label={`${label} ${n}`} className={`${num} text-slate-600 hover:-translate-y-0.5 hover:bg-surface hover:text-ed hover:ring-1 hover:ring-slate-300`}>
                     {n}
                   </Link>
                 )}
@@ -73,7 +73,7 @@ export default function Pagination({
         </span>
 
         {page < pages ? (
-          <Link href={href(page + 1)} rel="next" className={`${step} bg-ink text-surface ring-ink hover:translate-x-0.5 hover:shadow-lg hover:shadow-slate-900/20`}>
+          <Link href={href(page + 1)} rel="next" className={`${step} bg-ink text-surface ring-ink hover:bg-ed hover:ring-ed hover:text-white`}>
             <span>Berikutnya</span>
             <ArrowRight size={16} />
           </Link>

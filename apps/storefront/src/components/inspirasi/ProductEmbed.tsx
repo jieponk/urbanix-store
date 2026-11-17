@@ -11,7 +11,7 @@ export default function ProductEmbed({ product }: { product?: Product }) {
   const pct = discount ? product.discount_percent || Math.round(((normal - final) / normal) * 100) : 0;
 
   return (
-    <aside className="not-prose my-9 overflow-hidden rounded-3xl bg-surface shadow-xl shadow-slate-900/5 ring-1 ring-slate-200">
+    <aside className="not-prose my-9 overflow-hidden rounded-xl border border-slate-200 bg-surface">
       <div className="flex flex-col sm:flex-row">
         <Link href={`/produk/${product.id}`} className="relative flex aspect-square shrink-0 items-center justify-center bg-[#f7f7f7] p-5 sm:aspect-auto sm:w-52">
           {product.image_url && (
@@ -22,7 +22,7 @@ export default function ProductEmbed({ product }: { product?: Product }) {
           )}
         </Link>
         <div className="flex flex-1 flex-col justify-center gap-3 p-5 sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-600 dark:text-brand-500">Produk di artikel ini</p>
+          <p className="ed-kicker">Produk di artikel ini</p>
           <Link href={`/produk/${product.id}`} className="line-clamp-2 text-lg font-extrabold leading-snug text-ink hover:underline">
             {product.name}
           </Link>
@@ -31,7 +31,7 @@ export default function ProductEmbed({ product }: { product?: Product }) {
             {discount && <span className="text-sm text-slate-500 line-through">{money(normal)}</span>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/produk/${product.id}`} className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-700">
+            <Link href={`/produk/${product.id}`} className="rounded-lg bg-ink px-5 py-2.5 text-sm font-bold text-surface transition hover:bg-ed hover:text-white">
               Lihat produk
             </Link>
             {product.stock <= 0 && <span className="self-center text-sm font-semibold text-slate-500">Stok sedang habis</span>}

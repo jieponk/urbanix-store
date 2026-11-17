@@ -39,6 +39,8 @@ module.exports = {
           700: '#c01a2f',
         },
         // Warna dasar yang berganti otomatis di mode gelap (lihat globals.css)
+        // Merah editorial (Inspirasi & Berita); di mode gelap otomatis lebih terang
+        ed: 'rgb(var(--ed) / <alpha-value>)',
         ink: 'rgb(var(--ink) / <alpha-value>)',
         mist: 'rgb(var(--mist) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
