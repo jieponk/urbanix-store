@@ -67,7 +67,8 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
                 <img
                   src={slide.src}
                   srcSet={slide.srcSet}
-                  sizes={slide.srcSet ? '(max-width: 1024px) 100vw, 64vw' : undefined}
+                  // Banner dipotong (object-cover) di HP & di samping kotak promo, jadi butuh gambar lebih lebar dari kotaknya
+                  sizes={slide.srcSet ? '(max-width: 639px) 135vw, (max-width: 1023px) 100vw, 95vw' : undefined}
                   width={1600}
                   height={686}
                   alt={slide.alt}
