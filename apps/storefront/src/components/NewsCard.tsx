@@ -3,7 +3,7 @@ import { dateLocale } from '@/lib/i18n';
 import { getLang } from '@/lib/lang-server';
 import NewsImage from '@/components/NewsImage';
 import type { NewsArticle } from '@/lib/api';
-import { AiSpark, ArrowRight, Chat, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
+import { AiSpark, ArrowRight, Calendar, Chat, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
 
 /** "3 jam lalu", "Kemarin", "8 Nov 2026". */
@@ -17,30 +17,34 @@ export function newsDate(iso: string, now = Date.now()) {
   return date.toLocaleDateString(dateLocale(getLang()), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 }
 
-function SourceLine({ article, light = false }: { article: NewsArticle; light?: boolean }) {
+/** Baris info ala kartu artikel: penulis · tanggal · jumlah komentar. */
+export function NewsMeta({ article, light = false, className = '' }: { article: NewsArticle; light?: boolean; className?: string }) {
   const t = getT();
+  const comments = article.comment_count || 0;
+  // Berita yang sudah ditulis ulang jadi artikel lengkap = tulisan Tim Urbanix; sisanya kabar dari media sumber.
+  const author = article.has_article ? 'Tim Urbanix' : article.source;
   return (
-    <div className={`flex items-center gap-3 text-xs font-semibold ${light ? 'text-white/75' : 'text-slate-500'}`}>
-      <span className={`inline-flex min-w-0 items-center gap-1.5 font-bold ${light ? 'text-white' : 'text-ink'}`}>
-        <Globe size={13} />
-        <span className="truncate">{article.source}</span>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium ${light ? 'text-white/75' : 'text-slate-500'} ${className}`}>
+      <span className={`inline-flex min-w-0 items-center gap-1.5 font-semibold ${light ? 'text-white' : 'text-slate-700'}`}>
+        <span
+          aria-hidden="true"
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold ${light ? 'bg-white text-cobalt-900' : 'bg-ink text-surface'}`}
+        >
+          {author.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="truncate">{author}</span>
       </span>
       <time dateTime={article.published_at} className="inline-flex shrink-0 items-center gap-1.5">
-        <Clock size={13} /> {newsDate(article.published_at)}
+        <Calendar size={13} /> {newsDate(article.published_at)}
       </time>
-      {!article.is_translated && (
-        <span
-          className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wide ${light ? 'bg-white/15 text-white' : 'bg-mist text-slate-600'}`}
-          title={t('Belum diterjemahkan')}
-        >
-          EN
-        </span>
-      )}
+      <span className="inline-flex shrink-0 items-center gap-1.5" title={t('{n} komentar', { n: comments })}>
+        <Chat size={13} /> {t('{n} komentar', { n: comments })}
+      </span>
     </div>
   );
 }
 
-/** Kartu berita: gambar sampul, sumber, judul, cuplikan. Dibuka di /berita/[id] (tetap di web Urbanix). */
+/** Kartu berita bergaya kartu artikel: foto, sumber (label merah), judul, cuplikan, info, "Baca selengkapnya". */
 export default function NewsCard({
   article,
   compact = false,
@@ -56,38 +60,40 @@ export default function NewsCard({
       className="inspo-reveal group relative flex h-full flex-col"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
-      <div className="relative aspect-[16/9] overflow-hidden rounded-md bg-mist">
+      <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
         <NewsImage src={article.image_url} alt="" className="h-full w-full transition duration-700 ease-out group-hover:scale-[1.03]" />
         {article.is_pinned && (
           <span className="absolute left-0 top-0 inline-flex items-center gap-1 bg-ed px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white">
             <Sparkle size={11} /> {t('Pilihan')}
           </span>
         )}
-        {article.has_ai && (
+        {article.has_article && (
           <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/75 px-2 py-1 text-[11px] font-bold text-white">
-            <AiSpark size={12} /> {t(article.has_article ? 'Artikel lengkap' : 'Ada ringkasan')}
+            <AiSpark size={12} /> {t('Artikel lengkap')}
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col pt-3.5">
-        <SourceLine article={article} />
-        <h3 className={`mt-2 line-clamp-3 font-extrabold leading-snug text-ink ${compact ? 'text-[15px]' : 'text-base sm:text-[1.1rem]'}`}>
-          <Link href={`/berita/${article.id}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
+      <div className="flex flex-1 flex-col pt-4">
+        <span className="ed-kicker inline-flex min-w-0 items-center gap-1.5">
+          <Globe size={13} />
+          <span className="truncate">{article.source}</span>
+          {!article.is_translated && (
+            <span className="ml-1 rounded-full bg-mist px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-slate-600" title={t('Belum diterjemahkan')}>
+              EN
+            </span>
+          )}
+        </span>
+        <h3 className={`mt-2 line-clamp-3 font-extrabold leading-snug tracking-tight text-ink ${compact ? 'text-[15px]' : 'text-[1.1rem] sm:text-xl'}`}>
+          <Link href={`/berita/${article.id}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ed">
             {article.title}
           </Link>
         </h3>
         {article.summary && !compact && <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{article.summary}</p>}
+        <NewsMeta article={article} className="mt-auto pt-4" />
         {!compact && (
-          <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] font-bold">
-            <span className="inline-flex items-center gap-1.5 text-ed">
-              {t(article.has_article ? 'Baca artikel' : 'Baca ringkasan')} <ArrowRight size={15} />
-            </span>
-            {Boolean(article.comment_count) && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                <Chat size={13} /> {article.comment_count}
-              </span>
-            )}
+          <span className="mt-3 inline-flex items-center gap-1.5 border-t border-slate-200 pt-3 text-[13px] font-bold text-ed">
+            {t('Baca selengkapnya')} <ArrowRight size={15} />
           </span>
         )}
       </div>
@@ -104,13 +110,16 @@ export function NewsHero({ article }: { article: NewsArticle }) {
       </div>
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/50 to-black/0" />
       <div className="p-5 sm:p-7">
-        <SourceLine article={article} light />
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white">
+          <Globe size={13} /> {article.source}
+        </span>
         <h3 className="mt-3 line-clamp-3 text-xl font-extrabold leading-snug text-white sm:text-2xl">
           <Link href={`/berita/${article.id}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
             {article.title}
           </Link>
         </h3>
         {article.summary && <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/75">{article.summary}</p>}
+        <NewsMeta article={article} light className="mt-4" />
       </div>
     </article>
   );
@@ -132,9 +141,7 @@ export function NewsRow({ article, index = 0 }: { article: NewsArticle; index?: 
             {article.title}
           </Link>
         </h3>
-        <div className="mt-1.5">
-          <SourceLine article={article} />
-        </div>
+        <NewsMeta article={article} className="mt-1.5" />
       </div>
     </article>
   );

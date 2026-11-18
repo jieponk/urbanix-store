@@ -155,6 +155,12 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
             <h1 className="mt-4 text-[1.9rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-5xl">{article.title}</h1>
           </div>
           <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-y border-slate-200 py-3.5 text-sm text-slate-500">
+            <span className="inline-flex items-center gap-2 font-semibold text-slate-700">
+              <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full bg-ink text-[11px] font-extrabold text-surface">
+                {(aiArticle ? 'U' : article.source.slice(0, 1)).toUpperCase()}
+              </span>
+              {aiArticle ? t('Tim Urbanix') : article.source}
+            </span>
             <time dateTime={article.published_at} className="inline-flex items-center gap-1.5">
               <Calendar size={14} /> {date}
             </time>
@@ -230,7 +236,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                   <a
                     href={article.url}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="nofollow noopener noreferrer"
                     className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-surface transition hover:bg-ed hover:text-white"
                   >
                     {t(article.body || aiArticle ? 'Buka di {s}' : 'Baca lengkap di {s}', { s: article.source })} <External size={16} />
@@ -243,7 +249,28 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                 </p>
               </div>
 
-              <div className="mt-14">
+              {/* Ajakan berdiskusi sebelum kolom komentar */}
+              <a
+                href="#komentar"
+                className="group mt-12 flex items-center gap-4 rounded-2xl bg-mist p-5 transition hover:bg-slate-200 sm:p-6"
+              >
+                <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink text-surface">
+                  <Chat size={22} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-extrabold text-ink sm:text-lg">{t('Menurut kamu gimana nih?')}</span>
+                  <span className="mt-0.5 block text-sm leading-6 text-slate-600">
+                    {commentTotal > 0
+                      ? t('Sudah ada {n} komentar. Tulis pendapatmu di kolom komentar di bawah, yuk!', { n: commentTotal })
+                      : t('Jadi yang pertama kasih pendapat. Tulis komentarmu di bawah, yuk!')}
+                  </span>
+                </span>
+                <span aria-hidden="true" className="hidden shrink-0 rotate-90 text-ink transition group-hover:translate-y-0.5 sm:block">
+                  <ArrowRight size={20} />
+                </span>
+              </a>
+
+              <div className="mt-8">
                 <CommentSection slug={`berita-${article.id}`} apiPath={`/api/news/${article.id}/comments`} comments={comments} open />
               </div>
             </div>

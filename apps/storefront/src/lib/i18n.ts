@@ -639,6 +639,12 @@ const EN: Record<string, string> = {
   'Packing Rapi & Aman': 'Neat & Safe Packing',
   'Setiap barang dikemas dengan hati-hati sebelum dikirim.': 'Every item is packed carefully before shipping.',
   'Senin–Sabtu, kecuali libur nasional': 'Monday–Saturday, except public holidays',
+  // berita: kartu & ajakan komentar
+  'Baca selengkapnya': 'Read more',
+  'Tim Urbanix': 'Urbanix Team',
+  'Menurut kamu gimana nih?': 'What do you think?',
+  'Sudah ada {n} komentar. Tulis pendapatmu di kolom komentar di bawah, yuk!': '{n} comments so far. Share your take in the comments below!',
+  'Jadi yang pertama kasih pendapat. Tulis komentarmu di bawah, yuk!': 'Be the first to share your take. Drop a comment below!',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',
