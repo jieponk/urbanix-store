@@ -74,6 +74,9 @@ services:
       SITE_URL: https://${DOMAIN}
       GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
       NODE_ENV: production
+    volumes:
+      # Sampul artikel otomatis yang sudah dibuat (supaya tidak dibuat ulang setiap deploy)
+      - sampul_cache:/app/.cache/sampul
     depends_on:
       backend:
         condition: service_healthy
@@ -99,6 +102,7 @@ services:
 
 volumes:
   pgdata:
+  sampul_cache:
   static:
   media:
   caddy_data:

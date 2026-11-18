@@ -49,7 +49,7 @@ const FALLBACK = ['#5bb5f9', '#a78bfa', '#ff6b6b', '#ffa94d', '#f06eaa', '#4fd1c
 
 /**
  * Sampul disimpan di disk setelah dibuat sekali (membuatnya ±3 detik; membaca file < 50 ms).
- * Kunci = slug + versi (?v=...), jadi sampul otomatis dibuat ulang bila artikel/desain berubah.
+ * Folder .cache/sampul dipasang sebagai volume Docker, jadi tetap ada setelah deploy.
  */
 const CACHE_DIRS = [path.join(process.cwd(), '.cache', 'sampul'), path.join(os.tmpdir(), 'urbanix-sampul')];
 function cacheFile(slug: string, version: string) {
@@ -128,33 +128,19 @@ function coverSvg(color: string, body: string) {
   return `data:image/svg+xml;base64,${btoa(svg)}`; // isi SVG hanya ASCII
 }
 
-/**
- * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
- * Gaya ikon kategori: warna cerah datar, ikon sesuai topik + bayangan panjang, tanpa kotak & tulisan minimal.
- */
-export async function GET(req: Request, { params }: { params: { slug: string } }) {
-  const version = new URL(req.url).searchParams.get('v') || '';
-  const files = version ? cacheFile(params.slug, version) : [];
-  const cached = files.length ? readCache(files) : null;
-  if (cached) return new Response(new Uint8Array(cached), { headers: pngHeaders(true) });
+/** Versi gaya sampul: naikkan bila desain sampul diubah supaya cache lama tidak dipakai. */
+const STYLE = 'e6';
 
-  const article = await getArticle(params.slug);
-  if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
+/** Cache di memori (per proses) + render yang sedang berjalan, supaya permintaan serentak tidak merender dobel. */
+const memory = new Map<string, Buffer>();
+const pending = new Map<string, Promise<Buffer>>();
 
-  // Topik dari judul dulu; kalau tidak ketemu, dari kategori produk utama.
-  const productCat = article.related_products?.[0]?.category_name || '';
-  const topic =
-    TOPICS.find((t) => t.match.test(article.title)) ||
-    TOPICS.find((t) => t.match.test(productCat)) ||
-    TOPICS.find((t) => t.match.test(article.tags.join(' '))) ||
-    { ...DEFAULT_TOPIC, color: FALLBACK[article.id % FALLBACK.length] };
-  const color = topic.color;
-
+async function renderCover(color: string, icon: string): Promise<Buffer> {
   const image = new ImageResponse(
     (
       <div style={{ width: W, height: H, display: 'flex', position: 'relative' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={coverSvg(color, iconBody(topic.icon))} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
+        <img src={coverSvg(color, iconBody(icon))} width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} />
         <div
           style={{
             position: 'absolute',
@@ -171,12 +157,57 @@ export async function GET(req: Request, { params }: { params: { slug: string } }
         </div>
       </div>
     ),
-    {
-      width: W,
-      height: H,
-    }
+    { width: W, height: H }
   );
-  const data = Buffer.from(await image.arrayBuffer());
-  if (files.length) writeCache(files, data);
+  return Buffer.from(await image.arrayBuffer());
+}
+
+/**
+ * Gambar sampul hanya ditentukan topik (warna + ikon), bukan isi artikel. Jadi cache disimpan per topik:
+ * paling banyak ±20 gambar yang perlu dibuat (±3 detik masing-masing), sisanya tinggal dibaca.
+ */
+async function topicCover(color: string, icon: string): Promise<Buffer> {
+  const key = `topik-${STYLE}-${icon}-${color.replace('#', '')}`;
+  const inMemory = memory.get(key);
+  if (inMemory) return inMemory;
+  const files = cacheFile(key, 'png');
+  const onDisk = readCache(files);
+  if (onDisk) {
+    memory.set(key, onDisk);
+    return onDisk;
+  }
+  let job = pending.get(key);
+  if (!job) {
+    job = renderCover(color, icon)
+      .then((data) => {
+        memory.set(key, data);
+        writeCache(files, data);
+        return data;
+      })
+      .finally(() => pending.delete(key));
+    pending.set(key, job);
+  }
+  return job;
+}
+
+/**
+ * Sampul otomatis artikel Inspirasi (1200×630, juga pratinjau link WA/IG/Google).
+ * Gaya ikon kategori: warna cerah datar, ikon sesuai topik + bayangan panjang, tanpa kotak & tulisan minimal.
+ */
+export async function GET(req: Request, { params }: { params: { slug: string } }) {
+  const version = new URL(req.url).searchParams.get('v') || '';
+
+  const article = await getArticle(params.slug);
+  if (!article) return Response.redirect(`${SITE_URL}/inspirasi/default-cover.jpg`, 302);
+
+  // Topik dari judul dulu; kalau tidak ketemu, dari kategori produk utama.
+  const productCat = article.related_products?.[0]?.category_name || '';
+  const topic =
+    TOPICS.find((t) => t.match.test(article.title)) ||
+    TOPICS.find((t) => t.match.test(productCat)) ||
+    TOPICS.find((t) => t.match.test(article.tags.join(' '))) ||
+    { ...DEFAULT_TOPIC, color: FALLBACK[article.id % FALLBACK.length] };
+
+  const data = await topicCover(topic.color, topic.icon);
   return new Response(new Uint8Array(data), { headers: pngHeaders(Boolean(version)) });
 }

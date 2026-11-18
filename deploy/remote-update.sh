@@ -75,7 +75,8 @@ docker image prune -f >/dev/null
 # Pemanasan sampul artikel: buat semua sampul sekali di latar belakang supaya pengunjung pertama tidak menunggu.
 SITE="${SITE_URL:-https://urbanix.id}"
 (
-  sleep 25
+  # Storefront build dulu saat start (beberapa menit): tunggu sampai benar-benar melayani (maks. 15 menit).
+  for _ in $(seq 1 90); do curl -fsS -o /dev/null "$SITE/inspirasi" && break; sleep 10; done
   for PAGE in 1 2 3; do curl -fsS "$SITE/inspirasi?hal=$PAGE" 2>/dev/null; done \
     | grep -oE '/inspirasi/[a-z0-9-]+/sampul\.png\?v=[a-z0-9-]+' | sort -u \
     | while read -r U; do curl -fsS -o /dev/null "$SITE$U" || true; done
