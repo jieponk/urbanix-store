@@ -3,7 +3,7 @@ import { dateLocale } from '@/lib/i18n';
 import { getLang } from '@/lib/lang-server';
 import NewsImage from '@/components/NewsImage';
 import type { NewsArticle } from '@/lib/api';
-import { AiSpark, ArrowRight, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
+import { AiSpark, ArrowRight, Chat, Clock, Globe, Sparkle } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
 
 /** "3 jam lalu", "Kemarin", "8 Nov 2026". */
@@ -65,7 +65,7 @@ export default function NewsCard({
         )}
         {article.has_ai && (
           <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-black/75 px-2 py-1 text-[11px] font-bold text-white">
-            <AiSpark size={12} /> {t('Ada ringkasan')}
+            <AiSpark size={12} /> {t(article.has_article ? 'Artikel lengkap' : 'Ada ringkasan')}
           </span>
         )}
       </div>
@@ -79,8 +79,15 @@ export default function NewsCard({
         </h3>
         {article.summary && !compact && <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{article.summary}</p>}
         {!compact && (
-          <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-[13px] font-bold text-ed">
-            {t('Baca ringkasan')} <ArrowRight size={15} />
+          <span className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] font-bold">
+            <span className="inline-flex items-center gap-1.5 text-ed">
+              {t(article.has_article ? 'Baca artikel' : 'Baca ringkasan')} <ArrowRight size={15} />
+            </span>
+            {Boolean(article.comment_count) && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                <Chat size={13} /> {article.comment_count}
+              </span>
+            )}
           </span>
         )}
       </div>

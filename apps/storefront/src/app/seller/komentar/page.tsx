@@ -135,7 +135,7 @@ export default function CommentsPage() {
                     {c.parent_id && <span className="text-xs text-slate-500">· balasan</span>}
                     <span className="text-xs text-slate-500">{fmtDateTime(c.created_at)}</span>
                   </div>
-                  <a href={`/inspirasi/${c.article.slug}#komentar`} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
+                  <a href={`${c.article.url || `/inspirasi/${c.article.slug}`}#komentar`} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
                     di: {c.article.title}
                   </a>
                   {c.body && (

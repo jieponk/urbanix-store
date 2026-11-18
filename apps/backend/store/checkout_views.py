@@ -230,7 +230,23 @@ def _article(a):
         "is_translated": a.is_translated or a.source.language == "id",
         "is_pinned": a.is_pinned,
         "has_ai": a.ai_status == "done",
+        "has_article": bool(a.ai_body) or (bool(a.body) and a.source.full_text_allowed),
+        "comment_count": getattr(a, "comment_count", None),
     }
+
+
+def visible_news():
+    """Berita yang tampil: sumber aktif, tidak disembunyikan, dan tidak ditolak AI
+    (status "skip" = bukan topik kamera/foto/video atau tidak ada isi yang bisa dirangkum)."""
+    from django.db.models import Count, Q
+
+    return (
+        NewsArticle.objects.filter(is_visible=True, source__is_active=True)
+        .exclude(ai_status="skip")
+        .select_related("source")
+        .annotate(comment_count=Count("comments", filter=Q(comments__is_approved=True)))
+        .order_by("-is_pinned", "-published_at")  # Meta.ordering tidak dipakai Django pada query ber-annotate
+    )
 
 
 @api_view(["GET"])
@@ -238,7 +254,7 @@ def _article(a):
 def news_list(request):
     """Berita kamera & fotografi. ?source=<id>, ?page=<n>, ?limit=<n> (maks. 48)."""
     news_engine.refresh_in_background()
-    qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True).select_related("source")
+    qs = visible_news()
     source = request.query_params.get("source", "")
     if source.isdigit():
         qs = qs.filter(source_id=int(source))
@@ -249,7 +265,7 @@ def news_list(request):
         limit, page = 12, 1
     total = qs.count()
     start = (page - 1) * limit
-    sources = NewsSource.objects.filter(is_active=True, articles__is_visible=True).distinct()
+    sources = NewsSource.objects.filter(is_active=True, articles__in=visible_news()).distinct()
     return Response({
         "count": total,
         "page": page,
@@ -294,15 +310,11 @@ def related_products(article, limit=4):
 @api_view(["GET"])
 @_public
 def news_detail(request, pk):
-    article = get_object_or_404(
-        NewsArticle.objects.select_related("source"), pk=pk, is_visible=True, source__is_active=True
-    )
+    from .articles_api import REACTIONS, _comment, _comment_qs
+
+    article = get_object_or_404(visible_news(), pk=pk)
     brand, products = related_products(article)
-    more = (
-        NewsArticle.objects.filter(is_visible=True, source__is_active=True)
-        .exclude(pk=article.pk)
-        .select_related("source")[:3]
-    )
+    more = visible_news().exclude(pk=article.pk)[:3]
     return Response({
         **_article(article),
         "source_site": article.source.site_url,
@@ -313,8 +325,11 @@ def news_detail(request, pk):
             "points": article.ai_points,
             "conclusion": article.ai_conclusion,
             "opinion": article.ai_opinion,
+            "article": article.ai_body,
             "generated_at": article.ai_generated_at,
         } if article.ai_status == "done" else None,
         "body": article.body if article.source.full_text_allowed else "",
         "more": [_article(a) for a in more],
+        "comments": [_comment(c) for c in _comment_qs(article)],
+        "reactions": REACTIONS,
     })

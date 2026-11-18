@@ -302,7 +302,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; 
 
 // ------------------------------------------------------------------ form
 function Composer({
-  slug,
+  endpoint,
   parent,
   replyTo,
   gifEnabled,
@@ -310,7 +310,8 @@ function Composer({
   onDone,
   onCancel,
 }: {
-  slug: string;
+  /** Alamat proxy komentar, mis. /api/articles/<slug>/comments atau /api/news/<id>/comments. */
+  endpoint: string;
   parent?: number;
   replyTo?: string;
   gifEnabled: boolean;
@@ -377,7 +378,7 @@ function Composer({
     setSending(true);
     setError('');
     try {
-      const res = await fetch(`/api/articles/${encodeURIComponent(slug)}/comments`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), body: body.trim(), gif_url: gif?.url || '', parent, website: trap }),
@@ -617,8 +618,20 @@ function Item({
 
 // ------------------------------------------------------------------ utama
 /** Komentar ala Instagram: langsung tampil, reaksi emoji bergerak, balasan 1 tingkat, GIF. */
-export default function CommentSection({ slug, comments: initial, open }: { slug: string; comments: C[]; open: boolean }) {
+export default function CommentSection({
+  slug,
+  apiPath,
+  comments: initial,
+  open,
+}: {
+  slug: string;
+  /** Untuk berita: /api/news/<id>/comments. Default: komentar artikel Inspirasi. */
+  apiPath?: string;
+  comments: C[];
+  open: boolean;
+}) {
   const t = useT();
+  const endpoint = apiPath || `/api/articles/${encodeURIComponent(slug)}/comments`;
   const [comments, setComments] = useState<C[]>(initial);
   const [gifEnabled, setGifEnabled] = useState(false);
   const [replying, setReplying] = useState<{ root: number; to: string } | null>(null);
@@ -630,7 +643,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
 
   useEffect(() => {
     visitor.current = visitorId();
-    fetch(`/api/articles/${encodeURIComponent(slug)}/comments?visitor=${visitor.current}`, { cache: 'no-store' })
+    fetch(`${endpoint}?visitor=${visitor.current}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
@@ -638,7 +651,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
         setGifEnabled(Boolean(data.gif_enabled));
       })
       .catch(() => {});
-  }, [slug]);
+  }, [endpoint]);
 
   useEffect(() => {
     if (!notice) return;
@@ -702,7 +715,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
 
       <div className="mt-5 overflow-visible rounded-3xl bg-surface p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
         {open ? (
-          <Composer slug={slug} gifEnabled={gifEnabled} onDone={(c, m, h) => posted(c, m, h)} />
+          <Composer endpoint={endpoint} gifEnabled={gifEnabled} onDone={(c, m, h) => posted(c, m, h)} />
         ) : (
           <p className="text-sm text-slate-600">{t('Komentar untuk artikel ini ditutup.')}</p>
         )}
@@ -743,7 +756,7 @@ export default function CommentSection({ slug, comments: initial, open }: { slug
                     {open && replying?.root === c.id && (
                       <Composer
                         key={`${c.id}-${replying.to}`}
-                        slug={slug}
+                        endpoint={endpoint}
                         parent={c.id}
                         replyTo={replying.to}
                         gifEnabled={gifEnabled}

@@ -698,6 +698,8 @@ class NewsArticle(models.Model):
     ai_points = models.JSONField("Inti berita (AI)", default=list, blank=True)
     ai_conclusion = models.TextField("Kesimpulan (AI)", blank=True)
     ai_opinion = models.TextField("Pendapat Urbanix (AI)", blank=True)
+    ai_body = models.TextField("Artikel lengkap versi Urbanix (AI)", blank=True,
+                               help_text="Ditulis ulang dengan kata sendiri dari fakta berita asli (bukan salinan).")
     ai_generated_at = models.DateTimeField("Dibuat AI pada", null=True, blank=True)
 
     class Meta:
@@ -793,7 +795,10 @@ class Article(models.Model):
 
 
 class ArticleComment(models.Model):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments")
+    """Komentar ala Instagram untuk artikel Inspirasi ATAU berita (salah satu terisi)."""
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
+    news = models.ForeignKey("NewsArticle", on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
     name = models.CharField("Nama", max_length=60)
     email = models.EmailField("Email (tidak ditampilkan)", blank=True)
     body = models.TextField("Komentar", max_length=1500, blank=True)
@@ -808,6 +813,20 @@ class ArticleComment(models.Model):
         ordering = ["created_at"]
         verbose_name = "Komentar artikel"
         verbose_name_plural = "Komentar artikel"
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(article__isnull=False, news__isnull=True) | models.Q(article__isnull=True, news__isnull=False)),
+                name="komentar_artikel_atau_berita",
+            )
+        ]
+
+    @property
+    def target_title(self) -> str:
+        return self.article.title if self.article_id else (self.news.title if self.news_id else "")
+
+    @property
+    def target_url(self) -> str:
+        return f"/inspirasi/{self.article.slug}" if self.article_id else (f"/berita/{self.news_id}" if self.news_id else "/")
 
     def __str__(self):
         return f"{self.name}: {self.body[:40]}"

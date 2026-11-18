@@ -2,10 +2,12 @@ import Link from 'next/link';
 import NewsCard, { newsDate } from '@/components/NewsCard';
 import NewsImage from '@/components/NewsImage';
 import ProductCard from '@/components/ProductCard';
+import CommentSection from '@/components/inspirasi/CommentSection';
 import {
   AiSpark,
   ArrowRight,
   Calendar,
+  Chat,
   CheckCircle,
   ChevronRight,
   Clock,
@@ -74,6 +76,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta',
   });
   const ai = article.ai;
+  const aiArticle = ai?.article || '';
+  const comments = article.comments ?? [];
+  const commentTotal = comments.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0);
   const translatedTitle = article.is_translated && article.original_title !== article.title;
 
   return (
@@ -106,6 +111,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
             <span className="inline-flex items-center gap-1.5">
               <Clock size={14} /> {newsDate(article.published_at)}
             </span>
+            <a href="#komentar" className="inline-flex items-center gap-1.5 hover:text-ink">
+              <Chat size={14} /> {t('{n} komentar', { n: commentTotal })}
+            </a>
           </p>
         </div>
       </header>
@@ -120,7 +128,17 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
 
             <div className="max-w-[720px]">
               {(ai?.conclusion || article.summary) && (
-                <p className="mt-8 text-lg leading-8 text-ink sm:text-xl sm:leading-9">{ai?.conclusion || article.summary}</p>
+                <p className="mt-8 text-lg font-semibold leading-8 text-ink sm:text-xl sm:leading-9">{ai?.conclusion || article.summary}</p>
+              )}
+
+              {/* Artikel lengkap versi Urbanix (ditulis ulang AI dari fakta berita asli) */}
+              {aiArticle && <FullText text={aiArticle} />}
+
+              {!ai && !article.body && (
+                <div className="mt-8 flex items-start gap-3 rounded-md bg-mist p-4 text-sm leading-6 text-slate-600">
+                  <AiSpark size={18} className="mt-0.5 shrink-0 text-ed" />
+                  <p>{t('Artikel lengkap versi Urbanix untuk berita ini sedang disiapkan. Sementara itu, baca beritanya di sumber asli lewat tombol di bawah.')}</p>
+                </div>
               )}
 
               {ai && ai.points.length > 0 && (
@@ -165,14 +183,18 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                     rel="noopener noreferrer"
                     className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-surface transition hover:bg-ed hover:text-white"
                   >
-                    {t(article.body ? 'Buka di {s}' : 'Baca lengkap di {s}', { s: article.source })} <External size={16} />
+                    {t(article.body || aiArticle ? 'Buka di {s}' : 'Baca lengkap di {s}', { s: article.source })} <External size={16} />
                   </a>
                 </div>
                 <p className="mt-4 text-xs leading-5 text-slate-500">
                   {translatedTitle ? t('Judul diterjemahkan otomatis.') + ' ' : ''}
-                  {ai ? t('Inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya.') + ' ' : ''}
+                  {ai ? t('Artikel dan inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya.') + ' ' : ''}
                   {t('Foto dan hak cipta artikel asli milik {s}.', { s: article.source })}
                 </p>
+              </div>
+
+              <div className="mt-14">
+                <CommentSection slug={`berita-${article.id}`} apiPath={`/api/news/${article.id}/comments`} comments={comments} open />
               </div>
             </div>
           </article>

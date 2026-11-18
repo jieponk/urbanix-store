@@ -639,6 +639,10 @@ const EN: Record<string, string> = {
   'Packing Rapi & Aman': 'Neat & Safe Packing',
   'Setiap barang dikemas dengan hati-hati sebelum dikirim.': 'Every item is packed carefully before shipping.',
   'Senin–Sabtu, kecuali libur nasional': 'Monday–Saturday, except public holidays',
+  // berita lengkap
+  'Artikel lengkap versi Urbanix untuk berita ini sedang disiapkan. Sementara itu, baca beritanya di sumber asli lewat tombol di bawah.': 'The full Urbanix write-up for this story is being prepared. Meanwhile, read it at the original source using the button below.',
+  'Artikel dan inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya.': 'The article and key points are rewritten in our own words based on the original story.',
+  'Artikel lengkap': 'Full article',
   // checkout alamat, urutan katalog
   'Alamat tersimpan': 'Saved addresses',
   'Contoh: Jl. Melati No. 12, RT 03/RW 05, dekat masjid': 'Example: Jl. Melati No. 12, RT 03/RW 05, near the mosque',

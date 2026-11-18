@@ -25,7 +25,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from django.core.files.storage import default_storage
 
 from .images import MAX_BODY, MAX_COVER, ImageError, to_webp
-from .models import Article, ArticleCategory, ArticleComment, ArticleCommentReaction, Product
+from .models import Article, ArticleCategory, ArticleComment, ArticleCommentReaction, NewsArticle, Product
 from .seller_api import _product_row, bad, paginate, staff
 
 PRODUCT_TOKEN = re.compile(r"\[\[produk:(\d+)\]\]")
@@ -191,10 +191,11 @@ def _comment(c: ArticleComment, visitor: str = "") -> dict:
     }
 
 
-def _comment_qs(article: Article):
+def _comment_qs(target):
+    """Komentar utama yang tampil untuk artikel Inspirasi atau berita (keduanya punya .comments)."""
     from django.db.models import Prefetch
 
-    return article.comments.filter(is_approved=True, parent__isnull=True).order_by("-is_pinned", "-created_at").prefetch_related(
+    return target.comments.filter(is_approved=True, parent__isnull=True).order_by("-is_pinned", "-created_at").prefetch_related(
         "reactions",
         Prefetch("replies", queryset=ArticleComment.objects.order_by("created_at").prefetch_related("reactions")),
     )
@@ -305,6 +306,11 @@ def _post_comment(request, slug):
     article = get_object_or_404(published(), slug=slug)
     if not article.allow_comments:
         return bad("Komentar untuk artikel ini ditutup.")
+    return _create_comment(request, {"article": article})
+
+
+def _create_comment(request, target: dict):
+    """Simpan komentar/balasan untuk target {"article": ...} atau {"news": ...} (sudah lolos throttle)."""
     data = request.data
     if (data.get("website") or "").strip():  # jebakan bot: kolom tersembunyi harus kosong
         return Response({"message": "Terima kasih!", "held": True}, status=201)
@@ -328,14 +334,14 @@ def _post_comment(request, slug):
 
     parent = None
     if data.get("parent"):
-        parent = ArticleComment.objects.filter(pk=data.get("parent"), article=article, is_approved=True).first()
+        parent = ArticleComment.objects.filter(pk=data.get("parent"), is_approved=True, **target).first()
         if not parent:
             return bad("Komentar yang dibalas tidak ditemukan.")
         parent = parent.parent or parent  # balasan selalu satu tingkat (seperti Instagram)
 
     held = bool(links or HOLD_WORDS.search(body) or HOLD_WORDS.search(name) or re.search(r"(.)\1{9,}", body))
     c = ArticleComment.objects.create(
-        article=article, parent=parent, name=name, email=email, body=body, gif_url=gif, is_approved=not held
+        **target, parent=parent, name=name, email=email, body=body, gif_url=gif, is_approved=not held
     )
     if held:
         return Response({"message": "Komentarmu sedang dicek admin dulu sebelum tampil.", "held": True}, status=201)
@@ -346,12 +352,36 @@ def _post_comment(request, slug):
 article_comment = article_comments
 
 
+def _visible_news():
+    return NewsArticle.objects.filter(is_visible=True, source__is_active=True)
+
+
+@api_view(["GET", "POST"])
+@_public
+def news_comments(request, pk):
+    """Komentar & reaksi di halaman berita /berita/<id> (sama seperti artikel Inspirasi)."""
+    news = get_object_or_404(_visible_news(), pk=pk)
+    if request.method == "POST":
+        if not CommentThrottle().allow_request(request, None):
+            return Response({"error": "Terlalu banyak komentar. Tunggu sebentar."}, status=429)
+        return _create_comment(request, {"news": news})
+    visitor = _visitor(request.query_params.get("visitor"))
+    return Response({
+        "comments": [_comment(c, visitor) for c in _comment_qs(news)],
+        "allow_comments": True,
+        "gif_enabled": bool(settings.GIPHY_API_KEY),
+        "reactions": REACTIONS,
+    })
+
+
 @api_view(["POST"])
 @_public
 @throttle_classes([ReactionThrottle])
 def comment_react(request, pk):
     """Beri/ganti/hapus reaksi. emoji kosong atau sama dengan sebelumnya = hapus."""
-    c = get_object_or_404(ArticleComment, pk=pk, is_approved=True, article__status="PUBLISHED")
+    c = get_object_or_404(
+        ArticleComment.objects.filter(Q(article__status="PUBLISHED") | Q(news__is_visible=True)), pk=pk, is_approved=True
+    )
     visitor = _visitor(request.data.get("visitor"))
     if not visitor:
         return bad("Pengunjung tidak dikenali. Muat ulang halaman.")
@@ -620,13 +650,16 @@ def _seller_comment(c: ArticleComment) -> dict:
         "staff_reaction": _staff_reaction(c),
         "parent_id": c.parent_id,
         "created_at": c.created_at,
-        "article": {"id": c.article_id, "title": c.article.title, "slug": c.article.slug},
+        # Untuk berita, "article" berisi judul & alamat berita (Seller Center memakai url).
+        "article": {"id": c.article_id or c.news_id, "title": c.target_title,
+                    "slug": c.article.slug if c.article_id else "", "url": c.target_url,
+                    "kind": "article" if c.article_id else "news"},
     }
 
 
 @staff(["GET"])
 def seller_comments(request):
-    qs = ArticleComment.objects.select_related("article").prefetch_related("reactions").order_by("-created_at")
+    qs = ArticleComment.objects.select_related("article", "news").prefetch_related("reactions").order_by("-created_at")
     st = request.query_params.get("status")
     if st == "pending":
         qs = qs.filter(is_approved=False)
@@ -639,7 +672,7 @@ def seller_comments(request):
 
 @staff(["PATCH", "DELETE", "POST"])
 def seller_comment_detail(request, pk):
-    c = get_object_or_404(ArticleComment.objects.select_related("article").prefetch_related("reactions"), pk=pk)
+    c = get_object_or_404(ArticleComment.objects.select_related("article", "news").prefetch_related("reactions"), pk=pk)
     if request.method == "DELETE":
         c.delete()
         return Response(status=204)
@@ -655,7 +688,7 @@ def seller_comment_detail(request, pk):
             root.is_approved = True
             root.save(update_fields=["is_approved"])
         reply = ArticleComment.objects.create(
-            article=c.article, parent=root, name=(request.data.get("name") or "Admin Urbanix")[:60],
+            article=c.article, news=c.news, parent=root, name=(request.data.get("name") or "Admin Urbanix")[:60],
             body=body[:1500], gif_url=gif, is_approved=True, is_staff_reply=True,
         )
         return Response(_seller_comment(reply), status=201)
@@ -676,5 +709,5 @@ def seller_comment_detail(request, pk):
         ArticleCommentReaction.objects.filter(comment=c, visitor=STAFF_VISITOR).delete()
         if emoji:
             ArticleCommentReaction.objects.create(comment=c, visitor=STAFF_VISITOR, emoji=emoji)
-        c = ArticleComment.objects.select_related("article").prefetch_related("reactions").get(pk=c.pk)
+        c = ArticleComment.objects.select_related("article", "news").prefetch_related("reactions").get(pk=c.pk)
     return Response(_seller_comment(c))

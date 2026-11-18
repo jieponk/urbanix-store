@@ -273,6 +273,9 @@ export type NewsArticle = {
   is_translated: boolean;
   is_pinned: boolean;
   has_ai?: boolean;
+  /** Ada artikel lengkap (tulisan ulang AI atau teks penuh sumber berizin). */
+  has_article?: boolean;
+  comment_count?: number | null;
 };
 
 export type NewsPage = {
@@ -303,8 +306,9 @@ export type NewsDetail = NewsArticle & {
   related_brand: string;
   related_products: Product[];
   more: NewsArticle[];
-  ai: { points: string[]; conclusion: string; opinion: string; generated_at: string | null } | null;
+  ai: { points: string[]; conclusion: string; opinion: string; article?: string; generated_at: string | null } | null;
   body: string;
+  comments: ArticleComment[];
 };
 
 export async function getNewsDetail(id: string): Promise<NewsDetail | null> {

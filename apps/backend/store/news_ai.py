@@ -1,4 +1,4 @@
-"""Inti berita, kesimpulan, dan opini singkat buatan AI (Claude) untuk halaman /berita/<id>.
+"""Artikel lengkap versi Urbanix, inti berita, kesimpulan, dan opini buatan AI (Claude) untuk /berita/<id>.
 
 - Teks artikel sumber hanya dipakai sebagai BAHAN untuk AI; yang disimpan & ditampilkan adalah
   tulisan baru (poin-poin dengan kata sendiri), bukan salinan artikel.
@@ -25,6 +25,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-haiku-5-5"
 MAX_SOURCE_CHARS = 12000
 FULL_TEXT_CHARS = 20000
+MIN_MATERIAL = 200
 
 
 def api_key() -> str:
@@ -92,13 +93,14 @@ Aturan WAJIB:
 - Tulis dengan kata-katamu sendiri. JANGAN menyalin kalimat dari teks sumber; kutipan langsung maksimal 10 kata dan paling banyak satu.
 - Hanya pakai fakta yang ada di teks sumber. Jangan mengarang spesifikasi, harga Rupiah, tanggal rilis Indonesia, atau stok.
 - Kalau teks sumber tidak lengkap, rangkum yang ada saja.
+- "artikel": artikel berita LENGKAP versi Urbanix, 4-6 paragraf (total 280-480 kata), dipisah baris kosong. Boleh 1-2 subjudul yang diawali "## ". Susunan: pembuka (apa & siapa), detail fitur/spesifikasi, harga & ketersediaan bila disebut, konteks untuk kreator Indonesia. Kalimat & susunan harus BARU, jangan mengikuti urutan paragraf sumber.
 - "poin": 4-6 poin penting (apa yang diumumkan, fitur/spesifikasi kunci, harga & ketersediaan bila disebut, untuk siapa). Tiap poin 1 kalimat, maks 30 kata.
 - "kesimpulan": 2 kalimat inti beritanya.
 - "opini": 2-3 kalimat pendapat Urbanix sebagai toko gear: siapa yang cocok, apakah layak ditunggu/dibandingkan dengan alternatif. Jelas sebagai pendapat ("menurut kami ..."), tidak menjelekkan merek, tidak menjanjikan stok.
 - Kalau berita BUKAN soal kamera, lensa, foto/video, drone, audio kreator, atau aksesorinya, isi "lewati": true.
 
 Balas HANYA JSON valid tanpa teks lain, format:
-{"lewati": false, "poin": ["..."], "kesimpulan": "...", "opini": "..."}
+{"lewati": false, "artikel": "...", "poin": ["..."], "kesimpulan": "...", "opini": "..."}
 
 Judul: {title}
 Sumber: {source}
@@ -114,7 +116,7 @@ Teks sumber:
 def _call_claude(prompt: str) -> str:
     payload = json.dumps({
         "model": model_name(),
-        "max_tokens": 900,
+        "max_tokens": 2200,
         "temperature": 0.4,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
@@ -144,7 +146,22 @@ def parse_reply(text: str) -> dict | None:
     opinion = re.sub(r"\s+", " ", str(data.get("opini") or "")).strip()[:700]
     if len(points) < 2 or not conclusion:
         return None
-    return {"skip": False, "points": points, "conclusion": conclusion, "opinion": opinion}
+    return {"skip": False, "points": points, "conclusion": conclusion, "opinion": opinion,
+            "body": clean_article(data.get("artikel"))}
+
+
+def clean_article(raw) -> str:
+    """Rapikan artikel AI: paragraf dipisah baris kosong, subjudul "## ", maks. ±6.000 huruf. Terlalu pendek = kosong."""
+    paras = []
+    for block in re.split(r"\n\s*\n", str(raw or "")):
+        text = re.sub(r"\s+", " ", block).strip()
+        if not text:
+            continue
+        if text.startswith("#"):
+            text = "## " + text.lstrip("# ").strip()[:120]
+        paras.append(text[:1500])
+    body = "\n\n".join(paras)[:6000].strip()
+    return body if len(body) >= 400 else ""
 
 
 # --------------------------------------------------------------------------- proses berita
@@ -160,7 +177,9 @@ def process_article(article) -> str:
         return article.ai_status
 
     material = body or article.original_summary
-    if len(material) < 80:
+    # Bahan terlalu sedikit (mis. link Google News yang hanya berisi judul) → jangan dipaksa jadi artikel;
+    # status "skip" juga menyembunyikan berita ini dari daftar.
+    if len(material) < MIN_MATERIAL:
         article.ai_status = "skip"
         article.save(update_fields=["body", "ai_status"])
         return "skip"
@@ -190,9 +209,10 @@ def process_article(article) -> str:
         article.ai_points = result["points"]
         article.ai_conclusion = result["conclusion"]
         article.ai_opinion = result["opinion"]
+        article.ai_body = result.get("body", "")
         article.ai_status = "done"
         article.ai_generated_at = timezone.now()
-    article.save(update_fields=["body", "ai_points", "ai_conclusion", "ai_opinion", "ai_status", "ai_generated_at"])
+    article.save(update_fields=["body", "ai_points", "ai_conclusion", "ai_opinion", "ai_body", "ai_status", "ai_generated_at"])
     return article.ai_status
 
 
@@ -203,10 +223,15 @@ def process_pending(limit: int | None = None) -> int:
     limit = max_per_run() if limit is None else limit
     if limit <= 0:
         return 0
-    qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True, ai_status="pending").select_related("source")
+    from django.db.models import Q
+
+    # Belum dirangkum, atau sudah dirangkum versi lama (belum punya artikel lengkap).
+    qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True).filter(
+        Q(ai_status="pending") | Q(ai_status="done", ai_body="")
+    ).select_related("source")
     if not api_key():
         # Tanpa kunci AI: tetap simpan teks penuh untuk sumber yang diizinkan.
-        qs = qs.filter(source__full_text_allowed=True, body="")
+        qs = qs.filter(source__full_text_allowed=True, body="", ai_status="pending")
     done = 0
     for article in qs.order_by("-published_at")[:limit]:
         if process_article(article) == "done":

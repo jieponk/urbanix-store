@@ -10,7 +10,8 @@ from store.models import NewsArticle, NewsSource
 HTML = """<html><head><script>var x=1</script></head><body><nav>Menu</nav>
 <article><h1>Judul</h1><p>Hollyland announced the LARK M3, a wireless microphone system for multi-person shoots.</p>
 <p>Subscribe to our newsletter</p><h2>Features</h2>
-<p>It supports multiple transmitters and receivers at the same time with AI noise cancellation.</p></article></body></html>"""
+<p>It supports multiple transmitters and receivers at the same time with AI noise cancellation.</p>
+<p>Battery life reaches up to ten hours per transmitter, and the charging case adds two more full charges.</p></article></body></html>"""
 
 
 class NewsAiTests(TestCase):

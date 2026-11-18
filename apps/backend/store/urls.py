@@ -25,6 +25,7 @@ urlpatterns = [
     path('articles/<slug:slug>/', articles_api.article_detail, name='article_detail'),
     path('articles/<slug:slug>/comments/', articles_api.article_comments, name='article_comment'),
     path('article-comments/<int:pk>/react/', articles_api.comment_react, name='comment_react'),
+    path('news/<int:pk>/comments/', articles_api.news_comments, name='news_comments'),
     path('gifs/', articles_api.gif_search, name='gif_search'),
     path('news/', checkout_views.news_list, name='news_list'),
     path('news/<int:pk>/', checkout_views.news_detail, name='news_detail'),
