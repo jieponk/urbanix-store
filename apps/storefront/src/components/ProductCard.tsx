@@ -3,6 +3,7 @@ import { money, type Product } from '@/lib/api';
 import { productImg } from '@/lib/img';
 import { getT } from '@/lib/lang-server';
 import { Bolt, QuotaBar } from '@/components/FlashSale';
+import { currentEvent } from '@/lib/events';
 
 export default function ProductCard({ product }: { product: Product }) {
   const t = getT();
@@ -20,6 +21,9 @@ export default function ProductCard({ product }: { product: Product }) {
     ? product.discount_percent ||
       Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
     : 0;
+
+  // Selama Mode Event, produk diskon diberi label event (mis. "12.12"), seperti di marketplace.
+  const event = hasDiscount ? currentEvent() : null;
 
   return (
     <Link
@@ -42,8 +46,15 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {hasDiscount && (
           <span className="absolute left-2 top-2 flex flex-col items-start gap-1 sm:left-3 sm:top-3">
-            <span className="rounded-md bg-sale-600 px-2 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
-              -{discountPercent}%
+            <span className="flex items-center gap-1">
+              <span className="rounded-md bg-sale-600 px-2 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
+                -{discountPercent}%
+              </span>
+              {event && (
+                <span className="rounded-md bg-cobalt-900 px-1.5 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
+                  {event.big}
+                </span>
+              )}
             </span>
             {product.promo_name && (
               <span className="flex max-w-[7.5rem] items-center gap-0.5 truncate rounded-md bg-cobalt-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:text-[10px]">

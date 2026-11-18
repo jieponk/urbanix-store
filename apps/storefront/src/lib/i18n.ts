@@ -639,6 +639,18 @@ const EN: Record<string, string> = {
   'Packing Rapi & Aman': 'Neat & Safe Packing',
   'Setiap barang dikemas dengan hati-hati sebelum dikirim.': 'Every item is packed carefully before shipping.',
   'Senin–Sabtu, kecuali libur nasional': 'Monday–Saturday, except public holidays',
+  // mode event
+  '{name} sedang berlangsung': '{name} is on now',
+  '{name} mulai {n} hari lagi': '{name} starts in {n} days',
+  'Lihat semua deal': 'See all deals',
+  'Lihat promo sekarang': 'See current deals',
+  'EVENT TERBATAS': 'LIMITED EVENT',
+  'Hari Belanja Online Nasional, puncak promo akhir tahun': 'National Online Shopping Day, the biggest sale of the year',
+  'Tanggal kembar, harga spesial cuma sehari': 'Double-date sale, special prices for one day only',
+  'Gajian datang, waktunya upgrade gear': 'Payday is here, time to upgrade your gear',
+  'Promo pertengahan bulan untuk gear kreator': 'Mid-month deals on creator gear',
+  '{n} produk diskon sampai {p}%, original & bergaransi.': '{n} products up to {p}% off, genuine with warranty.',
+  'Kamera, lensa, mic & gear kreator original bergaransi.': 'Genuine cameras, lenses, mics & creator gear with warranty.',
   // berita lengkap
   'Artikel lengkap versi Urbanix untuk berita ini sedang disiapkan. Sementara itu, baca beritanya di sumber asli lewat tombol di bawah.': 'The full Urbanix write-up for this story is being prepared. Meanwhile, read it at the original source using the button below.',
   'Artikel dan inti berita ditulis ulang dengan bahasa kami berdasarkan berita aslinya.': 'The article and key points are rewritten in our own words based on the original story.',

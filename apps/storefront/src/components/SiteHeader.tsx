@@ -8,6 +8,8 @@ import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 import { dateLocale, type Lang } from '@/lib/i18n';
 import { getLang, getT } from '@/lib/lang-server';
+import { EventRibbon } from '@/components/EventMode';
+import { currentEvent, upcomingEvent } from '@/lib/events';
 
 type Props = {
   categories: Category[];
@@ -29,11 +31,15 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
   const t = getT();
   const ends = endDate(promo?.endsAt ?? null, lang);
   const menuItems = categories.map(({ id, name }) => ({ id, name }));
+  // Mode Event otomatis (tanggal kembar, payday, Harbolnas): pita event menggantikan pita promo biasa.
+  const event = currentEvent();
+  const upcoming = event ? null : upcomingEvent();
 
   return (
     <header className="sticky top-0 z-50">
       {/* Pita pengumuman: isi diambil dari promo yang sedang berjalan */}
-      {(promo || whatsappDiscount > 0) && (
+      {(event || upcoming) && <EventRibbon event={event} upcoming={upcoming} />}
+      {!event && !upcoming && (promo || whatsappDiscount > 0) && (
         <div className="bg-cobalt-800 text-white">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-center text-xs leading-snug sm:text-[13px]">
             {promo && (
@@ -66,7 +72,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
             {promo && (
               <Link href="/produk?promo=1" aria-label={t('Promo')} title={t('Promo')} className={`${iconBtn} !text-sale-600 hover:!bg-sale-50`}>
                 <PromoIcon />
-                <span className={`${slideLabel} font-bold`}>{t('Promo')}</span>
+                <span className={`${slideLabel} font-bold`}>{event ? `${t('Promo')} ${event.big}` : t('Promo')}</span>
               </Link>
             )}
             <Link href="/inspirasi" aria-label={t('Inspirasi')} title={t('Inspirasi')} className={iconBtn}>
