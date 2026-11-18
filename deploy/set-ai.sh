@@ -19,9 +19,9 @@ echo "  2) Gemini - gratis (aistudio.google.com); di paket gratis, Google boleh 
 echo "  3) Claude - berbayar (console.anthropic.com), tulisan paling rapi"
 read -r -p "Ketik 1, 2, atau 3 lalu Enter: " CHOICE
 case "$CHOICE" in
-  1) PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,200}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
-  2) PROVIDER=gemini;    PATTERN='^AIza[A-Za-z0-9_-]{20,200}$';      HINT="diawali AIza (aistudio.google.com/apikey)" ;;
-  3) PROVIDER=anthropic; PATTERN='^sk-ant-[A-Za-z0-9_-]{20,200}$';   HINT="diawali sk-ant- (console.anthropic.com)" ;;
+  1) PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,300}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
+  2) PROVIDER=gemini;    PATTERN='^AIza[A-Za-z0-9_-]{20,300}$';      HINT="diawali AIza (aistudio.google.com/apikey)" ;;
+  3) PROVIDER=anthropic; PATTERN='^sk-ant-[A-Za-z0-9_-]{20,300}$';   HINT="diawali sk-ant- (console.anthropic.com)" ;;
   *) echo "Pilihan tidak dikenal."; exit 1 ;;
 esac
 
@@ -31,9 +31,19 @@ for TRY in 1 2 3; do
   read -r -s -p "Tempel API key lalu Enter (percobaan $TRY/3): " RAW
   echo
   RAW="${RAW#*=}"
-  CAND=$(printf '%s' "$RAW" | LC_ALL=C tr -cd 'A-Za-z0-9_-')
-  if [[ "$CAND" =~ $PATTERN ]]; then KEY="$CAND"; echo "OK, terbaca ${#KEY} karakter."; break; fi
-  echo "Format kunci tidak dikenali (harus $HINT)."
+  # Buang spasi, enter, tanda kutip yang ikut tersalin; simpan karakter kunci yang wajar saja.
+  CAND=$(printf '%s' "$RAW" | LC_ALL=C tr -cd 'A-Za-z0-9_.-')
+  if [ ${#CAND} -lt 20 ]; then
+    echo "Kunci terlalu pendek (${#CAND} karakter). Pastikan sudah tersalin utuh, lalu tempel lagi."
+    continue
+  fi
+  KEY="$CAND"
+  if [[ "$CAND" =~ $PATTERN ]]; then
+    echo "OK, terbaca ${#KEY} karakter."
+  else
+    echo "Perhatian: biasanya kunci ini $HINT. Tetap dicoba; hasil tes di bawah yang menentukan."
+  fi
+  break
 done
 [ -n "$KEY" ] || { echo "Dibatalkan."; exit 1; }
 
