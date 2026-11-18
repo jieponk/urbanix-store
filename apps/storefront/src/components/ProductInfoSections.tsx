@@ -9,6 +9,7 @@ import {
   type Section,
 } from '@/lib/productDescription';
 import { getT } from '@/lib/lang-server';
+import { fixWarrantyBrand } from '@/lib/seo';
 
 /**
  * Susunan tetap untuk semua produk:
@@ -160,7 +161,15 @@ export default function ProductInfoSections({
   const t = getT();
   const parsed = parseDescription(description);
 
-  const warrantySections = parsed.warranty;
+  // Kalimat garansi yang menyebut merek lain (sisa template supplier) disesuaikan dengan merek produk.
+  const fix = (text: string) => fixWarrantyBrand(text, name);
+  const warrantySections: Section[] = parsed.warranty.map((section) => ({
+    ...section,
+    title: section.title ? fix(section.title) : section.title,
+    blocks: section.blocks.map((block) =>
+      block.type === 'p' ? { ...block, text: fix(block.text) } : { ...block, items: block.items.map(fix) }
+    ),
+  }));
   const showNameWarranty =
     warrantySections.length === 0 && warrantyFromName(name);
   const warrantyText = warrantySections
@@ -171,19 +180,24 @@ export default function ProductInfoSections({
   const variantNames = parsed.variants;
   const hasVariations = variations.length > 0;
   const hasDescription = parsed.description.length > 0;
+  // Banyak deskripsi langsung mulai dari Garansi/Key Feature: kartu Deskripsi kosong tidak perlu ditampilkan.
+  const hasOtherContent =
+    parsed.warranty.length > 0 || hasContent(parsed.features) || hasContent(parsed.specs) || hasContent(parsed.included);
 
   return (
     <div className="space-y-4">
       {/* 1. Deskripsi */}
-      <Card icon="doc" title={t('Deskripsi Produk')}>
-        {hasDescription ? (
-          <Blocks blocks={parsed.description} />
-        ) : (
-          <p className="text-sm text-slate-500">
-            {t('Deskripsi produk belum tersedia.')}
-          </p>
-        )}
-      </Card>
+      {(hasDescription || !hasOtherContent) && (
+        <Card icon="doc" title={t('Deskripsi Produk')}>
+          {hasDescription ? (
+            <Blocks blocks={parsed.description} />
+          ) : (
+            <p className="text-sm text-slate-500">
+              {t('Detail lengkap produk ini bisa ditanyakan langsung ke admin lewat WhatsApp.')}
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* 2. Garansi */}
       {(warrantySections.length > 0 || showNameWarranty) && (
@@ -265,8 +279,8 @@ export default function ProductInfoSections({
                       }`}
                     >
                       {variation.stock > 0
-                        ? t('Stok tercatat {n}', { n: variation.stock })
-                        : t('Stok tercatat habis')}
+                        ? t('Stok {n}', { n: variation.stock })
+                        : t('Stok habis')}
                     </p>
                   </div>
                 </li>

@@ -13,6 +13,9 @@ export const siteConfig = {
 
   // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
   motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
+  // Bukti kepercayaan di halaman produk & beranda.
+  since: 'Januari 2026',
+  city: 'Jakarta Pusat',
   // Google Customer Reviews (Merchant Center). Perkiraan sampai = maks. proses + maks. transit (sama dengan pengaturan pengiriman).
   googleCustomerReviews: { merchantId: 5904063899, processingDaysMax: 2, transitDaysMax: 7 },
   // Deskripsi beranda untuk Google (±150 karakter)

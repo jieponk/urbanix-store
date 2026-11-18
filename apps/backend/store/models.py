@@ -26,6 +26,10 @@ class Product(models.Model):
     slug = models.SlugField(unique=True)
     sku = models.CharField(max_length=50, unique=True)
     description = models.TextField()
+    description_original = models.TextField(
+        "Deskripsi asli (sebelum diterjemahkan)", blank=True,
+        help_text="Diisi otomatis oleh perintah perbaiki_deskripsi --terjemahkan; untuk memulihkan teks asli.",
+    )
     price = models.DecimalField(max_digits=12, decimal_places=2)
     discount_price = models.DecimalField(
         max_digits=12,

@@ -25,7 +25,7 @@ export function xmlEscape(value: string) {
 /* ---------------------------------------------------------------- Data terstruktur Google (JSON-LD) */
 
 /** Merek yang dikenali dari nama produk (untuk "brand" di data produk Google). */
-const BRANDS = [
+export const BRANDS = [
   'Sony', 'Canon', 'Nikon', 'Fujifilm', 'Panasonic', 'Lumix', 'DJI', 'GoPro', 'Insta360', 'Godox', 'RODE',
   'Sigma', 'Tamron', 'Zhiyun', 'Leica', 'OM System', 'Olympus', 'Hasselblad', 'Ricoh', 'Pentax', 'Blackmagic',
   'Saramonic', 'Boya', 'Ulanzi', 'SmallRig', 'Viltrox', 'Yongnuo', 'Samyang', 'Laowa', 'Aputure', 'Amaran',
@@ -55,6 +55,29 @@ export function detectBrand(name: string): string | undefined {
 /** Nama produk tanpa awalan "URBANIX - " (nama toko sudah ada di judul halaman). */
 export function cleanProductName(name: string) {
   return name.replace(/^\s*URBANIX\s*-\s*/i, '').trim();
+}
+
+/** Nama ringkas untuk kartu & saran pencarian: tanpa "URBANIX -" dan kata pengisi ala judul marketplace. */
+export function cardProductName(name: string) {
+  return cleanProductName(name)
+    .replace(/\b(garansi\s+resmi|original\s+bergaransi|100%\s*original|ori\b)/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/[\s,/|-]+$/, '')
+    .trim();
+}
+
+/**
+ * Perbaiki kalimat garansi yang menyebut merek lain (sisa template, mis. Amaran "bergaransi resmi Plaud"):
+ * merek setelah "garansi resmi" diganti merek produk bila keduanya merek yang dikenal dan berbeda.
+ */
+export function fixWarrantyBrand(text: string, productName: string) {
+  const own = detectBrand(productName);
+  if (!own) return text;
+  return text.replace(/(garansi\s+resmi\s+)([A-Za-z0-9&]+(?:\s?360)?)/gi, (whole, lead: string, said: string) => {
+    const known = BRANDS.find((b) => b.toLowerCase().replace(/\s/g, '') === said.toLowerCase().replace(/\s/g, ''));
+    if (!known || known.toLowerCase() === own.toLowerCase()) return whole;
+    return `${lead}${own}`;
+  });
 }
 
 /** Potong teks di batas kata, maksimal `max` karakter. */

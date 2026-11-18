@@ -51,6 +51,8 @@ export type Product = {
   /** Jumlah terjual dari pesanan web (bukan pesanan batal) — untuk urutan "Terlaris". */
   sold_count?: number;
   review_count?: number;
+  /** Rata-rata bintang dari ulasan pembeli terverifikasi (null = belum ada ulasan). */
+  rating_avg?: number | null;
   is_active: boolean;
 };
 

@@ -68,6 +68,7 @@ class ProductSerializer(serializers.ModelSerializer):
     flash = serializers.SerializerMethodField()
     sold_count = serializers.IntegerField(read_only=True, default=0)
     review_count = serializers.IntegerField(read_only=True, default=0)
+    rating_avg = serializers.FloatField(read_only=True, default=None)
 
     class Meta:
         model = Product

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.shortcuts import get_object_or_404
-from django.db.models import IntegerField, OuterRef, Subquery, Sum, Count
+from django.db.models import Avg, FloatField, IntegerField, OuterRef, Subquery, Sum, Count
 from django.db.models.functions import Coalesce
 from .models import Category, Product, Cart, CartItem, Order, OrderItem, ProductReview
 from .serializers import CategorySerializer, ProductSerializer, CartSerializer, OrderSerializer
@@ -32,6 +32,13 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                     output_field=IntegerField(),
                 ),
                 0,
+            ),
+            rating_avg=Subquery(
+                ProductReview.objects.filter(product=OuterRef('pk'), is_visible=True)
+                .values('product')
+                .annotate(a=Avg('rating'))
+                .values('a')[:1],
+                output_field=FloatField(),
             ),
             review_count=Coalesce(
                 Subquery(

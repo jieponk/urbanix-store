@@ -1,3 +1,4 @@
+import { cardProductName } from '@/lib/seo';
 import { NextResponse } from 'next/server';
 import { getActiveProducts, getCategories, type Product } from '@/lib/api';
 
@@ -86,7 +87,7 @@ export async function GET(request: Request) {
     const final = Number(p.final_price ?? p.discount_price) || 0;
     return {
       id: p.id,
-      name: cleanName(p.name),
+      name: cardProductName(p.name),
       category: p.category_name,
       image: p.image_url,
       price: final > 0 && final < price ? final : price,

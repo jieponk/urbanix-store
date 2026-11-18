@@ -645,6 +645,15 @@ const EN: Record<string, string> = {
   'Menurut kamu gimana nih?': 'What do you think?',
   'Sudah ada {n} komentar. Tulis pendapatmu di kolom komentar di bawah, yuk!': '{n} comments so far. Share your take in the comments below!',
   'Jadi yang pertama kasih pendapat. Tulis komentarmu di bawah, yuk!': 'Be the first to share your take. Drop a comment below!',
+  // kritik pembeli: stok, kepercayaan
+  'Detail lengkap produk ini bisa ditanyakan langsung ke admin lewat WhatsApp.': 'Ask our admin on WhatsApp for full details of this product.',
+  'Stok varian ini: {n}': 'Stock for this variant: {n}',
+  'Stok tersedia: {n}': 'In stock: {n}',
+  'Terjual {n}': '{n} sold',
+  '{n} hari': '{n} days',
+  'berjualan online sejak {d}': 'selling online since {d}',
+  'Januari 2026': 'January 2026',
+  'Dikelola {c}, barang original bergaransi resmi.': 'Run by {c}; genuine products with official warranty.',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',

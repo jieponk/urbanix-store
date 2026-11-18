@@ -44,10 +44,33 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
       ]
     : null;
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+
   return (
+    <>
+    {/* HP & tablet: satu baris ringkas supaya produk langsung terlihat di layar pertama */}
+    <Link
+      href="/produk?promo=1"
+      aria-label={`${name}, hemat sampai ${maxDiscount}%`}
+      className="flex items-center gap-3 rounded-xl bg-cobalt-900 px-4 py-3 text-white lg:hidden"
+    >
+      <span className="text-[1.75rem] font-extrabold leading-none tracking-tight text-sun-300">{maxDiscount}%</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[11px] font-semibold text-white/70">{name}</span>
+        <span className="block truncate text-sm font-bold">{t('{n} produk ikut promo', { n: count })}</span>
+      </span>
+      {time && (
+        <span className="shrink-0 text-right font-mono text-xs font-extrabold tabular-nums leading-tight" role="timer">
+          {time.days > 0 && <span className="block text-[10px] font-semibold text-white/70">{t('{n} hari', { n: time.days })}</span>}
+          {pad(time.hours)}:{pad(time.minutes)}:{pad(time.seconds)}
+        </span>
+      )}
+      <ArrowRight size={16} />
+    </Link>
+
     <section
       aria-label={`${name}, hemat sampai ${maxDiscount}%`}
-      className="relative flex h-full flex-col overflow-hidden rounded-xl bg-cobalt-900 p-5 text-white sm:p-6"
+      className="relative hidden h-full flex-col overflow-hidden rounded-xl bg-cobalt-900 p-5 text-white sm:p-6 lg:flex"
     >
       {/* Sudut jendela bidik kamera */}
       <span className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l-2 border-t-2 border-white/30" aria-hidden="true" />
@@ -93,5 +116,6 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
         </Link>
       </div>
     </section>
+    </>
   );
 }

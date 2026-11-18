@@ -197,6 +197,13 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* 2. Flash sale / produk promo langsung di bawah banner (di HP produk terlihat lebih cepat) */}
+      {flashProducts.length > 0 ? (
+        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
+      ) : (
+        promo && <FlashSale products={promoProducts} promoName={promo.name} />
+      )}
+
       {/* Voucher yang bisa diklaim */}
       {vouchers.length > 0 && (
         <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
@@ -217,13 +224,6 @@ export default async function HomePage({
         <GearBackdrop />
         <CategoryStrip categories={categories} products={allProducts} />
       </div>
-
-      {/* 3. Produk promo, potongan terbesar dulu */}
-      {flashProducts.length > 0 ? (
-        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
-      ) : (
-        promo && <FlashSale products={promoProducts} promoName={promo.name} />
-      )}
 
       {/* 4. Cara pesan via WhatsApp + diskon */}
       <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />

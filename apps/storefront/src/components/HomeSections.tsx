@@ -212,14 +212,15 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             </a>
           </div>
 
-          <ol className="relative grid gap-4 sm:grid-cols-3 sm:gap-5">
+          {/* HP: tiga langkah dalam satu baris yang bisa digeser (tidak terlalu tinggi); PC: tiga kolom */}
+          <ol className="relative -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
             {/* Garis penghubung yang "mengalir" */}
             <svg aria-hidden="true" className="pointer-events-none absolute left-[16%] right-[16%] top-9 hidden h-2 sm:block" preserveAspectRatio="none" viewBox="0 0 100 2">
               <line x1="0" y1="1" x2="100" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" className="wa-flow text-white/25" />
             </svg>
             {steps.map((step, i) => (
-              <li key={i} className="relative flex gap-4 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 sm:flex-col sm:gap-3 sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
-                <span className="relative mx-0 flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:mx-auto">
+              <li key={i} className="relative flex w-[80%] shrink-0 snap-start gap-3 rounded-2xl bg-white/[0.06] p-3.5 ring-1 ring-white/10 sm:w-auto sm:flex-col sm:gap-3 sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
+                <span className="relative mx-0 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:mx-auto sm:h-[72px] sm:w-[72px]">
                   {step.icon}
                   <span className="absolute -left-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-sun-400 text-[13px] font-extrabold text-white shadow-md ring-4 ring-cobalt-900">
                     {i + 1}

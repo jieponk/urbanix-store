@@ -4,6 +4,7 @@ import { productImg } from '@/lib/img';
 import { getT } from '@/lib/lang-server';
 import { Bolt, QuotaBar } from '@/components/FlashSale';
 import { currentEvent } from '@/lib/events';
+import { cardProductName } from '@/lib/seo';
 
 export default function ProductCard({ product }: { product: Product }) {
   const t = getT();
@@ -34,7 +35,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.image_url ? (
           <img
             src={productImg(product.image_url, 450)}
-            alt={product.name}
+            alt={cardProductName(product.name)}
             loading="lazy"
             className="h-full w-full object-contain md:transition md:duration-300 md:group-hover:scale-105"
           />
@@ -84,8 +85,25 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
 
         <h3 className="mt-1 line-clamp-2 min-h-10 text-xs font-bold leading-5 text-slate-800 transition group-hover:text-slate-900 sm:text-sm">
-          {product.name}
+          {cardProductName(product.name)}
         </h3>
+
+        {/* Bukti sosial jujur: hanya dari ulasan pembeli terverifikasi & pesanan web asli */}
+        {(Boolean(product.review_count) || Boolean(product.sold_count)) && (
+          <p className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 sm:text-xs">
+            {Boolean(product.review_count) && product.rating_avg != null && (
+              <span className="inline-flex items-center gap-0.5 font-semibold text-slate-700">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="text-ink">
+                  <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
+                </svg>
+                {product.rating_avg.toFixed(1)}
+                <span className="font-normal text-slate-500">({product.review_count})</span>
+              </span>
+            )}
+            {Boolean(product.review_count) && Boolean(product.sold_count) && <span aria-hidden="true">·</span>}
+            {Boolean(product.sold_count) && <span>{t('Terjual {n}', { n: product.sold_count ?? 0 })}</span>}
+          </p>
+        )}
 
         <div className="mt-3">
           {hasDiscount && (

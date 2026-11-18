@@ -130,10 +130,10 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
 
           <p className={`mt-3 text-sm font-semibold ${stock > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
             {stock > 0
-              ? t(selected ? 'Stok varian ini tersedia ({n})' : 'Stok tercatat tersedia ({n})', { n: stock })
+              ? t(selected ? 'Stok varian ini: {n}' : 'Stok tersedia: {n}', { n: stock })
               : selected
                 ? t('Stok varian ini habis')
-                : t('Stok tercatat habis')}
+                : t('Stok habis')}
           </p>
 
           {pkg?.ship_weight_grams ? (
@@ -203,6 +203,19 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
             <Link href="/syarat-ketentuan#pembatalan-retur" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
         </ul>
+
+        {/* Siapa penjualnya: toko & badan usaha nyata, untuk menumbuhkan kepercayaan */}
+        <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-mist px-3.5 py-3 text-[13px] leading-5 text-slate-600">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0 text-ink">
+            <path d="M3 9l1.5-5h15L21 9M4 9v11h16V9M3 9h18M9 20v-6h6v6" />
+          </svg>
+          <span>
+            <b className="text-ink">Urbanix Store</b> · {siteConfig.city} ·{' '}
+            {t('berjualan online sejak {d}', { d: t(siteConfig.since) })}.{' '}
+            {t('Dikelola {c}, barang original bergaransi resmi.', { c: siteConfig.legal.company })}{' '}
+            <Link href="/tentang-kami" className="font-semibold text-ink underline">{t('Tentang kami')}</Link>
+          </span>
+        </p>
       </section>
     </div>
   );
