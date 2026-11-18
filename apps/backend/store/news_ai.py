@@ -444,8 +444,14 @@ def check_key() -> tuple[bool, str]:
             ok_any = ok_any or ok
             lines.append(f"{name} · {model_name(name)}: {'merespons' if ok else 'balasan aneh'}")
         except urllib.error.HTTPError as exc:
-            hint = "kuota gratis habis, tunggu sebentar" if exc.code == 429 else f"cek kunci di {where[name]}"
-            lines.append(f"{name}: ditolak ({exc.code}) — {hint}. {_error_detail(exc)}")
+            detail = _error_detail(exc)
+            if re.search(r"credit|billing|balance|quota exceeded", detail, re.I) and name in ("openai", "anthropic"):
+                hint = f"saldo habis, isi saldo di {where[name]} (dilewati otomatis sampai ada saldo)"
+            elif exc.code == 429:
+                hint = "kuota gratis habis, tunggu sebentar"
+            else:
+                hint = f"cek kunci di {where[name]}"
+            lines.append(f"{name}: ditolak ({exc.code}) — {hint}. {detail}")
         except Exception as exc:  # noqa: BLE001
             lines.append(f"{name}: tidak bisa dihubungi ({exc})")
     return ok_any, "urutan pakai " + " → ".join(names) + "\n  " + "\n  ".join(lines)
