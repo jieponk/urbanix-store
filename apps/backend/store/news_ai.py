@@ -303,16 +303,28 @@ def _call_openai_compatible(prompt: str, name: str) -> str:
         "authorization": f"Bearer {_key_for(name)}",
         "user-agent": AI_USER_AGENT,
     }
-    if name == "github":  # header wajib GitHub REST
-        headers.update({"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"})
-    req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers=headers)
-    with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
-        raw = resp.read().decode(errors="replace")
-    try:
-        data = json.loads(raw)
-    except ValueError:
+    attempts = [(conf["url"], body, headers)]
+    if name == "github":
+        # Alamat utama GitHub Models; kalau balasannya aneh (mis. "OK" polos), coba alamat lama (Azure) yang menerima token sama.
+        gh = dict(headers, **{"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"})
+        legacy = dict(body, model=model.split("/", 1)[-1])
+        attempts = [(conf["url"], body, gh), ("https://models.inference.ai.azure.com/chat/completions", legacy, headers)]
+    data, last_err = None, None
+    for url, payload, hdrs in attempts:
+        req = urllib.request.Request(url, data=json.dumps(payload).encode(), method="POST", headers=hdrs)
+        with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
+            raw = resp.read().decode(errors="replace")
         snippet = re.sub(r"\s+", " ", raw)[:160] or "(kosong)"
-        raise ValueError(f"balasan {name} bukan JSON: {snippet}") from None
+        try:
+            data = json.loads(raw)
+            if isinstance(data, dict) and "choices" in data:
+                break
+            last_err = f"balasan {name} tanpa isi jawaban: {snippet}"
+        except ValueError:
+            last_err = f"balasan {name} bukan JSON: {snippet}"
+        data = None
+    if data is None:
+        raise ValueError(last_err)
     choices = data.get("choices") or [{}]
     return str((choices[0].get("message") or {}).get("content") or "")
 
