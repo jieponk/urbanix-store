@@ -3,8 +3,13 @@
 - Teks artikel sumber hanya dipakai sebagai BAHAN untuk AI; yang disimpan & ditampilkan adalah
   tulisan baru (poin-poin dengan kata sendiri), bukan salinan artikel.
 - Sumber yang diberi izin "teks penuh" (siaran pers / ada izin tertulis) boleh ditampilkan lengkap.
-- Kunci: ANTHROPIC_API_KEY di .env. Tanpa kunci, fitur ini diam saja (berita tetap tampil seperti biasa).
-- Biaya dikendalikan dengan NEWS_AI_MAX_PER_RUN (default 8 berita per pembaruan).
+- Penyedia AI (NEWS_AI_PROVIDER di .env):
+    anthropic (berbayar)  : ANTHROPIC_API_KEY
+    groq      (gratis)    : NEWS_AI_API_KEY dari console.groq.com
+    gemini    (gratis)    : NEWS_AI_API_KEY dari aistudio.google.com
+  Tanpa kunci, fitur ini diam saja (berita tetap tampil seperti biasa).
+- Biaya/kuota dikendalikan dengan NEWS_AI_MAX_PER_RUN (default 8 berita per pembaruan) dan
+  NEWS_AI_DELAY (jeda detik antar berita, supaya tidak melewati batas gratis per menit).
 """
 
 from __future__ import annotations
@@ -23,17 +28,44 @@ log = logging.getLogger(__name__)
 
 API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-haiku-5-5"
+
+# Penyedia gratis memakai format "OpenAI-compatible" (chat/completions). Model bisa diganti lewat NEWS_AI_MODEL.
+PROVIDERS = {
+    "groq": {"url": "https://api.groq.com/openai/v1/chat/completions", "model": "openai/gpt-oss-120b", "delay": 45},
+    "gemini": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "model": "gemini-flash-latest",
+        "delay": 15,
+    },
+}
 MAX_SOURCE_CHARS = 12000
 FULL_TEXT_CHARS = 20000
 MIN_MATERIAL = 200
 
 
+def provider() -> str:
+    p = os.environ.get("NEWS_AI_PROVIDER", "").strip().lower()
+    return p if p in PROVIDERS else "anthropic"
+
+
 def api_key() -> str:
-    return os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if provider() == "anthropic":
+        return (os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("NEWS_AI_API_KEY", "")).strip()
+    return os.environ.get("NEWS_AI_API_KEY", "").strip()
 
 
 def model_name() -> str:
-    return os.environ.get("NEWS_AI_MODEL", "").strip() or DEFAULT_MODEL
+    custom = os.environ.get("NEWS_AI_MODEL", "").strip()
+    if custom:
+        return custom
+    return PROVIDERS[provider()]["model"] if provider() in PROVIDERS else DEFAULT_MODEL
+
+
+def delay_seconds() -> float:
+    try:
+        return max(0.0, min(300.0, float(os.environ.get("NEWS_AI_DELAY", ""))))
+    except ValueError:
+        return float(PROVIDERS.get(provider(), {}).get("delay", 0))
 
 
 def max_per_run() -> int:
@@ -113,6 +145,34 @@ Teks sumber:
 """
 
 
+def _call_ai(prompt: str) -> str:
+    """Kirim prompt ke penyedia AI yang dipilih, kembalikan teks balasannya."""
+    if provider() in PROVIDERS:
+        return _call_openai_compatible(prompt)
+    return _call_claude(prompt)
+
+
+def _call_openai_compatible(prompt: str) -> str:
+    conf = PROVIDERS[provider()]
+    model = model_name()
+    body = {
+        "model": model,
+        "max_tokens": 4096,  # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini
+        "temperature": 0.4,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if "gpt-oss" in model or model.startswith("gemini"):
+        body["reasoning_effort"] = "low"
+    req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers={
+        "content-type": "application/json",
+        "authorization": f"Bearer {api_key()}",
+    })
+    with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
+        data = json.loads(resp.read().decode())
+    choices = data.get("choices") or [{}]
+    return str((choices[0].get("message") or {}).get("content") or "")
+
+
 def _call_claude(prompt: str) -> str:
     payload = json.dumps({
         "model": model_name(),
@@ -189,14 +249,15 @@ def process_article(article) -> str:
               .replace("{summary}", article.original_summary or "-")
               .replace("{body}", material[:MAX_SOURCE_CHARS]))
     try:
-        result = parse_reply(_call_claude(prompt))
+        result = parse_reply(_call_ai(prompt))
     except urllib.error.HTTPError as exc:
         log.warning("AI berita ditolak (%s) untuk #%s", exc.code, article.pk)
         # 401/403 = kunci salah; 429/529 = sibuk → coba lagi nanti, jangan tandai gagal permanen
         if exc.code in (400, 404):
             article.ai_status = "failed"
             article.save(update_fields=["body", "ai_status"])
-        return "failed"
+            return "failed"
+        return "limited" if exc.code in (401, 403, 429, 529) else "failed"
     except Exception as exc:  # noqa: BLE001
         log.warning("AI berita gagal untuk #%s: %s", article.pk, exc)
         return "failed"
@@ -232,20 +293,32 @@ def process_pending(limit: int | None = None) -> int:
     if not api_key():
         # Tanpa kunci AI: tetap simpan teks penuh untuk sumber yang diizinkan.
         qs = qs.filter(source__full_text_allowed=True, body="", ai_status="pending")
+    import time
+
     done = 0
-    for article in qs.order_by("-published_at")[:limit]:
-        if process_article(article) == "done":
+    pause = delay_seconds() if api_key() else 0
+    for i, article in enumerate(qs.order_by("-published_at")[:limit]):
+        if i and pause:
+            time.sleep(pause)  # jaga batas gratis per menit (Groq/Gemini)
+        status = process_article(article)
+        if status == "limited":
+            log.warning("AI berita berhenti: kunci ditolak atau kuota habis (coba lagi di pembaruan berikutnya).")
+            break
+        if status == "done":
             done += 1
     return done
 
 
 def check_key() -> tuple[bool, str]:
+    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com"}.get(provider(), "console.anthropic.com")
     if not api_key():
-        return False, "ANTHROPIC_API_KEY kosong."
+        name = "ANTHROPIC_API_KEY" if provider() == "anthropic" else "NEWS_AI_API_KEY"
+        return False, f"{name} kosong (penyedia: {provider()})."
     try:
-        reply = _call_claude('Balas hanya JSON: {"ok": true}')
+        reply = _call_ai('Balas hanya JSON: {"ok": true}')
     except urllib.error.HTTPError as exc:
-        return False, f"Ditolak API ({exc.code}). Cek kunci & saldo kredit di console.anthropic.com."
+        hint = "kuota gratis habis, tunggu sebentar" if exc.code == 429 else f"cek kunci di {where}"
+        return False, f"Ditolak API ({exc.code}): {hint}."
     except Exception as exc:  # noqa: BLE001
         return False, f"Tidak bisa menghubungi API: {exc}"
-    return ("ok" in reply), f"Model {model_name()} merespons."
+    return ("ok" in reply), f"{provider()} · model {model_name()} merespons."

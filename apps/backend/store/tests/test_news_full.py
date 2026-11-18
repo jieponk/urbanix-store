@@ -72,3 +72,58 @@ class NewsFullArticleTests(TestCase):
         self.assertEqual(c.target_url, f"/berita/{self.news.id}")
         listing = self.client.get("/api/v1/news/").json()["results"][0]
         self.assertEqual(listing["comment_count"], 2)
+
+
+class FreeProviderTests(TestCase):
+    """Penyedia gratis (Groq/Gemini) lewat format OpenAI-compatible."""
+
+    def setUp(self):
+        self.src = NewsSource.objects.create(name="Tes", feed_url="https://contoh.test/feed2", last_fetched_at=timezone.now())
+        for i in range(3):
+            NewsArticle.objects.create(
+                source=self.src, guid=f"f{i}", url=f"https://contoh.test/f{i}", original_title=f"Berita {i}",
+                original_summary="x", title=f"Berita {i}", published_at=timezone.now() - timedelta(hours=i + 1),
+            )
+
+    def _resp(self, payload):
+        import io
+        import json
+
+        class R(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        return R(json.dumps(payload).encode())
+
+    @mock.patch.dict("os.environ", {"NEWS_AI_PROVIDER": "groq", "NEWS_AI_API_KEY": "gsk_test", "NEWS_AI_DELAY": "0"})
+    def test_groq_request_and_parse(self):
+        import json
+        reply = json.dumps({"lewati": False, "artikel": ARTICLE, "poin": ["A.", "B."], "kesimpulan": "Inti.", "opini": "Oke."})
+        seen = {}
+
+        def fake_urlopen(req, timeout=0):
+            seen["url"] = req.full_url
+            seen["auth"] = req.get_header("Authorization")
+            seen["body"] = json.loads(req.data)
+            return self._resp({"choices": [{"message": {"content": reply}}]})
+
+        with mock.patch("store.news_ai.fetch_article_text", return_value="Isi sumber " * 30), \
+                mock.patch("store.news_ai.urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertEqual(news_ai.process_pending(1), 1)
+        self.assertIn("api.groq.com", seen["url"])
+        self.assertEqual(seen["auth"], "Bearer gsk_test")
+        self.assertEqual(seen["body"]["model"], "openai/gpt-oss-120b")
+        self.assertEqual(NewsArticle.objects.filter(ai_status="done").count(), 1)
+
+    @mock.patch.dict("os.environ", {"NEWS_AI_PROVIDER": "gemini", "NEWS_AI_API_KEY": "AIza_test", "NEWS_AI_DELAY": "0"})
+    def test_quota_exhausted_stops_run(self):
+        import urllib.error
+        err = urllib.error.HTTPError("https://x", 429, "Too Many Requests", {}, None)
+        with mock.patch("store.news_ai.fetch_article_text", return_value="Isi sumber " * 30), \
+                mock.patch("store.news_ai.urllib.request.urlopen", side_effect=err) as call:
+            self.assertEqual(news_ai.process_pending(3), 0)
+        self.assertEqual(call.call_count, 1)  # berhenti setelah kuota habis, tidak menembak terus
+        self.assertEqual(NewsArticle.objects.filter(ai_status="pending").count(), 3)  # dicoba lagi nanti
