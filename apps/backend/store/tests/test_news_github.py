@@ -2,6 +2,8 @@ import io
 import json
 from unittest import mock
 
+from django.test import SimpleTestCase
+
 
 from store import news_ai
 
