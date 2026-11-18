@@ -47,26 +47,59 @@ FULL_TEXT_CHARS = 20000
 MIN_MATERIAL = 200
 
 
+# Urutan pakai: yang gratis dulu. Kalau kuota satu penyedia habis/kunci ditolak, otomatis pindah ke berikutnya.
+CHAIN_ORDER = ["groq", "gemini", "anthropic"]
+KEY_ENV = {"groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+MODEL_ENV = {"groq": "GROQ_MODEL", "gemini": "GEMINI_MODEL", "anthropic": "NEWS_AI_MODEL"}
+REST_SECONDS = 30 * 60  # penyedia yang kuotanya habis diistirahatkan 30 menit
+
+_resting: dict[str, float] = {}
+
+
+def _key_for(name: str) -> str:
+    key = os.environ.get(KEY_ENV[name], "").strip()
+    if not key and os.environ.get("NEWS_AI_PROVIDER", "").strip().lower() == name:
+        key = os.environ.get("NEWS_AI_API_KEY", "").strip()  # setelan lama (satu penyedia)
+    return key
+
+
+def chain() -> list[str]:
+    """Penyedia yang punya kunci, sesuai urutan pakai."""
+    return [name for name in CHAIN_ORDER if _key_for(name)]
+
+
+def _available() -> list[str]:
+    import time
+
+    now = time.time()
+    return [name for name in chain() if _resting.get(name, 0) <= now]
+
+
 def provider() -> str:
-    p = os.environ.get("NEWS_AI_PROVIDER", "").strip().lower()
-    return p if p in PROVIDERS else "anthropic"
+    """Penyedia yang akan dipakai sekarang (yang pertama dan tidak sedang istirahat)."""
+    ready = _available() or chain()
+    return ready[0] if ready else "anthropic"
 
 
 def api_key() -> str:
-    if provider() == "anthropic":
-        return (os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("NEWS_AI_API_KEY", "")).strip()
-    return os.environ.get("NEWS_AI_API_KEY", "").strip()
+    """Kunci penyedia saat ini; kosong = fitur AI tidak aktif."""
+    return _key_for(provider()) if chain() else ""
 
 
-def model_name() -> str:
-    custom = os.environ.get("NEWS_AI_MODEL", "").strip()
+def model_name(name: str | None = None) -> str:
+    name = name or provider()
+    custom = os.environ.get(MODEL_ENV.get(name, "NEWS_AI_MODEL"), "").strip()
+    if not custom and name != "anthropic" and os.environ.get("NEWS_AI_PROVIDER", "").strip().lower() == name:
+        custom = os.environ.get("NEWS_AI_MODEL", "").strip()
     if custom:
         return custom
-    return PROVIDERS[provider()]["model"] if provider() in PROVIDERS else DEFAULT_MODEL
+    return PROVIDERS[name]["model"] if name in PROVIDERS else DEFAULT_MODEL
 
 
 def source_chars() -> int:
-    return int(PROVIDERS.get(provider(), {}).get("source_chars", MAX_SOURCE_CHARS))
+    # Ikuti batas terketat di rantai supaya prompt yang sama tetap muat saat pindah penyedia.
+    limits = [int(PROVIDERS.get(n, {}).get("source_chars", MAX_SOURCE_CHARS)) for n in chain()]
+    return min(limits) if limits else MAX_SOURCE_CHARS
 
 
 def delay_seconds() -> float:
@@ -165,16 +198,32 @@ def _error_detail(exc: urllib.error.HTTPError) -> str:
         return exc.reason if isinstance(exc.reason, str) else ""
 
 
+LIMIT_CODES = (401, 403, 413, 429, 529)
+
+
 def _call_ai(prompt: str) -> str:
-    """Kirim prompt ke penyedia AI yang dipilih, kembalikan teks balasannya."""
-    if provider() in PROVIDERS:
-        return _call_openai_compatible(prompt)
-    return _call_claude(prompt)
+    """Kirim prompt ke penyedia pertama yang siap; kalau kuota habis/kunci ditolak, pindah ke penyedia berikutnya."""
+    import time
+
+    names = _available() or chain()
+    if not names:
+        raise RuntimeError("Belum ada kunci AI.")
+    last: Exception | None = None
+    for name in names:
+        try:
+            return _call_openai_compatible(prompt, name) if name in PROVIDERS else _call_claude(prompt)
+        except urllib.error.HTTPError as exc:
+            if exc.code not in LIMIT_CODES:
+                raise
+            log.warning("Penyedia AI %s istirahat 30 menit (%s): %s", name, exc.code, _error_detail(exc))
+            _resting[name] = time.time() + REST_SECONDS
+            last = exc
+    raise last  # semua penyedia sedang habis kuota / ditolak
 
 
-def _call_openai_compatible(prompt: str) -> str:
-    conf = PROVIDERS[provider()]
-    model = model_name()
+def _call_openai_compatible(prompt: str, name: str) -> str:
+    conf = PROVIDERS[name]
+    model = model_name(name)
     body = {
         "model": model,
         "max_tokens": conf["max_tokens"],  # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini
@@ -185,7 +234,7 @@ def _call_openai_compatible(prompt: str) -> str:
         body["reasoning_effort"] = "low"
     req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers={
         "content-type": "application/json",
-        "authorization": f"Bearer {api_key()}",
+        "authorization": f"Bearer {_key_for(name)}",
     })
     with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
         data = json.loads(resp.read().decode())
@@ -202,7 +251,7 @@ def _call_claude(prompt: str) -> str:
     }).encode()
     req = urllib.request.Request(API_URL, data=payload, method="POST", headers={
         "content-type": "application/json",
-        "x-api-key": api_key(),
+        "x-api-key": _key_for("anthropic"),
         "anthropic-version": "2023-06-01",
     })
     with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 (alamat tetap)
@@ -365,15 +414,22 @@ def _needs_ai_call(article) -> bool:
 
 
 def check_key() -> tuple[bool, str]:
-    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com"}.get(provider(), "console.anthropic.com")
-    if not api_key():
-        name = "ANTHROPIC_API_KEY" if provider() == "anthropic" else "NEWS_AI_API_KEY"
-        return False, f"{name} kosong (penyedia: {provider()})."
-    try:
-        reply = _call_ai('Balas hanya JSON: {"ok": true}')
-    except urllib.error.HTTPError as exc:
-        hint = "kuota gratis habis, tunggu sebentar" if exc.code == 429 else f"cek kunci di {where}"
-        return False, f"Ditolak API ({exc.code}): {hint}. Pesan penyedia: {_error_detail(exc)}"
-    except Exception as exc:  # noqa: BLE001
-        return False, f"Tidak bisa menghubungi API: {exc}"
-    return ("ok" in reply), f"{provider()} · model {model_name()} merespons."
+    """Uji setiap penyedia yang punya kunci. OK bila minimal satu merespons."""
+    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com", "anthropic": "console.anthropic.com"}
+    names = chain()
+    if not names:
+        return False, "Belum ada kunci AI (GROQ_API_KEY / GEMINI_API_KEY / ANTHROPIC_API_KEY)."
+    lines, ok_any = [], False
+    for name in names:
+        try:
+            reply = (_call_openai_compatible('Balas hanya JSON: {"ok": true}', name) if name in PROVIDERS
+                     else _call_claude('Balas hanya JSON: {"ok": true}'))
+            ok = "ok" in reply
+            ok_any = ok_any or ok
+            lines.append(f"{name} · {model_name(name)}: {'merespons' if ok else 'balasan aneh'}")
+        except urllib.error.HTTPError as exc:
+            hint = "kuota gratis habis, tunggu sebentar" if exc.code == 429 else f"cek kunci di {where[name]}"
+            lines.append(f"{name}: ditolak ({exc.code}) — {hint}. {_error_detail(exc)}")
+        except Exception as exc:  # noqa: BLE001
+            lines.append(f"{name}: tidak bisa dihubungi ({exc})")
+    return ok_any, "urutan pakai " + " → ".join(names) + "\n  " + "\n  ".join(lines)

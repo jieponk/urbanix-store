@@ -78,6 +78,7 @@ class FreeProviderTests(TestCase):
     """Penyedia gratis (Groq/Gemini) lewat format OpenAI-compatible."""
 
     def setUp(self):
+        news_ai._resting.clear()
         self.src = NewsSource.objects.create(name="Tes", feed_url="https://contoh.test/feed2", last_fetched_at=timezone.now())
         for i in range(3):
             NewsArticle.objects.create(
@@ -132,6 +133,7 @@ class FreeProviderTests(TestCase):
 class BacklogTests(TestCase):
     @mock.patch.dict("os.environ", {"NEWS_AI_PROVIDER": "gemini", "NEWS_AI_API_KEY": "AQ.test", "NEWS_AI_DELAY": "0"})
     def test_google_news_bulk_skipped_and_limit_counts_ai_calls(self):
+        news_ai._resting.clear()
         import json
         src = NewsSource.objects.create(name="Campur", feed_url="https://contoh.test/feed3", last_fetched_at=timezone.now())
         now = timezone.now()
@@ -148,3 +150,41 @@ class BacklogTests(TestCase):
         self.assertEqual(NewsArticle.objects.filter(ai_status="skip").count(), 10)
         real.refresh_from_db()
         self.assertEqual(real.ai_status, "done")
+
+
+class FallbackTests(TestCase):
+    def setUp(self):
+        news_ai._resting.clear()
+        src = NewsSource.objects.create(name="Tes", feed_url="https://contoh.test/feed4", last_fetched_at=timezone.now())
+        self.news = NewsArticle.objects.create(source=src, guid="fb", url="https://contoh.test/fb", original_title="Kamera",
+                                               title="Kamera", published_at=timezone.now())
+
+    def tearDown(self):
+        news_ai._resting.clear()
+
+    @mock.patch.dict("os.environ", {"GROQ_API_KEY": "gsk_x", "GEMINI_API_KEY": "AQ.x", "NEWS_AI_DELAY": "0",
+                                    "NEWS_AI_PROVIDER": "", "NEWS_AI_API_KEY": ""})
+    def test_groq_quota_falls_back_to_gemini(self):
+        import json
+        import urllib.error
+        self.assertEqual(news_ai.chain(), ["groq", "gemini"])
+        reply = json.dumps({"lewati": False, "artikel": ARTICLE, "poin": ["A.", "B."], "kesimpulan": "Inti.", "opini": "Oke."})
+        used = []
+
+        def fake(prompt, name):
+            used.append(name)
+            if name == "groq":
+                raise urllib.error.HTTPError("https://x", 429, "Too Many", {}, None)
+            return reply
+
+        with mock.patch("store.news_ai.fetch_article_text", return_value="Isi sumber " * 30), \
+                mock.patch("store.news_ai._call_openai_compatible", side_effect=fake):
+            self.assertEqual(news_ai.process_pending(1), 1)
+        self.assertEqual(used, ["groq", "gemini"])
+        self.assertEqual(news_ai.provider(), "gemini")  # Groq istirahat 30 menit
+
+    @mock.patch.dict("os.environ", {"NEWS_AI_PROVIDER": "gemini", "NEWS_AI_API_KEY": "AQ.lama", "GROQ_API_KEY": "",
+                                    "GEMINI_API_KEY": ""})
+    def test_old_single_provider_setting_still_works(self):
+        self.assertEqual(news_ai.chain(), ["gemini"])
+        self.assertEqual(news_ai._key_for("gemini"), "AQ.lama")

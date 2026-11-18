@@ -13,7 +13,8 @@ if [ -z "$SERVER" ]; then
   exit 1
 fi
 
-echo "Pilih penyedia AI untuk berita:"
+echo "Pasang kunci AI untuk berita. Bisa dijalankan beberapa kali untuk memasang lebih dari satu penyedia:"
+echo "Groq dipakai lebih dulu; kalau kuotanya habis, otomatis pindah ke Gemini, lalu Claude."
 echo "  1) Groq   - gratis, tanpa kartu kredit (console.groq.com)"
 echo "  2) Gemini - gratis (aistudio.google.com); di paket gratis, Google boleh memakai data untuk produknya"
 echo "  3) Claude - berbayar (console.anthropic.com), tulisan paling rapi"
@@ -54,12 +55,20 @@ echo "==> Menyimpan kunci di server & menyalakan ulang backend..."
 set -e
 ENVF="$HOME/urbanix/.env"
 [ -f "$ENVF" ] || { echo "File $ENVF tidak ada. Jalankan deploy dulu."; exit 1; }
-grep -v -E "^(ANTHROPIC_API_KEY|NEWS_AI_PROVIDER|NEWS_AI_API_KEY)=" "$ENVF" > "$ENVF.tmp" || true
-if [ "$PROVIDER" = "anthropic" ]; then
-  printf 'ANTHROPIC_API_KEY=%s\nNEWS_AI_PROVIDER=anthropic\n' "$KEY" >> "$ENVF.tmp"
-else
-  printf 'NEWS_AI_PROVIDER=%s\nNEWS_AI_API_KEY=%s\n' "$PROVIDER" "$KEY" >> "$ENVF.tmp"
+case "$PROVIDER" in
+  groq) VAR=GROQ_API_KEY ;;
+  gemini) VAR=GEMINI_API_KEY ;;
+  *) VAR=ANTHROPIC_API_KEY ;;
+esac
+# Setelan lama (satu penyedia: NEWS_AI_PROVIDER + NEWS_AI_API_KEY) dipindah ke variabel per penyedia.
+OLD_P=$(grep -m1 '^NEWS_AI_PROVIDER=' "$ENVF" | cut -d= -f2- || true)
+OLD_K=$(grep -m1 '^NEWS_AI_API_KEY=' "$ENVF" | cut -d= -f2- || true)
+case "$OLD_P" in groq) OLD_VAR=GROQ_API_KEY ;; gemini) OLD_VAR=GEMINI_API_KEY ;; *) OLD_VAR="" ;; esac
+grep -v -E "^(NEWS_AI_PROVIDER|NEWS_AI_API_KEY|$VAR)=" "$ENVF" > "$ENVF.tmp" || true
+if [ -n "$OLD_VAR" ] && [ -n "$OLD_K" ] && [ "$OLD_VAR" != "$VAR" ] && ! grep -q "^$OLD_VAR=" "$ENVF.tmp"; then
+  printf '%s=%s\n' "$OLD_VAR" "$OLD_K" >> "$ENVF.tmp"
 fi
+printf '%s=%s\n' "$VAR" "$KEY" >> "$ENVF.tmp"
 mv "$ENVF.tmp" "$ENVF"
 chmod 600 "$ENVF"
 
@@ -67,7 +76,9 @@ cd "$HOME/urbanix/app/deploy"
 DC="docker compose --env-file $ENVF -f docker-compose.prod.yml"
 $DC up -d backend </dev/null >/dev/null
 sleep 6
-echo "==> Menguji kunci (membuat 2 artikel berita)..."
+echo "==> Kunci AI yang terpasang (urutan pakai Groq -> Gemini -> Claude):"
+for V in GROQ_API_KEY GEMINI_API_KEY ANTHROPIC_API_KEY; do grep -q "^$V=." "$ENVF" && echo "   - $V ada"; done
+echo "==> Menguji kunci & membuat 2 artikel berita..."
 if $DC exec -T backend python manage.py ringkas_berita --maks 2 </dev/null; then
   echo "BERHASIL. Artikel lengkap, inti berita & opini AI akan muncul bertahap (maks. 8 berita per pembaruan, tiap 2 jam)."
 else
