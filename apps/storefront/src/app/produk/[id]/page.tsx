@@ -191,7 +191,10 @@ export default async function ProductPage({
   return (
     <div className="px-4 pb-28 pt-4 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <BackLink href="/produk">{t('Kembali ke katalog')}</BackLink>
+        {/* HP: tombol kembali ada di header (ProductBackButton) */}
+        <div className="hidden md:block">
+          <BackLink href="/produk">{t('Kembali ke katalog')}</BackLink>
+        </div>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={jsonLd(productJsonLd(product, buyerReviews))}

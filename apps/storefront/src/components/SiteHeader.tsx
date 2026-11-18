@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import CategoryMenu from '@/components/CategoryMenu';
-import HeaderActions from '@/components/HeaderMenu';
+import HeaderActions, { ProductBackButton, ProductCartButton } from '@/components/HeaderMenu';
 import SearchBox from '@/components/SearchBox';
 import { iconBtn, slideLabel } from '@/components/headerLabel';
 import { NewsIcon } from '@/components/Icons';
@@ -55,7 +55,8 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
       <div className="relative border-b border-slate-200 bg-surface/95 backdrop-blur">
         {/* Baris utama */}
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2.5 sm:px-6 md:gap-3 lg:px-8">
-          <Link href="/" className="shrink-0" aria-label={t('Urbanix Store, ke beranda')}>
+          <ProductBackButton />
+          <Link href="/" className="hdr-logo shrink-0" aria-label={t('Urbanix Store, ke beranda')}>
             <BrandLogo />
           </Link>
 
@@ -77,6 +78,7 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
           <SearchBox className="flex min-w-0 flex-1" />
 
           {/* Desktop: cek pesanan, keranjang, ID/EN, tema. HP: pindah ke bar navigasi bawah */}
+          <ProductCartButton />
           <HeaderActions />
         </div>
       </div>

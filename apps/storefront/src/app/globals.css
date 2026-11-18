@@ -133,6 +133,20 @@ body {
   }
 }
 
+/* HP: beri ruang di bawah footer saat bar beli halaman produk tampil */
+@media (max-width: 639px) {
+  body:has(#bar-beli) footer {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* HP, halaman detail produk: logo diganti tombol kembali (lihat ProductBackButton) */
+@media (max-width: 767px) {
+  body:has(#bar-beli) .hdr-logo {
+    display: none;
+  }
+}
+
 /* Cetak (invoice): kertas A4, warna dipertahankan */
 @media print {
   @page { size: A4; margin: 12mm; }
