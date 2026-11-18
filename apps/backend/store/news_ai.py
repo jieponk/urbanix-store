@@ -151,7 +151,7 @@ def fetch_article_text(url: str) -> str:
     from .news import download
 
     try:
-        data = download(url)
+        data = download(url, accept="text/html,application/xhtml+xml,*/*;q=0.8")
     except Exception as exc:  # noqa: BLE001
         log.info("Gagal ambil isi berita %s: %s", url, exc)
         return ""
@@ -199,6 +199,8 @@ def _error_detail(exc: urllib.error.HTTPError) -> str:
 
 
 LIMIT_CODES = (401, 403, 413, 429, 529)
+# Beberapa penyedia (mis. Groq di balik Cloudflare) menolak (403) permintaan tanpa User-Agent aplikasi.
+AI_USER_AGENT = "UrbanixStore-News/1.0 (+https://urbanix.id)"
 
 
 def _call_ai(prompt: str) -> str:
@@ -235,6 +237,7 @@ def _call_openai_compatible(prompt: str, name: str) -> str:
     req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers={
         "content-type": "application/json",
         "authorization": f"Bearer {_key_for(name)}",
+        "user-agent": AI_USER_AGENT,
     })
     with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
         data = json.loads(resp.read().decode())
@@ -252,6 +255,7 @@ def _call_claude(prompt: str) -> str:
     req = urllib.request.Request(API_URL, data=payload, method="POST", headers={
         "content-type": "application/json",
         "x-api-key": _key_for("anthropic"),
+        "user-agent": AI_USER_AGENT,
         "anthropic-version": "2023-06-01",
     })
     with urllib.request.urlopen(req, timeout=60) as resp:  # noqa: S310 (alamat tetap)
@@ -308,6 +312,12 @@ def process_article(article) -> str:
     material = body or article.original_summary
     # Bahan terlalu sedikit (mis. link Google News yang hanya berisi judul) → jangan dipaksa jadi artikel;
     # status "skip" juga menyembunyikan berita ini dari daftar.
+    if len(material) < MIN_MATERIAL and not body and not article.url.startswith("https://news.google."):
+        # Isi artikel gagal diambil (situs sumber menolak/timeout): beritanya tetap tampil tanpa artikel AI.
+        article.ai_status = "failed"
+        article._ai_error = "isi artikel sumber tidak bisa diambil"
+        article.save(update_fields=["body", "ai_status"])
+        return "failed"
     if len(material) < MIN_MATERIAL:
         article.ai_status = "skip"
         article.save(update_fields=["body", "ai_status"])

@@ -188,3 +188,19 @@ class FallbackTests(TestCase):
     def test_old_single_provider_setting_still_works(self):
         self.assertEqual(news_ai.chain(), ["gemini"])
         self.assertEqual(news_ai._key_for("gemini"), "AQ.lama")
+
+
+class FetchFailTests(TestCase):
+    @mock.patch.dict("os.environ", {"GEMINI_API_KEY": "AQ.x", "NEWS_AI_DELAY": "0", "NEWS_AI_PROVIDER": "", "NEWS_AI_API_KEY": "",
+                                    "GROQ_API_KEY": ""})
+    def test_unreadable_source_stays_visible(self):
+        news_ai._resting.clear()
+        src = NewsSource.objects.create(name="DIY", feed_url="https://contoh.test/feed5", last_fetched_at=timezone.now())
+        n = NewsArticle.objects.create(source=src, guid="ff", url="https://contoh.test/hera", original_title="Hera",
+                                       original_summary="Pendek.", title="Hera", published_at=timezone.now())
+        with mock.patch("store.news_ai.fetch_article_text", return_value=""), \
+                mock.patch("store.news_ai._call_ai") as call:
+            self.assertEqual(news_ai.process_article(n), "failed")
+        call.assert_not_called()
+        self.assertEqual(APIClient().get("/api/v1/news/").json()["count"], 1)  # tidak disembunyikan
+        self.assertIn('"user-agent"', open(news_ai.__file__).read())

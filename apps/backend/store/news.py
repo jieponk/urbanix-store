@@ -29,7 +29,7 @@ from django.utils import timezone
 
 log = logging.getLogger(__name__)
 
-USER_AGENT = "UrbanixStoreNews/1.0 (+https://urbanix.store)"
+USER_AGENT = "UrbanixStoreNews/1.0 (+https://urbanix.id)"
 MAX_BYTES = 3 * 1024 * 1024
 SUMMARY_CHARS = 300
 REFRESH_EVERY = timedelta(hours=2)
@@ -152,8 +152,8 @@ def parse_feed(data: bytes, google_news: bool = False) -> list[FeedItem]:
     return items
 
 
-def download(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/rss+xml, application/xml, */*"})
+def download(url: str, accept: str = "application/rss+xml, application/xml, */*") -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": accept})
     with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310 (URL dari admin)
         data = resp.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:

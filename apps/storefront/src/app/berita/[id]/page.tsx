@@ -98,7 +98,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
               <span className="ed-kicker inline-flex items-center gap-1.5"><Globe size={13} /> {article.source}</span>
               {ai && (
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
-                  <AiSpark size={13} /> {t('Ada ringkasan')}
+                  <AiSpark size={13} /> {t(aiArticle || article.body ? 'Artikel lengkap' : 'Ada ringkasan')}
                 </span>
               )}
             </div>
