@@ -249,3 +249,32 @@ class SitemapFilterTests(TestCase):
         self.assertEqual(only["count"], 1)
         self.assertEqual(only["results"][0]["title"], "A")
         self.assertIn("updated_at", only["results"][0])
+
+
+class MoreFreeProvidersTests(TestCase):
+    @mock.patch.dict("os.environ", {"GROQ_API_KEY": "gsk_x", "GEMINI_API_KEY": "AQ.x", "GITHUB_MODELS_TOKEN": "github_pat_x",
+                                    "NVIDIA_API_KEY": "nvapi-x", "OPENAI_API_KEY": "sk-x", "ANTHROPIC_API_KEY": "",
+                                    "NEWS_AI_PROVIDER": "", "NEWS_AI_API_KEY": ""})
+    def test_chain_order_and_endpoints(self):
+        import io
+        import json
+        news_ai._resting.clear()
+        self.assertEqual(news_ai.chain(), ["groq", "gemini", "github", "nvidia", "openai"])
+        seen = []
+
+        class R(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake(req, timeout=0):
+            seen.append((req.full_url, json.loads(req.data)["model"], req.get_header("Authorization")))
+            return R(json.dumps({"choices": [{"message": {"content": '{"ok": true}'}}]}).encode())
+
+        with mock.patch("store.news_ai.urllib.request.urlopen", side_effect=fake):
+            news_ai._call_openai_compatible("tes", "github")
+            news_ai._call_openai_compatible("tes", "nvidia")
+        self.assertEqual(seen[0], ("https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini", "Bearer github_pat_x"))
+        self.assertEqual(seen[1], ("https://integrate.api.nvidia.com/v1/chat/completions", "meta/llama-3.3-70b-instruct", "Bearer nvapi-x"))

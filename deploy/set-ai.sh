@@ -7,6 +7,8 @@
 #   2) Gemini (GRATIS)   kunci dari https://aistudio.google.com/apikey     (diawali AIza atau AQ.)
 #   3) Claude (berbayar) kunci dari https://console.anthropic.com          (diawali sk-ant-)
 #   4) OpenAI (berbayar) kunci dari https://platform.openai.com/api-keys   (diawali sk-)
+#   5) GitHub Models (GRATIS) token dari https://github.com/settings/tokens  (izin Models: read)
+#   6) NVIDIA NIM (GRATIS)    kunci dari https://build.nvidia.com          (diawali nvapi-)
 set -e
 SERVER="$1"
 if [ -z "$SERVER" ]; then
@@ -15,13 +17,17 @@ if [ -z "$SERVER" ]; then
 fi
 
 echo "Pasang kunci AI untuk berita. Bisa dijalankan beberapa kali untuk memasang lebih dari satu penyedia:"
-echo "Groq dipakai lebih dulu; kalau kuotanya habis, otomatis pindah ke Gemini, lalu OpenAI, lalu Claude."
+echo "Urutan pakai: Groq -> Gemini -> GitHub Models -> NVIDIA -> OpenAI -> Claude (yang kuotanya habis dilewati otomatis)."
 echo "  1) Groq   - gratis, tanpa kartu kredit (console.groq.com)"
 echo "  2) Gemini - gratis (aistudio.google.com); di paket gratis, Google boleh memakai data untuk produknya"
 echo "  3) Claude - berbayar (console.anthropic.com), tulisan paling rapi"
 echo "  4) ChatGPT/OpenAI - berbayar dari saldo API (platform.openai.com/api-keys)"
-read -r -p "Ketik 1, 2, 3, atau 4 lalu Enter: " CHOICE
+echo "  5) GitHub Models - gratis dengan akun GitHub (token fine-grained, izin Models: read)"
+echo "  6) NVIDIA NIM - gratis (build.nvidia.com, kunci diawali nvapi-)"
+read -r -p "Ketik 1-6 lalu Enter: " CHOICE
 case "$CHOICE" in
+  5) PREFIX="";      PROVIDER=github;    PATTERN='^(github_pat_|ghp_)[A-Za-z0-9_]{20,300}$'; HINT="diawali github_pat_ atau ghp_ (github.com/settings/tokens)" ;;
+  6) PREFIX=nvapi-;  PROVIDER=nvidia;    PATTERN='^nvapi-[A-Za-z0-9_-]{20,300}$';     HINT="diawali nvapi- (build.nvidia.com)" ;;
   1) PREFIX=gsk_;    PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,300}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
   2) PREFIX="";      PROVIDER=gemini;    PATTERN='^(AIza|AQ\.)[A-Za-z0-9_.-]{20,300}$'; HINT="diawali AIza atau AQ. (aistudio.google.com/apikey)" ;;
   4) PREFIX=sk-;     PROVIDER=openai;    PATTERN='^sk-[A-Za-z0-9_-]{20,300}$';       HINT="diawali sk- (platform.openai.com/api-keys)" ;;
@@ -42,8 +48,9 @@ for TRY in 1 2 3; do
     echo "Ada huruf sisa di depan kunci (${CAND%%"$PREFIX"*}); dibuang otomatis."
     CAND="$PREFIX${CAND#*"$PREFIX"}"
   fi
-  if [ "$PROVIDER" = "gemini" ]; then
-    for P in AIza AQ.; do
+  if [ "$PROVIDER" = "gemini" ] || [ "$PROVIDER" = "github" ]; then
+    if [ "$PROVIDER" = "gemini" ]; then PFX="AIza AQ."; else PFX="github_pat_ ghp_"; fi
+    for P in $PFX; do
       if [[ "$CAND" == *"$P"* ]] && [[ "$CAND" != "$P"* ]]; then
         echo "Ada huruf sisa di depan kunci (${CAND%%"$P"*}); dibuang otomatis."
         CAND="$P${CAND#*"$P"}"
@@ -75,6 +82,8 @@ case "$PROVIDER" in
   groq) VAR=GROQ_API_KEY ;;
   gemini) VAR=GEMINI_API_KEY ;;
   openai) VAR=OPENAI_API_KEY ;;
+  github) VAR=GITHUB_MODELS_TOKEN ;;
+  nvidia) VAR=NVIDIA_API_KEY ;;
   *) VAR=ANTHROPIC_API_KEY ;;
 esac
 # Setelan lama (satu penyedia: NEWS_AI_PROVIDER + NEWS_AI_API_KEY) dipindah ke variabel per penyedia.
@@ -93,8 +102,8 @@ cd "$HOME/urbanix/app/deploy"
 DC="docker compose --env-file $ENVF -f docker-compose.prod.yml"
 $DC up -d backend </dev/null >/dev/null
 sleep 6
-echo "==> Kunci AI yang terpasang (urutan pakai Groq -> Gemini -> OpenAI -> Claude):"
-for V in GROQ_API_KEY GEMINI_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY; do grep -q "^$V=." "$ENVF" && echo "   - $V ada"; done
+echo "==> Kunci AI yang terpasang (urutan pakai Groq -> Gemini -> GitHub -> NVIDIA -> OpenAI -> Claude):"
+for V in GROQ_API_KEY GEMINI_API_KEY GITHUB_MODELS_TOKEN NVIDIA_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY; do grep -q "^$V=." "$ENVF" && echo "   - $V ada"; done
 echo "==> Menguji kunci & membuat 2 artikel berita..."
 if $DC exec -T backend python manage.py ringkas_berita --maks 2 </dev/null; then
   echo "BERHASIL. Artikel lengkap, inti berita & opini AI akan muncul bertahap (maks. 8 berita per pembaruan, tiap 2 jam)."

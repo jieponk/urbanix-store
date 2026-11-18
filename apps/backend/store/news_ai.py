@@ -7,6 +7,8 @@
     anthropic (berbayar)  : ANTHROPIC_API_KEY
     groq      (gratis)    : NEWS_AI_API_KEY dari console.groq.com
     gemini    (gratis)    : GEMINI_API_KEY dari aistudio.google.com
+    github    (gratis)    : GITHUB_MODELS_TOKEN (token GitHub dengan izin "Models: read")
+    nvidia    (gratis)    : NVIDIA_API_KEY dari build.nvidia.com
     openai    (berbayar)  : OPENAI_API_KEY dari platform.openai.com
   Tanpa kunci, fitur ini diam saja (berita tetap tampil seperti biasa).
 - Biaya/kuota dikendalikan dengan NEWS_AI_MAX_PER_RUN (default 8 berita per pembaruan) dan
@@ -42,7 +44,13 @@ PROVIDERS = {
         "max_tokens": 4096,
         "source_chars": 12000,
     },
-    # Berbayar (saldo akun OpenAI), dipakai hanya bila Groq & Gemini sedang habis kuota.
+    # GitHub Models (gratis dengan akun GitHub; token "models: read"). Batas per request ±8.000 token masuk / 4.000 keluar.
+    "github": {"url": "https://models.github.ai/inference/chat/completions", "model": "openai/gpt-4.1-mini", "delay": 10,
+               "max_tokens": 2600, "source_chars": 7000},
+    # NVIDIA NIM (gratis dengan NVIDIA Developer Program; kunci diawali nvapi-).
+    "nvidia": {"url": "https://integrate.api.nvidia.com/v1/chat/completions", "model": "meta/llama-3.3-70b-instruct",
+               "delay": 5, "max_tokens": 2600, "source_chars": 12000},
+    # Berbayar (saldo akun OpenAI), dipakai hanya bila semua penyedia gratis sedang habis kuota.
     "openai": {"url": "https://api.openai.com/v1/chat/completions", "model": "gpt-4.1-mini", "delay": 0,
                "max_tokens": 2600, "source_chars": 12000},
 }
@@ -52,9 +60,11 @@ MIN_MATERIAL = 200
 
 
 # Urutan pakai: yang gratis dulu. Kalau kuota satu penyedia habis/kunci ditolak, otomatis pindah ke berikutnya.
-CHAIN_ORDER = ["groq", "gemini", "openai", "anthropic"]
-KEY_ENV = {"groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
-MODEL_ENV = {"groq": "GROQ_MODEL", "gemini": "GEMINI_MODEL", "openai": "OPENAI_MODEL", "anthropic": "NEWS_AI_MODEL"}
+CHAIN_ORDER = ["groq", "gemini", "github", "nvidia", "openai", "anthropic"]
+KEY_ENV = {"groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "github": "GITHUB_MODELS_TOKEN", "nvidia": "NVIDIA_API_KEY",
+           "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+MODEL_ENV = {"groq": "GROQ_MODEL", "gemini": "GEMINI_MODEL", "github": "GITHUB_MODEL", "nvidia": "NVIDIA_MODEL",
+             "openai": "OPENAI_MODEL", "anthropic": "NEWS_AI_MODEL"}
 REST_SECONDS = 30 * 60  # penyedia yang kuotanya habis diistirahatkan 30 menit
 
 _resting: dict[str, float] = {}
@@ -430,7 +440,8 @@ def _needs_ai_call(article) -> bool:
 
 def check_key() -> tuple[bool, str]:
     """Uji setiap penyedia yang punya kunci. OK bila minimal satu merespons."""
-    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com", "openai": "platform.openai.com",
+    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com", "github": "github.com/settings/tokens",
+             "nvidia": "build.nvidia.com", "openai": "platform.openai.com",
              "anthropic": "console.anthropic.com"}
     names = chain()
     if not names:
