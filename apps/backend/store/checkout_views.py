@@ -54,6 +54,12 @@ def store_settings(request):
             "shopee_rating_count": store.shopee_rating_count,
             "shopee_reviews_url": store.shopee_reviews_url,
             "review_count": reviews.count(),
+            "event": {
+                "mode": store.event_mode,
+                "theme": store.event_theme or None,
+                "until": store.event_until.isoformat() if store.event_until else None,
+                "teaser_days": store.event_teaser_days,
+            },
         }
     )
 

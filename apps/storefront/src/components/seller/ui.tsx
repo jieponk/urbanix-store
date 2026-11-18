@@ -7,11 +7,11 @@ import { useEffect, useState } from 'react';
 
 export const btn = {
   primary:
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-surface transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-surface transition hover:opacity-90 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50',
   brand:
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-brand-accent px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-brand-accent px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-95 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50',
   ghost:
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-surface px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-surface px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 transition hover:bg-mist active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50',
   danger:
     'inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-50',
   small:
@@ -19,7 +19,7 @@ export const btn = {
 };
 
 export const inputCls =
-  'w-full rounded-xl border-0 bg-surface px-3 py-2.5 text-sm text-ink ring-1 ring-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-ink';
+  'w-full rounded-xl border-0 bg-surface px-3.5 py-2.5 text-[15px] text-ink ring-1 ring-slate-200 transition placeholder:text-slate-400 hover:ring-slate-300 focus:outline-none focus:ring-2 focus:ring-ink sm:text-sm';
 
 export function PageHeader({
   title,
@@ -33,17 +33,18 @@ export function PageHeader({
   back?: { href: string; label: string };
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back && (
           <Link href={back.href} className="mb-1 inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-ink">
             ← {back.label}
           </Link>
         )}
-        <h1 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{title}</h1>
+        {/* HP: judul tampil di bar atas, di sini cukup untuk pembaca layar */}
+        <h1 className={`text-2xl font-extrabold tracking-tight text-ink ${back ? '' : 'sr-only lg:not-sr-only'}`}>{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">{actions}</div>}
     </div>
   );
 }
@@ -62,10 +63,10 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <section className={`rounded-2xl bg-surface ring-1 ring-slate-200 ${className}`}>
+    <section className={`rounded-2xl bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-slate-200/80 ${className}`}>
       {(title || action) && (
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
-          <h2 className="text-sm font-extrabold text-ink">{title}</h2>
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3.5 sm:px-5">
+          <h2 className="text-[15px] font-extrabold tracking-tight text-ink">{title}</h2>
           {action}
         </div>
       )}
@@ -156,9 +157,14 @@ export function Field({
 
 export function Spinner({ label = 'Memuat…' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500" role="status">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-ink" />
-      {label}
+    <div className="space-y-3 py-2" role="status" aria-label={label}>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface ring-1 ring-slate-200/80" />
+        ))}
+      </div>
+      <div className="h-64 animate-pulse rounded-2xl bg-surface ring-1 ring-slate-200/80" />
+      <span className="sr-only">{label}</span>
     </div>
   );
 }
@@ -241,9 +247,10 @@ export function Drawer({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" aria-label="Tutup" onClick={onClose} className="absolute inset-0 bg-black/40" />
-      <div className="relative flex h-full w-full max-w-lg flex-col bg-mist shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-end sm:items-stretch" role="dialog" aria-modal="true" aria-label={title}>
+      <button type="button" aria-label="Tutup" onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      <div className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-mist shadow-2xl sm:h-full sm:max-h-none sm:max-w-lg sm:rounded-none sm:rounded-l-3xl">
+        <div className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-300 sm:hidden" />
         <div className="flex items-center justify-between border-b border-slate-200 bg-surface px-5 py-4">
           <h2 className="text-base font-extrabold text-ink">{title}</h2>
           <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-xl leading-none text-slate-500 hover:bg-mist" aria-label="Tutup">
@@ -251,7 +258,7 @@ export function Drawer({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
-        {footer && <div className="border-t border-slate-200 bg-surface px-5 py-3">{footer}</div>}
+        {footer && <div className="border-t border-slate-200 bg-surface px-5 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">{footer}</div>}
       </div>
     </div>
   );
@@ -303,7 +310,7 @@ export function Tabs({
           key={item.value}
           type="button"
           onClick={() => onChange(item.value)}
-          className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-bold transition ${
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition active:scale-[.97] ${
             value === item.value ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-slate-200 hover:bg-mist'
           }`}
         >

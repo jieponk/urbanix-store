@@ -154,6 +154,7 @@ export function buyableVariations(product: Product): Variation[] {
 }
 
 export type StoreSettings = {
+  event?: { mode: "auto" | "off" | "force"; theme: "kembar" | "harbolnas" | "tengah" | "gajian" | null; until: string | null; teaser_days: number };
   whatsapp_number: string;
   shopee_store_url: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };

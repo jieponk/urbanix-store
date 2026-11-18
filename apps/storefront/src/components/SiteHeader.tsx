@@ -8,8 +8,8 @@ import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 import { dateLocale, type Lang } from '@/lib/i18n';
 import { getLang, getT } from '@/lib/lang-server';
-import { EventRibbon } from '@/components/EventMode';
-import { currentEvent, upcomingEvent } from '@/lib/events';
+import { EventPreviewBar, EventRibbon } from '@/components/EventMode';
+import { getEventState } from '@/lib/event-server';
 
 type Props = {
   categories: Category[];
@@ -26,18 +26,19 @@ function endDate(iso: string | null, lang: Lang) {
     : date.toLocaleDateString(dateLocale(lang), { day: 'numeric', month: 'long', timeZone: 'Asia/Jakarta' });
 }
 
-export default function SiteHeader({ categories, promo, whatsappNumber, whatsappDiscount }: Props) {
+export default async function SiteHeader({ categories, promo, whatsappNumber, whatsappDiscount }: Props) {
   const lang = getLang();
   const t = getT();
   const ends = endDate(promo?.endsAt ?? null, lang);
   const menuItems = categories.map(({ id, name }) => ({ id, name }));
   // Mode Event otomatis (tanggal kembar, payday, Harbolnas): pita event menggantikan pita promo biasa.
-  const event = currentEvent();
-  const upcoming = event ? null : upcomingEvent();
+  // Dekor toko (Seller Center → Dekor toko): otomatis, mati, tema pilihan, atau pratinjau.
+  const { event, upcoming, preview } = await getEventState();
 
   return (
     <header className="sticky top-0 z-50">
       {/* Pita pengumuman: isi diambil dari promo yang sedang berjalan */}
+      {preview && <EventPreviewBar preview={preview} />}
       {(event || upcoming) && <EventRibbon event={event} upcoming={upcoming} />}
       {!event && !upcoming && (promo || whatsappDiscount > 0) && (
         <div className="bg-cobalt-800 text-white">

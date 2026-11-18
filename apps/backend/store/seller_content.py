@@ -479,8 +479,17 @@ class SettingsSerializer(serializers.ModelSerializer):
         fields = [
             "whatsapp_number", "shopee_shop_id", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
             "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
-            "shopee_rating_count",
+            "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
         ]
+
+    def validate(self, attrs):
+        mode = attrs.get("event_mode", getattr(self.instance, "event_mode", "auto"))
+        theme = attrs.get("event_theme", getattr(self.instance, "event_theme", ""))
+        if mode == StoreSettings.EVENT_FORCE and not theme:
+            raise serializers.ValidationError({"event_theme": "Pilih tema yang mau dipakai."})
+        if attrs.get("event_teaser_days") is not None and attrs["event_teaser_days"] > 14:
+            raise serializers.ValidationError({"event_teaser_days": "Maksimal 14 hari."})
+        return attrs
 
 
 @staff(["GET", "PATCH"])

@@ -9,7 +9,7 @@ import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { VoucherStrip } from '@/components/VoucherCard';
 import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
 import { EventHero } from '@/components/EventMode';
-import { currentEvent } from '@/lib/events';
+import { getEventState } from '@/lib/event-server';
 import {
   API,
   getActiveProducts,
@@ -134,7 +134,7 @@ export default async function HomePage({
   const products = allProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const promo = promoSummary(allProducts);
-  const event = currentEvent();
+  const { event } = await getEventState();
   const promoProducts = allProducts
     .filter((p) => (p.discount_percent ?? 0) > 0)
     .sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0))

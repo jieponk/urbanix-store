@@ -147,3 +147,67 @@ export function upcomingEvent(now: Date = new Date(), withinDays = TEASER_DAYS):
 export function daysUntil(event: ShopEvent, now: Date = new Date()) {
   return Math.max(1, Math.ceil((Date.parse(event.startsAt) - now.getTime()) / (24 * 3600 * 1000)));
 }
+
+/* ---------------- Dekor toko (diatur di Seller Center → Dekor toko) ---------------- */
+
+export const EVENT_KEYS: EventKey[] = ['kembar', 'harbolnas', 'tengah', 'gajian'];
+
+export type EventConfig = {
+  mode: 'auto' | 'off' | 'force';
+  theme: EventKey | null;
+  until: string | null;
+  teaser_days: number;
+};
+
+export const DEFAULT_EVENT_CONFIG: EventConfig = { mode: 'auto', theme: null, until: null, teaser_days: TEASER_DAYS };
+
+/** Event untuk tema yang dipilih manual: berlaku dari awal hari ini (WIB) sampai `until` atau akhir hari ini. */
+export function themeEvent(key: EventKey, now: Date = new Date(), until: string | null = null): ShopEvent {
+  const rule = EVENT_RULES.find((r) => r.key === key) ?? EVENT_RULES[0];
+  const { y, m, d } = wibParts(now);
+  const ruleDays = rule.days(y, m);
+  const day = ruleDays[0] ?? d;
+  const start = wibMidnight(y, m, d);
+  const endOfToday = new Date(start.getTime() + 24 * 3600 * 1000 - 1000);
+  const end = until && Date.parse(until) > now.getTime() ? new Date(until) : endOfToday;
+  return {
+    key,
+    big: key === 'kembar' ? rule.big(m, m) : rule.big(m, day),
+    title: key === 'kembar' ? rule.title(m, m) : rule.title(m, day),
+    sub: rule.sub,
+    startsAt: start.toISOString(),
+    endsAt: end.toISOString(),
+  };
+}
+
+export type EventState = { event: ShopEvent | null; upcoming: ShopEvent | null; preview: EventKey | null };
+
+/** Gabungkan kalender otomatis + pengaturan Dekor toko + pratinjau (cookie, hanya untuk perangkat penjual). */
+export function resolveEvent(config: EventConfig, preview: EventKey | null, now: Date = new Date()): EventState {
+  if (preview && EVENT_KEYS.includes(preview)) return { event: themeEvent(preview, now), upcoming: null, preview };
+  if (!EVENTS_ENABLED || config.mode === 'off') return { event: null, upcoming: null, preview: null };
+  const forced =
+    config.mode === 'force' && config.theme && (!config.until || Date.parse(config.until) > now.getTime());
+  if (forced) return { event: themeEvent(config.theme as EventKey, now, config.until), upcoming: null, preview: null };
+  const event = currentEvent(now);
+  const upcoming = event || config.teaser_days <= 0 ? null : upcomingEvent(now, config.teaser_days);
+  return { event, upcoming, preview: null };
+}
+
+/** Jadwal event otomatis mulai hari ini sampai `months` bulan ke depan (untuk Seller Center). */
+export function upcomingSchedule(now: Date = new Date(), months = 2): ShopEvent[] {
+  let { y, m } = wibParts(now);
+  const out: ShopEvent[] = [];
+  for (let i = 0; i <= months; i++) {
+    const evs = monthEvents(y, m)
+      .filter((e) => Date.parse(e.endsAt) >= now.getTime())
+      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt) || b.priority - a.priority);
+    for (const { priority: _p, ...e } of evs) {
+      // tanggal yang bentrok: hanya event berprioritas tertinggi yang tampil
+      if (!out.some((o) => o.startsAt === e.startsAt)) out.push(e);
+    }
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
+}

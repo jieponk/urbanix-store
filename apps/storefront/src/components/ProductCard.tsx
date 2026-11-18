@@ -3,10 +3,11 @@ import { money, type Product } from '@/lib/api';
 import { productImg } from '@/lib/img';
 import { getT } from '@/lib/lang-server';
 import { Bolt, QuotaBar } from '@/components/FlashSale';
-import { currentEvent } from '@/lib/events';
+import { getEventState } from '@/lib/event-server';
+import { themeFor } from '@/lib/eventTheme';
 import { cardProductName } from '@/lib/seo';
 
-export default function ProductCard({ product }: { product: Product }) {
+export default async function ProductCard({ product }: { product: Product }) {
   const t = getT();
   const originalPrice = Number(product.price) || 0;
   // final_price sudah termasuk promo "Potong harga" (dihitung di backend).
@@ -24,7 +25,7 @@ export default function ProductCard({ product }: { product: Product }) {
     : 0;
 
   // Selama Mode Event, produk diskon diberi label event (mis. "12.12"), seperti di marketplace.
-  const event = hasDiscount ? currentEvent() : null;
+  const event = hasDiscount ? (await getEventState()).event : null;
 
   return (
     <Link
@@ -52,7 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 -{discountPercent}%
               </span>
               {event && (
-                <span className="rounded-md bg-cobalt-900 px-1.5 py-1 text-[10px] font-extrabold text-white shadow sm:text-xs">
+                <span className={`rounded-md px-1.5 py-1 text-[10px] font-extrabold shadow sm:text-xs ${themeFor(event.key).card}`}>
                   {event.big}
                 </span>
               )}

@@ -152,6 +152,21 @@ class StoreSettings(models.Model):
         help_text="Tombol \"Baca semua ulasan\" mengarah ke sini.",
     )
 
+    # Dekor toko (Mode Event): tampilan pita, banner beranda & label kartu saat event
+    EVENT_AUTO, EVENT_OFF, EVENT_FORCE = "auto", "off", "force"
+    EVENT_MODES = [(EVENT_AUTO, "Otomatis sesuai kalender"), (EVENT_OFF, "Matikan dekor event"), (EVENT_FORCE, "Pakai tema pilihan")]
+    EVENT_KEYS = [("kembar", "Tanggal kembar"), ("harbolnas", "Harbolnas 12.12"), ("tengah", "Payday tengah bulan"),
+                  ("gajian", "Gajian Sale")]
+    event_mode = models.CharField("Mode dekor event", max_length=10, choices=EVENT_MODES, default=EVENT_AUTO)
+    event_theme = models.CharField("Tema dipaksa", max_length=12, choices=EVENT_KEYS, blank=True)
+    event_until = models.DateTimeField(
+        "Tema pilihan sampai", null=True, blank=True,
+        help_text="Setelah waktu ini kembali ke mode otomatis. Kosong = sampai diganti.",
+    )
+    event_teaser_days = models.PositiveSmallIntegerField(
+        "Pita \"segera hadir\" (hari sebelum event)", default=3, help_text="0 = tanpa pita hitung mundur.",
+    )
+
     class Meta:
         verbose_name = "Pengaturan toko"
         verbose_name_plural = "Pengaturan toko"
