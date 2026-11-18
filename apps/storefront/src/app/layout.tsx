@@ -37,9 +37,9 @@ export const metadata = {
     siteName: siteConfig.name,
     title: `URBANIX STORE | ${siteConfig.tagline}`,
     description: siteConfig.metaDescription,
-    images: [{ url: '/brand/og-image.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
+    images: [{ url: '/brand/og-urbanix.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
   },
-  twitter: { card: 'summary_large_image', images: ['/brand/og-image.png'] },
+  twitter: { card: 'summary_large_image', images: ['/brand/og-urbanix.png'] },
   // Kode verifikasi Google Search Console (opsional). Isi GOOGLE_SITE_VERIFICATION di .env
   // bila mendaftar lewat cara "tag HTML". Kalau kosong, baris ini tidak ditampilkan.
   verification: process.env.GOOGLE_SITE_VERIFICATION

@@ -81,7 +81,7 @@ export function organizationJsonLd(opts: { whatsapp?: string; shopeeUrl?: string
     legalName: legal.company,
     url: SITE_URL,
     logo: `${SITE_URL}/brand/urbanix-logo-dark.png`,
-    image: `${SITE_URL}/brand/og-image.png`,
+    image: `${SITE_URL}/brand/og-urbanix.png`,
     description: siteConfig.motto,
     email: contact.email,
     ...(wa ? { telephone: `+${wa}` } : {}),
