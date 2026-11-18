@@ -276,6 +276,8 @@ export type NewsArticle = {
   /** Ada artikel lengkap (tulisan ulang AI atau teks penuh sumber berizin). */
   has_article?: boolean;
   comment_count?: number | null;
+  /** Waktu artikel AI dibuat (atau tanggal terbit) — untuk sitemap & dateModified. */
+  updated_at?: string;
 };
 
 export type NewsPage = {
@@ -287,8 +289,11 @@ export type NewsPage = {
 };
 
 /** Berita kamera & fotografi (diambil dari RSS, diterjemahkan di backend). */
-export async function getNews(params: { page?: number; limit?: number; source?: string } = {}): Promise<NewsPage | null> {
+export async function getNews(
+  params: { page?: number; limit?: number; source?: string; withArticle?: boolean } = {}
+): Promise<NewsPage | null> {
   const query = new URLSearchParams();
+  if (params.withArticle) query.set('artikel', '1');
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
   if (params.source) query.set('source', params.source);

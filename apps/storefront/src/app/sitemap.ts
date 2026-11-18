@@ -1,4 +1,4 @@
-import { fetchAll, getArticles, getCategories, type ArticleCard, type Product } from '@/lib/api';
+import { fetchAll, getArticles, getCategories, getNews, type ArticleCard, type NewsArticle, type Product } from '@/lib/api';
 import { SITE_URL } from '@/lib/seo';
 
 export const revalidate = 3600;
@@ -27,6 +27,15 @@ export default async function sitemap() {
     if (page >= data.pages) break;
   }
 
+  // Berita: hanya yang sudah punya artikel lengkap versi Urbanix (yang lain noindex).
+  const news: NewsArticle[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const data = await getNews({ page, limit: 48, withArticle: true });
+    if (!data) break;
+    news.push(...data.results);
+    if (page >= data.pages) break;
+  }
+
   const categories = await getCategories();
 
   return [
@@ -42,6 +51,12 @@ export default async function sitemap() {
       lastModified: a.published_at ? new Date(a.published_at) : now,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    })),
+    ...news.map((n) => ({
+      url: `${SITE_URL}/berita/${n.id}`,
+      lastModified: new Date(n.updated_at || n.published_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
     })),
     ...products
       .filter((p) => p.is_active !== false)

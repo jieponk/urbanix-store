@@ -234,3 +234,18 @@ class OpenAiProviderTests(TestCase):
         self.assertEqual(seen["body"]["model"], "gpt-4.1-mini")
         self.assertIn("max_completion_tokens", seen["body"])
         self.assertNotIn("reasoning_effort", seen["body"])
+
+
+class SitemapFilterTests(TestCase):
+    def test_artikel_filter_only_returns_news_with_article(self):
+        src = NewsSource.objects.create(name="S", feed_url="https://contoh.test/feed6", last_fetched_at=timezone.now())
+        NewsArticle.objects.create(source=src, guid="a1", url="https://contoh.test/1", original_title="A", title="A",
+                                   published_at=timezone.now(), ai_status="done", ai_body="Isi artikel " * 50)
+        NewsArticle.objects.create(source=src, guid="a2", url="https://contoh.test/2", original_title="B", title="B",
+                                   published_at=timezone.now())
+        c = APIClient()
+        self.assertEqual(c.get("/api/v1/news/").json()["count"], 2)
+        only = c.get("/api/v1/news/?artikel=1").json()
+        self.assertEqual(only["count"], 1)
+        self.assertEqual(only["results"][0]["title"], "A")
+        self.assertIn("updated_at", only["results"][0])

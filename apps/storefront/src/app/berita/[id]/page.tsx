@@ -19,6 +19,7 @@ import {
 } from '@/components/inspirasi/InspoIcons';
 import { getNewsDetail } from '@/lib/api';
 import { getLang, getT } from '@/lib/lang-server';
+import { SITE_URL, breadcrumbJsonLd, jsonLd, plainText } from '@/lib/seo';
 import { dateLocale } from '@/lib/i18n';
 
 type Params = { id: string };
@@ -26,13 +27,29 @@ type Params = { id: string };
 export async function generateMetadata({ params }: { params: Promise<Params> | Params }) {
   const { id } = await params;
   const article = await getNewsDetail(id);
-  // Berita = rangkuman dari media lain: boleh dibaca pembeli, tapi tidak diindeks Google
-  // supaya situs tidak dinilai berisi konten pihak lain/otomatis dalam jumlah besar.
-  const robots = { index: false, follow: true };
-  const description = article?.ai?.conclusion || article?.summary || (article ? `Berita dari ${article.source}` : '');
-  return article
-    ? { title: article.title, description, robots, alternates: { canonical: `/berita/${id}` } }
-    : { title: 'Berita tidak ditemukan', robots };
+  // Hanya berita yang sudah punya artikel lengkap versi Urbanix yang diindeks Google.
+  // Berita yang isinya cuma judul + link tetap noindex: halaman tipis bisa menurunkan penilaian seluruh situs.
+  const hasArticle = Boolean(article?.ai?.article);
+  const robots = hasArticle ? undefined : { index: false, follow: true };
+  const description = plainText(article?.ai?.conclusion || article?.summary || (article ? `Berita dari ${article.source}` : ''), 160);
+  if (!article) return { title: 'Berita tidak ditemukan', robots: { index: false, follow: true } };
+  const images = article.image_url ? [{ url: article.image_url }] : [{ url: '/brand/og-urbanix.png', width: 1200, height: 630 }];
+  return {
+    title: article.title,
+    description,
+    robots,
+    alternates: { canonical: `/berita/${id}` },
+    openGraph: {
+      type: 'article',
+      url: `/berita/${id}`,
+      title: article.title,
+      description,
+      publishedTime: article.published_at,
+      modifiedTime: article.ai?.generated_at || article.published_at,
+      images,
+    },
+    twitter: { card: 'summary_large_image', title: article.title, description, images: images.map((i) => i.url) },
+  };
 }
 
 /** Teks penuh (hanya sumber berizin): paragraf biasa, baris "## " jadi subjudul. */
@@ -81,8 +98,41 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
   const commentTotal = comments.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0);
   const translatedTitle = article.is_translated && article.original_title !== article.title;
 
+  const pageUrl = `${SITE_URL}/berita/${article.id}`;
+  const newsLd = aiArticle
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: article.title.slice(0, 110),
+        description: plainText(ai?.conclusion || article.summary, 300),
+        articleBody: aiArticle.replace(/^## /gm, ''),
+        datePublished: article.published_at,
+        dateModified: ai?.generated_at || article.published_at,
+        inLanguage: 'id-ID',
+        mainEntityOfPage: pageUrl,
+        url: pageUrl,
+        ...(article.image_url ? { image: [article.image_url] } : {}),
+        author: { '@type': 'Organization', name: 'Tim Urbanix Store', url: SITE_URL },
+        publisher: { '@id': `${SITE_URL}/#toko` },
+        // Jujur soal asal-usul: ditulis ulang dari berita media lain.
+        isBasedOn: { '@type': 'NewsArticle', url: article.url, publisher: { '@type': 'Organization', name: article.source } },
+        commentCount: commentTotal,
+      }
+    : null;
+
   return (
     <div className="ed pb-16">
+      {newsLd && <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(newsLd)} />}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={jsonLd(
+          breadcrumbJsonLd([
+            { name: 'Inspirasi', path: '/inspirasi' },
+            { name: 'Berita', path: '/berita' },
+            { name: article.title, path: `/berita/${article.id}` },
+          ])
+        )}
+      />
       {/* ---------- Kepala ---------- */}
       <header className="px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
         <div className="mx-auto max-w-6xl">

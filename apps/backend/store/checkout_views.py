@@ -232,6 +232,7 @@ def _article(a):
         "has_ai": a.ai_status == "done",
         "has_article": bool(a.ai_body) or (bool(a.body) and a.source.full_text_allowed),
         "comment_count": getattr(a, "comment_count", None),
+        "updated_at": a.ai_generated_at or a.published_at,
     }
 
 
@@ -255,6 +256,8 @@ def news_list(request):
     """Berita kamera & fotografi. ?source=<id>, ?page=<n>, ?limit=<n> (maks. 48)."""
     news_engine.refresh_in_background()
     qs = visible_news()
+    if request.query_params.get("artikel") == "1":  # hanya yang sudah punya artikel lengkap (untuk sitemap)
+        qs = qs.exclude(ai_body="")
     source = request.query_params.get("source", "")
     if source.isdigit():
         qs = qs.filter(source_id=int(source))
