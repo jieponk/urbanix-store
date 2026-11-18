@@ -204,3 +204,33 @@ class FetchFailTests(TestCase):
         call.assert_not_called()
         self.assertEqual(APIClient().get("/api/v1/news/").json()["count"], 1)  # tidak disembunyikan
         self.assertIn('"user-agent"', open(news_ai.__file__).read())
+
+
+class OpenAiProviderTests(TestCase):
+    @mock.patch.dict("os.environ", {"OPENAI_API_KEY": "sk-proj-test", "GROQ_API_KEY": "gsk_x", "GEMINI_API_KEY": "",
+                                    "NEWS_AI_PROVIDER": "", "NEWS_AI_API_KEY": "", "ANTHROPIC_API_KEY": ""})
+    def test_openai_is_after_free_providers_and_uses_new_param(self):
+        import io
+        import json
+        news_ai._resting.clear()
+        self.assertEqual(news_ai.chain(), ["groq", "openai"])
+        seen = {}
+
+        class R(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake(req, timeout=0):
+            seen["url"] = req.full_url
+            seen["body"] = json.loads(req.data)
+            return R(json.dumps({"choices": [{"message": {"content": '{"ok": true}'}}]}).encode())
+
+        with mock.patch("store.news_ai.urllib.request.urlopen", side_effect=fake):
+            news_ai._call_openai_compatible("tes", "openai")
+        self.assertEqual(seen["url"], "https://api.openai.com/v1/chat/completions")
+        self.assertEqual(seen["body"]["model"], "gpt-4.1-mini")
+        self.assertIn("max_completion_tokens", seen["body"])
+        self.assertNotIn("reasoning_effort", seen["body"])

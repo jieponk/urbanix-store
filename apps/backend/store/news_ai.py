@@ -6,7 +6,8 @@
 - Penyedia AI (NEWS_AI_PROVIDER di .env):
     anthropic (berbayar)  : ANTHROPIC_API_KEY
     groq      (gratis)    : NEWS_AI_API_KEY dari console.groq.com
-    gemini    (gratis)    : NEWS_AI_API_KEY dari aistudio.google.com
+    gemini    (gratis)    : GEMINI_API_KEY dari aistudio.google.com
+    openai    (berbayar)  : OPENAI_API_KEY dari platform.openai.com
   Tanpa kunci, fitur ini diam saja (berita tetap tampil seperti biasa).
 - Biaya/kuota dikendalikan dengan NEWS_AI_MAX_PER_RUN (default 8 berita per pembaruan) dan
   NEWS_AI_DELAY (jeda detik antar berita, supaya tidak melewati batas gratis per menit).
@@ -41,6 +42,9 @@ PROVIDERS = {
         "max_tokens": 4096,
         "source_chars": 12000,
     },
+    # Berbayar (saldo akun OpenAI), dipakai hanya bila Groq & Gemini sedang habis kuota.
+    "openai": {"url": "https://api.openai.com/v1/chat/completions", "model": "gpt-4.1-mini", "delay": 0,
+               "max_tokens": 2600, "source_chars": 12000},
 }
 MAX_SOURCE_CHARS = 12000
 FULL_TEXT_CHARS = 20000
@@ -48,9 +52,9 @@ MIN_MATERIAL = 200
 
 
 # Urutan pakai: yang gratis dulu. Kalau kuota satu penyedia habis/kunci ditolak, otomatis pindah ke berikutnya.
-CHAIN_ORDER = ["groq", "gemini", "anthropic"]
-KEY_ENV = {"groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
-MODEL_ENV = {"groq": "GROQ_MODEL", "gemini": "GEMINI_MODEL", "anthropic": "NEWS_AI_MODEL"}
+CHAIN_ORDER = ["groq", "gemini", "openai", "anthropic"]
+KEY_ENV = {"groq": "GROQ_API_KEY", "gemini": "GEMINI_API_KEY", "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+MODEL_ENV = {"groq": "GROQ_MODEL", "gemini": "GEMINI_MODEL", "openai": "OPENAI_MODEL", "anthropic": "NEWS_AI_MODEL"}
 REST_SECONDS = 30 * 60  # penyedia yang kuotanya habis diistirahatkan 30 menit
 
 _resting: dict[str, float] = {}
@@ -228,10 +232,11 @@ def _call_openai_compatible(prompt: str, name: str) -> str:
     model = model_name(name)
     body = {
         "model": model,
-        "max_tokens": conf["max_tokens"],  # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini
         "temperature": 0.4,
         "messages": [{"role": "user", "content": prompt}],
     }
+    # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini; OpenAI memakai nama parameter baru
+    body["max_completion_tokens" if name == "openai" else "max_tokens"] = conf["max_tokens"]
     if "gpt-oss" in model or model.startswith("gemini"):
         body["reasoning_effort"] = "low"
     req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers={
@@ -425,10 +430,11 @@ def _needs_ai_call(article) -> bool:
 
 def check_key() -> tuple[bool, str]:
     """Uji setiap penyedia yang punya kunci. OK bila minimal satu merespons."""
-    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com", "anthropic": "console.anthropic.com"}
+    where = {"groq": "console.groq.com", "gemini": "aistudio.google.com", "openai": "platform.openai.com",
+             "anthropic": "console.anthropic.com"}
     names = chain()
     if not names:
-        return False, "Belum ada kunci AI (GROQ_API_KEY / GEMINI_API_KEY / ANTHROPIC_API_KEY)."
+        return False, "Belum ada kunci AI (GROQ_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY)."
     lines, ok_any = [], False
     for name in names:
         try:
