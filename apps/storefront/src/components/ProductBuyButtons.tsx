@@ -242,7 +242,7 @@ export default function ProductBuyButtons({
             type="button"
             onClick={openChat}
             aria-label={t('Chat admin lewat WhatsApp')}
-            className="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-emerald-600 sm:flex px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
+            className="fixed bottom-24 right-5 z-40 hidden items-center md:bottom-5 gap-2 rounded-full bg-emerald-600 sm:flex px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
           >
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />

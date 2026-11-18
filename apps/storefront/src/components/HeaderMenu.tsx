@@ -169,7 +169,7 @@ function useHideOnScroll(pathname: string) {
 /**
  * HP (<768px): bar navigasi bawah — Beranda, Kategori, Artikel, Keranjang, Lainnya.
  * Kategori & Lainnya membuka panel yang meluncur dari bawah.
- * Disembunyikan di halaman detail produk (sudah ada bar "Beli" di bawah).
+ * Di halaman detail produk (HP kecil) bar ini duduk di atas bar "Beli" yang menempel di bawah.
  */
 export function MobileNav({ categories, whatsappNumber, showPromo }: { categories: Cat[]; whatsappNumber: string; showPromo: boolean }) {
   const t = useT();
@@ -195,7 +195,8 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
 
   const hidden = useHideOnScroll(pathname) && !sheet;
 
-  if (/^\/produk\/[^/]+/.test(pathname)) return null;
+  // Halaman detail produk: di HP ada bar "Beli" (tinggi ±4.5rem) di dasar layar → kapsul naik di atasnya.
+  const onProduct = /^\/produk\/[^/]+/.test(pathname);
 
   const active = (key: string) =>
     sheet
@@ -229,7 +230,10 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
   return (
     <>
       {/* Ruang kosong agar isi paling bawah (footer) tidak tertutup bar */}
-      <div aria-hidden="true" className="h-[calc(5rem+env(safe-area-inset-bottom))] bg-cobalt-900 md:hidden" />
+      <div
+        aria-hidden="true"
+        className={`h-[calc(5rem+env(safe-area-inset-bottom))] bg-cobalt-900 md:hidden ${onProduct ? 'max-sm:h-[calc(10rem+env(safe-area-inset-bottom))]' : ''}`}
+      />
 
       {/* Panel dari bawah */}
       <div
@@ -242,7 +246,7 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
         aria-modal="true"
         aria-label={sheet === 'cat' ? t('Kategori') : t('Lainnya')}
         aria-hidden={!sheet}
-        className={`fixed inset-x-0 bottom-0 z-[56] max-h-[75vh] overflow-y-auto rounded-t-3xl bg-surface px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-2 shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-[56] max-h-[75vh] overflow-y-auto rounded-t-3xl bg-surface px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-2 ${onProduct ? 'max-sm:pb-[calc(10.25rem+env(safe-area-inset-bottom))]' : ''} shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none md:hidden ${
           sheet ? 'translate-y-0' : 'pointer-events-none translate-y-full'
         }`}
       >
@@ -304,7 +308,9 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
       {/* Kapsul mengambang: hilang saat scroll ke bawah, muncul lagi saat scroll ke atas */}
       <nav
         aria-label={t('Navigasi utama')}
-        className={`fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-[57] flex rounded-full bg-surface/75 p-1 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-xl backdrop-saturate-150 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none print:hidden dark:ring-white/10 md:hidden ${
+        className={`fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] ${
+          onProduct ? 'max-sm:bottom-[calc(5.25rem+env(safe-area-inset-bottom))]' : ''
+        } z-[57] flex rounded-full bg-surface/75 p-1 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-xl backdrop-saturate-150 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none print:hidden dark:ring-white/10 md:hidden ${
           hidden ? 'pointer-events-none translate-y-[calc(100%+1.5rem)] opacity-0' : 'translate-y-0 opacity-100'
         }`}
       >
