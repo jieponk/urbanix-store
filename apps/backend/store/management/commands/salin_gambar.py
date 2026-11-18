@@ -13,6 +13,7 @@ import json
 import re
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -36,6 +37,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--simpan", action="store_true", help="Benar-benar menyalin & mengganti link")
         parser.add_argument("--maks", type=int, default=0, help="Maks. produk per jalan (0 = semua)")
+        parser.add_argument("--paralel", type=int, default=6, help="Jumlah foto yang diunduh bersamaan (default 6)")
 
     def handle(self, *args, **o):
         products = list(Product.objects.prefetch_related("variations").order_by("-id"))
@@ -56,39 +58,76 @@ class Command(BaseCommand):
             sources = {}
 
         copied = failed = 0
-        for p in todo:
-            changed = []
+        n = len(todo)
+        n_imgs = sum(len(self._remote(p)) for p in todo)
+        started = time.monotonic()
+        pool = ThreadPoolExecutor(max_workers=max(1, o["paralel"]))
+        for i, p in enumerate(todo, 1):
+            urls = self._remote(p)
             mapping = {}
-            for url in self._remote(p):
-                try:
-                    mapping[url] = self._copy(p.id, url)
-                    sources[mapping[url]] = url
+            results = pool.map(lambda u, pid=p.id: self._try_copy(pid, u), urls)
+            for url, (new, err) in zip(urls, results):
+                if new:
+                    mapping[url] = new
+                    sources[new] = url
                     copied += 1
-                except Exception as exc:  # noqa: BLE001 — lanjut, laporkan
+                else:
                     failed += 1
-                    self.stdout.write(f"  [gagal] #{p.id} {url[-40:]} — {str(exc)[:80]}")
-                time.sleep(0.2)  # sopan ke CDN
-            if not mapping:
-                continue
-            if p.image_url in mapping:
-                p.image_url = mapping[p.image_url]
-                changed.append("image_url")
-            if p.images:
-                new = [mapping.get(u, u) for u in p.images]
-                if new != p.images:
-                    p.images = new
-                    changed.append("images")
-            if changed:
-                p.save(update_fields=changed)
-            for v in p.variations.all():
-                if v.image_url in mapping:
-                    ProductVariation.objects.filter(pk=v.pk).update(image_url=mapping[v.image_url])
-            self.stdout.write(f"  [ok] #{p.id} {p.name[:60]} ({len(mapping)} foto)")
+                    self.stdout.write(f"    ✗ gagal #{p.id} …{url[-28:]} — {err[:70]}")
+            if mapping:
+                self._apply(p, mapping)
+            self._progress(i, n, copied + failed, n_imgs, failed, started, p)
+            # simpan catatan sumber berkala supaya aman kalau terputus
+            if i % 20 == 0:
+                self._save_sources(log_path, sources)
+        pool.shutdown()
 
-        default_storage.delete(log_path) if default_storage.exists(log_path) else None
-        default_storage.save(log_path, io.BytesIO(json.dumps(sources, indent=1).encode()))
+        self._save_sources(log_path, sources)
+        menit = (time.monotonic() - started) / 60
+        self.stdout.write(f"Waktu: {menit:.1f} menit.")
         sisa = sum(1 for p in Product.objects.all() if self._remote(p))
         self.stdout.write(f"Selesai: {copied} foto disalin, {failed} gagal. Produk yang masih dari Shopee: {sisa}.")
+
+    def _try_copy(self, product_id, url):
+        try:
+            return self._copy(product_id, url), ""
+        except Exception as exc:  # noqa: BLE001 — dilaporkan, lanjut
+            return None, str(exc)
+
+    @staticmethod
+    def _apply(p, mapping):
+        changed = []
+        if p.image_url in mapping:
+            p.image_url = mapping[p.image_url]
+            changed.append("image_url")
+        if p.images:
+            new = [mapping.get(u, u) for u in p.images]
+            if new != p.images:
+                p.images = new
+                changed.append("images")
+        if changed:
+            p.save(update_fields=changed)
+        for v in p.variations.all():
+            if v.image_url in mapping:
+                ProductVariation.objects.filter(pk=v.pk).update(image_url=mapping[v.image_url])
+
+    @staticmethod
+    def _save_sources(log_path, sources):
+        if default_storage.exists(log_path):
+            default_storage.delete(log_path)
+        default_storage.save(log_path, io.BytesIO(json.dumps(sources, indent=1).encode()))
+
+    def _progress(self, i, n, done_imgs, n_imgs, failed, started, p):
+        pct = done_imgs / n_imgs if n_imgs else 1
+        bar = "█" * int(pct * 24) + "░" * (24 - int(pct * 24))
+        elapsed = time.monotonic() - started
+        left = elapsed / pct - elapsed if pct else 0
+        eta = f"±{int(left // 60)} mnt {int(left % 60):02d} dtk lagi" if i < n else "selesai"
+        gagal = f" · {failed} gagal" if failed else ""
+        self.stdout.write(
+            f"[{bar}] {pct * 100:5.1f}%  produk {i}/{n} · foto {done_imgs}/{n_imgs}{gagal} · {eta}  — {p.name[:38]}"
+        )
+        self.stdout.flush()
 
     @staticmethod
     def _remote(p) -> list[str]:
