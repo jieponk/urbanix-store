@@ -301,3 +301,24 @@ class MoreFreeProvidersTests(TestCase):
             with self.assertRaises(urllib.error.HTTPError):
                 news_ai._call_ai("tes")
         self.assertEqual(call.call_count, 2)  # github gagal → tetap mencoba nvidia
+
+
+class RewriteTests(TestCase):
+    @mock.patch.dict("os.environ", {"GEMINI_API_KEY": "AQ.x", "NEWS_AI_DELAY": "0", "GROQ_API_KEY": "", "NEWS_AI_PROVIDER": "",
+                                    "NEWS_AI_API_KEY": ""})
+    def test_rewrite_keeps_old_article_visible_until_replaced(self):
+        import json
+        from django.core.management import call_command
+        news_ai._resting.clear()
+        src = NewsSource.objects.create(name="S", feed_url="https://contoh.test/feed7", last_fetched_at=timezone.now())
+        n = NewsArticle.objects.create(source=src, guid="rw", url="https://contoh.test/rw", original_title="X", title="X",
+                                       published_at=timezone.now(), ai_status="done", ai_body="Lama " * 100,
+                                       ai_points=["a", "b"], ai_conclusion="c", ai_generated_at=timezone.now())
+        new = json.dumps({"lewati": False, "artikel": ARTICLE, "poin": ["A.", "B."], "kesimpulan": "Inti.", "opini": "Oke."})
+        with mock.patch("store.news_ai.fetch_article_text", return_value="Isi sumber " * 30), \
+                mock.patch("store.news_ai._call_ai", side_effect=[new]), \
+                mock.patch("store.news_ai.check_key", return_value=(True, "ok")):
+            call_command("ringkas_berita", "--tulis-ulang", "--maks", "1", stdout=open("/dev/null", "w"))
+        n.refresh_from_db()
+        self.assertTrue(n.ai_body.startswith("Hollyland"))
+        self.assertIsNotNone(n.ai_generated_at)

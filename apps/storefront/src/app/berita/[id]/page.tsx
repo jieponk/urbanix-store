@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> | P
   const robots = hasArticle ? undefined : { index: false, follow: true };
   const description = plainText(article?.ai?.conclusion || article?.summary || (article ? `Berita dari ${article.source}` : ''), 160);
   if (!article) return { title: 'Berita tidak ditemukan', robots: { index: false, follow: true } };
-  const images = article.image_url ? [{ url: article.image_url }] : [{ url: '/brand/og-urbanix.png', width: 1200, height: 630 }];
+  const images = article.image_url ? [{ url: article.image_url }] : [{ url: '/brand/og-urbanix-v2.png', width: 1200, height: 630 }];
   return {
     title: article.title,
     description,

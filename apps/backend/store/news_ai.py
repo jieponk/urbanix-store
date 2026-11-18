@@ -203,8 +203,17 @@ def fetch_article_text(url: str) -> str:
 
 
 # --------------------------------------------------------------------------- panggil Claude
-PROMPT = """Kamu penulis berita untuk Urbanix Store, toko kamera & gear kreator di Indonesia.
-Tulis rangkuman berita di bawah ini untuk pembaca Indonesia (gaya santai tapi rapi, bukan bahasa alay).
+PROMPT = """Kamu penulis konten untuk Urbanix Store, toko kamera & gear kreator di Indonesia.
+Pembacanya anak muda & kreator (Gen Z/milenial): suka foto, vlog, konten sosmed.
+
+GAYA BAHASA (penting):
+- Santai & akrab seperti ngobrol sama teman sesama kreator. Pakai "kamu", bukan "Anda".
+- Boleh bahasa gaul yang wajar & umum: "worth it", "gokil", "nggak", "banget", "bikin", "upgrade", "vibes",
+  "auto", "spill", "ngonten". Secukupnya (1-3 per paragraf), jangan alay, jangan singkatan aneh, tanpa emoji.
+- Kalimat pendek-pendek, ritme enak dibaca di HP. Buka artikel dengan kalimat pemancing (hook), bukan
+  "Perusahaan X mengumumkan...".
+- Jelaskan istilah teknis dengan bahasa sehari-hari & kaitkan ke kebutuhan nyata (ngonten, travel, vlog, foto produk).
+- Tetap sopan, informatif, dan akurat; tidak lebay atau clickbait menyesatkan.
 
 Aturan WAJIB:
 - Tulis dengan kata-katamu sendiri. JANGAN menyalin kalimat dari teks sumber; kutipan langsung maksimal 10 kata dan paling banyak satu.
@@ -212,8 +221,9 @@ Aturan WAJIB:
 - Kalau teks sumber tidak lengkap, rangkum yang ada saja.
 - "artikel": artikel berita LENGKAP versi Urbanix, 4-6 paragraf (total 280-480 kata), dipisah baris kosong. Boleh 1-2 subjudul yang diawali "## ". Susunan: pembuka (apa & siapa), detail fitur/spesifikasi, harga & ketersediaan bila disebut, konteks untuk kreator Indonesia. Kalimat & susunan harus BARU, jangan mengikuti urutan paragraf sumber.
 - "poin": 4-6 poin penting (apa yang diumumkan, fitur/spesifikasi kunci, harga & ketersediaan bila disebut, untuk siapa). Tiap poin 1 kalimat, maks 30 kata.
-- "kesimpulan": 2 kalimat inti beritanya.
-- "opini": 2-3 kalimat pendapat Urbanix sebagai toko gear: siapa yang cocok, apakah layak ditunggu/dibandingkan dengan alternatif. Jelas sebagai pendapat ("menurut kami ..."), tidak menjelekkan merek, tidak menjanjikan stok.
+- "kesimpulan": 2 kalimat inti beritanya, gaya santai (dipakai sebagai paragraf pembuka yang bikin penasaran).
+- "opini": 2-3 kalimat pendapat jujur Urbanix sebagai toko gear, gaya ngobrol: cocok buat siapa, worth it ditunggu atau
+  mending alternatif lain. Jelas sebagai pendapat ("menurut kami ..."), tidak menjelekkan merek, tidak menjanjikan stok.
 - Kalau berita BUKAN soal kamera, lensa, foto/video, drone, audio kreator, atau aksesorinya, isi "lewati": true.
 
 Balas HANYA JSON valid tanpa teks lain, format:
@@ -430,9 +440,9 @@ def process_pending(limit: int | None = None, report=None) -> int:
         return 0
     from django.db.models import Q
 
-    # Belum dirangkum, atau sudah dirangkum versi lama (belum punya artikel lengkap).
+    # Belum dirangkum, versi lama tanpa artikel lengkap, atau ditandai untuk ditulis ulang (ai_generated_at kosong).
     qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True).filter(
-        Q(ai_status="pending") | Q(ai_status="done", ai_body="")
+        Q(ai_status="pending") | Q(ai_status="done", ai_body="") | Q(ai_status="done", ai_generated_at__isnull=True)
     ).select_related("source")
     if not api_key():
         # Tanpa kunci AI: tetap simpan teks penuh untuk sumber yang diizinkan.
