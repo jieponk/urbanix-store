@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     alternates: { canonical: `/inspirasi/${a.slug}` },
     openGraph: {
       type: 'article',
+      url: `/inspirasi/${a.slug}`,
       title: a.title,
       description: a.excerpt,
       publishedTime: a.published_at || undefined,

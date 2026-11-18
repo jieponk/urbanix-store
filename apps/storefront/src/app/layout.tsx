@@ -11,6 +11,7 @@ import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
 import { SITE_URL, jsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { siteConfig } from '@/lib/siteConfig';
+import { headers } from 'next/headers';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -19,7 +20,7 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
-export const metadata = {
+const baseMetadata = {
   title: {
     default: `URBANIX STORE | ${siteConfig.tagline}`,
     template: '%s | URBANIX STORE',
@@ -49,6 +50,14 @@ export const metadata = {
   // tampilan HP berbeda dari server ("Hydration failed"). Matikan deteksi otomatis itu.
   formatDetection: { telephone: false, email: false, address: false },
 };
+
+/** og:url = alamat halaman yang sedang dibuka (dari middleware), tanpa query. Halaman lain yang punya
+ *  openGraph sendiri wajib menulis `url` juga, karena openGraph anak menggantikan milik layout. */
+export function generateMetadata() {
+  const path = headers().get('x-pathname') || '/';
+  const safe = /^\/[A-Za-z0-9\-._~/%]*$/.test(path) ? path : '/';
+  return { ...baseMetadata, openGraph: { ...baseMetadata.openGraph, url: safe } };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [categories, settings, products] = await Promise.all([

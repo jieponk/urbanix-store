@@ -15,7 +15,7 @@ export function generateMetadata({ params }: { params: { orderNumber: string } }
     title: `Pesanan ${no}`,
     description,
     robots: { index: false, follow: false },
-    openGraph: { title, description, type: 'website', siteName: 'Urbanix Store' },
+    openGraph: { title, description, type: 'website', siteName: 'Urbanix Store', url: `/pesanan/${encodeURIComponent(no)}` },
     twitter: { card: 'summary_large_image', title, description },
   };
 }

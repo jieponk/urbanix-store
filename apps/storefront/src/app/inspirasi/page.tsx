@@ -46,7 +46,7 @@ export async function generateMetadata({
     // Halaman filter label isinya tumpang tindih → tidak diindeks, tapi tautannya tetap diikuti.
     robots: label ? { index: false, follow: true } : undefined,
     alternates: { canonical: href({ kategori, hal: page }, false) },
-    openGraph: { title, description, images: [{ url: '/inspirasi/default-cover.jpg', width: 1200, height: 630 }] },
+    openGraph: { title, description, url: href({ kategori, hal: page }, false), images: [{ url: '/inspirasi/default-cover.jpg', width: 1200, height: 630 }] },
   };
 }
 
