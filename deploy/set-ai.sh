@@ -4,7 +4,7 @@
 #
 # Pilihan penyedia:
 #   1) Groq   (GRATIS)   kunci dari https://console.groq.com/keys          (diawali gsk_)
-#   2) Gemini (GRATIS)   kunci dari https://aistudio.google.com/apikey     (diawali AIza)
+#   2) Gemini (GRATIS)   kunci dari https://aistudio.google.com/apikey     (diawali AIza atau AQ.)
 #   3) Claude (berbayar) kunci dari https://console.anthropic.com          (diawali sk-ant-)
 set -e
 SERVER="$1"
@@ -20,7 +20,7 @@ echo "  3) Claude - berbayar (console.anthropic.com), tulisan paling rapi"
 read -r -p "Ketik 1, 2, atau 3 lalu Enter: " CHOICE
 case "$CHOICE" in
   1) PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,300}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
-  2) PROVIDER=gemini;    PATTERN='^AIza[A-Za-z0-9_-]{20,300}$';      HINT="diawali AIza (aistudio.google.com/apikey)" ;;
+  2) PROVIDER=gemini;    PATTERN='^(AIza|AQ\.)[A-Za-z0-9_.-]{20,300}$'; HINT="diawali AIza atau AQ. (aistudio.google.com/apikey)" ;;
   3) PROVIDER=anthropic; PATTERN='^sk-ant-[A-Za-z0-9_-]{20,300}$';   HINT="diawali sk-ant- (console.anthropic.com)" ;;
   *) echo "Pilihan tidak dikenal."; exit 1 ;;
 esac
