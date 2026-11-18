@@ -127,3 +127,24 @@ class FreeProviderTests(TestCase):
             self.assertEqual(news_ai.process_pending(3), 0)
         self.assertEqual(call.call_count, 1)  # berhenti setelah kuota habis, tidak menembak terus
         self.assertEqual(NewsArticle.objects.filter(ai_status="pending").count(), 3)  # dicoba lagi nanti
+
+
+class BacklogTests(TestCase):
+    @mock.patch.dict("os.environ", {"NEWS_AI_PROVIDER": "gemini", "NEWS_AI_API_KEY": "AQ.test", "NEWS_AI_DELAY": "0"})
+    def test_google_news_bulk_skipped_and_limit_counts_ai_calls(self):
+        import json
+        src = NewsSource.objects.create(name="Campur", feed_url="https://contoh.test/feed3", last_fetched_at=timezone.now())
+        now = timezone.now()
+        for i in range(10):  # berita Google News terbaru (tanpa isi)
+            NewsArticle.objects.create(source=src, guid=f"gn{i}", url=f"https://news.google.com/rss/articles/{i}",
+                                       original_title=f"HP {i}", title=f"HP {i}", published_at=now - timedelta(minutes=i))
+        real = NewsArticle.objects.create(source=src, guid="real", url="https://contoh.test/kamera", original_title="Kamera baru",
+                                          title="Kamera baru", published_at=now - timedelta(days=1))
+        reply = json.dumps({"lewati": False, "artikel": ARTICLE, "poin": ["A.", "B."], "kesimpulan": "Inti.", "opini": "Oke."})
+        with mock.patch("store.news_ai.fetch_article_text", return_value="Isi sumber " * 30), \
+                mock.patch("store.news_ai._call_ai", return_value=reply) as call:
+            self.assertEqual(news_ai.process_pending(1), 1)
+        self.assertEqual(call.call_count, 1)
+        self.assertEqual(NewsArticle.objects.filter(ai_status="skip").count(), 10)
+        real.refresh_from_db()
+        self.assertEqual(real.ai_status, "done")

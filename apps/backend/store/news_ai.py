@@ -318,11 +318,25 @@ def process_pending(limit: int | None = None, report=None) -> int:
         qs = qs.filter(source__full_text_allowed=True, body="", ai_status="pending")
     import time
 
+    from django.db.models.functions import Length
+
+    # Link Google News tanpa cuplikan memadai tidak bisa dibaca isinya → langsung "skip" sekaligus
+    # (tanpa memanggil AI dan tanpa memakai jatah per pembaruan).
+    if api_key():
+        NewsArticle.objects.filter(ai_status="pending", url__startswith="https://news.google.").annotate(
+            n=Length("original_summary")
+        ).filter(n__lt=MIN_MATERIAL).update(ai_status="skip")
+
     done = 0
     pause = delay_seconds() if api_key() else 0
     called_before = False
-    for article in qs.order_by("-published_at")[:limit]:
+    ai_calls = 0
+    # Jatah (limit) hanya dihitung untuk berita yang benar-benar dikirim ke AI.
+    for article in qs.order_by("-published_at")[: limit * 6]:
+        if ai_calls >= limit:
+            break
         will_call = _needs_ai_call(article)
+        ai_calls += int(will_call)
         if will_call and called_before and pause:
             if report:
                 report(f"  (jeda {pause:.0f} detik supaya tidak melewati batas gratis per menit)")
