@@ -22,10 +22,10 @@ echo "  3) Claude - berbayar (console.anthropic.com), tulisan paling rapi"
 echo "  4) ChatGPT/OpenAI - berbayar dari saldo API (platform.openai.com/api-keys)"
 read -r -p "Ketik 1, 2, 3, atau 4 lalu Enter: " CHOICE
 case "$CHOICE" in
-  1) PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,300}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
-  2) PROVIDER=gemini;    PATTERN='^(AIza|AQ\.)[A-Za-z0-9_.-]{20,300}$'; HINT="diawali AIza atau AQ. (aistudio.google.com/apikey)" ;;
-  4) PROVIDER=openai;    PATTERN='^sk-[A-Za-z0-9_-]{20,300}$';       HINT="diawali sk- (platform.openai.com/api-keys)" ;;
-  3) PROVIDER=anthropic; PATTERN='^sk-ant-[A-Za-z0-9_-]{20,300}$';   HINT="diawali sk-ant- (console.anthropic.com)" ;;
+  1) PREFIX=gsk_;    PROVIDER=groq;      PATTERN='^gsk_[A-Za-z0-9_-]{20,300}$';      HINT="diawali gsk_ (console.groq.com/keys)" ;;
+  2) PREFIX="";      PROVIDER=gemini;    PATTERN='^(AIza|AQ\.)[A-Za-z0-9_.-]{20,300}$'; HINT="diawali AIza atau AQ. (aistudio.google.com/apikey)" ;;
+  4) PREFIX=sk-;     PROVIDER=openai;    PATTERN='^sk-[A-Za-z0-9_-]{20,300}$';       HINT="diawali sk- (platform.openai.com/api-keys)" ;;
+  3) PREFIX=sk-ant-; PROVIDER=anthropic; PATTERN='^sk-ant-[A-Za-z0-9_-]{20,300}$';   HINT="diawali sk-ant- (console.anthropic.com)" ;;
   *) echo "Pilihan tidak dikenal."; exit 1 ;;
 esac
 
@@ -37,6 +37,19 @@ for TRY in 1 2 3; do
   RAW="${RAW#*=}"
   # Buang spasi, enter, tanda kutip yang ikut tersalin; simpan karakter kunci yang wajar saja.
   CAND=$(printf '%s' "$RAW" | LC_ALL=C tr -cd 'A-Za-z0-9_.-')
+  # Buang huruf sisa yang ikut tertempel di depan kunci (mis. "DCsk-proj-..." -> "sk-proj-...").
+  if [ -n "$PREFIX" ] && [[ "$CAND" == *"$PREFIX"* ]] && [[ "$CAND" != "$PREFIX"* ]]; then
+    echo "Ada huruf sisa di depan kunci (${CAND%%"$PREFIX"*}); dibuang otomatis."
+    CAND="$PREFIX${CAND#*"$PREFIX"}"
+  fi
+  if [ "$PROVIDER" = "gemini" ]; then
+    for P in AIza AQ.; do
+      if [[ "$CAND" == *"$P"* ]] && [[ "$CAND" != "$P"* ]]; then
+        echo "Ada huruf sisa di depan kunci (${CAND%%"$P"*}); dibuang otomatis."
+        CAND="$P${CAND#*"$P"}"
+      fi
+    done
+  fi
   if [ ${#CAND} -lt 20 ]; then
     echo "Kunci terlalu pendek (${#CAND} karakter). Pastikan sudah tersalin utuh, lalu tempel lagi."
     continue
