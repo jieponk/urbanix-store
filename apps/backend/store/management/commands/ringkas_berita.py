@@ -17,5 +17,11 @@ class Command(BaseCommand):
         self.stdout.write("OK: " + msg)
         if opts["cek"]:
             return
-        n = process_pending(opts["maks"])
-        self.stdout.write(f"{n} berita selesai dirangkum.")
+        from store.models import NewsArticle
+        from django.db.models import Count
+
+        counts = dict(NewsArticle.objects.values_list("ai_status").annotate(n=Count("id")))
+        self.stdout.write(f"Status berita sebelum: {counts}")
+        self.stdout.write("Memproses berita (yang bahannya kurang langsung dilewati & disembunyikan)...")
+        n = process_pending(opts["maks"], report=lambda line: (self.stdout.write(line), self.stdout.flush()))
+        self.stdout.write(f"{n} berita selesai dibuat artikelnya.")

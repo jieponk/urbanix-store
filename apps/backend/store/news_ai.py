@@ -31,11 +31,15 @@ DEFAULT_MODEL = "claude-haiku-5-5"
 
 # Penyedia gratis memakai format "OpenAI-compatible" (chat/completions). Model bisa diganti lewat NEWS_AI_MODEL.
 PROVIDERS = {
-    "groq": {"url": "https://api.groq.com/openai/v1/chat/completions", "model": "openai/gpt-oss-120b", "delay": 45},
+    # Groq gratis menghitung (teks prompt + max_tokens) terhadap batas ±8.000 token/menit → prompt & jawaban dibatasi.
+    "groq": {"url": "https://api.groq.com/openai/v1/chat/completions", "model": "openai/gpt-oss-120b", "delay": 45,
+             "max_tokens": 2600, "source_chars": 7000},
     "gemini": {
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         "model": "gemini-flash-latest",
         "delay": 15,
+        "max_tokens": 4096,
+        "source_chars": 12000,
     },
 }
 MAX_SOURCE_CHARS = 12000
@@ -59,6 +63,10 @@ def model_name() -> str:
     if custom:
         return custom
     return PROVIDERS[provider()]["model"] if provider() in PROVIDERS else DEFAULT_MODEL
+
+
+def source_chars() -> int:
+    return int(PROVIDERS.get(provider(), {}).get("source_chars", MAX_SOURCE_CHARS))
 
 
 def delay_seconds() -> float:
@@ -145,6 +153,18 @@ Teks sumber:
 """
 
 
+def _error_detail(exc: urllib.error.HTTPError) -> str:
+    """Pesan error singkat dari penyedia (tanpa kunci), untuk log & perintah ringkas_berita."""
+    try:
+        raw = exc.read().decode(errors="replace")
+        data = json.loads(raw)
+        err = data[0] if isinstance(data, list) and data else data
+        msg = (err.get("error") or {}).get("message") if isinstance(err, dict) else ""
+        return re.sub(r"\s+", " ", str(msg or raw))[:240]
+    except Exception:  # noqa: BLE001
+        return exc.reason if isinstance(exc.reason, str) else ""
+
+
 def _call_ai(prompt: str) -> str:
     """Kirim prompt ke penyedia AI yang dipilih, kembalikan teks balasannya."""
     if provider() in PROVIDERS:
@@ -157,7 +177,7 @@ def _call_openai_compatible(prompt: str) -> str:
     model = model_name()
     body = {
         "model": model,
-        "max_tokens": 4096,  # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini
+        "max_tokens": conf["max_tokens"],  # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini
         "temperature": 0.4,
         "messages": [{"role": "user", "content": prompt}],
     }
@@ -247,19 +267,22 @@ def process_article(article) -> str:
     prompt = (PROMPT.replace("{title}", article.original_title)
               .replace("{source}", source.name)
               .replace("{summary}", article.original_summary or "-")
-              .replace("{body}", material[:MAX_SOURCE_CHARS]))
+              .replace("{body}", material[:source_chars()]))
     try:
         result = parse_reply(_call_ai(prompt))
     except urllib.error.HTTPError as exc:
-        log.warning("AI berita ditolak (%s) untuk #%s", exc.code, article.pk)
+        detail = _error_detail(exc)
+        log.warning("AI berita ditolak (%s) untuk #%s: %s", exc.code, article.pk, detail)
+        article._ai_error = f"{exc.code} {detail}"
         # 401/403 = kunci salah; 429/529 = sibuk → coba lagi nanti, jangan tandai gagal permanen
         if exc.code in (400, 404):
             article.ai_status = "failed"
             article.save(update_fields=["body", "ai_status"])
             return "failed"
-        return "limited" if exc.code in (401, 403, 429, 529) else "failed"
+        return "limited" if exc.code in (401, 403, 413, 429, 529) else "failed"
     except Exception as exc:  # noqa: BLE001
         log.warning("AI berita gagal untuk #%s: %s", article.pk, exc)
+        article._ai_error = str(exc)[:200]
         return "failed"
 
     if result is None:
@@ -277,7 +300,7 @@ def process_article(article) -> str:
     return article.ai_status
 
 
-def process_pending(limit: int | None = None) -> int:
+def process_pending(limit: int | None = None, report=None) -> int:
     """Proses berita terbaru yang belum punya inti berita (dibatasi supaya biaya terkendali)."""
     from .models import NewsArticle
 
@@ -297,16 +320,34 @@ def process_pending(limit: int | None = None) -> int:
 
     done = 0
     pause = delay_seconds() if api_key() else 0
-    for i, article in enumerate(qs.order_by("-published_at")[:limit]):
-        if i and pause:
+    called_before = False
+    for article in qs.order_by("-published_at")[:limit]:
+        will_call = _needs_ai_call(article)
+        if will_call and called_before and pause:
+            if report:
+                report(f"  (jeda {pause:.0f} detik supaya tidak melewati batas gratis per menit)")
             time.sleep(pause)  # jaga batas gratis per menit (Groq/Gemini)
+        started = time.monotonic()
         status = process_article(article)
+        called_before = called_before or will_call
+        if report:
+            extra = f" — {getattr(article, '_ai_error', '')}" if status in ("failed", "limited") else ""
+            report(f"  [{status}] #{article.pk} {article.original_title[:70]} ({time.monotonic() - started:.0f} dtk){extra}")
         if status == "limited":
             log.warning("AI berita berhenti: kunci ditolak atau kuota habis (coba lagi di pembaruan berikutnya).")
             break
         if status == "done":
             done += 1
     return done
+
+
+def _needs_ai_call(article) -> bool:
+    """Perkiraan apakah berita ini akan memanggil AI (bahan cukup); yang bahannya kurang langsung dilewati."""
+    if not api_key():
+        return False
+    return article.url.startswith("http") and (
+        not article.url.startswith("https://news.google.") or len(article.original_summary or "") >= MIN_MATERIAL
+    )
 
 
 def check_key() -> tuple[bool, str]:
@@ -318,7 +359,7 @@ def check_key() -> tuple[bool, str]:
         reply = _call_ai('Balas hanya JSON: {"ok": true}')
     except urllib.error.HTTPError as exc:
         hint = "kuota gratis habis, tunggu sebentar" if exc.code == 429 else f"cek kunci di {where}"
-        return False, f"Ditolak API ({exc.code}): {hint}."
+        return False, f"Ditolak API ({exc.code}): {hint}. Pesan penyedia: {_error_detail(exc)}"
     except Exception as exc:  # noqa: BLE001
         return False, f"Tidak bisa menghubungi API: {exc}"
     return ("ok" in reply), f"{provider()} · model {model_name()} merespons."
