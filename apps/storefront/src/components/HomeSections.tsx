@@ -83,26 +83,27 @@ export function FlashSale({ products, promoName, flash = false, endsAt = null }:
   if (products.length === 0) return null;
 
   return (
-    <section aria-labelledby="judul-flash" className="mt-10 bg-cobalt-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section aria-labelledby="judul-flash" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+      {/* Panel putih ala mockup Mode Event: petir merah, hitung mundur, kartu bergaris */}
+      <div className="rounded-3xl bg-surface p-4 ring-1 ring-slate-200 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 id="judul-flash" className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              {flash ? <Bolt size={26} /> : <span aria-hidden="true" className="h-6 w-1.5 bg-sun-400" />}
+            <h2 id="judul-flash" className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-ink sm:text-[28px]">
+              {flash ? <span className="text-sale-600"><Bolt size={26} /></span> : <span aria-hidden="true" className="h-6 w-1.5 rounded-full bg-sale-600" />}
               {flash ? t('Flash Sale') : promoName}
             </h2>
             {flash && endsAt ? (
-              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-white/70">
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                 {t('Berakhir dalam')}
-                <Countdown endsAt={endsAt} />
+                <Countdown endsAt={endsAt} tone="light" />
               </p>
             ) : (
-              <p className="mt-1 text-sm font-medium text-white/65">{t('Potongan terbesar tampil paling depan.')}</p>
+              <p className="mt-1 text-sm font-medium text-slate-500">{t('Potongan terbesar tampil paling depan.')}</p>
             )}
           </div>
           <Link
             href={flash ? '/produk?flash=1' : '/produk?promo=1'}
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-md bg-white px-4 py-2 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-bold text-surface transition hover:opacity-90"
           >
             {t('Lihat semua')}
           </Link>
@@ -116,7 +117,7 @@ export function FlashSale({ products, promoName, flash = false, endsAt = null }:
               <li key={product.id} className="w-[46%] shrink-0 sm:w-56">
                 <Link
                   href={`/produk/${product.id}`}
-                  className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
                 >
                   <span className="relative block aspect-square bg-white p-3">
                     <img src={productImg(product.image_url, 300)} alt={product.name} loading="lazy" className="h-full w-full object-contain" />
@@ -367,6 +368,128 @@ export function ReviewsSection({
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ Zona hemat (dari mockup Mode Event) */
+
+const finalPrice = (p: Product) => Number(p.final_price ?? p.discount_price ?? p.price) || 0;
+
+/** 4 kotak pintasan belanja menurut harga & promo. Hanya zona yang ada produknya yang tampil. */
+export function PriceZones({ products }: { products: Product[] }) {
+  const t = getT();
+  const inStock = products.filter((p) => p.stock > 0);
+  const under100 = inStock.filter((p) => finalPrice(p) < 100_000).length;
+  const under500 = inStock.filter((p) => finalPrice(p) < 500_000).length;
+  const promo = inStock.filter((p) => (p.discount_percent ?? 0) > 0);
+  const maxOff = Math.max(0, ...promo.map((p) => p.discount_percent ?? 0));
+  const sold = inStock.filter((p) => (p.sold_count ?? 0) > 0).length;
+  const zones = [
+    { href: '/produk?harga=0-100', label: t('Di bawah'), value: t('100 ribu'), note: t('{n} produk · aksesori & memori', { n: under100 }), show: under100 > 0 },
+    { href: '/produk?harga=0-500', label: t('Di bawah'), value: t('500 ribu'), note: t('{n} produk · mic, tripod, lighting', { n: under500 }), show: under500 > 0 },
+    { href: '/produk?promo=1', label: t('Diskon'), value: t('s/d {n}%', { n: maxOff }), note: t('{n} produk lagi promo', { n: promo.length }), show: promo.length > 0, hot: true },
+    { href: '/produk?urut=terlaris', label: t('Pilihan pembeli'), value: t('Terlaris'), note: t('Yang paling sering dibeli'), show: sold > 0 },
+  ].filter((z) => z.show);
+  if (zones.length < 2) return null;
+  return (
+    <section aria-labelledby="judul-zona" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+      <h2 id="judul-zona" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Zona hemat')}</h2>
+      <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {zones.map((z) => (
+          <li key={z.href}>
+            <Link
+              href={z.href}
+              className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-surface p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg sm:p-5"
+            >
+              <span className="text-xs font-bold text-slate-500 sm:text-[13px]">{z.label}</span>
+              <span className={`mt-0.5 text-2xl font-extrabold tracking-tight sm:text-[28px] ${z.hot ? 'text-sale-600' : 'text-ink'}`}>{z.value}</span>
+              <span className="mt-1 text-xs leading-snug text-slate-500 sm:text-[13px]">{z.note}</span>
+              <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-extrabold text-ink">
+                {t('Lihat')} <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ Brand Corner */
+
+/** Merek yang ada produknya. Logo resmi dipakai bila file ada di public/brands, selain itu nama merek. */
+export function BrandCorner({ brands }: { brands: { name: string; count: number; logo?: string }[] }) {
+  const t = getT();
+  if (brands.length < 3) return null;
+  return (
+    <section aria-labelledby="judul-brand" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+      <div className="flex items-end justify-between gap-4">
+        <h2 id="judul-brand" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Brand Corner')}</h2>
+        <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Semua produk')}</Link>
+      </div>
+      <ul className="scroll-row -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-8">
+        {brands.map((b) => (
+          <li key={b.name} className="w-[132px] shrink-0 sm:w-auto">
+            <Link
+              href={`/produk?merek=${encodeURIComponent(b.name)}`}
+              className="group flex h-[76px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 transition hover:border-slate-400 hover:shadow-md"
+              title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
+            >
+              {b.logo ? (
+                <img src={b.logo} alt={b.name} loading="lazy" className="h-7 w-auto max-w-[110px] object-contain opacity-70 grayscale transition group-hover:opacity-100 group-hover:grayscale-0" />
+              ) : (
+                <span className="text-[15px] font-extrabold tracking-tight text-slate-600 transition group-hover:text-slate-900">{b.name}</span>
+              )}
+              <span className="mt-1 text-[11px] font-semibold text-slate-400">{t('{n} produk', { n: b.count })}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ Paling laris */
+
+/** Produk dengan penjualan terbanyak di web (angka asli dari pesanan). Disembunyikan bila belum ada penjualan. */
+export function BestSellers({ products }: { products: Product[] }) {
+  const t = getT();
+  const best = products
+    .filter((p) => (p.sold_count ?? 0) > 0)
+    .sort((a, b) => (b.sold_count ?? 0) - (a.sold_count ?? 0))
+    .slice(0, 4);
+  if (best.length < 2) return null;
+  return (
+    <section aria-labelledby="judul-laris" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+      <div className="flex items-end justify-between gap-4">
+        <h2 id="judul-laris" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Paling laris')}</h2>
+        <Link href="/produk?urut=terlaris" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Lihat semua')}</Link>
+      </div>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {best.map((p, i) => {
+          const normal = Number(p.price) || 0;
+          const final = finalPrice(p);
+          return (
+            <li key={p.id}>
+              <Link href={`/produk/${p.id}`} className="group flex h-full gap-3 rounded-2xl border border-slate-200 bg-surface p-3 transition hover:border-slate-300 hover:shadow-lg">
+                <span className="relative shrink-0">
+                  <img src={productImg(p.image_url, 200)} alt="" loading="lazy" width={84} height={84} className="h-[84px] w-[84px] rounded-xl bg-white object-contain p-1 ring-1 ring-slate-100" />
+                  <span className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-[11px] font-extrabold text-surface">{i + 1}</span>
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink group-hover:underline">{p.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
+                  <span className={`mt-1 text-[15px] font-extrabold ${final < normal ? 'text-sale-600' : 'text-ink'}`}>{money(final)}</span>
+                  <span className="mt-auto text-xs text-slate-500">
+                    {t('Terjual {n}', { n: p.sold_count ?? 0 })}
+                    {p.review_count && p.rating_avg != null ? ` · ★ ${p.rating_avg.toFixed(1)}` : ''}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

@@ -18,6 +18,7 @@ type SearchParams = { category?: string; q?: string; promo?: string; flash?: str
 
 /** Rentang harga (harga yang dibayar, termasuk promo). */
 const PRICE_RANGES = [
+  { value: '0-100', label: '< Rp100 rb', min: 0, max: 100_000 },
   { value: '0-500', label: '< Rp500 rb', min: 0, max: 500_000 },
   { value: '500-2000', label: 'Rp500 rb – 2 jt', min: 500_000, max: 2_000_000 },
   { value: '2000-5000', label: 'Rp2 – 5 jt', min: 2_000_000, max: 5_000_000 },

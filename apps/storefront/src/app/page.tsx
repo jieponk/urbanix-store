@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
-import { CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
+import { BestSellers, BrandCorner, CategoryStrip, FlashSale, PriceZones, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
 import NewsCard from '@/components/NewsCard';
 import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
@@ -24,6 +24,8 @@ import {
 } from '@/lib/api';
 import { listPublicImages, publicUrl } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
+import { BRANDS, detectBrand } from '@/lib/seo';
+import { productImg } from '@/lib/img';
 import { getT } from '@/lib/lang-server';
 
 const PER_PAGE = 8;
@@ -160,6 +162,28 @@ export default async function HomePage({
     : loadBannerSlides();
   const { features, featuresTitle } = siteConfig;
 
+  // Brand Corner: merek yang punya produk (urut jumlah), logo resmi bila ada filenya di public/brands
+  const brandLogos = new Set(listPublicImages('brands'));
+  const brandCount = new Map<string, number>();
+  for (const p of allProducts) {
+    const b = detectBrand(p.name);
+    if (b) brandCount.set(b, (brandCount.get(b) || 0) + 1);
+  }
+  const brands = Array.from(brandCount.entries())
+    .sort((a, b) => b[1] - a[1] || BRANDS.indexOf(a[0]) - BRANDS.indexOf(b[0]))
+    .slice(0, 8)
+    .map(([name, count]) => {
+      const file = Array.from(brandLogos).find((f) => f.replace(/\.[^.]+$/, '').toLowerCase() === name.toLowerCase().replace(/\s+/g, '-'));
+      return { name, count, logo: file ? publicUrl('brands', file) : undefined };
+    });
+
+  // Kotak kanan banner event: 2 produk promo dengan potongan terbesar + harga promo termurah
+  const heroTiles = promoProducts
+    .filter((p) => p.image_url && p.stock > 0)
+    .slice(0, 2)
+    .map((p) => ({ id: p.id, name: p.name, image: productImg(p.image_url, 300), price: Number(p.final_price ?? p.price) || 0 }));
+  const minPromoPrice = Math.min(...promoProducts.map((p) => Number(p.final_price ?? p.price) || Infinity));
+
   return (
     <div className="pb-4">
       {settings?.show_whatsapp_popup && waNumber && (
@@ -172,11 +196,26 @@ export default async function HomePage({
       )}
 
       {/* 0. Mode Event otomatis (12.12, tanggal kembar, payday): banner event di paling atas */}
-      {event && <EventHero event={event} maxDiscount={promo?.maxDiscount ?? 0} promoCount={promo?.count ?? 0} />}
+      {/* Susunan beranda mengikuti mockup Mode Event: banner → voucher → flash sale → kategori → zona hemat →
+          Brand Corner → paling laris → cara pesan → produk pilihan → ulasan → berita → keunggulan. */}
+      {event && (
+        <>
+          <h1 className="sr-only">{t('Urbanix Store: toko kamera, lensa, drone & gear kreator original bergaransi')}</h1>
+          <EventHero
+            event={event}
+            maxDiscount={promo?.maxDiscount ?? 0}
+            promoCount={promo?.count ?? 0}
+            tiles={heroTiles}
+            minPrice={Number.isFinite(minPromoPrice) ? minPromoPrice : 0}
+            waPercent={waPercent}
+          />
+        </>
+      )}
 
-      {/* 1. Banner + panel promo (latar: siluet gear & logo U, terlihat di sela-sela) */}
       <div className="relative isolate pb-2">
       <GearBackdrop className="-bottom-10" />
+      {/* 1. Banner + panel promo. Saat event berjalan, banner event di atas menggantikannya (seperti mockup). */}
+      {!event && (
       <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
         <div className={`grid gap-4 ${promo ? 'lg:grid-cols-[1.75fr_1fr]' : ''}`}>
           {slides.length > 0 ? (
@@ -200,19 +239,13 @@ export default async function HomePage({
           )}
         </div>
       </section>
-
-      {/* 2. Flash sale / produk promo langsung di bawah banner (di HP produk terlihat lebih cepat) */}
-      {flashProducts.length > 0 ? (
-        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
-      ) : (
-        promo && <FlashSale products={promoProducts} promoName={promo.name} />
       )}
 
-      {/* Voucher yang bisa diklaim */}
+      {/* 2. Voucher yang bisa diklaim */}
       {vouchers.length > 0 && (
         <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
           <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-            {t('Voucher toko')}
+            {event ? t('Klaim voucher {e}', { e: event.big }) : t('Voucher toko')}
           </h2>
           <VoucherStrip vouchers={vouchers} />
           <p className="mt-2 text-xs text-slate-500">
@@ -221,13 +254,25 @@ export default async function HomePage({
         </section>
       )}
 
+      {/* 3. Flash sale / produk promo (panel putih) */}
+      {flashProducts.length > 0 ? (
+        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
+      ) : (
+        promo && <FlashSale products={promoProducts} promoName={promo.name} />
+      )}
+
       </div>
 
-      {/* 2. Kategori bergambar */}
+      {/* 4. Kategori bergambar */}
       <div className="relative isolate">
         <GearBackdrop />
         <CategoryStrip categories={categories} products={allProducts} />
       </div>
+
+      {/* 5. Zona hemat, Brand Corner, paling laris */}
+      <PriceZones products={allProducts} />
+      <BrandCorner brands={brands} />
+      <BestSellers products={allProducts} />
 
       {/* 4. Cara pesan via WhatsApp + diskon */}
       <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
