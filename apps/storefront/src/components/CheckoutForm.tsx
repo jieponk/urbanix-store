@@ -14,6 +14,7 @@ import CourierBadge from '@/components/CourierBadge';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { useT } from '@/components/LangProvider';
 import AddressFields from '@/components/AddressFields';
+import { publicSku } from '@/lib/seo';
 import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
@@ -811,11 +812,11 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
               )}
               <div className="min-w-0 flex-1">
                 <Link href={`/produk/${item.product_id}`} className="line-clamp-2 text-sm text-slate-800 hover:underline">{item.name}</Link>
-                {(item.variation_name || item.sku) && (
+                {(item.variation_name || publicSku(item.sku)) && (
                   <p className="mt-0.5 text-xs text-slate-500">
                     {item.variation_name}
-                    {item.variation_name && item.sku && ' · '}
-                    {item.sku && `SKU ${item.sku}`}
+                    {item.variation_name && publicSku(item.sku) && ' · '}
+                    {publicSku(item.sku) && `SKU ${publicSku(item.sku)}`}
                   </p>
                 )}
                 <p className="mt-0.5 text-xs text-slate-500">

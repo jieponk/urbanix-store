@@ -66,6 +66,16 @@ export function cardProductName(name: string) {
     .trim();
 }
 
+/** Nama untuk judul Google/Open Graph: tanpa bagian setelah " | " (spesifikasi ala judul Shopee). */
+export function seoProductName(name: string) {
+  return cardProductName(name).split(/\s+\|\s+/)[0].trim();
+}
+
+/** SKU yang layak ditampilkan: SKU impor "SHOPEE-<id>" bukan SKU toko → disembunyikan. */
+export function publicSku(sku: string | null | undefined) {
+  return sku && !/^SHOPEE-/i.test(sku) ? sku : '';
+}
+
 /**
  * Perbaiki kalimat garansi yang menyebut merek lain (sisa template, mis. Amaran "bergaransi resmi Plaud"):
  * merek setelah "garansi resmi" diganti merek produk bila keduanya merek yang dikenal dan berbeda.

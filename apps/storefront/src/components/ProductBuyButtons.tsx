@@ -9,6 +9,7 @@ import { CartIcon } from '@/components/Icons';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { useT } from '@/components/LangProvider';
 import { rememberProduct } from '@/lib/lastProduct';
+import { publicSku } from '@/lib/seo';
 
 type Props = {
   id: string;
@@ -56,7 +57,7 @@ export default function ProductBuyButtons({
   // Harga yang masuk keranjang = harga akhir (termasuk promo). Server tetap menghitung ulang saat checkout.
   const currentPrice = selected ? Number(selected.final_price ?? selected.price) || 0 : price;
   const currentStock = hasVariants ? (selected ? selected.stock : 0) : stock;
-  const currentSku = selected?.sku || sku;
+  const currentSku = publicSku(selected?.sku || sku);
   const canBuy = hasVariants ? Boolean(selected) && currentStock > 0 : stock > 0;
 
   function choose(variation: Variation) {

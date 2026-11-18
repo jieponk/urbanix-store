@@ -43,10 +43,14 @@ export default function SiteHeader({ categories, promo, whatsappNumber, whatsapp
         <div className="bg-cobalt-800 text-white">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-center text-xs leading-snug sm:text-[13px]">
             {promo && (
-              <Link href="/produk?promo=1" className="font-semibold hover:underline">
+              <Link href="/produk?promo=1" className="truncate font-semibold hover:underline">
                 <span className="text-sun-300">{promo.name}</span>
-                {t('{promo}: hemat sampai {n}%', { promo: '', n: promo.maxDiscount })}
-                {ends && <> {t('sampai {date}', { date: ends })}</>}
+                {/* HP: satu baris ringkas; PC: kalimat lengkap */}
+                <span className="sm:hidden"> · {t('s/d {n}%', { n: promo.maxDiscount })}</span>
+                <span className="hidden sm:inline">
+                  {t('{promo}: hemat sampai {n}%', { promo: '', n: promo.maxDiscount })}
+                  {ends && <> {t('sampai {date}', { date: ends })}</>}
+                </span>
               </Link>
             )}
             {whatsappDiscount > 0 && whatsappNumber && (

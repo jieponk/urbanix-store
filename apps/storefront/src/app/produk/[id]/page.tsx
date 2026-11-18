@@ -1,14 +1,19 @@
 import Link from 'next/link';
 import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { BackLink } from '@/components/Icons';
 import { ReviewsSection } from '@/components/HomeSections';
 import ProductReviews from '@/components/ProductReviews';
 import ProductHero from '@/components/ProductHero';
 import ProductInfoSections from '@/components/ProductInfoSections';
+import ProductActions from '@/components/ProductActions';
+import { CompleteYourGear, RelatedArticles } from '@/components/ProductExtras';
+import { productImg } from '@/lib/img';
 import {
   API,
   buyableVariations,
   fetchAll,
+  getProductExtras,
   getProductReviews,
   getReviews,
   type ProductReviewPage,
@@ -16,8 +21,19 @@ import {
   getVouchers,
   type Product,
 } from '@/lib/api';
-import { SITE_URL, breadcrumbJsonLd, cleanProductName, detectBrand, jsonLd, plainText, shorten } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, cleanProductName, detectBrand, jsonLd, plainText, publicSku, seoProductName, shorten } from '@/lib/seo';
 import { getT } from '@/lib/lang-server';
+
+/** Produk benar-benar tidak ada (bukan server sedang bermasalah) → halaman 404 asli untuk Google. */
+const isMissing = cache(async function isMissing(id: string): Promise<boolean> {
+  if (!/^\d+$/.test(id)) return true;
+  try {
+    const response = await fetch(`${API}/products/${encodeURIComponent(id)}/`, { cache: 'no-store' });
+    return response.status === 404;
+  } catch {
+    return false;
+  }
+});
 
 const getProduct = cache(async function getProduct(id: string): Promise<Product | null> {
   // 1. Ambil langsung berdasarkan ID.
@@ -57,7 +73,7 @@ export async function generateMetadata({
   if (!product) return { title: 'Produk tidak ditemukan', robots: { index: false } };
   const price = Number(product.final_price ?? product.price) || 0;
   const priceText = price ? `Rp${Math.round(price).toLocaleString('id-ID')}` : '';
-  const name = cleanProductName(product.name);
+  const name = seoProductName(product.name);
   // Nama dipendekkan agar harga selalu terlihat di cuplikan Google.
   const lead = `Jual ${shorten(name, 70)} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, pesan via WhatsApp atau Shopee.`;
   const description = plainText(`${lead} ${plainText(product.description, 300)}`, 158);
@@ -80,8 +96,8 @@ function productJsonLd(product: Product, reviews?: ProductReviewPage | null) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: cleanProductName(product.name),
-    sku: product.sku,
+    name: seoProductName(product.name),
+    sku: publicSku(product.sku) || `URX-${product.id}`,
     ...(brand ? { brand: { '@type': 'Brand', name: brand } } : {}),
     image: [product.image_url, ...(product.images ?? [])].filter(Boolean).slice(0, 6),
     description: plainText(product.description, 500) || product.name,
@@ -160,6 +176,7 @@ export default async function ProductPage({
     getStoreSettings(),
   ]);
 
+  if (!product && (await isMissing(id))) notFound();
   if (!product) {
     return (
       <div className="bg-slate-50 px-4 py-16">
@@ -182,10 +199,11 @@ export default async function ProductPage({
   }
 
   const variants = buyableVariations(product);
-  const [reviews, vouchers, buyerReviews] = await Promise.all([
+  const [reviews, vouchers, buyerReviews, extras] = await Promise.all([
     getReviews({ product: product.id, limit: 6 }),
     getVouchers(),
     getProductReviews(product.id),
+    getProductExtras(product.id),
   ]);
 
   return (
@@ -219,12 +237,19 @@ export default async function ProductPage({
           vouchers={vouchers}
         />
 
-        <Link
-          href="/cart"
-          className="mt-4 inline-flex items-center text-sm font-semibold text-slate-600 underline"
-        >
-          {t('Lihat Keranjang Belanja')}
-        </Link>
+        {/* ♡ Simpan · Bandingkan · Bagikan */}
+        <ProductActions
+          id={product.id}
+          name={cleanProductName(product.name)}
+          image={productImg(product.image_url, 200)}
+          price={Number(product.final_price ?? product.price) || 0}
+        />
+
+        {/* Artikel Inspirasi yang membahas produk ini */}
+        <RelatedArticles articles={extras.articles} />
+
+        {/* Aksesori yang cocok */}
+        <CompleteYourGear products={extras.accessories} />
 
         {/* Informasi produk: susunan sama untuk semua produk */}
         <div id="info-produk" className="mt-8 scroll-mt-24 sm:mt-10">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import SmartBack from '@/components/SmartBack';
+import { publicSku } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CartItem,
@@ -87,12 +88,12 @@ export default function CartPage() {
                     <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink sm:text-base">
                       <Link href={`/produk/${cartProductId(item)}`} className="hover:underline">{item.name}</Link>
                     </h2>
-                    {(item.variationName || item.sku) && (
+                    {(item.variationName || publicSku(item.sku)) && (
                       <p className="mt-1 text-xs text-slate-500">
                         {item.variationName && <span className="font-semibold text-slate-700">{item.variationName}</span>}
-                        {item.variationName && item.sku && <br className="sm:hidden" />}
-                        {item.variationName && item.sku && <span className="hidden sm:inline"> · </span>}
-                        {item.sku && <>SKU {item.sku}</>}
+                        {item.variationName && publicSku(item.sku) && <br className="sm:hidden" />}
+                        {item.variationName && publicSku(item.sku) && <span className="hidden sm:inline"> · </span>}
+                        {publicSku(item.sku) && <>SKU {publicSku(item.sku)}</>}
                       </p>
                     )}
                     <p className="mt-1.5 text-sm font-extrabold text-ink">{money(item.price)}</p>

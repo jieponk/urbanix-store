@@ -29,6 +29,9 @@
 		file_server
 	}
 	handle /media/* {
+		# Foto produk hasil salin_gambar bernama kode unik → aman disimpan lama di browser.
+		@produk path /media/products/*
+		header @produk Cache-Control "public, max-age=2592000, immutable"
 		root * /srv
 		file_server
 	}

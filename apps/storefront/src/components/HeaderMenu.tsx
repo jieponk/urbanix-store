@@ -116,6 +116,10 @@ export default function HeaderActions() {
 
   return (
     <div className="hidden items-center gap-1 md:flex">
+      <Link href="/tersimpan" aria-label={t('Produk tersimpan')} className={btn}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-8.6C1.4 8.6 3.1 5 6.6 5c2 0 3.3 1.1 4.1 2.3.4.6 1.2.6 1.6 0C13.1 6.1 14.4 5 16.4 5c3.5 0 5.2 3.6 3.8 6.4C19 15.6 12 20 12 20z" /></svg>
+        <span className={tip}>{t('Tersimpan')}</span>
+      </Link>
       <Link href="/cek-pesanan" aria-label={t('Cek pesanan')} className={btn}>
         <OrderIco />
         <span className={tip}>{t('Cek pesanan')}</span>
@@ -343,6 +347,12 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
             )}
             <Link href="/cek-pesanan" className={row}>
               <OrderIco /> {t('Cek pesanan')}
+            </Link>
+            <Link href="/tersimpan" className={row}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-8.6C1.4 8.6 3.1 5 6.6 5c2 0 3.3 1.1 4.1 2.3.4.6 1.2.6 1.6 0C13.1 6.1 14.4 5 16.4 5c3.5 0 5.2 3.6 3.8 6.4C19 15.6 12 20 12 20z" /></svg> {t('Produk tersimpan')}
+            </Link>
+            <Link href="/bandingkan" className={row}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8h8M13 16h8" /></svg> {t('Bandingkan produk')}
             </Link>
             {whatsappNumber && (
               <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className={row}>

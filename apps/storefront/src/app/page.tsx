@@ -180,7 +180,11 @@ export default async function HomePage({
       <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
         <div className={`grid gap-4 ${promo ? 'lg:grid-cols-[1.75fr_1fr]' : ''}`}>
           {slides.length > 0 ? (
-            <BannerSlider slides={slides} />
+            <>
+              {/* Judul utama halaman untuk Google & pembaca layar (banner berupa gambar) */}
+              <h1 className="sr-only">{t('Urbanix Store: toko kamera, lensa, drone & gear kreator original bergaransi')}</h1>
+              <BannerSlider slides={slides} />
+            </>
           ) : (
             <div className="flex flex-col justify-center rounded-xl bg-surface p-8 ring-1 ring-slate-200 sm:p-12">
               <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl">

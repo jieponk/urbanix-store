@@ -6,12 +6,24 @@ import {
   API,
   fetchAll,
   getCategories,
+  getStoreSettings,
   type Product,
 } from '@/lib/api';
 import { getT } from '@/lib/lang-server';
 import SortSelect from '@/components/SortSelect';
+import CatalogFilter from '@/components/CatalogFilter';
+import { detectBrand } from '@/lib/seo';
 
-type SearchParams = { category?: string; q?: string; promo?: string; flash?: string; urut?: string };
+type SearchParams = { category?: string; q?: string; promo?: string; flash?: string; urut?: string; merek?: string; harga?: string };
+
+/** Rentang harga (harga yang dibayar, termasuk promo). */
+const PRICE_RANGES = [
+  { value: '0-500', label: '< Rp500 rb', min: 0, max: 500_000 },
+  { value: '500-2000', label: 'Rp500 rb – 2 jt', min: 500_000, max: 2_000_000 },
+  { value: '2000-5000', label: 'Rp2 – 5 jt', min: 2_000_000, max: 5_000_000 },
+  { value: '5000-10000', label: 'Rp5 – 10 jt', min: 5_000_000, max: 10_000_000 },
+  { value: '10000-', label: '> Rp10 jt', min: 10_000_000, max: Infinity },
+];
 
 const SORTS = ['relevan', 'rekomendasi', 'terlaris', 'terbaru', 'diskon', 'termurah', 'termahal', 'nama'] as const;
 type Sort = (typeof SORTS)[number];
@@ -104,13 +116,15 @@ export default async function CatalogPage({
   const flashOnly = params?.flash === '1';
   const promoOnly = params?.promo === '1' || flashOnly;
 
-  const [productResult, categories] = await Promise.all([
+  const [productResult, categories, settings] = await Promise.all([
     fetchAll<Product>('products').then(
       (value) => ({ ok: true as const, value }),
       () => ({ ok: false as const, value: [] as Product[] })
     ),
     getCategories(),
+    getStoreSettings(),
   ]);
+  const waNumber = (settings?.whatsapp_number ?? '').replace(/\D/g, '');
 
   const activeProducts = productResult.value.filter(
     (product) => product.is_active !== false
@@ -135,11 +149,35 @@ export default async function CatalogPage({
     return matchesCategory && matchesSearch && matchesPromo;
   });
 
+  // Filter merek & harga diterapkan setelah kategori/pencarian/promo; pilihan merek dihitung dari hasil itu.
+  const brandOf = (p: Product) => detectBrand(p.name) || '';
+  const brandCounts = new Map<string, number>();
+  for (const p of filteredProducts) {
+    const b = brandOf(p);
+    if (b) brandCounts.set(b, (brandCounts.get(b) || 0) + 1);
+  }
+  const brandOptions = Array.from(brandCounts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const selectedBrand = brandOptions.some(([b]) => b === params?.merek) ? (params?.merek as string) : '';
+  const range = PRICE_RANGES.find((r) => r.value === params?.harga);
+  const narrowed = filteredProducts.filter((p) => {
+    if (selectedBrand && brandOf(p) !== selectedBrand) return false;
+    if (range) {
+      const price = Number(p.final_price ?? p.discount_price ?? p.price) || 0;
+      if (price < range.min || price >= range.max) return false;
+    }
+    return true;
+  });
+
   const defaultSort: Sort = searchQuery ? 'relevan' : promoOnly ? 'diskon' : 'rekomendasi';
   const sort: Sort = (SORTS as readonly string[]).includes(params?.urut || '') && (params?.urut !== 'relevan' || searchQuery)
     ? (params?.urut as Sort)
     : defaultSort;
-  const sortedProducts = sortProducts(filteredProducts, sort, searchQuery.split(/\s+/).filter(Boolean), searchQuery);
+  // Pencarian kosong: saran produk terlaris/terdiskon supaya pembeli tidak buntu
+  const suggestions =
+    narrowed.length === 0
+      ? sortProducts(activeProducts, 'terlaris', [], '').filter((p) => (p.discount_percent ?? 0) > 0 || (p.sold_count ?? 0) > 0).slice(0, 8)
+      : [];
+  const sortedProducts = sortProducts(narrowed, sort, searchQuery.split(/\s+/).filter(Boolean), searchQuery);
   const sortOptions = [
     ...(searchQuery ? [{ value: 'relevan', label: t('Paling relevan') }] : []),
     ...(!searchQuery && !promoOnly ? [{ value: 'rekomendasi', label: t('Rekomendasi') }] : []),
@@ -212,6 +250,7 @@ export default async function CatalogPage({
           )}
           {promoOnly && <input type="hidden" name={flashOnly ? 'flash' : 'promo'} value="1" />}
           {params?.urut && params.urut !== 'relevan' && <input type="hidden" name="urut" value={params.urut} />}
+          {range && <input type="hidden" name="harga" value={range.value} />}
 
           <input
             type="search"
@@ -243,13 +282,31 @@ export default async function CatalogPage({
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-              {t('{n} produk', { n: filteredProducts.length })}
+              {t('{n} produk', { n: narrowed.length })}
             </span>
-            {(selectedCategory || searchQuery || promoOnly) && (
+            {(selectedCategory || searchQuery || promoOnly || selectedBrand || range) && (
               <BackLink href="/produk">{t('Tampilkan semua produk')}</BackLink>
             )}
           </div>
-          {filteredProducts.length > 1 && <SortSelect options={sortOptions} value={sort} />}
+          <div className="flex flex-wrap items-center gap-2">
+            {brandOptions.length > 1 && (
+              <CatalogFilter
+                param="merek"
+                value={selectedBrand}
+                label={t('Filter merek')}
+                options={[{ value: '', label: t('Semua merek') }, ...brandOptions.map(([b, n]) => ({ value: b, label: `${b} (${n})` }))]}
+              />
+            )}
+            {filteredProducts.length > 1 && (
+              <CatalogFilter
+                param="harga"
+                value={range?.value ?? ''}
+                label={t('Filter harga')}
+                options={[{ value: '', label: t('Semua harga') }, ...PRICE_RANGES.map((r) => ({ value: r.value, label: t(r.label) }))]}
+              />
+            )}
+            {narrowed.length > 1 && <SortSelect options={sortOptions} value={sort} />}
+          </div>
         </div>
 
         {!productResult.ok ? (
@@ -262,13 +319,41 @@ export default async function CatalogPage({
               API: {API}/products/
             </p>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
+        ) : narrowed.length === 0 ? (
+          <>
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center">
             <p className="font-bold">{t('Produk belum ditemukan')}</p>
             <p className="mt-2 text-sm text-slate-500">
               {t('Coba kata kunci atau kategori yang berbeda.')}
             </p>
+            {/* Jangan buntu: tawarkan kategori, produk terlaris, dan tanya admin */}
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {categories.slice(0, 8).map((c) => (
+                <a key={c.id} href={`/produk?category=${c.id}`} className="rounded-full bg-mist px-3.5 py-2 text-sm font-semibold text-ink hover:bg-slate-200">
+                  {c.name}
+                </a>
+              ))}
+            </div>
+            {searchQuery && waNumber && (
+              <a
+                href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Halo admin Urbanix, ada "${params?.q ?? ''}"?`)}`}
+                className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-bold text-surface hover:bg-slate-800"
+              >
+                {t('Tanya admin apakah ada “{q}”', { q: params?.q ?? '' })}
+              </a>
+            )}
           </div>
+          {suggestions.length > 0 && (
+            <section className="mt-10" aria-labelledby="judul-saran">
+              <h2 id="judul-saran" className="text-lg font-extrabold">{t('Mungkin kamu suka')}</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                {suggestions.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </section>
+          )}
+          </>
         ) : (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
             {sortedProducts.map((product) => (

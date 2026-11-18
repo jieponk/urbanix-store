@@ -395,6 +395,17 @@ export async function getArticles(
   }
 }
 
+/** "Lengkapi gear-mu" + artikel yang membahas produk (dicache backend 10 menit). */
+export async function getProductExtras(id: number): Promise<{ accessories: Product[]; articles: ArticleCard[] }> {
+  try {
+    const response = await apiFetch(`${API}/products/${id}/lengkapi/`, { next: { revalidate: 300 } } as RequestInit);
+    if (response.ok) return await response.json();
+  } catch {
+    /* tampilkan halaman tanpa bagian ini */
+  }
+  return { accessories: [], articles: [] };
+}
+
 export async function getArticleCategories(): Promise<{ name: string; slug: string; count: number }[]> {
   try {
     const response = await apiFetch(`${API}/article-categories/`, { next: { revalidate: 300 } } as RequestInit);

@@ -9,7 +9,7 @@ import {
   type Section,
 } from '@/lib/productDescription';
 import { getT } from '@/lib/lang-server';
-import { fixWarrantyBrand } from '@/lib/seo';
+import { fixWarrantyBrand, publicSku } from '@/lib/seo';
 
 /**
  * Susunan tetap untuk semua produk:
@@ -261,15 +261,19 @@ export default function ProductInfoSections({
                     <p className="break-words text-sm font-bold text-slate-800">
                       {variation.name || t('Varian standar')}
                     </p>
-                    {variation.sku && (
+                    {publicSku(variation.sku) && (
                       <p className="text-xs text-slate-400">
-                        SKU: {variation.sku}
+                        SKU: {publicSku(variation.sku)}
                       </p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-extrabold text-slate-900">
-                      {money(variation.price)}
+                    {/* Harga yang dibayar (setelah promo), harga normal dicoret bila berbeda */}
+                    {Number(variation.final_price ?? variation.price) < Number(variation.price) && (
+                      <p className="text-xs text-slate-400 line-through">{money(variation.price)}</p>
+                    )}
+                    <p className={`text-sm font-extrabold ${Number(variation.final_price ?? variation.price) < Number(variation.price) ? 'text-sale-600' : 'text-slate-900'}`}>
+                      {money(variation.final_price ?? variation.price)}
                     </p>
                     <p
                       className={`text-xs font-semibold ${

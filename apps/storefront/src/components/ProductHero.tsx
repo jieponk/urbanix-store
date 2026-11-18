@@ -1,4 +1,5 @@
 'use client';
+import { publicSku } from '@/lib/seo';
 
 import { FlashSaleStrip } from '@/components/FlashSale';
 import { useMemo, useState } from 'react';
@@ -67,7 +68,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
       ? selected.stock
       : variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
     : Number(product.stock) || 0;
-  const sku = selected?.sku || (!hasVariants ? product.sku : '');
+  const sku = publicSku(selected?.sku || (!hasVariants ? product.sku : ''));
   const promoEnds = promoEndText(product.promo_ends_at);
   const flash = selected ? selected.flash ?? null : product.flash ?? null;
   const pkg = selected?.package ?? product.package;
