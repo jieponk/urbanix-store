@@ -13,6 +13,8 @@ import { SHIPPING_GROUPS, type LogoKey } from '@/lib/shipping';
 import CourierBadge from '@/components/CourierBadge';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { useT } from '@/components/LangProvider';
+import AddressFields from '@/components/AddressFields';
+import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -75,8 +77,10 @@ const EMPTY_FORM = {
   phone: '',
   email: '',
   address: '',
-  city: '',
   province: '',
+  city: '',
+  district: '',
+  village: '',
   postal_code: '',
   service: '',
   notes: '',
@@ -133,6 +137,9 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
   const [submitting, setSubmitting] = useState(false);
   const [shopeeLinks, setShopeeLinks] = useState<ShopeeLink[] | null>(null);
   const [idemKey] = useState(makeKey);
+  const [saved, setSaved] = useState<SavedAddress[]>([]);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [remember, setRemember] = useState(true);
 
   const [codes, setCodes] = useState<string[]>([]);
   const [codeInput, setCodeInput] = useState('');
@@ -195,6 +202,36 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
     }
   }, []);
 
+  function applySaved(a: SavedAddress) {
+    setForm((f) => ({
+      ...f,
+      name: a.name,
+      phone: a.phone,
+      email: a.email,
+      address: a.street,
+      province: a.province,
+      city: a.city,
+      district: a.district,
+      village: a.village,
+      postal_code: a.postal_code,
+    }));
+    setErrors({});
+    setSavedId(a.id);
+  }
+
+  function newAddress() {
+    setForm((f) => ({ ...EMPTY_FORM, service: f.service, notes: f.notes }));
+    setErrors({});
+    setSavedId(null);
+  }
+
+  // Alamat tersimpan di perangkat ini: yang terakhir dipakai langsung terisi.
+  useEffect(() => {
+    const list = getSavedAddresses();
+    setSaved(list);
+    if (list[0]) applySaved(list[0]);
+  }, []);
+
   // 1. Baca keranjang + voucher yang sudah diklaim, 2. minta harga, stok & potongan dari server.
   useEffect(() => {
     const items = getCart();
@@ -244,6 +281,22 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
     setErrors((e) => ({ ...e, [field]: undefined }));
   }
 
+  function updateMany(patch: Partial<FormState>) {
+    setForm((f) => ({ ...f, ...patch }));
+    setErrors((e) => {
+      const next = { ...e };
+      for (const k of Object.keys(patch)) delete next[k as keyof FormState];
+      return next;
+    });
+  }
+
+  /** Alamat untuk admin/kurir: jalan + kelurahan + kecamatan dalam satu baris. */
+  function fullStreet() {
+    return [form.address.trim(), form.village.trim(), form.district.trim() && `Kec. ${form.district.trim()}`]
+      .filter(Boolean)
+      .join(', ');
+  }
+
   function validate(): FieldErrors {
     const e: FieldErrors = {};
     if (!needsForm) return e;
@@ -251,8 +304,10 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
     if (!/^(\+62|62|0)8[0-9]{7,12}$/.test(form.phone.replace(/[\s\-().]/g, '')))
       e.phone = t('Nomor HP tidak valid. Contoh: 081234567890.');
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = t('Email tidak valid.');
-    if (form.address.trim().length < 10) e.address = t('Tulis alamat lengkap (jalan, nomor, RT/RW, kelurahan).');
+    if (form.address.trim().length < 5) e.address = t('Tulis nama jalan, nomor rumah, dan RT/RW.');
+    if (!form.province.trim()) e.province = t('Provinsi wajib diisi.');
     if (!form.city.trim()) e.city = t('Kota/kabupaten wajib diisi.');
+    if (!form.district.trim()) e.district = t('Kecamatan wajib diisi.');
     if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = t('Kode pos harus 5 angka.');
     if (!form.service) e.service = t('Pilih jasa pengiriman.');
     return e;
@@ -285,7 +340,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
           ...(needsForm && {
             customer: { name: form.name, phone: form.phone, email: form.email },
             shipping: {
-              address: form.address,
+              address: fullStreet(),
               city: form.city,
               province: form.province,
               postal_code: form.postal_code,
@@ -324,6 +379,19 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
 
       clearCart();
       rememberOrder(data.order_number);
+      if (remember) {
+        saveAddress({
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim(),
+          street: form.address.trim(),
+          province: form.province.trim(),
+          city: form.city.trim(),
+          district: form.district.trim(),
+          village: form.village.trim(),
+          postal_code: form.postal_code.trim(),
+        });
+      }
       if (form.email) {
         // Untuk tawaran survei Google Customer Reviews di halaman pesanan (hanya di browser ini, sekali pakai).
         try {
@@ -574,6 +642,62 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
         {needsForm && (
           <>
             <Section title={t('3. Data pembeli')}>
+              {saved.length > 0 && (
+                <div className="mb-5">
+                  <p className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
+                    <PinIcon /> {t('Alamat tersimpan')}
+                  </p>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {saved.map((a) => {
+                      const on = savedId === a.id;
+                      return (
+                        <li key={a.id} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => applySaved(a)}
+                            aria-pressed={on}
+                            className={`h-full w-full rounded-xl p-3 pr-9 text-left ring-1 transition ${
+                              on ? 'bg-mist ring-2 ring-ink' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <span className="block truncate text-sm font-bold text-ink">
+                              {a.name} <span className="font-normal text-slate-500">· {a.phone}</span>
+                            </span>
+                            <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-slate-500">{addressLine(a)}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              removeAddress(a.id);
+                              setSaved(getSavedAddresses());
+                              if (on) newAddress();
+                            }}
+                            aria-label={t('Hapus alamat tersimpan')}
+                            title={t('Hapus')}
+                            className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-ink"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                              <path d="M6 6l12 12M18 6 6 18" />
+                            </svg>
+                          </button>
+                        </li>
+                      );
+                    })}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={newAddress}
+                        aria-pressed={savedId === null}
+                        className={`flex h-full min-h-[64px] w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed p-3 text-sm font-bold transition ${
+                          savedId === null ? 'border-ink text-ink' : 'border-slate-300 text-slate-500 hover:border-slate-500 hover:text-ink'
+                        }`}
+                      >
+                        <span aria-hidden="true" className="text-lg leading-none">+</span> {t('Pakai alamat baru')}
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={t('Nama lengkap')} required error={errors.name} className="sm:col-span-2">
                   <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} className={inputCls(errors.name)} />
@@ -589,19 +713,42 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
 
             <Section title={t('4. Alamat pengiriman')}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={t('Alamat lengkap')} required error={errors.address} className="sm:col-span-2">
-                  <textarea value={form.address} onChange={(e) => update('address', e.target.value)} rows={3} autoComplete="street-address" maxLength={500} placeholder={t('Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan')} className={inputCls(errors.address)} />
-                </Field>
-                <Field label={t('Kota / Kabupaten')} required error={errors.city}>
-                  <input value={form.city} onChange={(e) => update('city', e.target.value)} autoComplete="address-level2" maxLength={100} className={inputCls(errors.city)} />
-                </Field>
-                <Field label={t('Provinsi')} error={errors.province}>
-                  <input value={form.province} onChange={(e) => update('province', e.target.value)} autoComplete="address-level1" maxLength={100} className={inputCls(errors.province)} />
-                </Field>
-                <Field label={t('Kode pos')} error={errors.postal_code}>
-                  <input value={form.postal_code} onChange={(e) => update('postal_code', e.target.value)} inputMode="numeric" autoComplete="postal-code" maxLength={5} className={inputCls(errors.postal_code)} />
+                <AddressFields
+                  value={{ province: form.province, city: form.city, district: form.district, village: form.village, postal_code: form.postal_code }}
+                  onChange={(patch) => {
+                    updateMany(patch);
+                    setSavedId(null);
+                  }}
+                  errors={errors}
+                  inputClass={inputCls}
+                />
+                <Field label={t('Nama jalan, nomor rumah, RT/RW')} required error={errors.address} className="sm:col-span-2">
+                  <textarea
+                    value={form.address}
+                    onChange={(e) => {
+                      update('address', e.target.value);
+                      setSavedId(null);
+                    }}
+                    rows={2}
+                    autoComplete="street-address"
+                    maxLength={380}
+                    placeholder={t('Contoh: Jl. Melati No. 12, RT 03/RW 05, dekat masjid')}
+                    className={inputCls(errors.address)}
+                  />
                 </Field>
               </div>
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-mist p-3">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#191919]"
+                />
+                <span className="text-sm">
+                  <span className="block font-bold text-ink">{t('Simpan data & alamat untuk pembelian berikutnya')}</span>
+                  <span className="block text-xs text-slate-500">{t('Tersimpan hanya di browser perangkat ini, jadi nanti tidak perlu mengetik ulang.')}</span>
+                </span>
+              </label>
             </Section>
 
             <Section title={t('5. Pilih pengiriman')}>
@@ -663,7 +810,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                 <img src={productImg(item.image_url, 120)} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
               )}
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm text-slate-800">{item.name}</p>
+                <Link href={`/produk/${item.product_id}`} className="line-clamp-2 text-sm text-slate-800 hover:underline">{item.name}</Link>
                 {(item.variation_name || item.sku) && (
                   <p className="mt-0.5 text-xs text-slate-500">
                     {item.variation_name}
@@ -763,6 +910,15 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
         </Link>
       </aside>
     </form>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
   );
 }
 

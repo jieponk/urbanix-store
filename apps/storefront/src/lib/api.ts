@@ -48,6 +48,9 @@ export type Product = {
   promo_ends_at?: string | null;
   package?: Package;
   flash?: Flash | null;
+  /** Jumlah terjual dari pesanan web (bukan pesanan batal) — untuk urutan "Terlaris". */
+  sold_count?: number;
+  review_count?: number;
   is_active: boolean;
 };
 

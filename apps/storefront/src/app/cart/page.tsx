@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { BackLink } from '@/components/Icons';
+import SmartBack from '@/components/SmartBack';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CartItem,
+  cartProductId,
   getCart,
   removeFromCart,
   updateCartQuantity,
@@ -47,7 +48,7 @@ export default function CartPage() {
   return (
     <div className="px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-4xl">
-        <BackLink href="/">{t('Kembali ke toko')}</BackLink>
+        <SmartBack />
 
         <h1 className="mb-5 mt-4 text-2xl font-extrabold tracking-tight text-ink">
           {t('Keranjang Belanja')}
@@ -83,7 +84,9 @@ export default function CartPage() {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink sm:text-base">{item.name}</h2>
+                    <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink sm:text-base">
+                      <Link href={`/produk/${cartProductId(item)}`} className="hover:underline">{item.name}</Link>
+                    </h2>
                     {(item.variationName || item.sku) && (
                       <p className="mt-1 text-xs text-slate-500">
                         {item.variationName && <span className="font-semibold text-slate-700">{item.variationName}</span>}

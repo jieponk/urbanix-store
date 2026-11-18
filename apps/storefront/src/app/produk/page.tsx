@@ -9,8 +9,46 @@ import {
   type Product,
 } from '@/lib/api';
 import { getT } from '@/lib/lang-server';
+import SortSelect from '@/components/SortSelect';
 
-type SearchParams = { category?: string; q?: string; promo?: string; flash?: string };
+type SearchParams = { category?: string; q?: string; promo?: string; flash?: string; urut?: string };
+
+const SORTS = ['relevan', 'rekomendasi', 'terlaris', 'terbaru', 'diskon', 'termurah', 'termahal', 'nama'] as const;
+type Sort = (typeof SORTS)[number];
+
+const priceOf = (p: Product) => Number(p.final_price ?? p.discount_price ?? p.price) || 0;
+const inStock = (p: Product) => p.stock > 0 || (p.variations ?? []).some((v) => v.stock > 0);
+
+/** Skor kecocokan pencarian: kata di awal nama > kata utuh di nama > di nama > SKU/kategori. */
+function relevance(p: Product, words: string[], phrase: string) {
+  const name = (p.name || '').toLowerCase();
+  let score = name.startsWith(phrase) ? 60 : name.includes(phrase) ? 35 : 0;
+  for (const w of words) {
+    if (new RegExp(`(^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(name)) score += 12;
+    else if (name.includes(w)) score += 6;
+    else if ((p.sku || '').toLowerCase().includes(w)) score += 4;
+    else score += 2; // cocok di kategori
+  }
+  return score;
+}
+
+function sortProducts(list: Product[], sort: Sort, words: string[], phrase: string) {
+  const cmp: Record<Sort, (a: Product, b: Product) => number> = {
+    relevan: (a, b) => relevance(b, words, phrase) - relevance(a, words, phrase),
+    rekomendasi: () => 0,
+    terlaris: (a, b) => (b.sold_count ?? 0) - (a.sold_count ?? 0) || (b.review_count ?? 0) - (a.review_count ?? 0),
+    terbaru: (a, b) => b.id - a.id,
+    diskon: (a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0),
+    termurah: (a, b) => priceOf(a) - priceOf(b),
+    termahal: (a, b) => priceOf(b) - priceOf(a),
+    nama: (a, b) => a.name.localeCompare(b.name, 'id'),
+  };
+  // Urutan stabil; produk yang stoknya habis selalu di paling bawah.
+  return list
+    .map((p, i) => ({ p, i }))
+    .sort((x, y) => Number(inStock(y.p)) - Number(inStock(x.p)) || cmp[sort](x.p, y.p) || x.i - y.i)
+    .map((x) => x.p);
+}
 
 export async function generateMetadata({
   searchParams,
@@ -97,9 +135,21 @@ export default async function CatalogPage({
     return matchesCategory && matchesSearch && matchesPromo;
   });
 
-  if (promoOnly) {
-    filteredProducts.sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
-  }
+  const defaultSort: Sort = searchQuery ? 'relevan' : promoOnly ? 'diskon' : 'rekomendasi';
+  const sort: Sort = (SORTS as readonly string[]).includes(params?.urut || '') && (params?.urut !== 'relevan' || searchQuery)
+    ? (params?.urut as Sort)
+    : defaultSort;
+  const sortedProducts = sortProducts(filteredProducts, sort, searchQuery.split(/\s+/).filter(Boolean), searchQuery);
+  const sortOptions = [
+    ...(searchQuery ? [{ value: 'relevan', label: t('Paling relevan') }] : []),
+    ...(!searchQuery && !promoOnly ? [{ value: 'rekomendasi', label: t('Rekomendasi') }] : []),
+    { value: 'terlaris', label: t('Terlaris') },
+    { value: 'terbaru', label: t('Terbaru') },
+    { value: 'diskon', label: t('Diskon terbesar') },
+    { value: 'termurah', label: t('Harga terendah') },
+    { value: 'termahal', label: t('Harga tertinggi') },
+    { value: 'nama', label: t('Nama A–Z') },
+  ];
 
   const flashEnds = flashOnly
     ? filteredProducts.map((p) => p.flash?.ends_at).filter((d): d is string => Boolean(d)).sort()[0] ?? null
@@ -120,7 +170,7 @@ export default async function CatalogPage({
         .sort((a, b) => b.count - a.count)
     : [];
   const promoTotal = promoOnly ? activeProducts.filter((p) => (p.discount_percent ?? 0) > 0).length : 0;
-  const chipHref = (cat: string) => `/produk?promo=1${cat ? `&category=${cat}` : ''}${params?.q ? `&q=${encodeURIComponent(params.q)}` : ''}`;
+  const chipHref = (cat: string) => `/produk?promo=1${cat ? `&category=${cat}` : ''}${params?.q ? `&q=${encodeURIComponent(params.q)}` : ''}${params?.urut ? `&urut=${params.urut}` : ''}`;
 
   const title = flashOnly
     ? t('Flash Sale')
@@ -150,9 +200,6 @@ export default async function CatalogPage({
               </p>
             )}
           </div>
-          <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-            {t('{n} produk', { n: filteredProducts.length })}
-          </span>
         </div>
 
         <form
@@ -164,6 +211,7 @@ export default async function CatalogPage({
             <input type="hidden" name="category" value={selectedCategory} />
           )}
           {promoOnly && <input type="hidden" name={flashOnly ? 'flash' : 'promo'} value="1" />}
+          {params?.urut && params.urut !== 'relevan' && <input type="hidden" name="urut" value={params.urut} />}
 
           <input
             type="search"
@@ -192,11 +240,17 @@ export default async function CatalogPage({
           />
         )}
 
-        {(selectedCategory || searchQuery || promoOnly) && (
-          <div className="mt-3">
-            <BackLink href="/produk">{t('Tampilkan semua produk')}</BackLink>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+              {t('{n} produk', { n: filteredProducts.length })}
+            </span>
+            {(selectedCategory || searchQuery || promoOnly) && (
+              <BackLink href="/produk">{t('Tampilkan semua produk')}</BackLink>
+            )}
           </div>
-        )}
+          {filteredProducts.length > 1 && <SortSelect options={sortOptions} value={sort} />}
+        </div>
 
         {!productResult.ok ? (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
@@ -217,7 +271,7 @@ export default async function CatalogPage({
           </div>
         ) : (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
-            {filteredProducts.map((product) => (
+            {sortedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

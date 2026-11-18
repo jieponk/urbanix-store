@@ -3,7 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.shortcuts import get_object_or_404
-from .models import Category, Product, Cart, CartItem, Order
+from django.db.models import IntegerField, OuterRef, Subquery, Sum, Count
+from django.db.models.functions import Coalesce
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, ProductReview
 from .serializers import CategorySerializer, ProductSerializer, CartSerializer, OrderSerializer
 from .pricing import prefetch_running_promos
 from .services import OrderService
@@ -18,6 +20,30 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         Product.objects.filter(is_active=True)
         .select_related('category')
         .prefetch_related('variations', prefetch_running_promos())
+        .annotate(
+            # Untuk urutan "Terlaris" di katalog: jumlah terjual dari pesanan web (kecuali dibatalkan)
+            sold_count=Coalesce(
+                Subquery(
+                    OrderItem.objects.filter(product=OuterRef('pk'))
+                    .exclude(order__status='CANCELLED')
+                    .values('product')
+                    .annotate(n=Sum('quantity'))
+                    .values('n')[:1],
+                    output_field=IntegerField(),
+                ),
+                0,
+            ),
+            review_count=Coalesce(
+                Subquery(
+                    ProductReview.objects.filter(product=OuterRef('pk'), is_visible=True)
+                    .values('product')
+                    .annotate(n=Count('id'))
+                    .values('n')[:1],
+                    output_field=IntegerField(),
+                ),
+                0,
+            ),
+        )
     )
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]

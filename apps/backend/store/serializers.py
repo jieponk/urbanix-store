@@ -66,6 +66,8 @@ class ProductSerializer(serializers.ModelSerializer):
     promo_ends_at = serializers.SerializerMethodField()
     package = serializers.SerializerMethodField()
     flash = serializers.SerializerMethodField()
+    sold_count = serializers.IntegerField(read_only=True, default=0)
+    review_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Product

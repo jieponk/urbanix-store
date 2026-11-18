@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Variation } from '@/lib/api';
 import { money } from '@/lib/money';
@@ -8,6 +8,7 @@ import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
 import { CartIcon } from '@/components/Icons';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { useT } from '@/components/LangProvider';
+import { rememberProduct } from '@/lib/lastProduct';
 
 type Props = {
   id: string;
@@ -45,6 +46,11 @@ export default function ProductBuyButtons({
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
   const [needVariant, setNeedVariant] = useState(false);
+
+  // Ingat produk ini supaya tombol "Kembali" di keranjang/checkout bisa membawa pembeli ke sini lagi.
+  useEffect(() => {
+    rememberProduct({ href: window.location.pathname + window.location.search, name });
+  }, [name]);
 
   const selected = variations.find((v) => v.variation_id === variationId) ?? null;
   // Harga yang masuk keranjang = harga akhir (termasuk promo). Server tetap menghitung ulang saat checkout.
