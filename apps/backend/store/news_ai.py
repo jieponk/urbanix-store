@@ -48,7 +48,10 @@ PROVIDERS = {
     "github": {"url": "https://models.github.ai/inference/chat/completions", "model": "openai/gpt-4.1-mini", "delay": 10,
                "max_tokens": 2600, "source_chars": 7000},
     # NVIDIA NIM (gratis dengan NVIDIA Developer Program; kunci diawali nvapi-).
-    "nvidia": {"url": "https://integrate.api.nvidia.com/v1/chat/completions", "model": "meta/llama-3.3-70b-instruct",
+    # Model NVIDIA sering pensiun → bila NVIDIA_MODEL kosong, model dipilih otomatis dari daftar /v1/models.
+    "nvidia": {"url": "https://integrate.api.nvidia.com/v1/chat/completions", "model": "",
+               "models_url": "https://integrate.api.nvidia.com/v1/models",
+               "prefer": ["openai/gpt-oss-120b", "llama-4-maverick", "qwen3", "llama-3.3-70b", "mistral-large", "gemma-3-27b"],
                "delay": 5, "max_tokens": 2600, "source_chars": 12000},
     # Berbayar (saldo akun OpenAI), dipakai hanya bila semua penyedia gratis sedang habis kuota.
     "openai": {"url": "https://api.openai.com/v1/chat/completions", "model": "gpt-4.1-mini", "delay": 0,
@@ -100,6 +103,31 @@ def api_key() -> str:
     return _key_for(provider()) if chain() else ""
 
 
+_discovered: dict[str, str] = {}
+
+
+def _discover_model(name: str) -> str:
+    """Pilih model chat yang masih tersedia dari daftar resmi penyedia (dicache selama proses berjalan)."""
+    if name in _discovered:
+        return _discovered[name]
+    conf = PROVIDERS[name]
+    req = urllib.request.Request(conf["models_url"], headers={
+        "authorization": f"Bearer {_key_for(name)}", "user-agent": AI_USER_AGENT, "accept": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (alamat tetap)
+        ids = [m.get("id", "") for m in json.loads(resp.read().decode()).get("data", [])]
+    chosen = ""
+    for want in conf["prefer"]:
+        hit = next((i for i in ids if want in i.lower() and "embed" not in i.lower() and "guard" not in i.lower()), "")
+        if hit:
+            chosen = hit
+            break
+    if not chosen:
+        raise ValueError(f"tidak ada model chat yang cocok di {name}")
+    _discovered[name] = chosen
+    return chosen
+
+
 def model_name(name: str | None = None) -> str:
     name = name or provider()
     custom = os.environ.get(MODEL_ENV.get(name, "NEWS_AI_MODEL"), "").strip()
@@ -107,6 +135,8 @@ def model_name(name: str | None = None) -> str:
         custom = os.environ.get("NEWS_AI_MODEL", "").strip()
     if custom:
         return custom
+    if name in PROVIDERS and not PROVIDERS[name]["model"] and PROVIDERS[name].get("models_url"):
+        return _discovered.get(name) or "(otomatis)"
     return PROVIDERS[name]["model"] if name in PROVIDERS else DEFAULT_MODEL
 
 
@@ -229,9 +259,15 @@ def _call_ai(prompt: str) -> str:
         try:
             return _call_openai_compatible(prompt, name) if name in PROVIDERS else _call_claude(prompt)
         except urllib.error.HTTPError as exc:
-            if exc.code not in LIMIT_CODES:
+            if exc.code not in LIMIT_CODES and exc.code not in (404, 410, 500, 502, 503, 504):
                 raise
+            # kuota habis / kunci ditolak / model pensiun / server sedang bermasalah → pakai penyedia berikutnya
             log.warning("Penyedia AI %s istirahat 30 menit (%s): %s", name, exc.code, _error_detail(exc))
+            _resting[name] = time.time() + REST_SECONDS
+            _discovered.pop(name, None)
+            last = exc
+        except (ValueError, OSError) as exc:  # balasan bukan JSON, timeout, koneksi gagal
+            log.warning("Penyedia AI %s istirahat 30 menit: %s", name, exc)
             _resting[name] = time.time() + REST_SECONDS
             last = exc
     raise last  # semua penyedia sedang habis kuota / ditolak
@@ -240,6 +276,8 @@ def _call_ai(prompt: str) -> str:
 def _call_openai_compatible(prompt: str, name: str) -> str:
     conf = PROVIDERS[name]
     model = model_name(name)
+    if model == "(otomatis)":
+        model = _discover_model(name)
     body = {
         "model": model,
         "temperature": 0.4,
@@ -247,15 +285,24 @@ def _call_openai_compatible(prompt: str, name: str) -> str:
     }
     # model "berpikir" (gpt-oss, Gemini) ikut memakai jatah token ini; OpenAI memakai nama parameter baru
     body["max_completion_tokens" if name == "openai" else "max_tokens"] = conf["max_tokens"]
-    if "gpt-oss" in model or model.startswith("gemini"):
+    if name in ("groq", "gemini") and ("gpt-oss" in model or model.startswith("gemini")):
         body["reasoning_effort"] = "low"
-    req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers={
+    headers = {
         "content-type": "application/json",
+        "accept": "application/json",
         "authorization": f"Bearer {_key_for(name)}",
         "user-agent": AI_USER_AGENT,
-    })
+    }
+    if name == "github":  # header wajib GitHub REST
+        headers.update({"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"})
+    req = urllib.request.Request(conf["url"], data=json.dumps(body).encode(), method="POST", headers=headers)
     with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310 (alamat tetap)
-        data = json.loads(resp.read().decode())
+        raw = resp.read().decode(errors="replace")
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        snippet = re.sub(r"\s+", " ", raw)[:160] or "(kosong)"
+        raise ValueError(f"balasan {name} bukan JSON: {snippet}") from None
     choices = data.get("choices") or [{}]
     return str((choices[0].get("message") or {}).get("content") or "")
 
@@ -453,7 +500,7 @@ def check_key() -> tuple[bool, str]:
                      else _call_claude('Balas hanya JSON: {"ok": true}'))
             ok = "ok" in reply
             ok_any = ok_any or ok
-            lines.append(f"{name} · {model_name(name)}: {'merespons' if ok else 'balasan aneh'}")
+            lines.append(f"{name} · {model_name(name)}: {'merespons' if ok else 'balasan aneh'}")  # model sudah terpilih
         except urllib.error.HTTPError as exc:
             detail = _error_detail(exc)
             if re.search(r"credit|billing|balance|quota exceeded", detail, re.I) and name in ("openai", "anthropic"):

@@ -270,11 +270,34 @@ class MoreFreeProvidersTests(TestCase):
                 return False
 
         def fake(req, timeout=0):
-            seen.append((req.full_url, json.loads(req.data)["model"], req.get_header("Authorization")))
+            if req.full_url.endswith("/v1/models"):  # daftar model NVIDIA
+                return R(json.dumps({"data": [{"id": "nvidia/nv-embed-v1"}, {"id": "meta/llama-3.1-8b-instruct"},
+                                              {"id": "qwen/qwen3-235b-a22b"}]}).encode())
+            seen.append((req.full_url, json.loads(req.data)["model"], req.get_header("Authorization"), req.get_header("X-github-api-version")))
             return R(json.dumps({"choices": [{"message": {"content": '{"ok": true}'}}]}).encode())
 
+        news_ai._discovered.clear()
         with mock.patch("store.news_ai.urllib.request.urlopen", side_effect=fake):
             news_ai._call_openai_compatible("tes", "github")
             news_ai._call_openai_compatible("tes", "nvidia")
-        self.assertEqual(seen[0], ("https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini", "Bearer github_pat_x"))
-        self.assertEqual(seen[1], ("https://integrate.api.nvidia.com/v1/chat/completions", "meta/llama-3.3-70b-instruct", "Bearer nvapi-x"))
+        self.assertEqual(seen[0], ("https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini",
+                                   "Bearer github_pat_x", "2022-11-28"))
+        # model pensiun tidak dipakai lagi: dipilih otomatis dari daftar (qwen3 sesuai urutan preferensi)
+        self.assertEqual(seen[1], ("https://integrate.api.nvidia.com/v1/chat/completions", "qwen/qwen3-235b-a22b", "Bearer nvapi-x", None))
+
+    @mock.patch.dict("os.environ", {"GROQ_API_KEY": "", "GEMINI_API_KEY": "", "GITHUB_MODELS_TOKEN": "github_pat_x",
+                                    "NVIDIA_API_KEY": "nvapi-x", "OPENAI_API_KEY": "", "ANTHROPIC_API_KEY": "",
+                                    "NEWS_AI_PROVIDER": "", "NEWS_AI_API_KEY": "", "NVIDIA_MODEL": "x/model"})
+    def test_non_json_or_retired_model_falls_through(self):
+        import urllib.error
+        news_ai._resting.clear()
+
+        def fake(prompt, name):
+            if name == "github":
+                raise ValueError("balasan github bukan JSON: <html>")
+            raise urllib.error.HTTPError("https://x", 410, "Gone", {}, None)
+
+        with mock.patch("store.news_ai._call_openai_compatible", side_effect=fake) as call:
+            with self.assertRaises(urllib.error.HTTPError):
+                news_ai._call_ai("tes")
+        self.assertEqual(call.call_count, 2)  # github gagal → tetap mencoba nvidia
