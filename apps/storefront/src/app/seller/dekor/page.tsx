@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, ErrorBox, Field, PageHeader, Spinner, btn, inputCls } from '@/components/seller/ui';
 import { EVENT_KEYS, EVENT_RULES, resolveEvent, upcomingSchedule, type EventConfig, type EventKey, type ShopEvent } from '@/lib/events';
 import { EVENT_THEMES } from '@/lib/eventTheme';
+import { DEFAULT_LAYOUT, HOME_SECTIONS, resolveLayout, type HomeLayoutItem } from '@/lib/homeLayout';
+import TablerIcon from '@/components/TablerIcon';
 import { fmtDateTime, fromLocalInput, notify, sellerApi, toLocalInput, useSellerData } from '@/lib/seller';
 
 const MODES: { value: EventConfig['mode']; title: string; desc: string }[] = [
@@ -57,6 +59,8 @@ function ThemePreview({ k }: { k: EventKey }) {
 export default function DekorPage() {
   const { data, setData, error, loading, reload } = useSellerData<any>('settings');
   const [form, setForm] = useState<EventConfig | null>(null);
+  const [layout, setLayout] = useState<HomeLayoutItem[]>(DEFAULT_LAYOUT);
+  const [texts, setTexts] = useState({ event_title: '', event_subtitle: '', event_cta: '' });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -67,6 +71,8 @@ export default function DekorPage() {
         until: data.event_until || null,
         teaser_days: data.event_teaser_days ?? 3,
       });
+      setLayout(resolveLayout(data.home_layout));
+      setTexts({ event_title: data.event_title || '', event_subtitle: data.event_subtitle || '', event_cta: data.event_cta || '' });
     }
   }, [data]);
 
@@ -78,7 +84,19 @@ export default function DekorPage() {
     (form.mode !== (data.event_mode || 'auto') ||
       (form.theme || '') !== (data.event_theme || '') ||
       (form.mode === 'force' && (form.until || '') !== (data.event_until || '')) ||
-      form.teaser_days !== (data.event_teaser_days ?? 3));
+      form.teaser_days !== (data.event_teaser_days ?? 3) ||
+      JSON.stringify(layout) !== JSON.stringify(resolveLayout(data.home_layout)) ||
+      texts.event_title !== (data.event_title || '') ||
+      texts.event_subtitle !== (data.event_subtitle || '') ||
+      texts.event_cta !== (data.event_cta || ''));
+
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= layout.length) return;
+    const next = [...layout];
+    [next[i], next[j]] = [next[j], next[i]];
+    setLayout(next);
+  }
 
   async function save() {
     if (!form) return;
@@ -96,6 +114,10 @@ export default function DekorPage() {
             event_theme: form.theme || '',
             event_until: form.mode === 'force' ? form.until : null,
             event_teaser_days: form.teaser_days,
+            home_layout: layout,
+            event_title: texts.event_title.trim(),
+            event_subtitle: texts.event_subtitle.trim(),
+            event_cta: texts.event_cta.trim(),
           },
         }),
       );
@@ -116,7 +138,8 @@ export default function DekorPage() {
     <div className="pb-24 lg:pb-0">
       <PageHeader
         title="Dekor toko"
-        subtitle="Tampilan event toko: pita atas, banner beranda, dan label di kartu produk."
+        pretitle="Marketing"
+        subtitle="Atur susunan beranda, tema & teks event (pita atas, banner, label kartu produk)."
         actions={
           <button type="button" disabled={busy || !dirty} className={btn.primary} onClick={save}>
             {busy ? 'Menyimpan…' : dirty ? 'Simpan' : 'Tersimpan'}
@@ -189,6 +212,52 @@ export default function DekorPage() {
             )}
           </Card>
 
+          <Card
+            title="Tata letak beranda"
+            action={
+              <button type="button" className={btn.small} onClick={() => setLayout(DEFAULT_LAYOUT)}>
+                <TablerIcon name="arrow-back-up" size={14} /> Susunan bawaan
+              </button>
+            }
+            padded={false}
+          >
+            <p className="border-b border-slate-200 px-4 py-2.5 text-xs text-slate-500 sm:px-5">
+              Banner selalu paling atas. Atur urutan bagian di bawahnya dengan tombol panah, sembunyikan dengan ikon mata.
+            </p>
+            <ol className="divide-y divide-slate-200">
+              {layout.map((item, i) => {
+                const meta = HOME_SECTIONS.find((sec) => sec.key === item.key)!;
+                return (
+                  <li key={item.key} className={`flex items-center gap-3 px-4 py-2.5 sm:px-5 ${item.visible ? '' : 'bg-mist/60'}`}>
+                    <span className="text-slate-400"><TablerIcon name="grip-vertical" size={16} /></span>
+                    <span className="w-5 text-right text-xs font-semibold tabular-nums text-slate-400">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block truncate text-sm font-semibold ${item.visible ? 'text-ink' : 'text-slate-400 line-through'}`}>{meta.label}</span>
+                      <span className="block truncate text-xs text-slate-500">{meta.hint}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <button type="button" aria-label={`Naikkan ${meta.label}`} disabled={i === 0} onClick={() => move(i, -1)} className="rounded-md p-1.5 text-slate-500 hover:bg-mist hover:text-ink disabled:opacity-30">
+                        <TablerIcon name="arrow-up" size={16} />
+                      </button>
+                      <button type="button" aria-label={`Turunkan ${meta.label}`} disabled={i === layout.length - 1} onClick={() => move(i, 1)} className="rounded-md p-1.5 text-slate-500 hover:bg-mist hover:text-ink disabled:opacity-30">
+                        <TablerIcon name="arrow-down" size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={item.visible}
+                        aria-label={item.visible ? `Sembunyikan ${meta.label}` : `Tampilkan ${meta.label}`}
+                        onClick={() => setLayout(layout.map((x) => (x.key === item.key ? { ...x, visible: !x.visible } : x)))}
+                        className={`rounded-md p-1.5 hover:bg-mist ${item.visible ? 'text-ink' : 'text-slate-400'}`}
+                      >
+                        <TablerIcon name={item.visible ? 'eye' : 'eye-off'} size={16} />
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </Card>
+
           <Card title="Tema event" action={<span className="text-xs text-slate-500">Pratinjau hanya di perangkat ini</span>}>
             <div className="grid gap-4 sm:grid-cols-2">
               {EVENT_KEYS.map((k) => {
@@ -219,6 +288,20 @@ export default function DekorPage() {
         </div>
 
         <div className="space-y-4">
+          <Card title="Teks banner event">
+            <div className="space-y-3">
+              <Field label="Judul" hint="Kosongkan untuk memakai judul bawaan event.">
+                <input className={inputCls} maxLength={80} value={texts.event_title} placeholder={showing?.title || 'Gajian Sale'} onChange={(e) => setTexts({ ...texts, event_title: e.target.value })} />
+              </Field>
+              <Field label="Keterangan">
+                <input className={inputCls} maxLength={200} value={texts.event_subtitle} placeholder={showing?.sub || 'Saatnya upgrade gear'} onChange={(e) => setTexts({ ...texts, event_subtitle: e.target.value })} />
+              </Field>
+              <Field label="Teks tombol">
+                <input className={inputCls} maxLength={40} value={texts.event_cta} placeholder="Belanja sekarang" onChange={(e) => setTexts({ ...texts, event_cta: e.target.value })} />
+              </Field>
+            </div>
+          </Card>
+
           <Card title="Jadwal otomatis">
             {form.mode !== 'auto' && (
               <p className="mb-3 rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900">

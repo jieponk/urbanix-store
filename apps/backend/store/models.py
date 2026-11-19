@@ -163,6 +163,11 @@ class StoreSettings(models.Model):
         "Tema pilihan sampai", null=True, blank=True,
         help_text="Setelah waktu ini kembali ke mode otomatis. Kosong = sampai diganti.",
     )
+    # Tata letak beranda (Dekor toko): urutan & tampil/sembunyi bagian. Kosong = susunan bawaan.
+    home_layout = models.JSONField("Tata letak beranda", default=list, blank=True)
+    event_title = models.CharField("Judul banner event (opsional)", max_length=80, blank=True)
+    event_subtitle = models.CharField("Keterangan banner event (opsional)", max_length=200, blank=True)
+    event_cta = models.CharField("Teks tombol banner event (opsional)", max_length=40, blank=True)
     event_teaser_days = models.PositiveSmallIntegerField(
         "Pita \"segera hadir\" (hari sebelum event)", default=3, help_text="0 = tanpa pita hitung mundur.",
     )
@@ -908,3 +913,45 @@ class ContentTranslation(models.Model):
 
     def __str__(self):
         return f"[{self.lang}] {self.source[:60]}"
+
+
+class ShopVideo(models.Model):
+    """Video belanja di beranda ("Lihat langsung"): file unggahan atau link TikTok/Instagram/YouTube + produk terkait."""
+
+    title = models.CharField("Judul", max_length=120)
+    video_file = models.FileField("File video", upload_to="videos/", blank=True)
+    video_url = models.URLField("Link video", max_length=500, blank=True,
+                                help_text="Link TikTok, Instagram Reels, atau YouTube Shorts.")
+    poster = models.FileField("Gambar sampul", upload_to="videos/posters/", blank=True)
+    products = models.ManyToManyField("Product", blank=True, related_name="shop_videos", verbose_name="Produk di video")
+    sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
+    is_active = models.BooleanField("Tampil", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "-id"]
+        verbose_name = "Video belanja"
+        verbose_name_plural = "Video belanja"
+
+    def __str__(self):
+        return self.title
+
+    def source(self) -> dict:
+        """Jenis & alamat pemutar: file (diputar langsung) atau embed resmi platform."""
+        import re
+
+        if self.video_file:
+            return {"kind": "file", "src": self.video_file.url, "thumb": ""}
+        url = (self.video_url or "").strip()
+        m = re.search(r"(?:youtube\.com/(?:shorts/|watch\?v=|embed/)|youtu\.be/)([\w-]{6,})", url)
+        if m:
+            vid = m.group(1)
+            return {"kind": "youtube", "src": f"https://www.youtube-nocookie.com/embed/{vid}?autoplay=1&rel=0&playsinline=1",
+                    "thumb": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"}
+        m = re.search(r"tiktok\.com/.*?/video/(\d+)", url)
+        if m:
+            return {"kind": "tiktok", "src": f"https://www.tiktok.com/embed/v2/{m.group(1)}", "thumb": ""}
+        m = re.search(r"instagram\.com/(?:reel|reels|p)/([\w-]+)", url)
+        if m:
+            return {"kind": "instagram", "src": f"https://www.instagram.com/reel/{m.group(1)}/embed", "thumb": ""}
+        return {"kind": "link", "src": url, "thumb": ""}

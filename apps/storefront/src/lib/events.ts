@@ -24,6 +24,8 @@ export type ShopEvent = {
   sub: string;
   startsAt: string; // ISO (UTC)
   endsAt: string; // ISO (UTC)
+  /** Teks tombol banner (opsional, dari Dekor toko). */
+  cta?: string;
 };
 
 type Rule = {
@@ -157,6 +159,10 @@ export type EventConfig = {
   theme: EventKey | null;
   until: string | null;
   teaser_days: number;
+  /** Teks pengganti untuk banner event (opsional, dari Dekor toko). */
+  title?: string | null;
+  subtitle?: string | null;
+  cta?: string | null;
 };
 
 export const DEFAULT_EVENT_CONFIG: EventConfig = { mode: 'auto', theme: null, until: null, teaser_days: TEASER_DAYS };

@@ -59,7 +59,11 @@ def store_settings(request):
                 "theme": store.event_theme or None,
                 "until": store.event_until.isoformat() if store.event_until else None,
                 "teaser_days": store.event_teaser_days,
+                "title": store.event_title or None,
+                "subtitle": store.event_subtitle or None,
+                "cta": store.event_cta or None,
             },
+            "home_layout": store.home_layout or [],
         }
     )
 

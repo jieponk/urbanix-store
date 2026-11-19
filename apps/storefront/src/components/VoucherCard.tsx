@@ -21,11 +21,7 @@ function TicketIcon({ shipping }: { shipping: boolean }) {
   return shipping ? (
     <TablerIcon name="truck" size={22} />
   ) : (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M19 5 5 19" />
-      <circle cx="7" cy="7" r="2.5" />
-      <circle cx="17" cy="17" r="2.5" />
-    </svg>
+    <TablerIcon name="discount" size={22} />
   );
 }
 

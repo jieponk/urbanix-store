@@ -84,7 +84,7 @@ export function EventHero({
             href="/produk?promo=1"
             className={`inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-extrabold transition sm:h-[52px] sm:text-base ${th.heroCta}`}
           >
-            {t('Belanja sekarang')} <ArrowRight size={18} />
+            {event.cta || t('Belanja sekarang')} <ArrowRight size={18} />
           </Link>
           <span className={`inline-flex items-center gap-2 text-sm ${th.heroSub}`}>
             {t('Berakhir dalam')} <Countdown endsAt={event.endsAt} tone={th.countdown} />

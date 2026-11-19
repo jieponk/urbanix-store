@@ -17,9 +17,7 @@ export default function SortSelect({ options, value }: { options: SortOption[]; 
     <label className="relative inline-flex items-center gap-2 text-sm">
       <span className="hidden font-semibold text-slate-500 sm:inline">{t('Urutkan')}</span>
       <span className="pointer-events-none absolute left-3 text-slate-500 sm:hidden" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 6h13M3 12h9M3 18h5M17 8V20M17 20l-3-3M17 20l3-3" />
-        </svg>
+        <TablerIcon name="sort-descending" size={16} />
       </span>
       <select
         value={value}

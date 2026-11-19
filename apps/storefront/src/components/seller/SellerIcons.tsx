@@ -34,6 +34,8 @@ export const icons = {
   chevron: (p: P) => <T {...p} n="chevron-right" />,
   close: (p: P) => <T {...p} n="x" />,
   chat: (p: P) => <T {...p} n="message-circle" />,
+  video: (p: P) => <T {...p} n="video" />,
+  layout: (p: P) => <T {...p} n="layout-rows" />,
 };
 
 export type IconName = keyof typeof icons;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useT } from '@/components/LangProvider';
 import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 export type WaQuestion = { label: string; message: string };
 
@@ -76,9 +77,7 @@ export default function WaTypingPrompt({ whatsappNumber, questions }: { whatsapp
           <span className="wa-caret ml-0.5 inline-block h-4 w-[2px] translate-y-[3px] bg-cobalt-900" />
         </span>
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white transition group-hover:translate-x-0.5">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
+          <TablerIcon name="arrow-right" size={16} stroke={2.4} />
         </span>
       </a>
     </div>

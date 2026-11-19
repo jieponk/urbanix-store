@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { Fragment } from 'react';
+import ShopVideos from '@/components/ShopVideos';
+import { resolveLayout, type HomeKey } from '@/lib/homeLayout';
 import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
 import { BestSellers, BrandCorner, CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
@@ -18,6 +21,7 @@ import {
   getNews,
   getReviews,
   getStoreSettings,
+  getVideos,
   getVouchers,
   promoSummary,
   type Product,
@@ -100,13 +104,14 @@ export default async function HomePage({
     productError = true;
   }
 
-  const [categories, settings, reviews, vouchers, news, apiBanners] = await Promise.all([
+  const [categories, settings, reviews, vouchers, news, apiBanners, videos] = await Promise.all([
     getCategories(),
     getStoreSettings(),
     getReviews({ limit: 6 }),
     getVouchers(),
     getNews({ limit: 24 }),
     getBanners(),
+    getVideos(),
   ]);
   // Beranda: hanya berita terbaru yang punya gambar (berita tanpa gambar tetap ada di menu Berita).
   const homeNews = (news?.results ?? []).filter((n) => Boolean(n.image_url)).slice(0, 4);
@@ -160,6 +165,135 @@ export default async function HomePage({
     .slice(0, 2)
     .map((p) => ({ id: p.id, name: p.name, image: productImg(p.image_url, 300), price: Number(p.final_price ?? p.price) || 0 }));
   const minPromoPrice = Math.min(...promoProducts.map((p) => Number(p.final_price ?? p.price) || Infinity));
+
+  // Bagian beranda; urutan & tampil/sembunyi diatur di Seller Center → Dekor toko → Tata letak beranda.
+  const blocks: Record<HomeKey, React.ReactNode> = {
+    voucher: <>
+      {/* 2. Voucher yang bisa diklaim */}
+      {vouchers.length > 0 && (
+        <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+          <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            {event ? t('Klaim voucher {e}', { e: event.big }) : t('Voucher toko')}
+          </h2>
+          <VoucherStrip vouchers={vouchers} />
+          <p className="mt-2 text-xs text-slate-500">
+            {t('Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.')}
+          </p>
+        </section>
+      )}
+    </>,
+    flash: <>
+      {/* 3. Flash sale / produk promo (panel putih) */}
+      {flashProducts.length > 0 ? (
+        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
+      ) : (
+        promo && <FlashSale products={promoProducts} promoName={promo.name} />
+      )}
+    </>,
+    kategori: <>
+      {/* 4. Kategori bergambar */}
+      <div className="relative isolate">
+        <GearBackdrop />
+        <CategoryStrip categories={categories} products={allProducts} />
+      </div>
+    </>,
+    brand: <BrandCorner brands={brands} />,
+    laris: <BestSellers products={allProducts} />,
+    video: <ShopVideos videos={videos} />,
+    chat: <>
+      {/* 4. Cara pesan via WhatsApp + diskon */}
+      <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
+    </>,
+    produk: <>
+      {/* 5. Produk pilihan: 8 produk (4 + 4) dengan tombol halaman */}
+      <section id="produk-pilihan" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Produk pilihan')}</h2>
+          <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:text-slate-900">
+            {t('Lihat semua produk')}
+          </Link>
+        </div>
+
+        {productError ? (
+          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
+            <p className="font-bold text-red-700">{t('Produk gagal dimuat')}</p>
+            <p className="mt-2 text-sm text-slate-600">Pastikan backend Django berjalan dan API produk dapat diakses.</p>
+            <p className="mt-2 break-all text-xs text-slate-500">API: {API}/products/</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
+            <p className="font-bold">{t('Produk belum tersedia')}</p>
+            <p className="mt-2 text-sm text-slate-500">{t('Silakan cek kembali sebentar lagi.')}</p>
+          </div>
+        ) : (
+          <>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <nav aria-label={t('Halaman produk')} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                {page > 1 && <PageLink page={page - 1} direction="prev" />}
+                <span className="px-2 text-sm font-semibold text-slate-500">
+                  Halaman {page} dari {totalPages}
+                </span>
+                {page < totalPages && <PageLink page={page + 1} direction="next" />}
+              </nav>
+            )}
+          </>
+        )}
+      </section>
+    </>,
+    ulasan: <>
+      {/* 6. Ulasan asli pembeli */}
+      <ReviewsSection reviews={reviews} settings={settings} />
+    </>,
+    berita: <>
+      {/* Berita terbaru (hanya yang bergambar). Artikel Urbanix ada di menu Inspirasi. */}
+      {homeNews.length > 0 && (
+        <section aria-labelledby="judul-berita" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-3">
+            <h2 id="judul-berita" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              {t('Berita kamera & fotografi')}
+            </h2>
+            <Link href="/berita" className="shrink-0 text-sm font-bold text-ink hover:underline">
+              {t('Lihat semua')}
+            </Link>
+          </div>
+          <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+            {homeNews.map((article) => (
+              <NewsCard key={article.id} article={article} compact />
+            ))}
+          </div>
+        </section>
+      )}
+    </>,
+    keunggulan: <>
+      {/* 7. Keunggulan toko: daftar ringkas, bukan kartu */}
+      <section aria-labelledby="judul-keunggulan" className="relative isolate mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <GearBackdrop />
+        <h2 id="judul-keunggulan" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+          {t(featuresTitle)}
+        </h2>
+        <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <li key={feature.title} className="flex gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink ring-1 ring-slate-200">
+                <FeatureIcon name={feature.icon} size={22} />
+              </span>
+              <span>
+                <span className="block font-bold text-ink">{t(feature.title)}</span>
+                <span className="mt-1 block text-sm leading-6 text-slate-600">{t(feature.text)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>,
+  };
+  const layout = resolveLayout(settings?.home_layout);
 
   return (
     <div className="pb-4">
@@ -218,124 +352,11 @@ export default async function HomePage({
       </section>
       )}
 
-      {/* 2. Voucher yang bisa diklaim */}
-      {vouchers.length > 0 && (
-        <section aria-labelledby="judul-voucher" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-          <h2 id="judul-voucher" className="mb-3 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-            {event ? t('Klaim voucher {e}', { e: event.big }) : t('Voucher toko')}
-          </h2>
-          <VoucherStrip vouchers={vouchers} />
-          <p className="mt-2 text-xs text-slate-500">
-            {t('Klaim dulu, voucher otomatis tersedia saat checkout. Harga sudah termasuk PPN.')}
-          </p>
-        </section>
-      )}
-
-      {/* 3. Flash sale / produk promo (panel putih) */}
-      {flashProducts.length > 0 ? (
-        <FlashSale products={flashProducts} promoName={promo?.name ?? ''} flash endsAt={flashEnds} />
-      ) : (
-        promo && <FlashSale products={promoProducts} promoName={promo.name} />
-      )}
-
       </div>
 
-      {/* 4. Kategori bergambar */}
-      <div className="relative isolate">
-        <GearBackdrop />
-        <CategoryStrip categories={categories} products={allProducts} />
-      </div>
-
-      {/* 5. Brand Corner & paling laris */}
-      <BrandCorner brands={brands} />
-      <BestSellers products={allProducts} />
-
-      {/* 4. Cara pesan via WhatsApp + diskon */}
-      <WhatsappBand percent={waPercent} whatsappNumber={waNumber} appliesToPromo={waOnPromo} />
-
-      {/* 5. Produk pilihan: 8 produk (4 + 4) dengan tombol halaman */}
-      <section id="produk-pilihan" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-3">
-          <h2 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Produk pilihan')}</h2>
-          <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:text-slate-900">
-            {t('Lihat semua produk')}
-          </Link>
-        </div>
-
-        {productError ? (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-            <p className="font-bold text-red-700">{t('Produk gagal dimuat')}</p>
-            <p className="mt-2 text-sm text-slate-600">Pastikan backend Django berjalan dan API produk dapat diakses.</p>
-            <p className="mt-2 break-all text-xs text-slate-500">API: {API}/products/</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-5 py-12 text-center">
-            <p className="font-bold">{t('Produk belum tersedia')}</p>
-            <p className="mt-2 text-sm text-slate-500">{t('Silakan cek kembali sebentar lagi.')}</p>
-          </div>
-        ) : (
-          <>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            {totalPages > 1 && (
-              <nav aria-label={t('Halaman produk')} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                {page > 1 && <PageLink page={page - 1} direction="prev" />}
-                <span className="px-2 text-sm font-semibold text-slate-500">
-                  Halaman {page} dari {totalPages}
-                </span>
-                {page < totalPages && <PageLink page={page + 1} direction="next" />}
-              </nav>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* 6. Ulasan asli pembeli */}
-      <ReviewsSection reviews={reviews} settings={settings} />
-
-      {/* Berita terbaru (hanya yang bergambar). Artikel Urbanix ada di menu Inspirasi. */}
-      {homeNews.length > 0 && (
-        <section aria-labelledby="judul-berita" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between gap-3">
-            <h2 id="judul-berita" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-              {t('Berita kamera & fotografi')}
-            </h2>
-            <Link href="/berita" className="shrink-0 text-sm font-bold text-ink hover:underline">
-              {t('Lihat semua')}
-            </Link>
-          </div>
-          <div className="-mx-4 mt-5 grid auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
-            {homeNews.map((article) => (
-              <NewsCard key={article.id} article={article} compact />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 7. Keunggulan toko: daftar ringkas, bukan kartu */}
-      <section aria-labelledby="judul-keunggulan" className="relative isolate mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <GearBackdrop />
-        <h2 id="judul-keunggulan" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-          {t(featuresTitle)}
-        </h2>
-        <ul className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <li key={feature.title} className="flex gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-ink ring-1 ring-slate-200">
-                <FeatureIcon name={feature.icon} size={22} />
-              </span>
-              <span>
-                <span className="block font-bold text-ink">{t(feature.title)}</span>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">{t(feature.text)}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {layout.filter((item) => item.visible).map((item) => (
+        <Fragment key={item.key}>{blocks[item.key]}</Fragment>
+      ))}
     </div>
   );
 }

@@ -480,6 +480,7 @@ class SettingsSerializer(serializers.ModelSerializer):
             "whatsapp_number", "shopee_shop_id", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
             "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
             "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
+            "home_layout", "event_title", "event_subtitle", "event_cta",
         ]
 
     def validate(self, attrs):
@@ -487,6 +488,11 @@ class SettingsSerializer(serializers.ModelSerializer):
         theme = attrs.get("event_theme", getattr(self.instance, "event_theme", ""))
         if mode == StoreSettings.EVENT_FORCE and not theme:
             raise serializers.ValidationError({"event_theme": "Pilih tema yang mau dipakai."})
+        layout = attrs.get("home_layout")
+        if layout is not None:
+            if not isinstance(layout, list) or not all(isinstance(i, dict) and isinstance(i.get("key"), str) for i in layout):
+                raise serializers.ValidationError({"home_layout": "Format tata letak tidak valid."})
+            attrs["home_layout"] = [{"key": i["key"][:30], "visible": bool(i.get("visible", True))} for i in layout][:30]
         if attrs.get("event_teaser_days") is not None and attrs["event_teaser_days"] > 14:
             raise serializers.ValidationError({"event_teaser_days": "Maksimal 14 hari."})
         return attrs

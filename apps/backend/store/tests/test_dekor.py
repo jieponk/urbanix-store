@@ -14,7 +14,9 @@ class DekorTokoTests(TestCase):
 
     def test_default_auto_in_public_settings(self):
         data = APIClient().get("/api/v1/store-settings/").json()
-        self.assertEqual(data["event"], {"mode": "auto", "theme": None, "until": None, "teaser_days": 3})
+        self.assertEqual(data["event"], {"mode": "auto", "theme": None, "until": None, "teaser_days": 3,
+                                         "title": None, "subtitle": None, "cta": None})
+        self.assertEqual(data["home_layout"], [])
 
     def test_force_requires_theme_and_is_public(self):
         r = self.api.patch("/api/v1/seller/settings/", {"event_mode": "force"}, format="json")
@@ -28,4 +30,14 @@ class DekorTokoTests(TestCase):
 
     def test_teaser_limit(self):
         r = self.api.patch("/api/v1/seller/settings/", {"event_teaser_days": 30}, format="json")
+        self.assertEqual(r.status_code, 400)
+
+    def test_home_layout_and_event_text(self):
+        layout = [{"key": "flash", "visible": True}, {"key": "berita", "visible": False}]
+        r = self.api.patch("/api/v1/seller/settings/", {"home_layout": layout, "event_title": "Gajian Hore"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        data = APIClient().get("/api/v1/store-settings/").json()
+        self.assertEqual(data["home_layout"], layout)
+        self.assertEqual(data["event"]["title"], "Gajian Hore")
+        r = self.api.patch("/api/v1/seller/settings/", {"home_layout": "salah"}, format="json")
         self.assertEqual(r.status_code, 400)

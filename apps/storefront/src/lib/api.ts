@@ -154,7 +154,11 @@ export function buyableVariations(product: Product): Variation[] {
 }
 
 export type StoreSettings = {
-  event?: { mode: "auto" | "off" | "force"; theme: "kembar" | "harbolnas" | "tengah" | "gajian" | null; until: string | null; teaser_days: number };
+  event?: {
+    mode: "auto" | "off" | "force"; theme: "kembar" | "harbolnas" | "tengah" | "gajian" | null; until: string | null; teaser_days: number;
+    title?: string | null; subtitle?: string | null; cta?: string | null;
+  };
+  home_layout?: { key: string; visible: boolean }[];
   whatsapp_number: string;
   shopee_store_url: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
@@ -422,5 +426,26 @@ export async function getArticle(slug: string): Promise<ArticleDetail | null> {
     return response.ok ? await response.json() : null;
   } catch {
     return null;
+  }
+}
+
+
+/* ---------- Video belanja (beranda) ---------- */
+export type ShopVideo = {
+  id: number;
+  title: string;
+  kind: 'file' | 'youtube' | 'tiktok' | 'instagram' | 'link';
+  src: string;
+  poster: string;
+  link: string;
+  products: { id: number; name: string; image: string; price: string; normal: string }[];
+};
+
+export async function getVideos(): Promise<ShopVideo[]> {
+  try {
+    const r = await fetch(`${API}/videos/`, { next: { revalidate: 120 } } as RequestInit);
+    return r.ok ? ((await r.json()) as ShopVideo[]) : [];
+  } catch {
+    return [];
   }
 }

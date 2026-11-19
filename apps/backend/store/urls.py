@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import extras_api, articles_api, checkout_views, reviews_api, seller_content
 from .views import CartViewSet, CategoryViewSet, OrderViewSet, ProductViewSet
+from . import videos
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
@@ -21,6 +22,7 @@ urlpatterns = [
     path('seller/product-reviews/<int:pk>/', reviews_api.seller_review_detail, name='seller_product_review_detail'),
     path('seller/', include('store.seller_urls')),
     path('banners/', seller_content.public_banners, name='public_banners'),
+    path('videos/', videos.public_videos, name='public_videos'),
     path('articles/', articles_api.article_list, name='article_list'),
     path('article-categories/', articles_api.article_categories, name='article_categories'),
     path('articles/<slug:slug>/', articles_api.article_detail, name='article_detail'),

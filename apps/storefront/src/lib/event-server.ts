@@ -16,5 +16,15 @@ export const getEventState = cache(async (): Promise<EventState> => {
   } catch {
     preview = null;
   }
-  return resolveEvent(config, preview);
+  const state = resolveEvent(config, preview);
+  // Teks banner event yang diubah di Dekor toko menggantikan teks bawaan.
+  if (state.event && (config.title || config.subtitle || config.cta)) {
+    state.event = {
+      ...state.event,
+      title: config.title || state.event.title,
+      sub: config.subtitle || state.event.sub,
+      cta: config.cta || undefined,
+    };
+  }
+  return state;
 });

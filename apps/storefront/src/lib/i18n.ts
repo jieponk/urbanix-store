@@ -732,6 +732,12 @@ const EN: Record<string, string> = {
   'Masuk': 'Arrived',
   'Gear terbaru': 'Latest gear',
   'Rp100 – 500 rb': 'Rp100k – 500k',
+  'Lihat langsung': 'Watch it live',
+  'Video dari tim Urbanix': 'Videos from the Urbanix team',
+  'Putar video: {title}': 'Play video: {title}',
+  'Tutup video': 'Close video',
+  'Buka video': 'Open video',
+  'Lihat di {p}': 'View on {p}',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',

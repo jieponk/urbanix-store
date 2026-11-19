@@ -3,6 +3,7 @@ from django.urls import path
 from . import seller_api as a
 from . import articles_api as art
 from . import seller_content as c
+from . import videos
 
 urlpatterns = [
     path("login/", a.login),
@@ -27,6 +28,8 @@ urlpatterns = [
     path("vouchers/<int:pk>/", c.voucher_detail),
     path("banners/", c.banners),
     path("banners/<int:pk>/", c.banner_detail),
+    path("videos/", videos.videos),
+    path("videos/<int:pk>/", videos.video_detail),
     path("articles/", art.seller_articles),
     path("articles/image/", art.seller_article_image),
     path("articles/<int:pk>/", art.seller_article_detail),

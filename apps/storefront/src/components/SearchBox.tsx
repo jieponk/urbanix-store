@@ -98,9 +98,7 @@ function useSuggestions(query: string, enabled: boolean) {
 const SearchIco = ({ className = '' }: { className?: string }) => <TablerIcon name="search" size={18} stroke={2.2} className={`shrink-0 ${className}`} />;
 const ClockIco = () => <TablerIcon name="clock" size={16} className="shrink-0 text-slate-400" />;
 const ArrowUpLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0 text-slate-400">
-    <path d="M7 17V7h10M7 7l10 10" />
-  </svg>
+  <TablerIcon name="arrow-up-left" size={16} className="shrink-0 text-slate-400" />
 );
 
 /**
@@ -438,9 +436,7 @@ export default function SearchBox({ className }: { className: string }) {
         <div role="dialog" aria-modal="true" aria-label={t('Cari produk')} className="search-full fixed inset-0 z-[80] flex flex-col bg-surface md:hidden">
           <form onSubmit={onSubmit} className="flex items-center gap-2 border-b border-slate-200 px-2 py-2.5" role="search">
             <button type="button" onClick={closeFull} aria-label={t('Kembali')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink active:bg-mist">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M15 5l-7 7 7 7" />
-              </svg>
+              <TablerIcon name="arrow-left" size={22} stroke={2.2} />
             </button>
             <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-ink bg-surface px-3.5 py-2">
               <SearchIco className="text-slate-500" />
