@@ -8,6 +8,7 @@ import { getCart } from '@/lib/cart';
 import { LANG_COOKIE, type Lang } from '@/lib/i18n';
 import { loadMotion, prefersReducedMotion } from '@/lib/motion';
 import TablerIcon from '@/components/TablerIcon';
+import { useHideOnScroll } from '@/lib/useHideOnScroll';
 
 const THEME_KEY = 'urbanix-theme';
 
@@ -204,35 +205,6 @@ export function ProductCartButton() {
 
 type Cat = { id: number; name: string };
 
-/**
- * true saat pembeli scroll ke bawah (bar disembunyikan), false saat scroll ke atas,
- * dekat bagian atas halaman, atau sudah mentok di bawah (footer terlihat).
- */
-function useHideOnScroll(pathname: string) {
-  const [hidden, setHidden] = useState(false);
-  useEffect(() => {
-    setHidden(false);
-    let last = window.scrollY;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const delta = y - last;
-        const nearBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 80;
-        if (y < 80 || nearBottom) setHidden(false);
-        else if (delta > 6) setHidden(true);
-        else if (delta < -6) setHidden(false);
-        if (Math.abs(delta) > 6) last = y;
-        ticking = false;
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [pathname]);
-  return hidden;
-}
 
 /**
  * HP (<768px): bar navigasi bawah — Beranda, Kategori, Artikel, Keranjang, Lainnya.

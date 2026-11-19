@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { icons, type IconName } from '@/components/seller/SellerIcons';
 import { sellerApi } from '@/lib/seller';
+import { useHideOnScroll } from '@/lib/useHideOnScroll';
 import { MENU, type MenuItem } from '@/components/seller/menu';
 
 type Me = { username: string; name: string; new_orders: number };
@@ -38,6 +39,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
   const [me, setMe] = useState<Me | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const isLogin = pathname === '/seller/login';
+  const navHidden = useHideOnScroll(pathname);
 
   useEffect(() => {
     if (isLogin) return;
@@ -275,9 +277,12 @@ export default function SellerShell({ children }: { children: React.ReactNode })
       </div>
 
       {/* ===== Tab bawah HP ===== */}
+      {/* Kapsul mengambang (seperti toko): hilang saat scroll ke bawah, muncul lagi saat scroll ke atas */}
       <nav
         aria-label="Navigasi utama"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        className={`fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 rounded-full bg-surface/80 p-1 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-xl backdrop-saturate-150 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:ring-white/10 lg:hidden ${
+          navHidden ? 'pointer-events-none translate-y-[calc(100%+1.5rem)] opacity-0' : 'translate-y-0 opacity-100'
+        }`}
       >
         <div className="mx-auto grid max-w-md grid-cols-5">
           {TABS.map((tab) => {
@@ -288,7 +293,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
                 key={tab.href}
                 href={tab.href}
                 aria-current={on ? 'page' : undefined}
-                className={`flex flex-col items-center gap-1 py-2 text-[11px] font-bold ${on ? 'text-ink' : 'text-slate-400'}`}
+                className={`flex flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-bold ${on ? 'text-ink' : 'text-slate-400'}`}
               >
                 <span className={`relative flex h-8 w-12 items-center justify-center rounded-full transition ${on ? 'bg-mist' : ''}`}>
                   <Icon size={20} />

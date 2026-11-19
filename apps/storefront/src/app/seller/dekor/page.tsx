@@ -344,7 +344,7 @@ export default function DekorPage() {
 
       {/* HP: tombol simpan melayang di atas navigasi bawah saat ada perubahan */}
       {dirty && (
-        <div className="fixed inset-x-0 bottom-[76px] z-40 px-4 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 px-4 lg:hidden">
           <button type="button" disabled={busy} onClick={save} className={`${btn.primary} w-full shadow-xl`}>
             {busy ? 'Menyimpan…' : 'Simpan perubahan'}
           </button>
