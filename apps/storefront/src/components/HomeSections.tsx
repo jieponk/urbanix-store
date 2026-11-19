@@ -344,15 +344,15 @@ export function BrandCorner({ brands }: { brands: { name: string; count: number;
           <li key={b.name} className="w-[132px] shrink-0 sm:w-auto">
             <Link
               href={`/produk?merek=${encodeURIComponent(b.name)}`}
-              className="group flex h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
+              className="group flex h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface px-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
               title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
             >
               {b.logo ? (
-                <img src={b.logo} alt={b.name} loading="lazy" className="h-8 w-auto max-w-[112px] object-contain transition duration-300 group-hover:scale-105" />
+                <img src={b.logo} alt={b.name} loading="lazy" className="h-8 w-auto max-w-[112px] object-contain transition duration-300 group-hover:scale-105 dark:brightness-0 dark:invert" />
               ) : (
-                <span className="text-[17px] font-extrabold tracking-tight text-[#191919]">{b.name}</span>
+                <span className="text-[17px] font-extrabold tracking-tight text-ink">{b.name}</span>
               )}
-              <span className="text-[11px] font-semibold text-[#6b7280]">{t('{n} produk', { n: b.count })}</span>
+              <span className="text-[11px] font-semibold text-slate-500">{t('{n} produk', { n: b.count })}</span>
             </Link>
           </li>
         ))}
