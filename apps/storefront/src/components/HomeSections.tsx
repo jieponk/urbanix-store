@@ -329,6 +329,8 @@ const finalPrice = (p: Product) => Number(p.final_price ?? p.discount_price ?? p
 
 /* ------------------------------------------------------------ Brand Corner */
 
+const FULL_COLOR_LOGOS = new Set(['kodak']);
+
 /** Merek yang ada produknya. Logo resmi dipakai bila file ada di public/brands, selain itu nama merek. */
 export function BrandCorner({ brands }: { brands: { name: string; count: number; logo?: string }[] }) {
   const t = getT();
@@ -348,7 +350,13 @@ export function BrandCorner({ brands }: { brands: { name: string; count: number;
               title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
             >
               {b.logo ? (
-                <img src={b.logo} alt={b.name} loading="lazy" className="h-9 w-full max-w-[150px] object-contain transition sm:h-10 sm:max-w-[170px] duration-300 group-hover:scale-105 dark:brightness-0 dark:invert" />
+                <img src={b.logo} alt={b.name} loading="lazy" className={`w-full object-contain transition duration-300 group-hover:scale-105 ${
+                    // Logo kotak berwarna penuh (Kodak) tetap apa adanya & sedikit lebih tinggi; logo hitam dibalik jadi putih di mode gelap
+                    // (invert + hue-rotate menjaga warna aksen seperti oranye Vanguard/K&F dan merah Lexar).
+                    FULL_COLOR_LOGOS.has(b.name.toLowerCase())
+                      ? 'h-12 max-w-[60px]'
+                      : 'h-9 max-w-[150px] sm:h-10 sm:max-w-[170px] dark:hue-rotate-180 dark:invert'
+                  }`} />
               ) : (
                 <span className="text-[17px] font-extrabold tracking-tight text-ink">{b.name}</span>
               )}
