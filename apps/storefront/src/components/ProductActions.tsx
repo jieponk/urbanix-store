@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useT } from '@/components/LangProvider';
 import { getCompare, isWished, toggleCompare, toggleWish, COMPARE_MAX } from '@/lib/saved';
+import TablerIcon from '@/components/TablerIcon';
 
 type Props = { id: number; name: string; image: string; price: number };
 
@@ -60,9 +61,7 @@ export default function ProductActions({ id, name, image, price }: Props) {
         onClick={() => setWished(toggleWish({ id, name, image, price }))}
         className={`${btn} ${wished ? 'border-ink bg-ink text-surface' : 'border-slate-300 text-ink hover:border-ink'}`}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 20s-7-4.4-9.2-8.6C1.4 8.6 3.1 5 6.6 5c2 0 3.3 1.1 4.1 2.3.4.6 1.2.6 1.6 0C13.1 6.1 14.4 5 16.4 5c3.5 0 5.2 3.6 3.8 6.4C19 15.6 12 20 12 20z" />
-        </svg>
+        <TablerIcon name="heart" size={18} filled={wished} />
         {wished ? t('Tersimpan') : t('Simpan')}
       </button>
 
@@ -72,16 +71,12 @@ export default function ProductActions({ id, name, image, price }: Props) {
         onClick={() => setCompareList(toggleCompare(id))}
         className={`${btn} ${inCompare ? 'border-ink bg-mist text-ink' : 'border-slate-300 text-ink hover:border-ink'}`}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M7 4v16M17 4v16M3 8h8M13 16h8" />
-        </svg>
+        <TablerIcon name="arrows-left-right" size={18} />
         {inCompare ? t('Dibandingkan') : t('Bandingkan')}
       </button>
 
       <button type="button" onClick={share} className={`${btn} border-slate-300 text-ink hover:border-ink`}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13" />
-        </svg>
+        <TablerIcon name="share" size={18} />
         {copied ? t('Link disalin') : t('Bagikan')}
       </button>
 

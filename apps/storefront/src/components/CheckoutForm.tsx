@@ -17,6 +17,7 @@ import AddressFields from '@/components/AddressFields';
 import { publicSku } from '@/lib/seo';
 import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
 import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -682,9 +683,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                             title={t('Hapus')}
                             className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-ink"
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                              <path d="M6 6l12 12M18 6 6 18" />
-                            </svg>
+                            <TablerIcon name="x" size={14} stroke={2.4} />
                           </button>
                         </li>
                       );
@@ -921,10 +920,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
 
 function PinIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" />
-      <circle cx="12" cy="9.5" r="2.5" />
-    </svg>
+    <TablerIcon name="map-pin" size={16} />
   );
 }
 

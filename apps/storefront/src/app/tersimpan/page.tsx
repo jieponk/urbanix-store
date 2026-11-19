@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useT } from '@/components/LangProvider';
 import { money } from '@/lib/money';
 import { getWishlist, toggleWish, type SavedItem } from '@/lib/saved';
+import TablerIcon from '@/components/TablerIcon';
 
 /** Produk yang disimpan (♡) di perangkat ini. */
 export default function SavedPage() {
@@ -55,9 +56,7 @@ export default function SavedPage() {
                     aria-label={t('Hapus {name} dari tersimpan', { name: it.name })}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-mist hover:text-ink"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                      <path d="M6 6l12 12M18 6 6 18" />
-                    </svg>
+                    <TablerIcon name="x" size={16} stroke={2.4} />
                   </button>
                 </li>
               ))}

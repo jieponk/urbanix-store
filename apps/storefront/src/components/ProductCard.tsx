@@ -6,6 +6,7 @@ import { Bolt, QuotaBar } from '@/components/FlashSale';
 import { getEventState } from '@/lib/event-server';
 import { themeFor } from '@/lib/eventTheme';
 import { cardProductName } from '@/lib/seo';
+import TablerIcon from '@/components/TablerIcon';
 
 export default async function ProductCard({ product }: { product: Product }) {
   const t = getT();
@@ -94,9 +95,7 @@ export default async function ProductCard({ product }: { product: Product }) {
           <p className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 sm:text-xs">
             {Boolean(product.review_count) && product.rating_avg != null && (
               <span className="inline-flex items-center gap-0.5 font-semibold text-slate-700">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="text-ink">
-                  <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
-                </svg>
+                <TablerIcon name="star" size={12} filled className="text-ink" />
                 {product.rating_avg.toFixed(1)}
                 <span className="font-normal text-slate-500">({product.review_count})</span>
               </span>

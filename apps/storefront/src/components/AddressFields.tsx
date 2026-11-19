@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { useT } from '@/components/LangProvider';
 import { findByName, loadProvince, loadProvinces, norm, type ProvinceData } from '@/lib/wilayah';
+import TablerIcon from '@/components/TablerIcon';
 
 export type RegionValue = {
   province: string;
@@ -301,9 +302,7 @@ function Combo({
           className={`${inputClass(error)} pr-9 disabled:cursor-not-allowed disabled:bg-mist disabled:text-slate-400`}
         />
         <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <TablerIcon name="chevron-down" size={16} stroke={2.2} />
         </span>
       </div>
       {showList && (

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { productImg } from '@/lib/img';
 import { money } from '@/lib/money';
 import { useT } from '@/components/LangProvider';
+import TablerIcon from '@/components/TablerIcon';
 
 type Hit = { id: number; name: string; category: string; image: string; price: number; original: number | null };
 type Cat = { id: number; name: string; count: number };
@@ -94,18 +95,8 @@ function useSuggestions(query: string, enabled: boolean) {
   return { data, popular, loading };
 }
 
-const SearchIco = ({ className = '' }: { className?: string }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className={`shrink-0 ${className}`}>
-    <circle cx="11" cy="11" r="7" />
-    <path d="m20 20-3.5-3.5" />
-  </svg>
-);
-const ClockIco = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0 text-slate-400">
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 7.5V12l3 2" />
-  </svg>
-);
+const SearchIco = ({ className = '' }: { className?: string }) => <TablerIcon name="search" size={18} stroke={2.2} className={`shrink-0 ${className}`} />;
+const ClockIco = () => <TablerIcon name="clock" size={16} className="shrink-0 text-slate-400" />;
 const ArrowUpLeft = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="shrink-0 text-slate-400">
     <path d="M7 17V7h10M7 7l10 10" />

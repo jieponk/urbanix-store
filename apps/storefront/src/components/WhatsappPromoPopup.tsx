@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { loadMotion, prefersReducedMotion } from '@/lib/motion';
 import { claimVoucher, type VoucherInfo } from '@/lib/vouchers';
 import { useT } from '@/components/LangProvider';
+import TablerIcon from '@/components/TablerIcon';
 
 const STORAGE_KEY = 'urbanix-wa-popup-closed';
 const HIDE_DAYS = 3;
@@ -117,9 +118,7 @@ export default function WhatsappPromoPopup({ percent, whatsappNumber, appliesToP
           aria-label={t('Tutup')}
           className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:rotate-90 hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
+          <TablerIcon name="x" size={18} stroke={2.5} />
         </button>
 
         <div className="relative bg-cobalt-900 px-6 pb-6 pt-7">

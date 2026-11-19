@@ -10,6 +10,7 @@ import { dateLocale, type Lang } from '@/lib/i18n';
 import { getLang, getT } from '@/lib/lang-server';
 import { EventPreviewBar, EventRibbon } from '@/components/EventMode';
 import { getEventState } from '@/lib/event-server';
+import TablerIcon from '@/components/TablerIcon';
 
 type Props = {
   categories: Category[];
@@ -99,9 +100,6 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
 
 function PromoIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
-      <circle cx="7.5" cy="7.5" r="1.5" />
-    </svg>
+    <TablerIcon name="discount" size={20} />
   );
 }

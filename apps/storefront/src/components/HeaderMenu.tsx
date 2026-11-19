@@ -7,6 +7,7 @@ import { useLang, useT } from '@/components/LangProvider';
 import { getCart } from '@/lib/cart';
 import { LANG_COOKIE, type Lang } from '@/lib/i18n';
 import { loadMotion, prefersReducedMotion } from '@/lib/motion';
+import TablerIcon from '@/components/TablerIcon';
 
 const THEME_KEY = 'urbanix-theme';
 
@@ -117,7 +118,7 @@ export default function HeaderActions() {
   return (
     <div className="hidden items-center gap-1 md:flex">
       <Link href="/tersimpan" aria-label={t('Produk tersimpan')} className={btn}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-8.6C1.4 8.6 3.1 5 6.6 5c2 0 3.3 1.1 4.1 2.3.4.6 1.2.6 1.6 0C13.1 6.1 14.4 5 16.4 5c3.5 0 5.2 3.6 3.8 6.4C19 15.6 12 20 12 20z" /></svg>
+        <TablerIcon name="heart" size={20} />
         <span className={tip}>{t('Tersimpan')}</span>
       </Link>
       <Link href="/cek-pesanan" aria-label={t('Cek pesanan')} className={btn}>
@@ -180,9 +181,7 @@ export function ProductBackButton() {
       }}
       className={`${roundBtn} -ml-2`}
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
+      <TablerIcon name="chevron-left" size={22} stroke={2.2} />
     </button>
   );
 }
@@ -349,10 +348,10 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
               <OrderIco /> {t('Cek pesanan')}
             </Link>
             <Link href="/tersimpan" className={row}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-8.6C1.4 8.6 3.1 5 6.6 5c2 0 3.3 1.1 4.1 2.3.4.6 1.2.6 1.6 0C13.1 6.1 14.4 5 16.4 5c3.5 0 5.2 3.6 3.8 6.4C19 15.6 12 20 12 20z" /></svg> {t('Produk tersimpan')}
+              <TablerIcon name="heart" size={20} /> {t('Produk tersimpan')}
             </Link>
             <Link href="/bandingkan" className={row}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8h8M13 16h8" /></svg> {t('Bandingkan produk')}
+              <TablerIcon name="arrows-left-right" size={20} /> {t('Bandingkan produk')}
             </Link>
             {whatsappNumber && (
               <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className={row}>
@@ -418,48 +417,13 @@ export function MobileNav({ categories, whatsappNumber, showPromo }: { categorie
   );
 }
 
-const ico = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
-const CartIco = () => (
-  <svg {...ico} className="transition-transform duration-300 group-hover/item:-rotate-12">
-    <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 8H6.2" />
-    <circle cx="9.5" cy="20" r="1.3" />
-    <circle cx="17" cy="20" r="1.3" />
-  </svg>
-);
-const OrderIco = () => (
-  <svg {...ico} className="transition-transform duration-300 group-hover/item:-translate-y-0.5">
-    <path d="M21 8 12 3 3 8v8l9 5 9-5V8z" />
-    <path d="m3 8 9 5 9-5M12 13v8" />
-  </svg>
-);
-const InspoIco = () => (
-  <svg {...ico} className="transition-transform duration-300 group-hover/item:rotate-[-6deg]">
-    <path d="M4 5.5h12.5v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z" />
-    <path d="M16.5 9h3.5v9.5a2 2 0 0 1-4 0M7.5 9h5.5M7.5 12.5h5.5M7.5 16h3.5" />
-  </svg>
-);
-const ChatIco = () => (
-  <svg {...ico} className="transition-transform duration-300 group-hover/item:scale-110">
-    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
-  </svg>
-);
-const GlobeIco = () => (
-  <svg {...ico} width={17} height={17} className="transition-transform duration-500 group-hover/item:rotate-[30deg]">
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z" />
-  </svg>
-);
-const SunIco = () => (
-  <svg {...ico} className="transition-transform duration-500 group-hover/item:rotate-45">
-    <circle cx="12" cy="12" r="4.2" />
-    <path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6" />
-  </svg>
-);
-const MoonIco = () => (
-  <svg {...ico} className="transition-transform duration-500 group-hover/item:-rotate-12">
-    <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" />
-  </svg>
-);
+const CartIco = () => <TablerIcon name="shopping-cart" size={22} className="transition-transform duration-300 group-hover/item:-rotate-12" />;
+const OrderIco = () => <TablerIcon name="package" size={22} className="transition-transform duration-300 group-hover/item:-translate-y-0.5" />;
+const InspoIco = () => <TablerIcon name="news" size={22} className="transition-transform duration-300 group-hover/item:rotate-[-6deg]" />;
+const ChatIco = () => <TablerIcon name="message-circle" size={22} className="transition-transform duration-300 group-hover/item:scale-110" />;
+const GlobeIco = () => <TablerIcon name="world" size={17} className="transition-transform duration-500 group-hover/item:rotate-[30deg]" />;
+const SunIco = () => <TablerIcon name="sun" size={22} className="transition-transform duration-500 group-hover/item:rotate-45" />;
+const MoonIco = () => <TablerIcon name="moon" size={22} className="transition-transform duration-500 group-hover/item:-rotate-12" />;
 
 /** Pilihan bahasa di footer: "Bahasa Indonesia | English". */
 export function LangLinks() {
@@ -489,35 +453,8 @@ export function LangLinks() {
   );
 }
 
-const HomeIco = () => (
-  <svg {...ico}>
-    <path d="M3.5 10.5 12 4l8.5 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z" />
-  </svg>
-);
-const GridIco = () => (
-  <svg {...ico}>
-    <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
-    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
-    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
-    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
-  </svg>
-);
-const MoreIco = () => (
-  <svg {...ico}>
-    <circle cx="5.5" cy="12" r="1.3" />
-    <circle cx="12" cy="12" r="1.3" />
-    <circle cx="18.5" cy="12" r="1.3" />
-  </svg>
-);
-const TagIco = () => (
-  <svg {...ico}>
-    <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
-    <circle cx="7.5" cy="7.5" r="1.5" />
-  </svg>
-);
-const InfoIco = () => (
-  <svg {...ico}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 11v5M12 8h.01" />
-  </svg>
-);
+const HomeIco = () => <TablerIcon name="home" size={22} className="" />;
+const GridIco = () => <TablerIcon name="layout-grid" size={22} className="" />;
+const MoreIco = () => <TablerIcon name="dots" size={22} className="" />;
+const TagIco = () => <TablerIcon name="tag" size={22} className="" />;
+const InfoIco = () => <TablerIcon name="info-circle" size={22} className="" />;

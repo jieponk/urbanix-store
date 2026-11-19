@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/components/LangProvider';
+import TablerIcon from '@/components/TablerIcon';
 
 export type BannerSlide = {
   src: string;
@@ -113,17 +114,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
             aria-label={t('Banner sebelumnya')}
             className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 sm:left-3 sm:h-10 sm:w-10"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden="true"
-            >
-              <path d="m15 6-6 6 6 6" />
-            </svg>
+            <TablerIcon name="chevron-left" size={18} stroke={2.5} />
           </button>
 
           <button
@@ -132,17 +123,7 @@ export default function BannerSlider({ slides }: { slides: BannerSlide[] }) {
             aria-label={t('Banner berikutnya')}
             className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 sm:right-3 sm:h-10 sm:w-10"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden="true"
-            >
-              <path d="m9 6 6 6-6 6" />
-            </svg>
+            <TablerIcon name="chevron-right" size={18} stroke={2.5} />
           </button>
 
           <div className="absolute inset-x-0 bottom-1 flex justify-center">

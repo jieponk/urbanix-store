@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { VOUCHER_EVENT, claimVoucher, getClaimed, voucherEndText, type VoucherInfo } from '@/lib/vouchers';
 import { Check } from '@/components/inspirasi/InspoIcons';
 import { useT } from '@/components/LangProvider';
+import TablerIcon from '@/components/TablerIcon';
 
 function useClaimed(code: string) {
   const [claimed, setClaimed] = useState(false);
@@ -18,11 +19,7 @@ function useClaimed(code: string) {
 
 function TicketIcon({ shipping }: { shipping: boolean }) {
   return shipping ? (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 6h11v10H3zM14 9h4l3 3v4h-7z" />
-      <circle cx="7" cy="17.5" r="1.8" />
-      <circle cx="17.5" cy="17.5" r="1.8" />
-    </svg>
+    <TablerIcon name="truck" size={22} />
   ) : (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
       <path d="M19 5 5 19" />

@@ -6,6 +6,7 @@ import { Bolt, Countdown, QuotaBar } from '@/components/FlashSale';
 import { getT } from '@/lib/lang-server';
 import WaTypingPrompt from '@/components/WaTypingPrompt';
 import SimpleIcon, { SIMPLE_ICONS, simpleIconFor } from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -213,9 +214,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             >
               <WaLogo size={18} />
               {t('Chat admin sekarang')}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <TablerIcon name="arrow-right" size={16} stroke={2.4} className="transition-transform duration-300 group-hover:translate-x-1" />
             </a>
           </div>
         </div>

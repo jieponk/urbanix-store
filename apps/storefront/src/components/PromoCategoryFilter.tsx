@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '@/components/LangProvider';
+import TablerIcon from '@/components/TablerIcon';
 
 type Option = { id: string; name: string; count: number; max: number; href: string };
 
@@ -42,26 +43,12 @@ export default function PromoCategoryFilter({ options, selected }: { options: Op
           open ? 'border-ink' : 'border-slate-200 hover:border-slate-400'
         }`}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-slate-500" aria-hidden="true">
-          <path d="M4 5h16M7 12h10M10 19h4" strokeLinecap="round" />
-        </svg>
+        <TablerIcon name="filter" size={18} className="shrink-0 text-slate-500" />
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('Kategori promo')}</span>
           <span className="block truncate text-sm font-bold text-ink">{current.name}</span>
         </span>
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          className={`shrink-0 text-ink transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <TablerIcon name="chevron-down" size={18} stroke={2.2} className={`shrink-0 text-ink transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <ul
@@ -81,9 +68,7 @@ export default function PromoCategoryFilter({ options, selected }: { options: Op
               >
                 <span className="min-w-0 flex-1 truncate">{o.name}</span>
                 <span className="text-xs text-slate-400">{o.count}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`shrink-0 ${on ? 'text-ink' : 'invisible'}`} aria-hidden="true">
-                  <path d="m5 12 5 5 9-10" />
-                </svg>
+                <TablerIcon name="check" size={16} stroke={2.5} className={`shrink-0 ${on ? 'text-ink' : 'invisible'}`} />
               </Link>
             </li>
           );

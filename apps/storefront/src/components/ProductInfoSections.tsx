@@ -10,6 +10,7 @@ import {
 } from '@/lib/productDescription';
 import { getT } from '@/lib/lang-server';
 import { fixWarrantyBrand, publicSku } from '@/lib/seo';
+import TablerIcon from '@/components/TablerIcon';
 
 /**
  * Susunan tetap untuk semua produk:
@@ -310,18 +311,7 @@ export default function ProductInfoSections({
         <details className="group rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-slate-900 sm:text-lg">
             {t('Informasi Lainnya')}
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden="true"
-              className="shrink-0 transition-transform group-open:rotate-180"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <TablerIcon name="chevron-down" size={18} stroke={2.5} className="shrink-0 transition-transform group-open:rotate-180" />
           </summary>
           <div className="mt-4 space-y-4">
             <Groups sections={parsed.extras} />
