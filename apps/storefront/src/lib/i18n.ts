@@ -727,6 +727,11 @@ const EN: Record<string, string> = {
   'Bisa dikirim hari ini?': 'Can it ship today?',
   'Tanya aja, misalnya:': 'Just ask, for example:',
   'Chat admin: {q}': 'Chat admin: {q}',
+  'Diskon s/d': 'Up to',
+  'Baru': 'Just',
+  'Masuk': 'Arrived',
+  'Gear terbaru': 'Latest gear',
+  'Rp100 – 500 rb': 'Rp100k – 500k',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',

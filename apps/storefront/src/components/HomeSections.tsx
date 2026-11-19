@@ -329,38 +329,75 @@ export function ReviewsSection({
 
 const finalPrice = (p: Product) => Number(p.final_price ?? p.discount_price ?? p.price) || 0;
 
-/** 4 kotak pintasan belanja menurut harga & promo. Hanya zona yang ada produknya yang tampil. */
+/**
+ * Zona hemat: 4 pintasan belanja (≤100 rb, ≤500 rb, diskon terbesar, baru masuk), masing-masing
+ * memperlihatkan 3 foto produk asli dari zona itu supaya langsung "kebayang" isinya.
+ * HP: 2 kolom ringkas; PC: 4 kolom. Hanya zona yang ada produknya yang tampil.
+ */
 export function PriceZones({ products }: { products: Product[] }) {
   const t = getT();
-  const inStock = products.filter((p) => p.stock > 0);
-  const under100 = inStock.filter((p) => finalPrice(p) < 100_000).length;
-  const under500 = inStock.filter((p) => finalPrice(p) < 500_000).length;
-  const promo = inStock.filter((p) => (p.discount_percent ?? 0) > 0);
-  const maxOff = Math.max(0, ...promo.map((p) => p.discount_percent ?? 0));
-  const sold = inStock.filter((p) => (p.sold_count ?? 0) > 0).length;
+  const ready = products.filter((p) => p.stock > 0 && p.image_url);
+  const bySold = (a: Product, b: Product) => (b.sold_count ?? 0) - (a.sold_count ?? 0);
+  const under100 = ready.filter((p) => finalPrice(p) < 100_000).sort(bySold);
+  const under500 = ready.filter((p) => finalPrice(p) >= 100_000 && finalPrice(p) < 500_000).sort(bySold);
+  const promo = ready.filter((p) => (p.discount_percent ?? 0) > 0).sort((a, b) => (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
+  const fresh = [...ready].sort((a, b) => b.id - a.id);
+  const maxOff = promo[0]?.discount_percent ?? 0;
+
   const zones = [
-    { href: '/produk?harga=0-100', label: t('Di bawah'), value: t('100 ribu'), note: t('{n} produk · aksesori & memori', { n: under100 }), show: under100 > 0 },
-    { href: '/produk?harga=0-500', label: t('Di bawah'), value: t('500 ribu'), note: t('{n} produk · mic, tripod, lighting', { n: under500 }), show: under500 > 0 },
-    { href: '/produk?promo=1', label: t('Diskon'), value: t('s/d {n}%', { n: maxOff }), note: t('{n} produk lagi promo', { n: promo.length }), show: promo.length > 0, hot: true },
-    { href: '/produk?urut=terlaris', label: t('Pilihan pembeli'), value: t('Terlaris'), note: t('Yang paling sering dibeli'), show: sold > 0 },
-  ].filter((z) => z.show);
+    { key: 'u100', href: '/produk?harga=0-100&urut=termurah', kicker: t('Di bawah'), value: 'Rp100rb', note: t('{n} produk', { n: under100.length }), items: under100 },
+    { key: 'u500', href: '/produk?harga=100-500&urut=termurah', kicker: t('Di bawah'), value: 'Rp500rb', note: t('{n} produk', { n: under500.length }), items: under500 },
+    { key: 'promo', href: '/produk?promo=1&urut=diskon', kicker: t('Diskon s/d'), value: `${maxOff}%`, note: t('{n} produk', { n: promo.length }), items: promo, hot: true },
+    { key: 'new', href: '/produk?urut=terbaru', kicker: t('Baru'), value: t('Masuk'), note: t('Gear terbaru'), items: fresh },
+  ].filter((z) => z.items.length > 0);
   if (zones.length < 2) return null;
+
   return (
     <section aria-labelledby="judul-zona" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <h2 id="judul-zona" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Zona hemat')}</h2>
-      <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ul className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {zones.map((z) => (
-          <li key={z.href}>
+          <li key={z.key}>
             <Link
               href={z.href}
-              className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-surface p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg sm:p-5"
+              className={`group relative flex h-full flex-col overflow-hidden rounded-2xl p-3.5 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-5 ${
+                z.hot ? 'bg-sale-600 text-white' : 'bg-surface text-ink ring-1 ring-slate-200'
+              }`}
             >
-              <span className="text-xs font-bold text-slate-500 sm:text-[13px]">{z.label}</span>
-              <span className={`mt-0.5 text-2xl font-extrabold tracking-tight sm:text-[28px] ${z.hot ? 'text-sale-600' : 'text-ink'}`}>{z.value}</span>
-              <span className="mt-1 text-xs leading-snug text-slate-500 sm:text-[13px]">{z.note}</span>
-              <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-extrabold text-ink">
-                {t('Lihat')} <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
+              {/* Judul zona */}
+              <span className={`text-[11px] font-bold uppercase tracking-[0.08em] sm:text-xs ${z.hot ? 'text-white/80' : 'text-slate-500'}`}>{z.kicker}</span>
+              <span className="mt-0.5 flex items-baseline justify-between gap-2">
+                <span className="text-[22px] font-extrabold leading-none tracking-tight sm:text-[30px]">{z.value}</span>
+                <span
+                  aria-hidden="true"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition group-hover:translate-x-0.5 sm:h-8 sm:w-8 ${
+                    z.hot ? 'bg-white text-sale-700' : 'bg-ink text-surface'
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
               </span>
+
+              {/* 3 foto produk asli dari zona ini */}
+              <span className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:gap-2">
+                {z.items.slice(0, 3).map((p, i) => (
+                  <span
+                    key={p.id}
+                    className={`relative aspect-square overflow-hidden rounded-xl bg-white p-1 transition duration-300 sm:p-1.5 ${
+                      i === 1 ? 'group-hover:-translate-y-1' : ''
+                    } ${z.hot ? '' : 'ring-1 ring-slate-100'}`}
+                  >
+                    <img src={productImg(p.image_url, 200)} alt="" loading="lazy" className="h-full w-full object-contain" />
+                  </span>
+                ))}
+                {Array.from({ length: Math.max(0, 3 - z.items.length) }).map((_, i) => (
+                  <span key={`kosong-${i}`} className={`aspect-square rounded-xl ${z.hot ? 'bg-white/15' : 'bg-mist'}`} />
+                ))}
+              </span>
+
+              <span className={`mt-2.5 text-xs font-semibold sm:mt-3 sm:text-[13px] ${z.hot ? 'text-white/85' : 'text-slate-500'}`}>{z.note}</span>
             </Link>
           </li>
         ))}
