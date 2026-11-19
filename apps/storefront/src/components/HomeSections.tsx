@@ -164,13 +164,13 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="relative isolate overflow-hidden rounded-2xl bg-cobalt-900 p-6 text-white sm:p-8 lg:p-10">
+      <div className="relative isolate overflow-hidden rounded-2xl bg-cobalt-900 p-5 text-white sm:p-8 lg:p-10">
         {/* Aksen latar: gelembung chat samar */}
         <svg aria-hidden="true" viewBox="0 0 200 200" className="wa-float pointer-events-none absolute -right-10 -top-10 -z-10 h-56 w-56 text-white/[0.04] sm:h-72 sm:w-72">
           <path fill="currentColor" d="M100 10a90 90 0 0 0-78 135L10 190l46-12A90 90 0 1 0 100 10z" />
         </svg>
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_1.45fr] lg:items-center">
+        <div className="grid gap-5 sm:gap-8 lg:grid-cols-[1fr_1.45fr] lg:items-center">
           <div>
             <div className="flex items-center gap-4">
               <span className="relative flex h-14 w-14 shrink-0 items-center justify-center">
@@ -195,7 +195,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                 t('Pesan via WhatsApp')
               )}
             </h2>
-            <p className="mt-3 max-w-md text-sm leading-6 text-white/75">
+            <p className="mt-2 max-w-md text-[13px] leading-6 text-white/75 sm:mt-3 sm:text-sm">
               {t('Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.')}
               {percent > 0 && !appliesToPromo && ' ' + t('Potongan tidak berlaku untuk produk yang sedang promo.')}
             </p>
@@ -213,23 +213,27 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             </a>
           </div>
 
-          {/* HP: tiga langkah dalam satu baris yang bisa digeser (tidak terlalu tinggi); PC: tiga kolom */}
-          <ol className="relative -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
+          {/* HP: tiga langkah ringkas bertumpuk (tanpa geser); PC: tiga kolom */}
+          <ol className="relative grid gap-2 sm:grid-cols-3 sm:gap-5">
             {/* Garis penghubung yang "mengalir" */}
             <svg aria-hidden="true" className="pointer-events-none absolute left-[16%] right-[16%] top-9 hidden h-2 sm:block" preserveAspectRatio="none" viewBox="0 0 100 2">
               <line x1="0" y1="1" x2="100" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" className="wa-flow text-white/25" />
             </svg>
             {steps.map((step, i) => (
-              <li key={i} className="relative flex w-[80%] shrink-0 snap-start gap-3 rounded-2xl bg-white/[0.06] p-3.5 ring-1 ring-white/10 sm:w-auto sm:flex-col sm:gap-3 sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
-                <span className="relative mx-0 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:mx-auto sm:h-[72px] sm:w-[72px]">
+              <li key={i} className="relative flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-2.5 ring-1 ring-white/10 sm:flex-col sm:items-stretch sm:gap-3 sm:rounded-2xl sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
+                {/* HP: nomor saja (ringkas); PC: ikon besar bernomor */}
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-cobalt-900 sm:hidden">
+                  {i + 1}
+                </span>
+                <span className="relative mx-auto hidden h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:flex">
                   {step.icon}
-                  <span className="absolute -left-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-sun-400 text-[13px] font-extrabold text-white shadow-md ring-4 ring-cobalt-900">
+                  <span className="absolute -left-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-cobalt-900 shadow-md ring-4 ring-cobalt-900">
                     {i + 1}
                   </span>
                 </span>
-                <span>
-                  <span className="block text-sm font-extrabold">{step.title}</span>
-                  <span className="mt-1 block text-[13px] leading-5 text-white/65">{step.text}</span>
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-extrabold sm:text-sm">{step.title}</span>
+                  <span className="mt-1 hidden text-[13px] leading-5 text-white/65 sm:block">{step.text}</span>
                 </span>
               </li>
             ))}
