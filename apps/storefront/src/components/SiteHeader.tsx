@@ -29,6 +29,10 @@ function endDate(iso: string | null, lang: Lang) {
 export default async function SiteHeader({ categories, promo, whatsappNumber, whatsappDiscount }: Props) {
   const lang = getLang();
   const t = getT();
+  /* Label tombol header: EN "Deal"/"News", ID "Promo"/"Berita" */
+  const isEn = lang === 'en';
+  const dealLabel = isEn ? 'Deal' : 'Promo';
+  const newsLabel = isEn ? 'News' : 'Berita';
   const ends = endDate(promo?.endsAt ?? null, lang);
   const menuItems = categories.map(({ id, name }) => ({ id, name }));
   // Mode Event otomatis (tanggal kembar, payday, Harbolnas): pita event menggantikan pita promo biasa.
@@ -77,12 +81,12 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
             {promo && (
               <Link href="/produk?promo=1" title={t('Promo')} className={navPill}>
                 <TablerIcon name="discount" size={16} className="text-sale-600 dark:text-sun-300" />
-                {event ? `Deal ${event.big}` : 'Deal'}
+                {event ? `${dealLabel} ${event.big}` : dealLabel}
               </Link>
             )}
             <Link href="/inspirasi" title={t('Inspirasi')} className={navPill}>
               <NewsIcon size={16} />
-              News
+              {newsLabel}
             </Link>
           </div>
           {/* Pencarian: di HP satu baris dengan logo */}
