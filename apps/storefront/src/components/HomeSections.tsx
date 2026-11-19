@@ -345,42 +345,60 @@ export function BrandFallback({ name }: { name: string }) {
   return <SimpleIcon name={icon} size={104} color={dark ? 'current' : 'brand'} className={`-my-8 ${tint} dark:brightness-125`} title={name} />;
 }
 
-/** Merek yang ada produknya. Logo resmi dipakai bila file ada di public/brands, selain itu nama merek. */
+/**
+ * Brand Corner: satu baris logo merek yang berjalan pelan ke kiri tanpa putus (hemat tempat).
+ * Berhenti saat disentuh/disorot. Mode terang: logo warna asli; mode gelap: logo hitam dibalik jadi putih
+ * (warna aksen tetap), kotak ikut warna tema. Kodak (logo kotak berwarna) tetap apa adanya.
+ */
 export function BrandCorner({ brands }: { brands: { name: string; count: number; logo?: string }[] }) {
   const t = getT();
   if (brands.length < 3) return null;
+  const row = (hidden: boolean, copy: number) => (
+    <ul key={copy} className="flex shrink-0 items-center gap-3 pr-3" aria-hidden={hidden || undefined}>
+      {brands.map((b) => (
+        <li key={b.name} className="shrink-0">
+          <Link
+            href={`/produk?merek=${encodeURIComponent(b.name)}`}
+            tabIndex={hidden ? -1 : undefined}
+            title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
+            className="group flex h-16 w-40 items-center justify-center rounded-2xl bg-surface px-5 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300 sm:h-[72px] sm:w-44"
+          >
+            {b.logo ? (
+              <img
+                src={b.logo}
+                alt={hidden ? '' : b.name}
+                loading="lazy"
+                className={`object-contain transition duration-300 group-hover:scale-105 ${
+                  FULL_COLOR_LOGOS.has(b.name.toLowerCase())
+                    ? 'h-11 w-auto'
+                    : 'h-8 w-full max-w-[128px] dark:hue-rotate-180 dark:invert'
+                }`}
+              />
+            ) : simpleIconFor(b.name) ? (
+              <BrandFallback name={b.name} />
+            ) : (
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-ink">{b.name}</span>
+            )}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <section aria-labelledby="judul-brand" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-      <div className="flex items-end justify-between gap-4">
+    <section aria-labelledby="judul-brand" className="pt-10">
+      <div className="mx-auto flex max-w-7xl items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <h2 id="judul-brand" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Brand Corner')}</h2>
         <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Semua produk')}</Link>
       </div>
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {brands.map((b) => (
-          <li key={b.name}>
-            <Link
-              href={`/produk?merek=${encodeURIComponent(b.name)}`}
-              className="group flex h-[88px] flex-col items-center justify-center gap-2 rounded-2xl bg-surface px-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
-              title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
-            >
-              {b.logo ? (
-                <img src={b.logo} alt={b.name} loading="lazy" className={`w-full object-contain transition duration-300 group-hover:scale-105 ${
-                    // Logo kotak berwarna penuh (Kodak) tetap apa adanya & sedikit lebih tinggi; logo hitam dibalik jadi putih di mode gelap
-                    // (invert + hue-rotate menjaga warna aksen seperti oranye Vanguard/K&F dan merah Lexar).
-                    FULL_COLOR_LOGOS.has(b.name.toLowerCase())
-                      ? 'h-12 max-w-[60px]'
-                      : 'h-9 max-w-[150px] sm:h-10 sm:max-w-[170px] dark:hue-rotate-180 dark:invert'
-                  }`} />
-              ) : simpleIconFor(b.name) ? (
-                <BrandFallback name={b.name} />
-              ) : (
-                <span className="text-[17px] font-extrabold tracking-tight text-ink">{b.name}</span>
-              )}
-              <span className="text-[11px] font-semibold text-slate-500">{t('{n} produk', { n: b.count })}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="marquee relative mt-4 overflow-hidden py-1">
+        <div className="marquee-inner flex w-max">
+          {[0, 1, 2, 3].map((copy) => row(copy > 0, copy))}
+        </div>
+        {/* Tepi memudar ke warna latar halaman (ikut mode terang/gelap) */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-24" style={{ background: 'linear-gradient(90deg, rgb(var(--page)), transparent)' }} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-24" style={{ background: 'linear-gradient(270deg, rgb(var(--page)), transparent)' }} />
+      </div>
     </section>
   );
 }

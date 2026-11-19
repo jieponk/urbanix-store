@@ -2,6 +2,7 @@ import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
 import BrandMarquee, { topBrands } from '@/components/BrandMarquee';
+import HideOnHome from '@/components/HideOnHome';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
 import { MobileNav } from '@/components/HeaderMenu';
@@ -94,7 +95,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }
           footer={
             <>
-              <BrandMarquee brands={topBrands()} />
+              <HideOnHome>
+                <BrandMarquee brands={topBrands()} />
+              </HideOnHome>
               <Footer categories={categories} settings={settings} />
               <MobileNav
                 categories={categories.map(({ id, name }) => ({ id, name }))}
