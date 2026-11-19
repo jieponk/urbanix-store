@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import RevenueChart from '@/components/seller/RevenueChart';
-import { Badge, Card, ErrorBox, ORDER_TONE, PageHeader, Spinner, Tabs, btn } from '@/components/seller/ui';
+import { Badge, Card, ErrorBox, ORDER_TONE, PageHeader, Spinner, StatCard, Tabs, btn } from '@/components/seller/ui';
 import { fmtDateTime, rp, useSellerData } from '@/lib/seller';
+import { icons } from '@/components/seller/SellerIcons';
 
 const RANGES = [
   { value: 'today', label: 'Hari ini' },
@@ -24,15 +25,6 @@ function Change({ now, before }: { now: number; before: number }) {
   );
 }
 
-function Stat({ label, value, foot }: { label: string; value: string; foot?: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
-      <p className="text-xs font-bold text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{value}</p>
-      {foot && <div className="mt-1">{foot}</div>}
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const [range, setRange] = useState('30d');
@@ -73,10 +65,10 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Omzet" value={rp(s.revenue)} foot={<Change now={s.revenue} before={s.prev_revenue} />} />
-            <Stat label="Pesanan" value={String(s.orders)} foot={<Change now={s.orders} before={s.prev_orders} />} />
-            <Stat label="Rata-rata per pesanan" value={rp(s.average)} foot={<span className="text-xs text-slate-500">{s.items_sold} barang terjual</span>} />
-            <Stat label="Total potongan voucher" value={rp(s.discount)} foot={<span className="text-xs text-slate-500">{s.cancelled} pesanan dibatalkan</span>} />
+            <StatCard icon={icons.promo({ size: 20 })} tone="red" label="Omzet" value={rp(s.revenue)} foot={<Change now={s.revenue} before={s.prev_revenue} />} />
+            <StatCard icon={icons.orders({ size: 20 })} label="Pesanan" value={String(s.orders)} foot={<Change now={s.orders} before={s.prev_orders} />} />
+            <StatCard icon={icons.dashboard({ size: 20 })} tone="green" label="Rata-rata per pesanan" value={rp(s.average)} foot={<span className="text-xs text-slate-500">{s.items_sold} barang terjual</span>} />
+            <StatCard icon={icons.voucher({ size: 20 })} tone="amber" label="Total potongan voucher" value={rp(s.discount)} foot={<span className="text-xs text-slate-500">{s.cancelled} pesanan dibatalkan</span>} />
           </div>
 
           <Card title="Omzet per hari">

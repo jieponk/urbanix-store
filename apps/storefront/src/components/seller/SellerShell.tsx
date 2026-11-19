@@ -159,7 +159,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
     ) : null;
 
   return (
-    <div className="min-h-screen bg-mist lg:flex">
+    <div className="seller-root min-h-screen bg-mist text-sm lg:flex">
       {/* ===== Sidebar PC ===== */}
       <aside
         className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-white/5 bg-cobalt-900 transition-[width] duration-200 lg:flex ${
@@ -168,7 +168,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
       >
         <div className={`flex items-center gap-3 pb-3 pt-5 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
           <Link href="/seller" className="flex min-w-0 items-center gap-3" aria-label="Seller Center">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-cobalt-900">U</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-sm font-black text-cobalt-900">U</span>
             {!collapsed && (
               <span className="min-w-0 leading-tight">
                 <span className="block text-[15px] font-extrabold tracking-tight text-white">URBANIX</span>
@@ -182,7 +182,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
           <button
             type="button"
             onClick={() => setPalette(true)}
-            className={`flex w-full items-center gap-2 rounded-xl bg-white/5 py-2 text-sm text-white/60 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white ${
+            className={`flex w-full items-center gap-2 rounded-md bg-white/5 py-2 text-sm text-white/60 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white ${
               collapsed ? 'justify-center px-0' : 'px-3'
             }`}
             aria-label="Cari menu"
@@ -214,7 +214,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     aria-current={on ? 'page' : undefined}
-                    className={`group relative mb-0.5 flex items-center gap-3 rounded-xl py-2.5 text-sm font-semibold transition ${
+                    className={`group relative mb-0.5 flex items-center gap-3 rounded-md py-2 text-sm font-medium transition ${
                       collapsed ? 'justify-center px-0' : 'px-3'
                     } ${on ? 'bg-white/10 text-white' : 'text-white/65 hover:bg-white/5 hover:text-white'}`}
                   >

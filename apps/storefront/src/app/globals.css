@@ -466,3 +466,11 @@ body {
 @keyframes search-full-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .search-full { animation: search-full-in 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
 @media (prefers-reduced-motion: reduce) { .search-full { animation: none; } }
+
+/* ---------- Seller Center: tabel gaya Tabler UI ---------- */
+.seller-root table thead th {
+  font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  color: rgb(100 116 139); background: rgb(var(--mist) / 0.6);
+}
+.seller-root table tbody tr { transition: background-color 0.15s; }
+.seller-root table tbody tr:hover { background: rgb(var(--mist) / 0.5); }
