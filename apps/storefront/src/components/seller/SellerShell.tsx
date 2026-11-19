@@ -344,8 +344,8 @@ export default function SellerShell({ children }: { children: React.ReactNode })
       {sheet && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Semua menu">
           <button type="button" aria-label="Tutup" onClick={() => setSheet(false)} className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-surface pb-[calc(env(safe-area-inset-bottom)+16px)] shadow-2xl">
-            <div className="sticky top-0 bg-surface px-5 pb-2 pt-3">
+          <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl bg-surface pb-[calc(env(safe-area-inset-bottom)+48px)] shadow-2xl">
+            <div className="sticky top-0 z-10 border-b border-slate-200/70 bg-surface px-5 pb-3 pt-3">
               <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" />
               <div className="flex items-center justify-between">
                 <p className="text-base font-extrabold text-ink">Semua menu</p>
@@ -354,7 +354,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
                 </button>
               </div>
             </div>
-            <div className="px-5">
+            <div className="px-5 pt-4">
               {MENU.map((group) => (
                 <div key={group.group} className="mb-4">
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{group.group}</p>
