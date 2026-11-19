@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useT } from '@/components/LangProvider';
+import SimpleIcon from '@/components/SimpleIcon';
 
 export type WaQuestion = { label: string; message: string };
 
@@ -69,9 +70,7 @@ export default function WaTypingPrompt({ whatsappNumber, questions }: { whatsapp
         aria-label={t('Chat admin: {q}', { q: current.label })}
         className="group mt-2 flex h-12 max-w-md items-center gap-2.5 rounded-full bg-white pl-4 pr-1.5 text-cobalt-900 shadow-lg shadow-black/20 transition hover:scale-[1.01]"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-emerald-500">
-          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
-        </svg>
+        <SimpleIcon name="whatsapp" size={20} />
         <span className="min-w-0 flex-1 truncate text-[15px] font-semibold" aria-hidden="true">
           {shown}
           <span className="wa-caret ml-0.5 inline-block h-4 w-[2px] translate-y-[3px] bg-cobalt-900" />

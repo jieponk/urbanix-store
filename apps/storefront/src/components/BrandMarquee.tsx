@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { findPublicImage } from '@/lib/assets';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
+import { simpleIconFor } from '@/components/SimpleIcon';
+import { BrandFallback } from '@/components/HomeSections';
 
 /** Merek unggulan di atas footer (urutan sesuai tampilan). Logo: public/brands/<slug>.svg|png|webp. */
 const TOP_BRANDS = ['DJI', 'Insta360', 'Sony', 'Canon', 'Nikon', 'Fujifilm', 'Hollyland', 'Kodak'];
@@ -34,6 +36,10 @@ export default function BrandMarquee({ brands }: { brands: { name: string; logo:
                 height={32}
                 className="h-8 w-full object-contain opacity-70 grayscale transition group-hover:opacity-100 group-hover:grayscale-0 dark:invert"
               />
+            ) : simpleIconFor(b.name) ? (
+              <span className="opacity-70 grayscale transition group-hover:opacity-100 group-hover:grayscale-0">
+                <BrandFallback name={b.name} />
+              </span>
             ) : (
               <span className="truncate text-sm font-black uppercase tracking-[0.1em] text-slate-500 group-hover:text-ink">{b.name}</span>
             )}

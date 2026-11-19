@@ -4,6 +4,7 @@ import { getStoreSettings } from '@/lib/api';
 import { siteConfig } from '@/lib/siteConfig';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
+import SimpleIcon from '@/components/SimpleIcon';
 
 export const metadata = {
   title: 'Kontak',
@@ -43,10 +44,11 @@ export default async function ContactPage() {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(legal.address)}`;
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(legal.address)}&output=embed`;
 
-  const channels: { icon: FeatureIconName; label: string; value: string; note: string; href: string; cta: string; accent: string }[] = [];
+  const channels: { icon: FeatureIconName; brand?: 'whatsapp' | 'shopee'; label: string; value: string; note: string; href: string; cta: string; accent: string }[] = [];
   if (whatsapp) {
     channels.push({
       icon: 'chat',
+      brand: 'whatsapp',
       label: 'WhatsApp',
       value: displayPhone(whatsapp),
       note: 'Cara tercepat: tanya stok, rekomendasi, dan konfirmasi pesanan.',
@@ -67,6 +69,7 @@ export default async function ContactPage() {
   if (settings?.shopee_store_url) {
     channels.push({
       icon: 'box',
+      brand: 'shopee',
       label: 'Toko Shopee',
       value: 'Urbanix di Shopee',
       note: 'Lebih nyaman belanja di Shopee? Produk yang sama tersedia di sana.',
@@ -112,7 +115,7 @@ export default async function ContactPage() {
               className="group flex flex-col rounded-2xl bg-surface p-6 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-2xl"
             >
               <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${c.accent}`}>
-                <FeatureIcon name={c.icon} size={24} />
+                {c.brand ? <SimpleIcon name={c.brand} color="current" size={24} /> : <FeatureIcon name={c.icon} size={24} />}
               </span>
               <span className="mt-4 text-sm font-bold uppercase tracking-wider text-slate-500">{t(c.label)}</span>
               <span className="mt-1 break-all text-xl font-extrabold text-ink">{t(c.value)}</span>

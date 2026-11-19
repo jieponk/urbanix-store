@@ -5,6 +5,7 @@ import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 import { Bolt, Countdown, QuotaBar } from '@/components/FlashSale';
 import { getT } from '@/lib/lang-server';
 import WaTypingPrompt from '@/components/WaTypingPrompt';
+import SimpleIcon, { SIMPLE_ICONS, simpleIconFor } from '@/components/SimpleIcon';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -223,14 +224,9 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
   );
 }
 
-/** Ikon chat generik (bukan logo WhatsApp; logo bermerek hanya dari file resmi). */
+/** Logo WhatsApp (Simple Icons), putih di atas lingkaran hijau. */
 function WaLogo({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-white">
-      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
-      <path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" strokeWidth="2.6" />
-    </svg>
-  );
+  return <SimpleIcon name="whatsapp" color="current" size={size} className="text-white" />;
 }
 
 /* Ikon langkah: bergerak halus terus-menerus (mati otomatis bila pengguna memilih kurangi gerakan) */
@@ -331,6 +327,25 @@ const finalPrice = (p: Product) => Number(p.final_price ?? p.discount_price ?? p
 
 const FULL_COLOR_LOGOS = new Set(['kodak']);
 
+/**
+ * Logo cadangan dari Simple Icons (merek tanpa file logo resmi). Logo berupa tulisan (Sony, Nikon, Fujifilm)
+ * ditampilkan lebar; logo berupa simbol (Insta360, Leica, Xiaomi) ditemani nama mereknya.
+ */
+export function BrandFallback({ name }: { name: string }) {
+  const icon = simpleIconFor(name)!;
+  const dark = SIMPLE_ICONS[icon].hex === '000000';
+  const tint = dark ? 'text-ink' : '';
+  if ('mark' in SIMPLE_ICONS[icon]) {
+    return (
+      <span className={`inline-flex items-center gap-2 ${tint}`}>
+        <SimpleIcon name={icon} size={26} color={dark ? 'current' : 'brand'} />
+        <span className="text-[16px] font-extrabold tracking-tight text-ink">{name}</span>
+      </span>
+    );
+  }
+  return <SimpleIcon name={icon} size={104} color={dark ? 'current' : 'brand'} className={`-my-8 ${tint} dark:brightness-125`} title={name} />;
+}
+
 /** Merek yang ada produknya. Logo resmi dipakai bila file ada di public/brands, selain itu nama merek. */
 export function BrandCorner({ brands }: { brands: { name: string; count: number; logo?: string }[] }) {
   const t = getT();
@@ -357,6 +372,8 @@ export function BrandCorner({ brands }: { brands: { name: string; count: number;
                       ? 'h-12 max-w-[60px]'
                       : 'h-9 max-w-[150px] sm:h-10 sm:max-w-[170px] dark:hue-rotate-180 dark:invert'
                   }`} />
+              ) : simpleIconFor(b.name) ? (
+                <BrandFallback name={b.name} />
               ) : (
                 <span className="text-[17px] font-extrabold tracking-tight text-ink">{b.name}</span>
               )}

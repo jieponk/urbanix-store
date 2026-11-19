@@ -9,6 +9,7 @@ import { courierLogos } from '@/lib/courierLogos';
 import { SHIPPING_BRANDS } from '@/lib/shipping';
 import { LangLinks } from '@/components/HeaderMenu';
 import { getT } from '@/lib/lang-server';
+import SimpleIcon from '@/components/SimpleIcon';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -56,6 +57,7 @@ export default function Footer({
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
               >
+                <SimpleIcon name="whatsapp" size={18} />
                 {t('Chat admin di WhatsApp')}
               </a>
             )}
@@ -103,7 +105,7 @@ export default function Footer({
                 )}
                 {settings?.shopee_store_url && (
                   <li>
-                    <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Toko kami di Shopee')}</a>
+                    <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="shopee" size={15} />{t('Toko kami di Shopee')}</a>
                   </li>
                 )}
                 <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Syarat & Ketentuan')}</Link></li>
@@ -116,7 +118,7 @@ export default function Footer({
                 <li className="text-white">{contact.person}</li>
                 {whatsapp && (
                   <li>
-                    <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">WhatsApp {displayPhone(whatsapp)}</a>
+                    <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="whatsapp" size={15} />WhatsApp {displayPhone(whatsapp)}</a>
                   </li>
                 )}
                 <li><a href={`mailto:${contact.email}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4 break-all">{contact.email}</a></li>

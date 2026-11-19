@@ -16,6 +16,7 @@ import { useT } from '@/components/LangProvider';
 import AddressFields from '@/components/AddressFields';
 import { publicSku } from '@/lib/seo';
 import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
+import SimpleIcon from '@/components/SimpleIcon';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -530,7 +531,11 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                     className="mt-1 accent-slate-900"
                   />
                   <span>
-                    <span className="block font-bold text-slate-900">{t(METHOD_INFO[m].title)}</span>
+                    <span className="flex items-center gap-2 font-bold text-slate-900">
+                      {METHOD_INFO[m].key === 'whatsapp' && <SimpleIcon name="whatsapp" size={18} />}
+                      {METHOD_INFO[m].key === 'shopee' && <SimpleIcon name="shopee" size={18} />}
+                      {t(METHOD_INFO[m].title)}
+                    </span>
                     <span className="block text-sm text-slate-500">{t(METHOD_INFO[m].text)}</span>
                   </span>
                 </label>
