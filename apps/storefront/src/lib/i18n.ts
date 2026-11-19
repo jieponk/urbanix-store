@@ -723,6 +723,10 @@ const EN: Record<string, string> = {
   'Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.': "Talk to a real admin, not a bot. We'll help you find what fits your budget & content.",
   '(Potongan tidak berlaku untuk produk promo.)': '(Discount does not apply to sale items.)',
   'Contoh pertanyaan': 'Example questions',
+  'Apakah stok ready?': 'Is it in stock?',
+  'Bisa dikirim hari ini?': 'Can it ship today?',
+  'Tanya aja, misalnya:': 'Just ask, for example:',
+  'Chat admin: {q}': 'Chat admin: {q}',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',

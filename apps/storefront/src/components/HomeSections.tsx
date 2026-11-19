@@ -4,6 +4,7 @@ import { productImg } from '@/lib/img';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
 import { Bolt, Countdown, QuotaBar } from '@/components/FlashSale';
 import { getT } from '@/lib/lang-server';
+import WaTypingPrompt from '@/components/WaTypingPrompt';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -149,11 +150,13 @@ export function FlashSale({ products, promoName, flash = false, endsAt = null }:
 
 /* ------------------------------------------------------------ Cara pesan via WhatsApp */
 
-const CHIP_QUESTIONS = [
-  'Halo admin Urbanix, aku cari kamera buat vlog. Budget-ku sekitar Rp…, ada saran?',
-  'Halo admin Urbanix, aku mau cari lensa yang cocok buat kameraku (…). Ada rekomendasi?',
-  'Halo admin Urbanix, aku butuh mic buat bikin konten. Yang cocok apa ya?',
-  'Halo admin Urbanix, mau cek stok & minta foto unit untuk produk …',
+/** Pesan ke admin tetap Bahasa Indonesia; label tampilan diterjemahkan. */
+const WA_QUESTIONS = [
+  { label: 'Kamera buat vlog?', message: 'Halo admin Urbanix, aku cari kamera buat vlog. Budget-ku sekitar Rp…, ada saran?' },
+  { label: 'Lensa yang cocok?', message: 'Halo admin Urbanix, aku mau cari lensa yang cocok buat kameraku (…). Ada rekomendasi?' },
+  { label: 'Mic buat konten?', message: 'Halo admin Urbanix, aku butuh mic buat bikin konten. Yang cocok apa ya?' },
+  { label: 'Apakah stok ready?', message: 'Halo admin Urbanix, apakah stok produk … ready?' },
+  { label: 'Bisa dikirim hari ini?', message: 'Halo admin Urbanix, kalau aku order sekarang, apakah bisa dikirim hari ini?' },
 ];
 
 export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { percent: number; whatsappNumber: string; appliesToPromo: boolean }) {
@@ -161,7 +164,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
   if (!whatsappNumber) return null;
   const message = encodeURIComponent('Halo admin Urbanix, aku mau tanya-tanya soal gear dulu 🙌');
   // Hal yang bisa ditanyakan; dibuat seperti chip obrolan, bukan tata cara.
-  const chips = [t('Kamera buat vlog?'), t('Lensa yang cocok?'), t('Mic buat konten?'), t('Stok & foto unit')];
+  const questions = WA_QUESTIONS.map((q) => ({ label: t(q.label), message: q.message }));
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
@@ -191,30 +194,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                   : t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
                 {percent > 0 && !appliesToPromo && ' ' + t('(Potongan tidak berlaku untuk produk promo.)')}
               </p>
-              {/* Pertanyaan contoh mengalir pelan dari kanan ke kiri tanpa putus (seperti berputar), masuk & keluar
-                  dengan memudar di tepi, sambil naik-turun lembut. Bisa diketuk; berhenti saat disentuh/disorot.
-                  Bila pembeli mematikan animasi di HP-nya, tampil sebagai deretan chip biasa. */}
-              <div className="wa-marquee mt-4" aria-label={t('Contoh pertanyaan')} role="list">
-                <div className="wa-track">
-                  {[0, 1].map((copy) =>
-                    chips.map((c, i) => (
-                      <span key={`${copy}-${c}`} role="listitem" aria-hidden={copy === 1 || undefined} className="wa-bob shrink-0" style={{ animationDelay: `${i * -0.9}s` }}>
-                        <a
-                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(CHIP_QUESTIONS[i])}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          tabIndex={copy === 1 ? -1 : undefined}
-                          className={`inline-flex items-center whitespace-nowrap rounded-2xl px-3.5 py-2 text-[13px] font-semibold shadow-lg shadow-black/20 transition hover:scale-105 ${
-                            i % 2 ? 'rounded-br-md bg-emerald-500 text-white' : 'rounded-bl-md bg-white text-cobalt-900'
-                          }`}
-                        >
-                          {c}
-                        </a>
-                      </span>
-                    )),
-                  )}
-                </div>
-              </div>
+              <WaTypingPrompt whatsappNumber={whatsappNumber} questions={questions} />
             </div>
           </div>
 
