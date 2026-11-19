@@ -23,12 +23,23 @@ export function publicUrl(dir: string, file: string): string {
   return `/${dir}/${encodeURIComponent(file)}`;
 }
 
-/** Cari gambar dengan nama dasar tertentu (qris -> qris.png / qris.svg / ...). */
+/**
+ * Cari gambar dengan nama dasar tertentu (qris -> qris.png / qris.svg / ...).
+ * Bila ada beberapa format (mis. kodak.svg & kodak.webp), dipakai file yang PALING BARU diubah,
+ * supaya logo yang terakhir kamu taruh di folder itulah yang tampil.
+ */
 export function findPublicImage(dir: string, baseName: string): string | null {
-  const match = listPublicImages(dir).find(
-    (file) =>
-      file.replace(IMAGE_EXT, '').toLowerCase() === baseName.toLowerCase()
+  const matches = listPublicImages(dir).filter(
+    (file) => file.replace(IMAGE_EXT, '').toLowerCase() === baseName.toLowerCase(),
   );
-
-  return match ? publicUrl(dir, match) : null;
+  if (!matches.length) return null;
+  const mtime = (file: string) => {
+    try {
+      return fs.statSync(path.join(process.cwd(), 'public', dir, file)).mtimeMs;
+    } catch {
+      return 0;
+    }
+  };
+  const newest = matches.sort((a, b) => mtime(b) - mtime(a))[0];
+  return publicUrl(dir, newest);
 }

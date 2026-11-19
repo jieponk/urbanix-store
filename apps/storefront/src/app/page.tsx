@@ -22,7 +22,7 @@ import {
   promoSummary,
   type Product,
 } from '@/lib/api';
-import { listPublicImages, publicUrl } from '@/lib/assets';
+import { findPublicImage, listPublicImages, publicUrl } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 import { BRANDS, detectBrand } from '@/lib/seo';
 import { productImg } from '@/lib/img';
@@ -163,7 +163,6 @@ export default async function HomePage({
   const { features, featuresTitle } = siteConfig;
 
   // Brand Corner: merek yang punya produk (urut jumlah), logo resmi bila ada filenya di public/brands
-  const brandLogos = new Set(listPublicImages('brands'));
   const brandCount = new Map<string, number>();
   for (const p of allProducts) {
     const b = detectBrand(p.name);
@@ -172,10 +171,7 @@ export default async function HomePage({
   const brands = Array.from(brandCount.entries())
     .sort((a, b) => b[1] - a[1] || BRANDS.indexOf(a[0]) - BRANDS.indexOf(b[0]))
     .slice(0, 8)
-    .map(([name, count]) => {
-      const file = Array.from(brandLogos).find((f) => f.replace(/\.[^.]+$/, '').toLowerCase() === name.toLowerCase().replace(/\s+/g, '-'));
-      return { name, count, logo: file ? publicUrl('brands', file) : undefined };
-    });
+    .map(([name, count]) => ({ name, count, logo: findPublicImage('brands', name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) ?? undefined }));
 
   // Kotak kanan banner event: 2 produk promo dengan potongan terbesar + harga promo termurah
   const heroTiles = promoProducts

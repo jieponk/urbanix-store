@@ -339,16 +339,16 @@ export function BrandCorner({ brands }: { brands: { name: string; count: number;
         <h2 id="judul-brand" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Brand Corner')}</h2>
         <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Semua produk')}</Link>
       </div>
-      <ul className="scroll-row -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-8">
+      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {brands.map((b) => (
-          <li key={b.name} className="w-[132px] shrink-0 sm:w-auto">
+          <li key={b.name}>
             <Link
               href={`/produk?merek=${encodeURIComponent(b.name)}`}
-              className="group flex h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-surface px-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
+              className="group flex h-[88px] flex-col items-center justify-center gap-2 rounded-2xl bg-surface px-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-slate-300"
               title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
             >
               {b.logo ? (
-                <img src={b.logo} alt={b.name} loading="lazy" className="h-8 w-auto max-w-[112px] object-contain transition duration-300 group-hover:scale-105 dark:brightness-0 dark:invert" />
+                <img src={b.logo} alt={b.name} loading="lazy" className="h-9 w-full max-w-[150px] object-contain transition sm:h-10 sm:max-w-[170px] duration-300 group-hover:scale-105 dark:brightness-0 dark:invert" />
               ) : (
                 <span className="text-[17px] font-extrabold tracking-tight text-ink">{b.name}</span>
               )}
