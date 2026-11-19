@@ -712,6 +712,17 @@ const EN: Record<string, string> = {
   'Pesan mudah': 'Easy ordering',
   'Klaim voucher {e}': 'Claim {e} vouchers',
   '< Rp100 rb': '< Rp100k',
+  // ajakan chat WhatsApp
+  'Kamera buat vlog?': 'Camera for vlogging?',
+  'Lensa yang cocok?': 'Which lens fits?',
+  'Mic buat konten?': 'Mic for content?',
+  'Stok & foto unit': 'Stock & unit photos',
+  'Butuh bantuan pilih gear?': 'Need help picking gear?',
+  'Chat aja dulu.': 'Just chat with us.',
+  'Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu. Kalau cocok, order via WhatsApp langsung hemat {n}%.': "Talk to a real admin, not a bot. We'll help you find what fits your budget & content. Order via WhatsApp and save {n}% right away.",
+  'Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.': "Talk to a real admin, not a bot. We'll help you find what fits your budget & content.",
+  '(Potongan tidak berlaku untuk produk promo.)': '(Discount does not apply to sale items.)',
+  'Contoh pertanyaan': 'Example questions',
   // mode event
   '{name} sedang berlangsung': '{name} is on now',
   '{name} mulai {n} hari lagi': '{name} starts in {n} days',

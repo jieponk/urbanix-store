@@ -149,61 +149,77 @@ export function FlashSale({ products, promoName, flash = false, endsAt = null }:
 
 /* ------------------------------------------------------------ Cara pesan via WhatsApp */
 
+const CHIP_QUESTIONS = [
+  'Halo admin Urbanix, aku cari kamera buat vlog. Budget-ku sekitar Rp…, ada saran?',
+  'Halo admin Urbanix, aku mau cari lensa yang cocok buat kameraku (…). Ada rekomendasi?',
+  'Halo admin Urbanix, aku butuh mic buat bikin konten. Yang cocok apa ya?',
+  'Halo admin Urbanix, mau cek stok & minta foto unit untuk produk …',
+];
+
 export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { percent: number; whatsappNumber: string; appliesToPromo: boolean }) {
   const t = getT();
   if (!whatsappNumber) return null;
-  const steps = [
-    { icon: <StepCart />, title: t('Masukkan ke keranjang'), text: t('Pilih produk dan varian yang kamu mau.') },
-    { icon: <StepForm />, title: t('Pilih "Pesan via WhatsApp"'), text: t('Di checkout, isi alamat lalu pilih cara pesan ini.') },
-    {
-      icon: <StepChat />,
-      title: t('Kirim chat ke admin'),
-      text: percent > 0 ? t('Total otomatis dipotong {n}%. Admin konfirmasi ongkir & pembayaran.', { n: percent }) : t('Admin konfirmasi ongkir & pembayaran.'),
-    },
-  ];
+  const message = encodeURIComponent('Halo admin Urbanix, aku mau tanya-tanya soal gear dulu 🙌');
+  // Hal yang bisa ditanyakan; dibuat seperti chip obrolan, bukan tata cara.
+  const chips = [t('Kamera buat vlog?'), t('Lensa yang cocok?'), t('Mic buat konten?'), t('Stok & foto unit')];
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
       <div className="relative isolate overflow-hidden rounded-2xl bg-cobalt-900 p-5 text-white sm:p-8 lg:p-10">
         {/* Aksen latar: gelembung chat samar */}
-        <svg aria-hidden="true" viewBox="0 0 200 200" className="wa-float pointer-events-none absolute -right-10 -top-10 -z-10 h-56 w-56 text-white/[0.04] sm:h-72 sm:w-72">
+        <svg aria-hidden="true" viewBox="0 0 200 200" className="wa-float pointer-events-none absolute -right-10 -top-10 -z-10 h-48 w-48 text-white/[0.05] sm:h-72 sm:w-72">
           <path fill="currentColor" d="M100 10a90 90 0 0 0-78 135L10 190l46-12A90 90 0 1 0 100 10z" />
         </svg>
 
-        <div className="grid gap-5 sm:gap-8 lg:grid-cols-[1fr_1.45fr] lg:items-center">
-          <div>
-            <div className="flex items-center gap-4">
-              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center">
-                <span aria-hidden="true" className="wa-ring absolute inset-0 rounded-full bg-emerald-500/40" />
-                <span aria-hidden="true" className="wa-ring wa-ring-2 absolute inset-0 rounded-full bg-emerald-500/30" />
-                <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40">
-                  <WaLogo />
-                </span>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="flex items-start gap-4">
+            <span className="relative mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
+              <span aria-hidden="true" className="wa-ring absolute inset-0 rounded-full bg-emerald-500/40" />
+              <span aria-hidden="true" className="wa-ring wa-ring-2 absolute inset-0 rounded-full bg-emerald-500/30" />
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40 sm:h-14 sm:w-14">
+                <WaLogo />
               </span>
-              {percent > 0 && (
-                <span className="wa-pop rounded-full bg-sun-400 px-3 py-1 text-sm font-extrabold text-white">
-                  {t('Hemat {n}%', { n: percent })}
-                </span>
-              )}
+            </span>
+            <div className="min-w-0">
+              <h2 id="judul-wa" className="text-xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+                {t('Butuh bantuan pilih gear?')}{' '}
+                <span className="text-sun-300">{t('Chat aja dulu.')}</span>
+              </h2>
+              <p className="mt-2 max-w-xl text-[13px] leading-6 text-white/75 sm:text-[15px]">
+                {percent > 0
+                  ? t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu. Kalau cocok, order via WhatsApp langsung hemat {n}%.', { n: percent })
+                  : t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
+                {percent > 0 && !appliesToPromo && ' ' + t('(Potongan tidak berlaku untuk produk promo.)')}
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('Contoh pertanyaan')}>
+                {chips.map((c, i) => (
+                  <li key={c}>
+                    {/* Ketuk chip = langsung chat admin dengan pertanyaan itu (pesan ke admin tetap Bahasa Indonesia) */}
+                    <a
+                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(CHIP_QUESTIONS[i])}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 ring-1 ring-white/10 transition hover:bg-white/20"
+                    >
+                      {c}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h2 id="judul-wa" className="mt-5 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-              {percent > 0 ? (
-                <>
-                  {t('Pesan via WhatsApp,')} <span className="text-sun-300">{t('lebih hemat {n}%', { n: percent })}</span>
-                </>
-              ) : (
-                t('Pesan via WhatsApp')
-              )}
-            </h2>
-            <p className="mt-2 max-w-md text-[13px] leading-6 text-white/75 sm:mt-3 sm:text-sm">
-              {t('Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.')}
-              {percent > 0 && !appliesToPromo && ' ' + t('Potongan tidak berlaku untuk produk yang sedang promo.')}
-            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+            {percent > 0 && (
+              <span className="wa-pop self-start rounded-full bg-white px-3 py-1 text-sm font-extrabold text-cobalt-900 lg:self-end">
+                {t('Hemat {n}%', { n: percent })}
+              </span>
+            )}
             <a
-              href={`https://wa.me/${whatsappNumber}`}
+              href={`https://wa.me/${whatsappNumber}?text=${message}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-600"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-600"
             >
               <WaLogo size={18} />
               {t('Chat admin sekarang')}
@@ -212,32 +228,6 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
               </svg>
             </a>
           </div>
-
-          {/* HP: tiga langkah ringkas bertumpuk (tanpa geser); PC: tiga kolom */}
-          <ol className="relative grid gap-2 sm:grid-cols-3 sm:gap-5">
-            {/* Garis penghubung yang "mengalir" */}
-            <svg aria-hidden="true" className="pointer-events-none absolute left-[16%] right-[16%] top-9 hidden h-2 sm:block" preserveAspectRatio="none" viewBox="0 0 100 2">
-              <line x1="0" y1="1" x2="100" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" className="wa-flow text-white/25" />
-            </svg>
-            {steps.map((step, i) => (
-              <li key={i} className="relative flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-2.5 ring-1 ring-white/10 sm:flex-col sm:items-stretch sm:gap-3 sm:rounded-2xl sm:bg-transparent sm:p-0 sm:text-center sm:ring-0">
-                {/* HP: nomor saja (ringkas); PC: ikon besar bernomor */}
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-cobalt-900 sm:hidden">
-                  {i + 1}
-                </span>
-                <span className="relative mx-auto hidden h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-white text-cobalt-900 sm:flex">
-                  {step.icon}
-                  <span className="absolute -left-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-cobalt-900 shadow-md ring-4 ring-cobalt-900">
-                    {i + 1}
-                  </span>
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-extrabold sm:text-sm">{step.title}</span>
-                  <span className="mt-1 hidden text-[13px] leading-5 text-white/65 sm:block">{step.text}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
         </div>
       </div>
     </section>
@@ -257,38 +247,8 @@ function WaLogo({ size = 28 }: { size?: number }) {
 /* Ikon langkah: bergerak halus terus-menerus (mati otomatis bila pengguna memilih kurangi gerakan) */
 const stepSvg = { width: 40, height: 40, viewBox: '0 0 48 48', fill: 'none', stroke: 'currentColor', strokeWidth: 2.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
 
-function StepCart() {
-  return (
-    <svg {...stepSvg}>
-      <rect className="wa-drop" x="20" y="6" width="10" height="10" rx="2" fill="#e30220" stroke="none" />
-      <path d="M5 12h5l4.5 20h21L40 18H16" />
-      <circle cx="18" cy="39" r="2.6" />
-      <circle cx="32" cy="39" r="2.6" />
-    </svg>
-  );
-}
 
-function StepForm() {
-  return (
-    <svg {...stepSvg}>
-      <rect x="9" y="5" width="30" height="38" rx="4" />
-      <path d="M16 15h16M16 22h10" />
-      <circle cx="24" cy="33" r="6" fill="#22c55e" stroke="none" className="wa-pulse" />
-      <path d="m21 33 2.2 2.2L27.5 31" stroke="#fff" strokeWidth="2.4" pathLength={1} className="wa-check" />
-    </svg>
-  );
-}
 
-function StepChat() {
-  return (
-    <svg {...stepSvg}>
-      <path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H20l-8 7v-7H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3z" />
-      <circle className="wa-dot" cx="16" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
-      <circle className="wa-dot wa-dot-2" cx="24" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
-      <circle className="wa-dot wa-dot-3" cx="32" cy="21.5" r="2.4" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
 
 /* ------------------------------------------------------------ Ulasan */
 
