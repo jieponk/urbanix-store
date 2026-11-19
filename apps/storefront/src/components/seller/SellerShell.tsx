@@ -6,35 +6,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { icons, type IconName } from '@/components/seller/SellerIcons';
 import { sellerApi } from '@/lib/seller';
+import { MENU, type MenuItem } from '@/components/seller/menu';
 
 type Me = { username: string; name: string; new_orders: number };
-type Item = { href: string; label: string; icon: IconName; keywords?: string };
-
-const MENU: { group: string; items: Item[] }[] = [
-  { group: 'Penjualan', items: [
-    { href: '/seller', label: 'Dashboard', icon: 'dashboard', keywords: 'beranda omzet laporan' },
-    { href: '/seller/pesanan', label: 'Pesanan', icon: 'orders', keywords: 'order resi kirim' },
-  ] },
-  { group: 'Produk', items: [
-    { href: '/seller/produk', label: 'Produk & SKU', icon: 'products', keywords: 'stok harga varian' },
-    { href: '/seller/mass-update', label: 'Mass update', icon: 'bulk', keywords: 'excel massal' },
-  ] },
-  { group: 'Marketing', items: [
-    { href: '/seller/promo', label: 'Promo harga', icon: 'promo', keywords: 'diskon flash sale potong harga' },
-    { href: '/seller/voucher', label: 'Voucher', icon: 'voucher', keywords: 'kupon ongkir' },
-    { href: '/seller/banner', label: 'Banner & link', icon: 'banner', keywords: 'slider gambar' },
-    { href: '/seller/video', label: 'Video belanja', icon: 'video', keywords: 'tiktok instagram youtube reels lihat langsung' },
-    { href: '/seller/dekor', label: 'Dekor toko', icon: 'palette', keywords: 'tema event 12.12 gajian payday tampilan tata letak beranda urutan' },
-  ] },
-  { group: 'Konten', items: [
-    { href: '/seller/artikel', label: 'Artikel', icon: 'article', keywords: 'inspirasi blog' },
-    { href: '/seller/komentar', label: 'Komentar', icon: 'chat' },
-    { href: '/seller/berita', label: 'Berita RSS', icon: 'news' },
-    { href: '/seller/ulasan-pembeli', label: 'Ulasan produk', icon: 'reviews', keywords: 'rating bintang' },
-    { href: '/seller/ulasan', label: 'Ulasan Shopee', icon: 'reviews' },
-  ] },
-  { group: 'Toko', items: [{ href: '/seller/pengaturan', label: 'Pengaturan', icon: 'settings', keywords: 'whatsapp shopee kategori' }] },
-];
+type Item = MenuItem;
 
 const ALL = MENU.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group })));
 
@@ -58,7 +33,6 @@ const initials = (name?: string) =>
 export default function SellerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const router = useRouter();
-  const [sheet, setSheet] = useState(false);
   const [palette, setPalette] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [me, setMe] = useState<Me | null>(null);
@@ -71,7 +45,6 @@ export default function SellerShell({ children }: { children: React.ReactNode })
   }, [isLogin, pathname]);
 
   useEffect(() => {
-    setSheet(false);
     setPalette(false);
   }, [pathname]);
 
@@ -143,7 +116,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
   const active = (href: string) =>
     href === '/seller' ? pathname === '/seller' : pathname === href || pathname.startsWith(`${href}/`);
   const current = ALL.find((i) => active(i.href));
-  const title = current?.label ?? 'Seller Center';
+  const title = current?.label ?? (pathname === '/seller/menu' ? 'Menu' : 'Seller Center');
   const newOrders = me?.new_orders ?? 0;
 
   const countBadge = (href: string, mini = false) =>
@@ -325,9 +298,9 @@ export default function SellerShell({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setSheet(true)}
+          <Link
+            href="/seller/menu"
+            aria-current={pathname === '/seller/menu' ? 'page' : undefined}
             className={`flex flex-col items-center gap-1 py-2 text-[11px] font-bold ${
               !TABS.some((t) => active(t.href)) ? 'text-ink' : 'text-slate-400'
             }`}
@@ -336,58 +309,9 @@ export default function SellerShell({ children }: { children: React.ReactNode })
               {icons.grid({ size: 20 })}
             </span>
             Menu
-          </button>
+          </Link>
         </div>
       </nav>
-
-      {/* ===== Lembar menu HP ===== */}
-      {sheet && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Semua menu">
-          <button type="button" aria-label="Tutup" onClick={() => setSheet(false)} className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl bg-surface pb-[calc(env(safe-area-inset-bottom)+48px)] shadow-2xl">
-            <div className="sticky top-0 z-10 border-b border-slate-200/70 bg-surface px-5 pb-3 pt-3">
-              <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" />
-              <div className="flex items-center justify-between">
-                <p className="text-base font-extrabold text-ink">Semua menu</p>
-                <button type="button" onClick={() => setSheet(false)} aria-label="Tutup" className="rounded-full p-2 text-slate-500 hover:bg-mist">
-                  {icons.close({ size: 18 })}
-                </button>
-              </div>
-            </div>
-            <div className="px-5 pt-4">
-              {MENU.map((group) => (
-                <div key={group.group} className="mb-4">
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{group.group}</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {group.items.map((item) => {
-                      const Icon = icons[item.icon];
-                      const on = active(item.href);
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={`flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center text-[11px] font-semibold leading-tight ${
-                            on ? 'bg-ink text-surface' : 'text-ink'
-                          }`}
-                        >
-                          <span className={`relative flex h-11 w-11 items-center justify-center rounded-2xl ${on ? '' : 'bg-mist'}`}>
-                            <Icon size={20} />
-                            {countBadge(item.href, true)}
-                          </span>
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              <Link href="/" className="mt-1 flex items-center justify-center gap-2 rounded-2xl bg-mist py-3 text-sm font-bold text-ink">
-                {icons.store({ size: 18 })} Lihat toko
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {palette && <CommandPalette onClose={() => setPalette(false)} onGo={(href) => router.push(href)} />}
       {toastLayer}
