@@ -191,29 +191,30 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                   : t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
                 {percent > 0 && !appliesToPromo && ' ' + t('(Potongan tidak berlaku untuk produk promo.)')}
               </p>
-              {/* Pertanyaan contoh = gelembung chat yang muncul, melayang naik, lalu menghilang bergantian.
-                  Bisa diketuk (langsung chat admin dengan pertanyaan itu); berhenti saat disentuh/disorot.
+              {/* Pertanyaan contoh mengalir pelan dari kanan ke kiri tanpa putus (seperti berputar), masuk & keluar
+                  dengan memudar di tepi, sambil naik-turun lembut. Bisa diketuk; berhenti saat disentuh/disorot.
                   Bila pembeli mematikan animasi di HP-nya, tampil sebagai deretan chip biasa. */}
-              <ul className="wa-bubbles relative mt-3 h-[118px] sm:h-[128px]" aria-label={t('Contoh pertanyaan')}>
-                {chips.map((c, i) => (
-                  <li
-                    key={c}
-                    className={`wa-bubble absolute bottom-1 ${i % 2 ? 'left-10 sm:left-24' : 'left-0'}`}
-                    style={{ animationDelay: `${i * 2.5}s` }}
-                  >
-                    <a
-                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(CHIP_QUESTIONS[i])}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl px-3.5 py-2 text-[13px] font-semibold shadow-lg shadow-black/20 transition hover:scale-105 ${
-                        i % 2 ? 'rounded-br-md bg-emerald-500 text-white' : 'rounded-bl-md bg-white text-cobalt-900'
-                      }`}
-                    >
-                      {c}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="wa-marquee mt-4" aria-label={t('Contoh pertanyaan')} role="list">
+                <div className="wa-track">
+                  {[0, 1].map((copy) =>
+                    chips.map((c, i) => (
+                      <span key={`${copy}-${c}`} role="listitem" aria-hidden={copy === 1 || undefined} className="wa-bob shrink-0" style={{ animationDelay: `${i * -0.9}s` }}>
+                        <a
+                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(CHIP_QUESTIONS[i])}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          tabIndex={copy === 1 ? -1 : undefined}
+                          className={`inline-flex items-center whitespace-nowrap rounded-2xl px-3.5 py-2 text-[13px] font-semibold shadow-lg shadow-black/20 transition hover:scale-105 ${
+                            i % 2 ? 'rounded-br-md bg-emerald-500 text-white' : 'rounded-bl-md bg-white text-cobalt-900'
+                          }`}
+                        >
+                          {c}
+                        </a>
+                      </span>
+                    )),
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

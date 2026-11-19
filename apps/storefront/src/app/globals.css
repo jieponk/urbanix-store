@@ -443,21 +443,27 @@ body {
 .wa-dot { transform-box: fill-box; animation: wa-dot 1.3s ease-in-out infinite; }
 .wa-dot-2 { animation-delay: 0.18s; }
 .wa-dot-3 { animation-delay: 0.36s; }
-/* Gelembung pertanyaan: muncul dari bawah, melayang naik, lalu menghilang (4 gelembung bergantian, 10 dtk) */
-@keyframes wa-bubble {
-  0% { transform: translateY(26px) scale(0.85); opacity: 0; }
-  7% { transform: translateY(0) scale(1.04); opacity: 1; }
-  10% { transform: translateY(-4px) scale(1); opacity: 1; }
-  32% { transform: translateY(-46px); opacity: 1; }
-  42%, 100% { transform: translateY(-74px); opacity: 0; }
+/* Pertanyaan WhatsApp: pita yang mengalir kanan → kiri tanpa putus, memudar di kedua tepi, gelembung naik-turun lembut */
+.wa-marquee {
+  overflow: hidden; padding: 6px 0 10px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
-.wa-bubble { opacity: 0; animation: wa-bubble 10s cubic-bezier(0.25, 0.8, 0.35, 1) infinite; will-change: transform, opacity; }
-.wa-bubbles:hover .wa-bubble, .wa-bubbles:focus-within .wa-bubble { animation-play-state: paused; }
+.wa-track { display: flex; width: max-content; gap: 10px; animation: wa-flow-x 22s linear infinite; }
+.wa-track > * { margin-right: 0; }
+.wa-marquee:hover .wa-track, .wa-marquee:focus-within .wa-track,
+.wa-marquee:hover .wa-bob, .wa-marquee:focus-within .wa-bob { animation-play-state: paused; }
+/* -50% = tepat satu salinan, sehingga putaran berikutnya menyambung mulus */
+@keyframes wa-flow-x { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 5px)); } }
+@keyframes wa-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.wa-bob { display: inline-block; animation: wa-bob 3.6s ease-in-out infinite; }
 @keyframes wa-wiggle { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-12deg); } 92% { transform: rotate(10deg); } 96% { transform: rotate(-5deg); } }
 .wa-wiggle { animation: wa-wiggle 4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .wa-bubbles { display: flex; flex-wrap: wrap; gap: 0.5rem; height: auto; }
-  .wa-bubble { position: static; opacity: 1; animation: none; }
+  .wa-marquee { -webkit-mask-image: none; mask-image: none; }
+  .wa-track { animation: none; width: auto; flex-wrap: wrap; gap: 0.5rem; }
+  .wa-track > [aria-hidden="true"] { display: none; }
+  .wa-bob { animation: none; }
   .wa-wiggle { animation: none; }
 }
 @media (prefers-reduced-motion: reduce) {
