@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import BannerSlider, { type BannerSlide } from '@/components/BannerSlider';
 import FeatureIcon from '@/components/FeatureIcon';
-import { BestSellers, BrandCorner, CategoryStrip, FlashSale, PriceZones, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
+import { BestSellers, BrandCorner, CategoryStrip, FlashSale, ReviewsSection, WhatsappBand } from '@/components/HomeSections';
 import NewsCard from '@/components/NewsCard';
 import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
@@ -269,8 +269,7 @@ export default async function HomePage({
         <CategoryStrip categories={categories} products={allProducts} />
       </div>
 
-      {/* 5. Zona hemat, Brand Corner, paling laris */}
-      <PriceZones products={allProducts} />
+      {/* 5. Brand Corner & paling laris */}
       <BrandCorner brands={brands} />
       <BestSellers products={allProducts} />
 
