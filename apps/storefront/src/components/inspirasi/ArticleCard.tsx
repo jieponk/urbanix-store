@@ -116,7 +116,7 @@ export default function ArticleCard({ article, index = 0 }: { article: Card; ind
 export function FeaturedArticle({ article }: { article: Card }) {
   const t = getT();
   return (
-    <article className="inspo-reveal group relative grid gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
+    <article className="inspo-reveal group relative grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
       <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
         <Cover src={article.cover} alt="" eager sizes="(min-width: 1024px) 60vw, 100vw" className="transition duration-700 ease-out group-hover:scale-[1.03]" />
       </div>

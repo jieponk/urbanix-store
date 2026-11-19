@@ -131,7 +131,7 @@ export default async function ContactPage() {
 
       {/* Kantor + jam */}
       <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-6 lg:grid-cols-[1.4fr_1fr]">
           <div className="overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200">
             <iframe
               title="Peta lokasi kantor Urbanix Store"

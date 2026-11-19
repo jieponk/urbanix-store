@@ -89,7 +89,7 @@ export default async function NewsPage({
           </div>
         ) : (
           <>
-            <div className="mt-8 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {data.results.map((article, i) => (
                 <NewsCard key={article.id} article={article} index={i} />
               ))}

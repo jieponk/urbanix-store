@@ -175,7 +175,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
       </header>
 
       <div className="mt-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
           <article className="min-w-0">
             <figure className="inspo-reveal overflow-hidden rounded-md bg-mist">
               <NewsImage src={article.image_url} alt={article.title} className="aspect-[16/9] w-full" />
@@ -312,7 +312,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<Param
                 {t('Semua berita')} <ArrowRight size={16} />
               </Link>
             </div>
-            <div className="mt-7 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-7 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {article.more.map((item, i) => (
                 <NewsCard key={item.id} article={item} index={i} />
               ))}

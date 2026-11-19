@@ -512,7 +512,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
               {t('Belum ada metode pembayaran yang aktif. Silakan hubungi admin toko.')}
             </p>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {availableMethods.map((m) => (
                 <label
                   key={m}
@@ -654,7 +654,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                   <p className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
                     <PinIcon /> {t('Alamat tersimpan')}
                   </p>
-                  <ul className="grid gap-2 sm:grid-cols-2">
+                  <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {saved.map((a) => {
                       const on = savedId === a.id;
                       return (
@@ -703,7 +703,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                   </ul>
                 </div>
               )}
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t('Nama lengkap')} required error={errors.name} className="sm:col-span-2">
                   <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} className={inputCls(errors.name)} />
                 </Field>
@@ -717,7 +717,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
             </Section>
 
             <Section title={t('4. Alamat pengiriman')}>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <AddressFields
                   value={{ province: form.province, city: form.city, district: form.district, village: form.village, postal_code: form.postal_code }}
                   onChange={(patch) => {
@@ -763,7 +763,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                     <p className="text-sm font-extrabold text-ink">
                       {t(group.name)} <span className="font-normal text-slate-500">· {t(group.note)}</span>
                     </p>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {group.options.map((o) => {
                         const on = form.service === o.code;
                         return (

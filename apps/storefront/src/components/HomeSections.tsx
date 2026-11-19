@@ -419,7 +419,7 @@ export function BestSellers({ products }: { products: Product[] }) {
         <h2 id="judul-laris" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Paling laris')}</h2>
         <Link href="/produk?urut=terlaris" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Lihat semua')}</Link>
       </div>
-      <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ol className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {best.map((p, i) => {
           const normal = Number(p.price) || 0;
           const final = finalPrice(p);

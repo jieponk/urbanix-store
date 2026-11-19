@@ -149,7 +149,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
       {/* Isi + daftar isi */}
       <div className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_260px]">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-10 lg:grid-cols-[1fr_260px]">
           <div id="isi-artikel" className="mx-auto w-full min-w-0 max-w-[720px]">
             {headings.length >= 3 && (
               <details className="group mb-10 border-y-[3px] border-ink lg:hidden">
@@ -252,7 +252,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
               <h2 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Baca juga')}</h2>
               <Link href="/inspirasi" className="group inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-ed">{t('Semua artikel')} <ArrowRight size={16} /></Link>
             </div>
-            <div className="mt-7 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-7 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {article.more.map((m, i) => (
                 <ArticleCard key={m.id} article={m} index={i} />
               ))}

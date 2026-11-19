@@ -185,7 +185,7 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         )}
 
         {/* Info pembayaran, pengiriman & retur di dekat tombol beli (juga syarat Google Merchant Center) */}
-        <ul className="mt-5 grid gap-3 border-t border-slate-200 pt-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
+        <ul className="mt-5 grid grid-cols-1 gap-3 border-t border-slate-200 pt-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
           <li>
             <b className="block text-ink">{t('Pembayaran')}</b>
             {siteConfig.paymentMethods.map((m) => m.name).join(', ')}.{' '}

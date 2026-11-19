@@ -11,7 +11,7 @@ export function RelatedArticles({ articles }: { articles: ArticleCard[] }) {
   return (
     <section aria-labelledby="judul-artikel-produk" className="mt-6 rounded-2xl bg-mist p-4 sm:p-5">
       <h2 id="judul-artikel-produk" className="text-sm font-extrabold text-ink">{t('Masih galau? Baca dulu ini')}</h2>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+      <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {articles.map((a) => (
           <li key={a.id}>
             <Link href={`/inspirasi/${a.slug}`} className="group flex items-center gap-3 rounded-xl bg-surface p-2.5 ring-1 ring-slate-200 transition hover:ring-ink">

@@ -36,7 +36,7 @@ export default function CheckOrderPage() {
       </section>
 
       <section className="px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid grid-cols-1 max-w-4xl gap-4 sm:grid-cols-3">
           {features.map((f) => (
             <div key={f.title} className="rounded-2xl bg-surface p-5 ring-1 ring-slate-200">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15">

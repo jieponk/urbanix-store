@@ -91,7 +91,7 @@ export default function ProductReviews({ productId, initial }: { productId: numb
       <h2 id="judul-ulasan-produk" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
         {t('Ulasan pembeli')}
       </h2>
-      <div className="mt-5 grid gap-6 rounded-3xl bg-surface p-5 ring-1 ring-slate-200 sm:p-7 lg:grid-cols-[260px_1fr]">
+      <div className="mt-5 grid grid-cols-1 gap-6 rounded-3xl bg-surface p-5 ring-1 ring-slate-200 sm:p-7 lg:grid-cols-[260px_1fr]">
         {/* Ringkasan */}
         <div className="lg:border-r lg:border-slate-200 lg:pr-6">
           <div className="flex items-end gap-2">

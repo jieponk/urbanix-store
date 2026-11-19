@@ -161,7 +161,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
 
           {/* ---------- Artikel utama (halaman 1) ---------- */}
           {featured && (
-            <section aria-label={t('Artikel utama')} className="mt-8 grid gap-8 border-b border-slate-200 pb-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:gap-10">
+            <section aria-label={t('Artikel utama')} className="mt-8 grid grid-cols-1 gap-8 border-b border-slate-200 pb-10 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:gap-10">
               <FeaturedArticle article={featured} />
               <div className="lg:border-l lg:border-slate-200 lg:pl-8">
                 <h2 className="ed-kicker flex items-center gap-2">
@@ -200,7 +200,7 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
             </div>
 
             {grid.length > 0 ? (
-              <div className="mt-7 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-7 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {grid.map((a, i) => (
                   <ArticleCard key={a.id} article={a} index={i} />
                 ))}
@@ -233,14 +233,14 @@ export default async function InspirationPage({ searchParams }: { searchParams?:
                   {t('Semua berita')} <ArrowRight size={16} />
                 </Link>
               </div>
-              <div className="mt-6 grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+              <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
                 <NewsHero article={news.results[0]} />
                 <div className="hidden flex-col lg:flex">
                   {news.results.slice(1, 5).map((n, i) => (
                     <NewsRow key={n.id} article={n} index={i} />
                   ))}
                 </div>
-                <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:hidden">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:hidden">
                   {news.results.slice(1, 5).map((n, i) => (
                     <NewsCard key={n.id} article={n} compact index={i} />
                   ))}

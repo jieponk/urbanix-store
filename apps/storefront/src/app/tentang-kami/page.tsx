@@ -39,7 +39,7 @@ export default async function AboutPage() {
     <div>
       {/* Pembuka */}
       <section className="relative overflow-hidden bg-cobalt-900 px-4 py-16 text-white sm:px-6 sm:py-24 lg:px-8">
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
+        <div className="relative mx-auto grid grid-cols-1 max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-sun-300 ring-1 ring-white/15">
               {t('Tentang Urbanix')}
@@ -100,7 +100,7 @@ export default async function AboutPage() {
 
       {/* Cerita */}
       <section id="cerita" className="scroll-mt-28 px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Cerita kami')}</h2>
             <div className="mt-5 space-y-4 text-[17px] leading-8 text-slate-700">
@@ -142,7 +142,7 @@ export default async function AboutPage() {
       <section className="bg-mist px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Janji kami untukmu')}</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
               <div key={f.title} className="rounded-2xl bg-surface p-6 ring-1 ring-slate-200">
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-ink ring-1 ring-slate-200">
@@ -160,7 +160,7 @@ export default async function AboutPage() {
       <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Belanja dengan cara yang kamu suka')}</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex gap-5 rounded-2xl p-6 ring-1 ring-slate-200 transition hover:shadow-lg hover:ring-slate-300">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15">
                 <FeatureIcon name="chat" size={24} />

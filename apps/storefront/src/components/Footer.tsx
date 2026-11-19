@@ -43,7 +43,7 @@ export default function Footer({
   return (
     <footer className="bg-cobalt-900 text-white/75">
       <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 md:pt-12 lg:px-8">
-        <div className="grid gap-0 md:grid-cols-[1.3fr_1fr_1fr_1fr_1.1fr] md:gap-8">
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.3fr_1fr_1fr_1fr_1.1fr] md:gap-8">
           {/* Merek toko */}
           <div className="pb-6 md:pb-0">
             <Link href="/" aria-label={t('Urbanix Store, ke beranda')} className="inline-block">
@@ -130,7 +130,7 @@ export default function Footer({
         </div>
 
         {/* Pembayaran & pengiriman: satu baris rapi */}
-        <div className="mt-8 grid gap-6 border-t border-white/10 py-7 sm:grid-cols-2 md:mt-10">
+        <div className="mt-8 grid grid-cols-1 gap-6 border-t border-white/10 py-7 sm:grid-cols-2 md:mt-10">
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-white/60">{t('Pembayaran')}</h2>
             <ul className="mt-3 grid grid-cols-4 gap-2 sm:max-w-[340px] sm:grid-cols-3">

@@ -122,7 +122,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           </header>
 
           {/* Info */}
-          <section className="mt-8 grid gap-6 border-y border-[#e5e7eb] py-6 text-sm sm:grid-cols-3">
+          <section className="mt-8 grid grid-cols-1 gap-6 border-y border-[#e5e7eb] py-6 text-sm sm:grid-cols-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">Ditagihkan kepada</p>
               <p className="mt-1 font-bold">{o.customer_name || '-'}</p>

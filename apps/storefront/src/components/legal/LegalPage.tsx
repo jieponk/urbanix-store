@@ -52,7 +52,7 @@ export default function LegalPage({
       {/* Ringkasan singkat */}
       {highlights.length > 0 && (
         <section className="relative -mt-12 px-4 sm:-mt-16 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-6xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto grid grid-cols-1 max-w-6xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {highlights.map((h) => (
               <div key={h.title} className="rounded-2xl bg-surface p-5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15">
@@ -68,7 +68,7 @@ export default function LegalPage({
 
       {/* Isi */}
       <div className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
           <aside className="lg:sticky lg:top-32 lg:self-start">
             <nav aria-label="Daftar isi" className="rounded-2xl bg-mist p-5">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar isi</p>
