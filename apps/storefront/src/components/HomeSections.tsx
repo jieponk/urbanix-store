@@ -176,7 +176,7 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
             <span className="relative mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
               <span aria-hidden="true" className="wa-ring absolute inset-0 rounded-full bg-emerald-500/40" />
               <span aria-hidden="true" className="wa-ring wa-ring-2 absolute inset-0 rounded-full bg-emerald-500/30" />
-              <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40 sm:h-14 sm:w-14">
+              <span className="wa-wiggle relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40 sm:h-14 sm:w-14">
                 <WaLogo />
               </span>
             </span>
@@ -191,15 +191,23 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                   : t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
                 {percent > 0 && !appliesToPromo && ' ' + t('(Potongan tidak berlaku untuk produk promo.)')}
               </p>
-              <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('Contoh pertanyaan')}>
+              {/* Pertanyaan contoh = gelembung chat yang muncul, melayang naik, lalu menghilang bergantian.
+                  Bisa diketuk (langsung chat admin dengan pertanyaan itu); berhenti saat disentuh/disorot.
+                  Bila pembeli mematikan animasi di HP-nya, tampil sebagai deretan chip biasa. */}
+              <ul className="wa-bubbles relative mt-3 h-[118px] sm:h-[128px]" aria-label={t('Contoh pertanyaan')}>
                 {chips.map((c, i) => (
-                  <li key={c}>
-                    {/* Ketuk chip = langsung chat admin dengan pertanyaan itu (pesan ke admin tetap Bahasa Indonesia) */}
+                  <li
+                    key={c}
+                    className={`wa-bubble absolute bottom-1 ${i % 2 ? 'left-10 sm:left-24' : 'left-0'}`}
+                    style={{ animationDelay: `${i * 2.5}s` }}
+                  >
                     <a
                       href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(CHIP_QUESTIONS[i])}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 ring-1 ring-white/10 transition hover:bg-white/20"
+                      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl px-3.5 py-2 text-[13px] font-semibold shadow-lg shadow-black/20 transition hover:scale-105 ${
+                        i % 2 ? 'rounded-br-md bg-emerald-500 text-white' : 'rounded-bl-md bg-white text-cobalt-900'
+                      }`}
                     >
                       {c}
                     </a>

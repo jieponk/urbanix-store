@@ -443,6 +443,23 @@ body {
 .wa-dot { transform-box: fill-box; animation: wa-dot 1.3s ease-in-out infinite; }
 .wa-dot-2 { animation-delay: 0.18s; }
 .wa-dot-3 { animation-delay: 0.36s; }
+/* Gelembung pertanyaan: muncul dari bawah, melayang naik, lalu menghilang (4 gelembung bergantian, 10 dtk) */
+@keyframes wa-bubble {
+  0% { transform: translateY(26px) scale(0.85); opacity: 0; }
+  7% { transform: translateY(0) scale(1.04); opacity: 1; }
+  10% { transform: translateY(-4px) scale(1); opacity: 1; }
+  32% { transform: translateY(-46px); opacity: 1; }
+  42%, 100% { transform: translateY(-74px); opacity: 0; }
+}
+.wa-bubble { opacity: 0; animation: wa-bubble 10s cubic-bezier(0.25, 0.8, 0.35, 1) infinite; will-change: transform, opacity; }
+.wa-bubbles:hover .wa-bubble, .wa-bubbles:focus-within .wa-bubble { animation-play-state: paused; }
+@keyframes wa-wiggle { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-12deg); } 92% { transform: rotate(10deg); } 96% { transform: rotate(-5deg); } }
+.wa-wiggle { animation: wa-wiggle 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .wa-bubbles { display: flex; flex-wrap: wrap; gap: 0.5rem; height: auto; }
+  .wa-bubble { position: static; opacity: 1; animation: none; }
+  .wa-wiggle { animation: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .wa-ring, .wa-float, .wa-pop, .wa-flow, .wa-drop, .wa-check, .wa-pulse, .wa-dot { animation: none !important; }
   .wa-drop { opacity: 1; transform: translateY(10px); }
