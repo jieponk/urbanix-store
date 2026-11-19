@@ -65,7 +65,7 @@ export default function BannersPage() {
       {error ? <ErrorBox message={error} onRetry={reload} /> : loading && !data ? <Spinner /> : !data || data.length === 0 ? (
         <Card><Empty title="Belum ada banner dari Seller Center">Selama kosong, beranda memakai banner bawaan (folder public/banners).</Empty></Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {data.map((b) => (
             <div key={b.id} className="overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}

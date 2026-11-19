@@ -172,10 +172,10 @@ export default function DekorPage() {
         </a>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
           <Card title="Mode">
-            <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Mode dekor">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Mode dekor">
               {MODES.map((m) => {
                 const on = form.mode === m.value;
                 return (
@@ -199,7 +199,7 @@ export default function DekorPage() {
               })}
             </div>
             {form.mode === 'force' && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Pakai sampai" hint="Kosongkan = sampai diganti. Setelah lewat, kembali otomatis.">
                   <input
                     type="datetime-local"
@@ -259,7 +259,7 @@ export default function DekorPage() {
           </Card>
 
           <Card title="Tema event" action={<span className="text-xs text-slate-500">Pratinjau hanya di perangkat ini</span>}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {EVENT_KEYS.map((k) => {
                 const chosen = form.mode === 'force' && form.theme === k;
                 return (

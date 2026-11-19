@@ -94,7 +94,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card title="Barang" padded={false}>
             <ul className="divide-y divide-slate-200">
@@ -136,7 +136,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
 
           <Card title="Pengiriman & catatan">
             <form
-              className="grid gap-3 sm:grid-cols-3"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-3"
               onSubmit={(e) => { e.preventDefault(); save({ ...form, shipping_cost: form.shipping_cost === '' ? null : form.shipping_cost }); }}
             >
               {data.shipping_service && (

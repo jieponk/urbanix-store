@@ -212,7 +212,7 @@ export default function ArticleEditorPage() {
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_340px]">
         {/* Kolom tulis */}
         <div className="min-w-0 space-y-4">
           <input

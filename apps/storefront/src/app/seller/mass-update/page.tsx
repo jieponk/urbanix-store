@@ -44,7 +44,7 @@ export default function MassUpdatePage() {
         title="Mass update"
         subtitle="Ubah harga, stok, link Shopee, dan status tampil banyak SKU sekaligus lewat Excel."
       />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="1. Unduh template">
           <p className="text-sm text-slate-600">File berisi semua SKU (produk tanpa varian + tiap varian) beserta harga dan stok saat ini.</p>
           <div className="mt-4 flex flex-wrap gap-2">

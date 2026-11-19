@@ -67,7 +67,7 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-surface shadow-[0_2px_4px_rgba(24,36,51,0.04)] ${className}`}>
+    <section className={`min-w-0 rounded-lg border border-slate-200 bg-surface shadow-[0_2px_4px_rgba(24,36,51,0.04)] ${className}`}>
       {(title || action) && (
         <div className="flex min-h-[56px] items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
           <h2 className="text-[15px] font-semibold leading-6 text-ink">{title}</h2>
@@ -357,12 +357,12 @@ export function StatCard({
     blue: 'bg-sky-600 text-white',
   };
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-surface p-4 shadow-[0_2px_4px_rgba(24,36,51,0.04)]">
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${tones[tone]}`}>{icon}</span>
+    <div className="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-surface p-3.5 shadow-[0_2px_4px_rgba(24,36,51,0.04)] sm:flex-row sm:items-center sm:p-4">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${tones[tone]}`}>{icon}</span>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-slate-500">{label}</p>
-        <p className="truncate text-lg font-bold leading-6 text-ink sm:text-xl">{value}</p>
-        {foot && <div className="mt-0.5 text-xs">{foot}</div>}
+        <p className="text-xs font-semibold leading-4 text-slate-500 sm:text-sm">{label}</p>
+        <p className="mt-0.5 break-words text-base font-bold leading-6 text-ink tabular-nums sm:text-xl">{value}</p>
+        {foot && <div className="mt-0.5 text-xs leading-4">{foot}</div>}
       </div>
     </div>
   );

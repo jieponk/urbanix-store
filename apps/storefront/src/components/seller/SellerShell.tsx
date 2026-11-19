@@ -273,7 +273,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-10">{children}</main>
+        <main className="mx-auto max-w-7xl overflow-x-clip px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-10">{children}</main>
       </div>
 
       {/* ===== Tab bawah HP ===== */}

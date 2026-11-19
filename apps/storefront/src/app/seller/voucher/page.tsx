@@ -65,7 +65,7 @@ export default function VouchersPage() {
       {error ? <ErrorBox message={error} onRetry={reload} /> : loading && !data ? <Spinner /> : !data || data.length === 0 ? (
         <Card><Empty title="Belum ada voucher" /></Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {data.map((v) => (
             <div key={v.id} className="flex overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200">
               <div className={`flex w-24 shrink-0 flex-col items-center justify-center px-2 text-center text-white ${v.voucher_type === 'FREE_SHIPPING' ? 'bg-emerald-600' : 'bg-sale-600'}`}>

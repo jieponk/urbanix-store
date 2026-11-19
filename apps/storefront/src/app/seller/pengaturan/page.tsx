@@ -47,7 +47,7 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader title="Pengaturan toko" actions={<button type="button" disabled={busy} className={btn.primary} onClick={save}>{busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button>} />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Kontak & metode pembelian">
           <div className="space-y-4">
             <Field label="Nomor WhatsApp toko" hint="Format 628xxx. Pesanan & tombol chat diarahkan ke nomor ini.">

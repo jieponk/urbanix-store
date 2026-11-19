@@ -47,7 +47,7 @@ export default function NewsAdminPage() {
       {data && !data.translation_ready && (
         <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200">DEEPL_API_KEY belum diisi di .env backend: berita bahasa Inggris belum diterjemahkan.</p>
       )}
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
         <div>
           <Tabs items={[{ value: '', label: 'Semua' }, { value: 'pinned', label: 'Disematkan' }, { value: 'hidden', label: 'Disembunyikan' }, { value: 'untranslated', label: 'Belum diterjemahkan' }]}
             value={filter} onChange={(v) => { setFilter(v); setPage(1); }} />

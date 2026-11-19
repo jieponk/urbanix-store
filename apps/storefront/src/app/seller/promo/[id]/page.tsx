@@ -63,7 +63,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
       />
 
       <Card title="Jadwal promo" className="mb-4">
-        <form className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto_auto] sm:items-end" onSubmit={(e) => { e.preventDefault(); saveHead(); }}>
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto_auto] sm:items-end" onSubmit={(e) => { e.preventDefault(); saveHead(); }}>
           <Field label="Nama promo"><input className={inputCls} value={head.name} onChange={(e) => setHead({ ...head, name: e.target.value })} /></Field>
           <Field label="Mulai"><input type="datetime-local" className={inputCls} value={head.starts_at} onChange={(e) => setHead({ ...head, starts_at: e.target.value })} /></Field>
           <Field label="Selesai"><input type="datetime-local" className={inputCls} value={head.ends_at} onChange={(e) => setHead({ ...head, ends_at: e.target.value })} /></Field>

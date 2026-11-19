@@ -93,7 +93,7 @@ export default function DashboardPage() {
       ) : data ? (
         <div className={`mt-4 space-y-4 transition-opacity ${loading ? 'opacity-60' : ''}`}>
           {/* Perlu tindakan: kartu putih gaya Tabler, kotak ikon menyala merah bila ada yang harus dikerjakan */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ActionCard
               href="/seller/pesanan?status=PENDING"
               icon="bell"
@@ -125,7 +125,7 @@ export default function DashboardPage() {
             <RevenueChart series={data.series} />
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card title="Produk terlaris" className="lg:col-span-2" padded={false}>
               {data.top_products.length === 0 ? (
                 <p className="p-5 text-sm text-slate-500">Belum ada penjualan.</p>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card title="Pesanan terbaru" className="lg:col-span-2" padded={false} action={<Link href="/seller/pesanan" className="text-xs font-bold text-ink hover:underline">Semua</Link>}>
               {data.recent_orders.length === 0 ? (
                 <p className="p-5 text-sm text-slate-500">Belum ada pesanan.</p>
