@@ -198,7 +198,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-2" aria-label="Menu Seller Center">
+        <nav className="seller-nav-scroll flex-1 overflow-y-auto px-3 py-2" aria-label="Menu Seller Center">
           {MENU.map((group) => (
             <div key={group.group} className="mb-3">
               {collapsed ? (
