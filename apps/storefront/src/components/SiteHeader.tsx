@@ -3,7 +3,6 @@ import BrandLogo from '@/components/BrandLogo';
 import CategoryMenu from '@/components/CategoryMenu';
 import HeaderActions, { ProductBackButton, ProductCartButton } from '@/components/HeaderMenu';
 import SearchBox from '@/components/SearchBox';
-import { iconBtn, slideLabel } from '@/components/headerLabel';
 import { NewsIcon } from '@/components/Icons';
 import type { Category } from '@/lib/api';
 import { dateLocale, type Lang } from '@/lib/i18n';
@@ -73,17 +72,17 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
           </Link>
 
           {/* Desktop: kategori, promo, pencarian */}
-          <div className="ml-4 hidden items-center gap-1 md:flex">
+          <div className="ml-4 hidden items-center gap-2 md:flex">
             <CategoryMenu categories={menuItems} showPromo={Boolean(promo)} />
             {promo && (
-              <Link href="/produk?promo=1" aria-label={t('Promo')} title={t('Promo')} className={`${iconBtn} !text-sale-600 hover:!bg-sale-50`}>
-                <PromoIcon />
-                <span className={`${slideLabel} font-bold`}>{event ? `${t('Promo')} ${event.big}` : t('Promo')}</span>
+              <Link href="/produk?promo=1" title={t('Promo')} className={navPill}>
+                <TablerIcon name="discount" size={16} className="text-sale-600 dark:text-sun-300" />
+                {event ? `Deal ${event.big}` : 'Deal'}
               </Link>
             )}
-            <Link href="/inspirasi" aria-label={t('Inspirasi')} title={t('Inspirasi')} className={iconBtn}>
-              <NewsIcon size={19} />
-              <span className={`${slideLabel} font-bold`}>{t('Inspirasi')}</span>
+            <Link href="/inspirasi" title={t('Inspirasi')} className={navPill}>
+              <NewsIcon size={16} />
+              News
             </Link>
           </div>
           {/* Pencarian: di HP satu baris dengan logo */}
@@ -98,8 +97,6 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
   );
 }
 
-function PromoIcon() {
-  return (
-    <TablerIcon name="discount" size={20} />
-  );
-}
+/** Tombol pil seragam dengan tombol "Kategori". */
+const navPill =
+  'flex h-10 shrink-0 items-center gap-2 rounded-full bg-mist px-3.5 text-sm font-bold text-ink transition hover:bg-slate-200';
