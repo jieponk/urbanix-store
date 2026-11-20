@@ -152,7 +152,7 @@ export default function ShippingLabelPage({ params }: { params: { number: string
           <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-b-2 border-black px-2 py-1">
             <div className="space-y-0.5">
               <p><b>Berat:</b> {L.weight_grams ? kg(L.weight_grams) : '-'} &nbsp; <b>COD:</b> {L.cod ? 'Ya' : 'Rp0'} &nbsp; <b>Ongkir:</b> {ongkir}</p>
-              <p><b>Batas kirim:</b> {batasKirim(L.order_created_at)} &nbsp; <b>Serah:</b> {L.method === 'pickup' ? 'Pickup' : 'Drop off'}{L.etd ? <> &nbsp; <b>Estimasi:</b> {L.etd} hari</> : null}</p>
+              <p><b>Batas kirim:</b> {batasKirim(L.order_created_at)} &nbsp; <b>Serah:</b> {L.method === 'pickup' ? 'Pickup' : 'Drop off'}{L.etd ? <> &nbsp; <b>Estimasi:</b> {L.etd.includes('jam') ? L.etd : `${L.etd} hari`}</> : null}</p>
               <p><b>No. Pesanan:</b> <b style={{ fontSize: '8pt' }}>{data.order_number}</b></p>
             </div>
             <div className="w-[36mm]"><Barcode value={data.order_number} height="9mm" /></div>

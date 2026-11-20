@@ -43,6 +43,9 @@ class ShippingSerializer(serializers.Serializer):
     # "kurir:layanan" (mis. jne:reg) = tarif otomatis Biteship, wajib destination_id.
     service = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
     destination_id = serializers.RegexField(r"^[A-Za-z0-9]{4,60}$", required=False, allow_blank=True, default="")
+    # Titik penerima di peta (wajib untuk kurir instan GoSend/Grab)
+    latitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=-11.5, max_value=6.5)
+    longitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=94.5, max_value=141.5)
 
     def validate_service(self, value):
         if value and value not in SHIPPING_CODES and not AUTO_SERVICE_RE.match(value):
@@ -68,6 +71,8 @@ class ShippingSerializer(serializers.Serializer):
 class OngkirRequestSerializer(serializers.Serializer):
     items = CheckoutItemSerializer(many=True, allow_empty=False, max_length=50)
     destination_id = serializers.RegexField(r"^[A-Za-z0-9]{4,60}$")
+    latitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=-11.5, max_value=6.5)
+    longitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=94.5, max_value=141.5)
 
 
 class QuoteRequestSerializer(QuoteSerializer):

@@ -109,6 +109,14 @@ def _payload(order: Order, store, method: str) -> dict:
         "metadata": {"order_number": order.order_number},
         "items": items,
     }
+    if courier in ongkir.INSTANT_COURIERS:
+        if store.ongkir_origin_lat is None or order.shipping_lat is None:
+            raise ShipmentError("Kurir instan butuh titik lokasi gudang (Pengaturan) dan titik penerima.")
+        payload["origin_coordinate"] = {"latitude": store.ongkir_origin_lat, "longitude": store.ongkir_origin_lng}
+        payload["destination_coordinate"] = {"latitude": order.shipping_lat, "longitude": order.shipping_lng}
+        payload["origin_collection_method"] = "pickup"  # kurir instan selalu menjemput
+    elif store.ongkir_origin_lat is not None:
+        payload["origin_coordinate"] = {"latitude": store.ongkir_origin_lat, "longitude": store.ongkir_origin_lng}
     if s["postal_code"].isdigit():
         payload["origin_postal_code"] = int(s["postal_code"])
     if (order.shipping_postal_code or "").isdigit():
@@ -156,6 +164,8 @@ def create(order: Order, method: str | None = None) -> Order:
     if reason:
         raise ShipmentError(reason)
     method = method or store.ship_collection_method or "drop_off"
+    if order.shipping_service.split(":")[0] in ongkir.INSTANT_COURIERS:
+        method = "pickup"
     if method not in ("drop_off", "pickup"):
         raise ShipmentError("Cara serah paket tidak dikenal.")
     payload = _payload(order, store, method)

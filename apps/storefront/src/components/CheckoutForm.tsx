@@ -19,6 +19,7 @@ import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedA
 import SimpleIcon from '@/components/SimpleIcon';
 import TablerIcon from '@/components/TablerIcon';
 import { useOngkir, type Rate } from '@/lib/useOngkir';
+import MapPicker, { type LatLng } from '@/components/MapPicker';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -44,7 +45,7 @@ type Quote = {
   total_weight_grams?: number;
   weight_complete?: boolean;
   shipping_note: string;
-  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean; ongkir_auto?: boolean };
+  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean; ongkir_auto?: boolean; ongkir_instant?: boolean };
   vouchers: {
     discount_amount: string;
     shipping_discount_max: string;
@@ -166,11 +167,28 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
     () => (quote?.items ?? []).map((i) => ({ product_id: i.product_id, variation_id: i.variation_id, quantity: i.quantity })),
     [quote]
   );
+  // Kurir instan (GoSend/Grab): tarif dari jarak → pembeli menandai titik lokasi di peta.
+  const instantEnabled = ongkirAuto && Boolean(quote?.methods.ongkir_instant);
+  const [pin, setPin] = useState<LatLng | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const ongkir = useOngkir(
     ongkirAuto,
     { village: form.village, district: form.district, city: form.city, postal_code: form.postal_code },
-    ongkirItems
+    ongkirItems,
+    instantEnabled ? pin : null
   );
+
+  // Posisi awal peta: tengah kecamatan pembeli
+  useEffect(() => {
+    if (!showMap || pin || !form.district || !form.city) return;
+    let cancelled = false;
+    fetch(`/api/ongkir/titik?q=${encodeURIComponent([form.village, form.district, form.city].filter(Boolean).join(', '))}`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.point) setMapCenter(d.point); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showMap, form.district, form.city, form.village, pin]);
   const selectedRate: Rate | null = ongkir.rates.find((r) => r.code === form.service) ?? null;
 
   // Tarif berganti (alamat/keranjang berubah): pilihan lama yang tak tersedia dihapus.
@@ -385,6 +403,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
               postal_code: form.postal_code,
               service: form.service,
               ...(selectedRate && ongkir.destination && { destination_id: ongkir.destination.id }),
+              ...(instantEnabled && pin && { latitude: pin.lat, longitude: pin.lng }),
             },
             notes: form.notes,
             voucher_codes: appliedCodes,
@@ -541,7 +560,9 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
   const total = Number(quote.total) + (shippingCost !== null ? shippingCost - shippingCut : 0);
   // Ongkir otomatis gagal (mis. kuota harian habis): pesanan WA tetap bisa pakai pilihan biasa (ongkir dari admin).
   const manualGroups = SHIPPING_GROUPS.filter(
-    (g) => !ongkirAuto || (method === 'WHATSAPP' && (Boolean(ongkir.error) || g.name === 'Instan'))
+    (g) =>
+      !ongkirAuto ||
+      (method === 'WHATSAPP' && (Boolean(ongkir.error) || (g.name === 'Instan' && !instantEnabled)))
   );
   const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
@@ -866,13 +887,49 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-bold text-ink">{r.service}</span>
                               <span className="block truncate text-xs text-slate-500">
-                                {r.etd ? t('Estimasi {n} hari', { n: r.etd }) : r.description}
+                                {r.instant && <b className="mr-1 text-emerald-700">{t('Instan')} ·</b>}
+                                {r.etd
+                                  ? r.etd.includes('jam')
+                                    ? t('Estimasi {n} jam', { n: r.etd.replace(' jam', '') })
+                                    : t('Estimasi {n} hari', { n: r.etd })
+                                  : r.description}
                               </span>
                             </span>
                             <span className="shrink-0 text-sm font-extrabold text-ink tabular-nums">{money(r.cost)}</span>
                           </label>
                         );
                       })}
+                    </div>
+                  )}
+                  {instantEnabled && ongkir.destination && (
+                    <div className="mt-3 rounded-xl bg-mist p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm text-ink">
+                          <b>{t('Mau sampai hari ini?')}</b>{' '}
+                          <span className="text-slate-600">
+                            {pin ? t('Titik lokasi sudah ditandai. Tarif GoSend/Grab ada di daftar di atas.') : t('Tandai titik lokasi untuk melihat tarif GoSend & GrabExpress.')}
+                          </span>
+                        </p>
+                        <button type="button" onClick={() => setShowMap((v) => !v)} className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-surface">
+                          {showMap ? t('Tutup peta') : pin ? t('Ubah titik') : t('Tandai di peta')}
+                        </button>
+                      </div>
+                      {showMap && (
+                        <div className="mt-3">
+                          <MapPicker
+                            value={pin}
+                            center={mapCenter}
+                            onChange={setPin}
+                            labels={{
+                              useMyLocation: t('Pakai lokasi saya'),
+                              hint: t('Geser pin atau ketuk peta tepat di depan rumah/gedung.'),
+                              locating: t('Mencari lokasi…'),
+                              denied: t('Izin lokasi ditolak. Geser pin secara manual.'),
+                              failed: t('Peta gagal dimuat. Coba muat ulang halaman.'),
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   {!ongkir.loading && ongkir.error && (

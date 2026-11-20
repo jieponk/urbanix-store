@@ -481,7 +481,7 @@ class SettingsSerializer(serializers.ModelSerializer):
             "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
             "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
             "home_layout", "event_title", "event_subtitle", "event_cta",
-            "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers",
+            "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers", "ongkir_origin_lat", "ongkir_origin_lng",
             "ship_sender_name", "ship_sender_phone", "ship_sender_address", "ship_sender_postal_code",
             "ship_collection_method",
         ]
@@ -496,6 +496,14 @@ class SettingsSerializer(serializers.ModelSerializer):
             if not isinstance(layout, list) or not all(isinstance(i, dict) and isinstance(i.get("key"), str) for i in layout):
                 raise serializers.ValidationError({"home_layout": "Format tata letak tidak valid."})
             attrs["home_layout"] = [{"key": i["key"][:30], "visible": bool(i.get("visible", True))} for i in layout][:30]
+        lat, lng = attrs.get("ongkir_origin_lat"), attrs.get("ongkir_origin_lng")
+        if (lat is None) != (lng is None):
+            raise serializers.ValidationError({"ongkir_origin_lat": "Titik gudang belum lengkap."})
+        if lat is not None:
+            from .ongkir import valid_coord
+
+            if not valid_coord(lat, lng):
+                raise serializers.ValidationError({"ongkir_origin_lat": "Titik gudang harus di wilayah Indonesia."})
         couriers = attrs.get("ongkir_couriers")
         if couriers is not None:
             from .ongkir import COURIER_CODES

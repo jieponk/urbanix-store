@@ -71,7 +71,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(Decimal(r.data["subtotal"]), Decimal("1800000"))
         self.assertEqual(r.data["items"][0]["shopee_url"], "https://shopee.co.id/kamera-a")
-        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True, "ongkir_auto": True})
+        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True, "ongkir_auto": True, "ongkir_instant": False})
 
     def test_quote_rejects_inactive_product(self):
         self.mic.is_active = False

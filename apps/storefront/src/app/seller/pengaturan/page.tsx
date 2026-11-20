@@ -1,5 +1,6 @@
 'use client';
 
+import MapPicker from '@/components/MapPicker';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ErrorBox, Field, PageHeader, Spinner, Toggle, btn, inputCls } from '@/components/seller/ui';
 import { notify, sellerApi, useSellerData } from '@/lib/seller';
@@ -87,6 +88,13 @@ export default function SettingsPage() {
                 onPick={(o) => setForm({ ...form, ongkir_origin_id: o.id, ongkir_origin_label: o.label })}
               />
             </Field>
+            <Field label="Titik lokasi gudang (untuk GoSend/Grab)" hint="Wajib bila kurir instan diaktifkan. Geser pin tepat di pintu gudang.">
+              <MapPicker
+                value={form.ongkir_origin_lat != null && form.ongkir_origin_lat !== '' ? { lat: Number(form.ongkir_origin_lat), lng: Number(form.ongkir_origin_lng) } : null}
+                onChange={(p) => setForm({ ...form, ongkir_origin_lat: p.lat, ongkir_origin_lng: p.lng })}
+                height={260}
+              />
+            </Field>
             <div>
               <p className="mb-2 text-sm font-semibold text-slate-700">Kurir yang ditampilkan</p>
               <div className="flex flex-wrap gap-2">
@@ -108,7 +116,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <p className="text-xs text-slate-500">
-              Bila aktif, pembeli melihat ongkir langsung saat checkout dan bisa bayar di web (Midtrans). Kurir instan (GoSend/Grab) tetap dikonfirmasi admin lewat WhatsApp.
+              Bila aktif, pembeli melihat ongkir langsung saat checkout dan bisa bayar di web (Midtrans). GoSend/Grab (instan) muncul setelah titik gudang diisi dan pembeli menandai lokasinya di peta.
             </p>
           </div>
         </Card>

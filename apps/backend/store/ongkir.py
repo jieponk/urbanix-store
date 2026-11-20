@@ -38,8 +38,12 @@ COURIER_CHOICES = [
     ("wahana", "Wahana"),
     ("paxel", "Paxel"),
     ("rpx", "RPX"),
+    # Kurir instan: tarif dari jarak, butuh titik gudang & titik penerima (peta)
+    ("gojek", "GoSend (instan)"),
+    ("grab", "GrabExpress (instan)"),
 ]
 COURIER_CODES = {code for code, _ in COURIER_CHOICES}
+INSTANT_COURIERS = {"gojek", "grab"}
 FALLBACK_ITEM_WEIGHT = 1000  # gram, untuk barang yang belum diisi beratnya
 MAX_WEIGHT = 150_000
 AREA_ID_RE = re.compile(r"^[A-Za-z0-9]{4,60}$")
@@ -67,10 +71,31 @@ def is_configured(store=None) -> bool:
     return bool(store.ongkir_origin_id)
 
 
-def courier_list(store) -> list[str]:
+def _selected(store) -> list[str]:
     raw = (store.ongkir_couriers or DEFAULT_COURIERS).replace(",", ":")
-    codes = [c.strip().lower() for c in raw.split(":") if c.strip().lower() in COURIER_CODES]
+    return [c.strip().lower() for c in raw.split(":") if c.strip().lower() in COURIER_CODES]
+
+
+def courier_list(store) -> list[str]:
+    """Kurir reguler (tarif dari area tujuan)."""
+    codes = [c for c in _selected(store) if c not in INSTANT_COURIERS]
     return codes or DEFAULT_COURIERS.split(":")
+
+
+def instant_list(store) -> list[str]:
+    """Kurir instan yang aktif — hanya bila titik gudang sudah diisi."""
+    if store.ongkir_origin_lat is None or store.ongkir_origin_lng is None:
+        return []
+    return [c for c in _selected(store) if c in INSTANT_COURIERS]
+
+
+def valid_coord(lat, lng) -> bool:
+    """Titik di wilayah Indonesia (kotak kasar)."""
+    try:
+        lat, lng = float(lat), float(lng)
+    except (TypeError, ValueError):
+        return False
+    return -11.5 <= lat <= 6.5 and 94.5 <= lng <= 141.5
 
 
 def _request(method: str, path: str, **kwargs) -> dict:
@@ -169,32 +194,7 @@ def _etd(r: dict) -> str:
     return rng  # hari
 
 
-def rates(destination_id: str, lines, store=None) -> list[dict]:
-    """Daftar layanan [{code, courier, courier_name, service, description, cost, etd}] urut termurah."""
-    from .models import StoreSettings
-
-    store = store or StoreSettings.load()
-    if not is_configured(store):
-        raise OngkirError("Cek ongkir otomatis belum aktif.")
-    if not AREA_ID_RE.match(str(destination_id or "")):
-        raise OngkirError("Alamat tujuan tidak valid. Pilih ulang kecamatannya.")
-    couriers = ",".join(courier_list(store))
-    items = package_items(lines)
-    sig = hashlib.md5(json.dumps([store.ongkir_origin_id, destination_id, couriers, items], sort_keys=True).encode()).hexdigest()
-    ck = f"bs:rate:{sig}"
-    hit = cache.get(ck)
-    if hit is not None:
-        return hit
-    body = _request(
-        "POST",
-        "rates/couriers",
-        json={
-            "origin_area_id": store.ongkir_origin_id,
-            "destination_area_id": str(destination_id),
-            "couriers": couriers,
-            "items": items,
-        },
-    )
+def _parse_pricing(body: dict, instant=False) -> list[dict]:
     result, seen = [], set()
     for r in body.get("pricing") or []:
         try:
@@ -217,14 +217,112 @@ def rates(destination_id: str, lines, store=None) -> list[dict]:
             "description": str(r.get("description") or ""),
             "cost": cost,
             "etd": _etd(r),
+            "instant": instant or courier in INSTANT_COURIERS,
         })
-    result.sort(key=lambda x: x["cost"])
-    cache.set(ck, result, 60 * 60 * 3)
     return result
 
 
-def find_rate(destination_id: str, lines, code: str, store=None) -> dict | None:
-    for rate in rates(destination_id, lines, store):
+def instant_rates(lat: float, lng: float, lines, store) -> list[dict]:
+    """Tarif kurir instan (GoSend/Grab) dari titik gudang ke titik penerima."""
+    couriers = instant_list(store)
+    if not couriers or not valid_coord(lat, lng):
+        return []
+    lat, lng = round(float(lat), 6), round(float(lng), 6)
+    items = package_items(lines)
+    sig = hashlib.md5(json.dumps([store.ongkir_origin_lat, store.ongkir_origin_lng, lat, lng, couriers, items],
+                                 sort_keys=True).encode()).hexdigest()
+    ck = f"bs:instant:{sig}"
+    hit = cache.get(ck)
+    if hit is not None:
+        return hit
+    body = _request("POST", "rates/couriers", json={
+        "origin_latitude": store.ongkir_origin_lat,
+        "origin_longitude": store.ongkir_origin_lng,
+        "destination_latitude": lat,
+        "destination_longitude": lng,
+        "couriers": ",".join(couriers),
+        "items": items,
+    })
+    result = sorted(_parse_pricing(body, instant=True), key=lambda x: x["cost"])
+    cache.set(ck, result, 60 * 15)  # tarif instan cepat berubah
+    return result
+
+
+def rates(destination_id: str, lines, store=None, lat=None, lng=None) -> list[dict]:
+    """Daftar layanan [{code, courier, courier_name, service, description, cost, etd, instant}] urut termurah.
+    Bila titik penerima (lat/lng) dikirim, tarif kurir instan ikut dihitung."""
+    from .models import StoreSettings
+
+    store = store or StoreSettings.load()
+    if not is_configured(store):
+        raise OngkirError("Cek ongkir otomatis belum aktif.")
+    if not AREA_ID_RE.match(str(destination_id or "")):
+        raise OngkirError("Alamat tujuan tidak valid. Pilih ulang kecamatannya.")
+    couriers = ",".join(courier_list(store))
+    items = package_items(lines)
+    sig = hashlib.md5(json.dumps([store.ongkir_origin_id, destination_id, couriers, items], sort_keys=True).encode()).hexdigest()
+    ck = f"bs:rate:{sig}"
+    hit = cache.get(ck)
+    if hit is not None:
+        return _with_instant(hit, lat, lng, lines, store)
+    body = _request(
+        "POST",
+        "rates/couriers",
+        json={
+            "origin_area_id": store.ongkir_origin_id,
+            "destination_area_id": str(destination_id),
+            "couriers": couriers,
+            "items": items,
+        },
+    )
+    result = sorted(_parse_pricing(body), key=lambda x: x["cost"])
+    cache.set(ck, result, 60 * 60 * 3)
+    return _with_instant(result, lat, lng, lines, store)
+
+
+def _with_instant(result, lat, lng, lines, store):
+    if lat is None or lng is None:
+        return result
+    try:
+        extra = instant_rates(lat, lng, lines, store)
+    except OngkirError:
+        extra = []  # kurir reguler tetap tampil walau tarif instan gagal
+    return sorted(result + extra, key=lambda x: x["cost"])
+
+
+def find_rate(destination_id: str, lines, code: str, store=None, lat=None, lng=None) -> dict | None:
+    for rate in rates(destination_id, lines, store, lat, lng):
         if rate["code"] == code:
             return rate
     return None
+
+
+# ---------------------------------------------------------------- titik peta
+def geocode(query: str) -> dict | None:
+    """Perkiraan titik tengah kecamatan/kota untuk memusatkan peta (OpenStreetMap Nominatim, gratis).
+    Hanya untuk posisi awal peta; titik akhir tetap dipilih pembeli. Disimpan 30 hari."""
+    query = " ".join((query or "").split())[:120]
+    if len(query) < 3:
+        return None
+    ck = "geo:" + hashlib.md5(query.lower().encode()).hexdigest()
+    hit = cache.get(ck)
+    if hit is not None:
+        return hit or None
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": query, "countrycodes": "id", "format": "jsonv2", "limit": 1},
+            headers={"User-Agent": "UrbanixStore/1.0 (https://urbanix.id)", "Accept-Language": "id"},
+            timeout=8,
+        )
+        rows = resp.json() if resp.status_code == 200 else []
+    except (requests.RequestException, ValueError):
+        return None
+    result = {}
+    if rows:
+        try:
+            result = {"lat": float(rows[0]["lat"]), "lng": float(rows[0]["lon"])}
+        except (KeyError, TypeError, ValueError):
+            result = {}
+    cache.set(ck, result, 60 * 60 * 24 * 30)
+    return result or None

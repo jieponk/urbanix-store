@@ -132,6 +132,8 @@ class StoreSettings(models.Model):
         help_text="Pilih kecamatan/kode pos gudang di Seller Center → Pengaturan.",
     )
     ongkir_origin_label = models.CharField("Asal pengiriman", max_length=255, blank=True)
+    ongkir_origin_lat = models.FloatField("Titik gudang (lintang)", null=True, blank=True)
+    ongkir_origin_lng = models.FloatField("Titik gudang (bujur)", null=True, blank=True)
     ongkir_couriers = models.CharField(
         "Kurir ongkir otomatis", max_length=120, blank=True, default="jne:jnt:sicepat:anteraja:pos",
         help_text="Kode kurir dipisah titik dua, mis. jne:jnt:sicepat.",
@@ -351,6 +353,8 @@ class Order(models.Model):
     )
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
     shipping_destination_id = models.CharField("ID area tujuan (Biteship)", max_length=60, blank=True)
+    shipping_lat = models.FloatField("Titik penerima (lintang)", null=True, blank=True)
+    shipping_lng = models.FloatField("Titik penerima (bujur)", null=True, blank=True)
     shipping_etd = models.CharField("Estimasi tiba", max_length=30, blank=True)
     shipment_id = models.CharField("ID pengiriman Biteship", max_length=60, blank=True)
     shipment_status = models.CharField("Status pengiriman", max_length=30, blank=True)

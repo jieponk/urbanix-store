@@ -805,6 +805,18 @@ const EN: Record<string, string> = {
   'Belum ada kurir yang melayani alamat ini.': 'No courier serves this address yet.',
   'Gagal menghitung ongkir.': 'Failed to calculate shipping.',
   'Gagal mencari tujuan.': 'Failed to look up the destination.',
+  'Estimasi {n} jam': 'Est. {n} hours',
+  'Mau sampai hari ini?': 'Need it today?',
+  'Titik lokasi sudah ditandai. Tarif GoSend/Grab ada di daftar di atas.': 'Location pinned. GoSend/Grab rates are in the list above.',
+  'Tandai titik lokasi untuk melihat tarif GoSend & GrabExpress.': 'Pin your location to see GoSend & GrabExpress rates.',
+  'Tutup peta': 'Close map',
+  'Ubah titik': 'Change pin',
+  'Tandai di peta': 'Pin on map',
+  'Pakai lokasi saya': 'Use my location',
+  'Geser pin atau ketuk peta tepat di depan rumah/gedung.': 'Drag the pin or tap the map right at the building entrance.',
+  'Mencari lokasi…': 'Locating…',
+  'Izin lokasi ditolak. Geser pin secara manual.': 'Location permission denied. Drag the pin manually.',
+  'Peta gagal dimuat. Coba muat ulang halaman.': 'Map failed to load. Try reloading the page.',
 };
 /* eslint-enable quote-props */
 

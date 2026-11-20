@@ -190,3 +190,76 @@ class OngkirCheckoutTests(TestCase):
     @override_settings(BITESHIP_API_KEY="")
     def test_midtrans_hidden_without_ongkir(self):
         self.assertFalse(svc.available_methods()["midtrans"])
+
+
+@override_settings(BITESHIP_API_KEY="biteship_test.abc")
+class InstantCourierTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        store = StoreSettings.load()
+        store.ongkir_origin_id = ORIGIN
+        store.ongkir_couriers = "jne:gojek"
+        store.ongkir_origin_lat, store.ongkir_origin_lng = -6.1610, 106.8340
+        store.whatsapp_number = "6281234567890"
+        store.save()
+        cat = Category.objects.create(name="Kamera", slug="kamera")
+        self.cam = Product.objects.create(category=cat, name="Kamera A", slug="a", sku="K-A", description="-",
+                                          price=Decimal("1000000"), stock=5, weight_grams=800)
+
+    def responses(self, method, url, **kw):
+        body = kw.get("json") or {}
+        if "destination_latitude" in body:
+            return fake_response({"success": True, "pricing": [
+                {"courier_name": "Gojek", "courier_code": "gojek", "courier_service_name": "Instant",
+                 "courier_service_code": "instant", "price": 32000, "shipment_duration_range": "1 - 3",
+                 "shipment_duration_unit": "hours"}]})
+        return fake_response({"success": True, "pricing": [
+            {"courier_name": "JNE", "courier_code": "jne", "courier_service_name": "Reguler",
+             "courier_service_code": "reg", "price": 10000, "shipment_duration_range": "2 - 3"}]})
+
+    def test_rates_with_pin_include_instant(self):
+        api = APIClient()
+        with mock.patch("store.ongkir.requests.request", side_effect=self.responses) as req:
+            r = api.post("/api/v1/ongkir/", {"items": [{"product_id": self.cam.id, "quantity": 1}],
+                                             "destination_id": DEST}, format="json")
+            self.assertEqual([o["code"] for o in r.data["options"]], ["jne:reg"])
+            r = api.post("/api/v1/ongkir/", {"items": [{"product_id": self.cam.id, "quantity": 1}],
+                                             "destination_id": DEST, "latitude": -6.2441, "longitude": 106.8},
+                         format="json")
+        codes = {o["code"]: o for o in r.data["options"]}
+        self.assertIn("gojek:instant", codes)
+        self.assertTrue(codes["gojek:instant"]["instant"])
+        self.assertEqual(codes["gojek:instant"]["etd"], "1-3 jam")
+        body = req.call_args.kwargs["json"]
+        self.assertEqual((body["origin_latitude"], body["couriers"]), (-6.1610, "gojek"))
+        self.assertNotIn("origin_area_id", body)
+
+    def test_instant_order_saves_pin_and_shipment_uses_coordinates(self):
+        api = APIClient()
+        body = {"payment_method": "WHATSAPP", "items": [{"product_id": self.cam.id, "quantity": 1}],
+                "customer": {"name": "Budi", "phone": "081234567890"},
+                "shipping": {"address": "Jl. Mawar 1", "city": "Jakarta", "service": "gojek:instant",
+                             "destination_id": DEST, "latitude": -6.2441, "longitude": 106.8}}
+        with mock.patch("store.ongkir.requests.request", side_effect=self.responses):
+            r = api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        order = Order.objects.get()
+        self.assertEqual((order.shipping_lat, order.shipping_cost), (-6.2441, Decimal("32000")))
+        # Tanpa titik: ditolak dengan pesan jelas
+        body["shipping"].pop("latitude"); body["shipping"].pop("longitude")
+        with mock.patch("store.ongkir.requests.request", side_effect=self.responses):
+            r = api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("peta", r.data["error"])
+        # Resi instan: koordinat dikirim & selalu pickup
+        from store import shipments
+
+        order.payment_status = "PAID"
+        order.save()
+        created = fake_response({"success": True, "id": "BS-9", "status": "confirmed",
+                                 "courier": {"waybill_id": "GK1"}})
+        with mock.patch("store.ongkir.requests.request", return_value=created) as req:
+            shipments.create(order, "drop_off")
+        payload = req.call_args.kwargs["json"]
+        self.assertEqual(payload["destination_coordinate"], {"latitude": -6.2441, "longitude": 106.8})
+        self.assertEqual(payload["origin_collection_method"], "pickup")

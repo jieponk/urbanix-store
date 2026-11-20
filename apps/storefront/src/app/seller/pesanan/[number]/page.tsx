@@ -161,6 +161,16 @@ export default function OrderDetailPage({ params }: { params: { number: string }
           <Card title="Pembeli & alamat" action={<button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(address); notify('Alamat disalin.'); }}>Salin</button>}>
             <p className="whitespace-pre-line text-sm text-ink">{address}</p>
             {data.customer_email && <p className="mt-2 text-xs text-slate-500">{data.customer_email}</p>}
+            {data.shipping_pin && (
+              <a
+                href={`https://www.google.com/maps?q=${data.shipping_pin.lat},${data.shipping_pin.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${btn.small} mt-2`}
+              >
+                Lihat titik lokasi pembeli
+              </a>
+            )}
             {data.notes && <p className="mt-3 rounded-lg bg-sun-100 p-2.5 text-sm text-cobalt-900"><b>Catatan pembeli:</b> {data.notes}</p>}
           </Card>
 

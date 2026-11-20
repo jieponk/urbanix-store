@@ -153,6 +153,18 @@ def ongkir_destination(request):
 ongkir_destination.cls.throttle_scope = "ongkir"
 
 
+@api_view(["GET"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_geocode(request):
+    """Titik awal peta untuk kecamatan/kota pembeli (bukan titik akhir)."""
+    point = ongkir.geocode(request.query_params.get("q", ""))
+    return Response({"point": point})
+
+
+ongkir_geocode.cls.throttle_scope = "ongkir"
+
+
 @api_view(["POST"])
 @_public
 @throttle_classes([ScopedRateThrottle])
@@ -164,7 +176,7 @@ def ongkir_rates(request):
     try:
         lines = svc.build_lines(data["items"])
         weight = ongkir.order_weight(lines)
-        options = ongkir.rates(data["destination_id"], lines)
+        options = ongkir.rates(data["destination_id"], lines, lat=data.get("latitude"), lng=data.get("longitude"))
     except svc.CheckoutError as exc:
         return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except ongkir.OngkirError as exc:

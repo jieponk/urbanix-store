@@ -69,6 +69,7 @@ def available_methods(store: StoreSettings | None = None) -> dict:
         # Bayar di web butuh ongkir otomatis: total tagihan harus final saat bayar.
         "midtrans": bool(store.enable_midtrans and midtrans_is_configured() and ongkir.is_configured(store)),
         "ongkir_auto": ongkir.is_configured(store),
+        "ongkir_instant": ongkir.is_configured(store) and bool(ongkir.instant_list(store)),
         "whatsapp": bool(store.enable_whatsapp and store.whatsapp_number),
         "shopee": bool(store.enable_shopee),
     }
@@ -546,10 +547,13 @@ def resolve_shipping(method: str, lines, shipping: dict, store) -> dict | None:
             raise CheckoutError("Pilih kurir pengiriman dulu supaya total bayar bisa dihitung.")
         return None
     try:
-        rate = ongkir.find_rate(shipping["destination_id"], lines, service, store)
+        rate = ongkir.find_rate(shipping["destination_id"], lines, service, store,
+                                shipping.get("latitude"), shipping.get("longitude"))
     except ongkir.OngkirError as exc:
         raise CheckoutError(str(exc))
     if rate is None:
+        if service.split(":")[0] in ongkir.INSTANT_COURIERS and shipping.get("latitude") is None:
+            raise CheckoutError("Tandai titik lokasi di peta dulu untuk kurir instan.")
         raise CheckoutError("Tarif kurir yang dipilih sudah berubah. Pilih ulang kurirnya, ya.")
     return rate
 
@@ -579,6 +583,8 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         shipping_postal_code=shipping.get("postal_code", ""),
         shipping_service=shipping.get("service", ""),
         shipping_destination_id=shipping.get("destination_id") if rate else "",
+        shipping_lat=shipping.get("latitude"),
+        shipping_lng=shipping.get("longitude"),
         shipping_cost=Decimal(rate["cost"]) if rate else None,
         shipping_courier=rate["courier_name"][:50] if rate else "",
         shipping_etd=rate["etd"][:30] if rate else "",

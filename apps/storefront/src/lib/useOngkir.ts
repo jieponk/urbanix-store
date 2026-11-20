@@ -21,6 +21,7 @@ export type Rate = {
   description: string;
   cost: number;
   etd: string;
+  instant?: boolean;
 };
 
 type Region = { village: string; district: string; city: string; postal_code: string };
@@ -40,7 +41,7 @@ function score(d: Destination, r: Region) {
  * Ongkir otomatis (Biteship): cari ID area tujuan dari alamat yang sudah diisi (kode pos / kelurahan / kecamatan),
  * lalu ambil tarif kurir untuk isi keranjang.
  */
-export function useOngkir(enabled: boolean, region: Region, items: Item[]) {
+export function useOngkir(enabled: boolean, region: Region, items: Item[], pin: { lat: number; lng: number } | null = null) {
   const [options, setOptions] = useState<Destination[]>([]);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [rates, setRates] = useState<Rate[]>([]);
@@ -109,7 +110,11 @@ export function useOngkir(enabled: boolean, region: Region, items: Item[]) {
         const res = await fetch('/api/ongkir', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items, destination_id: destination.id }),
+          body: JSON.stringify({
+            items,
+            destination_id: destination.id,
+            ...(pin && { latitude: pin.lat, longitude: pin.lng }),
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Gagal menghitung ongkir.');
@@ -129,7 +134,7 @@ export function useOngkir(enabled: boolean, region: Region, items: Item[]) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination?.id, itemsKey]);
+  }, [destination?.id, itemsKey, pin?.lat, pin?.lng]);
 
   return { options, destination, setDestination, rates, loading, error };
 }

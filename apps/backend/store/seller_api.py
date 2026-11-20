@@ -383,6 +383,7 @@ def _order_detail(o: Order):
         "status_choices": [{"value": k, "label": v} for k, v in STATUS_LABELS.items()],
         "payment_choices": [{"value": k, "label": v} for k, v in PAYMENT_LABELS.items()],
         "shipping_city": o.shipping_city,
+        "shipping_pin": {"lat": o.shipping_lat, "lng": o.shipping_lng} if o.shipping_lat is not None else None,
         "total_weight_grams": o.total_weight_grams,
         "shipment": {**shipments.summary(o), "sender": shipments.sender(StoreSettings.load())},
         "label": shipments.label_data(o),
