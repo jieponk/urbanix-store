@@ -108,15 +108,23 @@ export const siteConfig = {
    * PENTING: tampilkan hanya metode yang benar-benar bisa dipakai di checkout.
    */
   paymentMethods: [
-    // Metode yang tampil di halaman bayar Midtrans (Snap) toko. Logo resmi di public/payments;
-    // yang belum punya file logo tampil sebagai teks. Kartu kredit (Visa/Mastercard dari Simple Icons)
-    // tambahkan hanya bila aktif di Midtrans: { name: 'Visa', logo: '', simple: 'visa' }.
+    // Semua metode Snap Midtrans aktif. Logo resmi di public/payments; Visa/Mastercard dari Simple Icons;
+    // yang belum punya file logo tampil sebagai teks (taruh file <logo>.webp/.svg di public/payments untuk menggantinya).
     { name: 'QRIS', logo: 'qris-logo' },
     { name: 'GoPay', logo: 'gopay' },
+    { name: 'ShopeePay', logo: 'shopeepay' },
+    { name: 'Visa', logo: '', simple: 'visa' },
+    { name: 'Mastercard', logo: '', simple: 'mastercard' },
     { name: 'BCA', logo: 'bca' },
     { name: 'Mandiri', logo: 'mandiri' },
     { name: 'BNI', logo: 'bni' },
+    { name: 'BRI', logo: 'bri' },
+    { name: 'Permata', logo: 'permata' },
+    { name: 'CIMB Niaga', logo: 'cimb' },
+    { name: 'Indomaret', logo: 'indomaret' },
+    { name: 'Alfamart', logo: 'alfamart' },
     { name: 'Akulaku', logo: 'akulaku' },
+    { name: 'Kredivo', logo: 'kredivo' },
   ] as { name: string; logo: string; showName?: boolean; simple?: 'visa' | 'mastercard' }[],
 
   // Teks berjalan di beranda

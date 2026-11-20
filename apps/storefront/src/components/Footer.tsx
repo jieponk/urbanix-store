@@ -140,7 +140,7 @@ export default function Footer({
         <div className="mt-8 grid grid-cols-1 gap-6 border-t border-white/10 py-7 sm:grid-cols-2 md:mt-10">
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-white/60">{t('Pembayaran')}</h2>
-            <ul className="mt-3 grid grid-cols-4 gap-2 sm:max-w-[340px] sm:grid-cols-3">
+            <ul className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-5">
               {payments.map((method) => (
                 <li key={method.name}>
                   <span title={method.name} tabIndex={0} className={LOGO_BOX}>
@@ -178,7 +178,7 @@ export default function Footer({
                 {t('Detail')}
               </Link>
             </div>
-            <ul className="mt-3 grid grid-cols-4 gap-2 sm:max-w-[460px]">
+            <ul className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-5">
               {couriers.map((c) => (
                 <li key={c.code}>
                   <span title={c.name} tabIndex={0} className={LOGO_BOX}>
