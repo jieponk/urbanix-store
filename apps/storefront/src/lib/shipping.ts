@@ -56,3 +56,28 @@ export const SHIPPING_GROUPS: {
 ];
 
 export const courierName = (key: CourierKey) => COURIERS.find((c) => c.key === key)?.name ?? key;
+
+/**
+ * Kurir di footer, urut tampil. `file` = logo resmi di public/couriers (dari pemilik toko),
+ * `simple` = logo dari Simple Icons (github.com/simple-icons). Tanpa keduanya: nama sebagai teks.
+ * Footer hanya menampilkan kurir yang aktif di checkout (StoreSettings.couriers).
+ */
+export const FOOTER_COURIERS: { code: string; name: string; file?: string; simple?: 'gojek' | 'grab' }[] = [
+  { code: 'jne', name: 'JNE', file: 'jne' },
+  { code: 'jnt', name: 'J&T Express', file: 'jnt' },
+  { code: 'sicepat', name: 'SiCepat', file: 'sicepat' },
+  { code: 'anteraja', name: 'AnterAja', file: 'anteraja' },
+  { code: 'pos', name: 'POS Indonesia', file: 'pos' },
+  { code: 'lion', name: 'Lion Parcel', file: 'lion' },
+  { code: 'idexpress', name: 'ID Express', file: 'idexpress' },
+  { code: 'tiki', name: 'TIKI' },
+  { code: 'ninja', name: 'Ninja Xpress' },
+  { code: 'sap', name: 'SAP Express' },
+  { code: 'wahana', name: 'Wahana' },
+  { code: 'paxel', name: 'Paxel' },
+  { code: 'rpx', name: 'RPX' },
+  { code: 'gojek', name: 'GoSend', simple: 'gojek' },
+  { code: 'grab', name: 'GrabExpress', simple: 'grab' },
+];
+/** Bila ongkir otomatis belum aktif: kurir yang dilayani manual lewat admin. */
+export const FOOTER_COURIERS_FALLBACK = ['jne', 'jnt', 'gojek', 'grab'];

@@ -5,8 +5,7 @@ import type { Category, StoreSettings } from '@/lib/api';
 import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
 import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
-import { courierLogos } from '@/lib/courierLogos';
-import { SHIPPING_BRANDS } from '@/lib/shipping';
+import { FOOTER_COURIERS, FOOTER_COURIERS_FALLBACK } from '@/lib/shipping';
 import { LangLinks } from '@/components/HeaderMenu';
 import { getT } from '@/lib/lang-server';
 import SimpleIcon from '@/components/SimpleIcon';
@@ -20,6 +19,10 @@ function displayPhone(number: string) {
 /** Logo pembayaran & kurir: abu-abu seragam, berwarna saat disorot (PC) atau disentuh (HP), seperti logo merek. */
 const LOGO_MONO =
   'opacity-75 brightness-0 invert transition duration-300 group-hover/logo:opacity-100 group-hover/logo:brightness-100 group-hover/logo:invert-0 group-focus/logo:opacity-100 group-focus/logo:brightness-100 group-focus/logo:invert-0';
+/** Logo berbentuk kotak penuh bertulisan putih (Lion Parcel): siluet putih akan menghapus tulisannya, jadi pakai abu terbalik. */
+const LOGO_GRAY =
+  'opacity-80 grayscale invert transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-hover/logo:invert-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0 group-focus/logo:invert-0';
+const SOLID_LOGOS = ['lion'];
 /** Kotak logo: gelap transparan menyatu dengan footer hitam, jadi putih saat disorot/disentuh agar warna logo terbaca. */
 const LOGO_BOX =
   'group/logo flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] px-2 ring-1 ring-white/15 outline-none transition duration-300 hover:bg-white hover:ring-white focus:bg-white focus:ring-white';
@@ -34,7 +37,11 @@ export default function Footer({
   const t = getT();
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
-  const logos = courierLogos();
+  const active = settings?.couriers?.length ? settings.couriers : FOOTER_COURIERS_FALLBACK;
+  const couriers = FOOTER_COURIERS.filter((c) => active.includes(c.code)).map((c) => ({
+    ...c,
+    src: c.file ? findPublicImage('couriers', c.file) : null,
+  }));
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -137,7 +144,16 @@ export default function Footer({
               {payments.map((method) => (
                 <li key={method.name}>
                   <span title={method.name} tabIndex={0} className={LOGO_BOX}>
-                    {method.src && (
+                    {method.simple && (
+                      <SimpleIcon
+                        name={method.simple}
+                        size={30}
+                        color="current"
+                        title={method.name}
+                        className={`text-white/75 transition ${method.simple === 'visa' ? 'group-hover/logo:text-[#1A1F71] group-focus/logo:text-[#1A1F71]' : 'group-hover/logo:text-[#EB001B] group-focus/logo:text-[#EB001B]'}`}
+                      />
+                    )}
+                    {!method.simple && method.src && (
                       <img
                         src={method.src}
                         alt={method.showName ? '' : method.name}
@@ -147,7 +163,7 @@ export default function Footer({
                         className={`${method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'} ${LOGO_MONO}`}
                       />
                     )}
-                    {(!method.src || method.showName) && (
+                    {!method.simple && (!method.src || method.showName) && (
                       <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-cobalt-900 group-focus/logo:text-cobalt-900">{method.name}</span>
                     )}
                   </span>
@@ -163,13 +179,26 @@ export default function Footer({
               </Link>
             </div>
             <ul className="mt-3 grid grid-cols-4 gap-2 sm:max-w-[460px]">
-              {SHIPPING_BRANDS.map((b) => (
-                <li key={b.logo}>
-                  <span title={`${b.name} · ${b.services}`} tabIndex={0} className={LOGO_BOX}>
-                    {logos[b.logo] ? (
-                      <img src={logos[b.logo]} alt={b.name} loading="lazy" width={60} height={20} className={`h-5 w-full object-contain ${LOGO_MONO}`} />
+              {couriers.map((c) => (
+                <li key={c.code}>
+                  <span title={c.name} tabIndex={0} className={LOGO_BOX}>
+                    {c.simple ? (
+                      <>
+                        <SimpleIcon
+                          name={c.simple}
+                          size={c.simple === 'grab' ? 34 : 16}
+                          color="current"
+                          title={c.simple === 'grab' ? c.name : undefined}
+                          className={`text-white/75 transition ${c.simple === 'grab' ? 'group-hover/logo:text-[#00B14F] group-focus/logo:text-[#00B14F]' : 'group-hover/logo:text-[#00AA13] group-focus/logo:text-[#00AA13]'}`}
+                        />
+                        {c.simple === 'gojek' && (
+                          <span className="text-[11px] font-black text-white/75 transition group-hover/logo:text-[#00AA13] group-focus/logo:text-[#00AA13]">GoSend</span>
+                        )}
+                      </>
+                    ) : c.src ? (
+                      <img src={c.src} alt={c.name} loading="lazy" width={60} height={20} className={`h-5 w-full object-contain ${SOLID_LOGOS.includes(c.code) ? LOGO_GRAY : LOGO_MONO}`} />
                     ) : (
-                      <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-slate-700 group-focus/logo:text-slate-700">{b.name}</span>
+                      <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-slate-700 group-focus/logo:text-slate-700">{c.name}</span>
                     )}
                   </span>
                 </li>

@@ -159,6 +159,8 @@ export type StoreSettings = {
     title?: string | null; subtitle?: string | null; cta?: string | null;
   };
   home_layout?: { key: string; visible: boolean }[];
+  /** Kode kurir yang aktif di checkout (Biteship). Kosong = ongkir otomatis belum aktif. */
+  couriers?: string[];
   whatsapp_number: string;
   shopee_store_url: string;
   methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };

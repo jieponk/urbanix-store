@@ -66,6 +66,8 @@ def store_settings(request):
                 "cta": store.event_cta or None,
             },
             "home_layout": store.home_layout or [],
+            # Kurir yang benar-benar bisa dipilih di checkout (untuk footer). Kosong = ongkir otomatis belum aktif.
+            "couriers": (ongkir.courier_list(store) + ongkir.instant_list(store)) if ongkir.is_configured(store) else [],
         }
     )
 
