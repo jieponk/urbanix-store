@@ -121,3 +121,17 @@ class ShipmentTests(TestCase):
             r = self.api.post(self.url, {"action": "create"}, format="json")
         self.assertEqual(r.status_code, 200, r.content)
         self.assertNotEqual(req.call_args.kwargs["json"]["reference_id"], "URX-1")
+
+    def test_cek_pengiriman_command_updates_open_shipments(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        with mock.patch("store.ongkir.requests.request", return_value=ok(CREATED)):
+            self.api.post(self.url, {"action": "create"}, format="json")
+        with mock.patch("store.ongkir.requests.request", return_value=ok({**CREATED, "status": "dropping_off"})):
+            out = StringIO()
+            call_command("cek_pengiriman", stdout=out)
+        self.order.refresh_from_db()
+        self.assertEqual((self.order.shipment_status, self.order.status), ("dropping_off", "SHIPPED"))
+        self.assertIn("1 berubah", out.getvalue())

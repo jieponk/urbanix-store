@@ -131,8 +131,8 @@ export default function SettingsPage() {
               </Field>
             </div>
             <p className="text-xs text-slate-500">
-              Dipakai saat klik <b>Buat resi</b> di halaman pesanan. Ongkir resi dipotong dari saldo Biteship. Status paket ter-update otomatis lewat webhook:
-              <code className="ml-1">https://urbanix.id/api/v1/shipping/biteship-webhook/</code>
+              Dipakai saat klik <b>Buat resi</b> di halaman pesanan. Ongkir resi dipotong dari saldo Biteship. Status paket dicek otomatis
+              tiap jam (atau klik <b>Cek status</b> di pesanan). Webhook Biteship tidak dipakai karena sudah dipakai sistem Aneka Foto.
             </p>
           </div>
         </Card>
