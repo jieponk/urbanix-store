@@ -69,6 +69,15 @@ class ShipmentTests(TestCase):
         r = self.api.post(self.url, {"action": "create"}, format="json")
         self.assertEqual(r.status_code, 400)
 
+    def test_drop_off_not_supported_message(self):
+        resp = mock.Mock(status_code=400)
+        resp.json.return_value = {"success": False, "error": "Existing courier cannot provide dropping off service",
+                                  "code": 40002031}
+        with mock.patch("store.ongkir.requests.request", return_value=resp):
+            r = self.api.post(self.url, {"action": "create", "method": "drop_off"}, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("Dijemput kurir", str(r.data))
+
     def test_unpaid_or_manual_courier_rejected(self):
         self.order.payment_status = "UNPAID"
         self.order.save()

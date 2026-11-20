@@ -162,7 +162,12 @@ def create(order: Order, method: str | None = None) -> Order:
     try:
         data = ongkir._request("POST", "orders", json=payload)
     except ongkir.OngkirError as exc:
-        raise ShipmentError(f"Biteship menolak: {exc.detail or exc}")
+        detail = exc.detail or str(exc)
+        if "dropping off" in detail.lower() or "40002031" in detail:
+            raise ShipmentError("Kurir ini tidak melayani antar ke agen (drop off) lewat Biteship. Pilih \"Dijemput kurir\" lalu buat resi lagi.")
+        if "pick" in detail.lower() and method == "pickup":
+            raise ShipmentError(f"Kurir ini tidak bisa menjemput paket: {detail}. Coba pilih \"Antar ke agen\".")
+        raise ShipmentError(f"Biteship menolak: {detail}")
     shipment_id = str(data.get("id") or "")
     if not shipment_id:
         raise ShipmentError("Biteship tidak mengembalikan ID pengiriman. Cek dashboard Biteship.")
