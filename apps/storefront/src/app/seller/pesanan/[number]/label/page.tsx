@@ -6,16 +6,23 @@ import SimpleIcon from '@/components/SimpleIcon';
 import { rp, useSellerData } from '@/lib/seller';
 
 /**
- * Logo kurir: file resmi di public/couriers (JNE, J&T) dicetak hitam-putih lewat filter;
- * Gojek & Grab dari Simple Icons (satu warna, hitam). Kurir lain (SiCepat, AnterAja, POS, …) tidak ada
- * di Simple Icons → tampil sebagai teks sampai file logo resminya ditaruh di public/couriers.
+ * Logo kurir: file resmi di public/couriers (berwarna, latar transparan), dicetak hitam-putih lewat filter.
+ * Gojek & Grab dari Simple Icons (satu warna). Kurir lain tampil sebagai teks sampai logo resminya ditambahkan.
  */
 const COURIER_LOGOS: Record<string, string> = {
   jne: '/couriers/jne.webp',
   jnt: '/couriers/jnt.webp',
+  sicepat: '/couriers/sicepat.webp',
+  anteraja: '/couriers/anteraja.webp',
+  pos: '/couriers/pos.webp',
+  lion: '/couriers/lion.webp',
 };
 const SIMPLE_COURIERS: Record<string, 'gojek' | 'grab'> = { gojek: 'gojek', grab: 'grab' };
-const PRINT_BW = { filter: 'grayscale(1) contrast(1.8) brightness(0.55)' };
+/** Hitam-putih untuk printer thermal. Lion: kotak merah bertulisan putih → kontras tinggi supaya tulisan tetap putih. */
+const PRINT_BW: Record<string, { filter: string }> = {
+  lion: { filter: 'grayscale(1) contrast(3)' },
+};
+const PRINT_BW_DEFAULT = { filter: 'grayscale(1) contrast(1.8) brightness(0.55)' };
 
 function kg(grams: number) {
   return `${(grams / 1000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} kg`;
@@ -106,7 +113,7 @@ export default function ShippingLabelPage({ params }: { params: { number: string
                 </span>
               ) : logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={L.courier_name} className="max-h-[9mm] w-auto max-w-full object-contain" style={PRINT_BW} />
+                <img src={logo} alt={L.courier_name} className="max-h-[9mm] w-auto max-w-full object-contain" style={PRINT_BW[L.courier_code] ?? PRINT_BW_DEFAULT} />
               ) : (
                 <span style={{ fontSize: '11pt' }} className="rounded border-2 border-black px-1.5 py-0.5 font-black leading-none">{L.courier_name || '-'}</span>
               )}

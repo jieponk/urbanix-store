@@ -58,6 +58,14 @@ type Quote = {
 
 type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
 
+/** Logo resmi kurir ongkir otomatis (public/couriers) selain JNE & J&T. */
+const EXTRA_COURIER_LOGOS: Record<string, string> = {
+  sicepat: '/couriers/sicepat.webp',
+  anteraja: '/couriers/anteraja.webp',
+  pos: '/couriers/pos.webp',
+  lion: '/couriers/lion.webp',
+};
+
 const METHOD_INFO: Record<Method, { key: 'midtrans' | 'whatsapp' | 'shopee'; title: string; text: string }> = {
   MIDTRANS: {
     key: 'midtrans',
@@ -833,6 +841,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                       {ongkir.rates.map((r) => {
                         const on = form.service === r.code;
                         const known = r.courier === 'jne' || r.courier === 'jnt';
+                        const extraLogo = EXTRA_COURIER_LOGOS[r.courier];
                         return (
                           <label
                             key={r.code}
@@ -843,6 +852,11 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                             <input type="radio" name="service" value={r.code} checked={on} onChange={() => update('service', r.code)} className="h-4 w-4 shrink-0 accent-[#111111]" />
                             {known ? (
                               <CourierBadge courier={r.courier as 'jne' | 'jnt'} logo={courierLogos[r.courier as 'jne' | 'jnt']} label={r.courier_name} />
+                            ) : extraLogo ? (
+                              <span className="inline-flex h-9 w-[76px] shrink-0 items-center justify-center rounded-lg bg-white px-1.5 ring-1 ring-black/5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={extraLogo} alt={r.courier_name} className="max-h-6 w-auto max-w-full object-contain" />
+                              </span>
                             ) : (
                               <span className="inline-flex h-9 min-w-[76px] items-center justify-center rounded-lg bg-white px-2.5 text-[13px] font-black tracking-tight text-[#191919] ring-1 ring-black/5">
                                 {r.courier_name}
