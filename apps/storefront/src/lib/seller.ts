@@ -98,3 +98,9 @@ export function query(params: Record<string, string | number | undefined | null>
   const text = q.toString();
   return text ? `?${text}` : '';
 }
+
+/** Warna badge status pengembalian (retur). */
+export const RETURN_TONE: Record<string, string> = {
+  REQUESTED: 'amber', APPROVED: 'blue', RETURN_SHIPPED: 'blue', RECEIVED: 'blue',
+  REFUNDED: 'green', REPLACED: 'green', REJECTED: 'red', CANCELLED: 'gray',
+};

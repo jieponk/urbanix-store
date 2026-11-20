@@ -68,8 +68,8 @@ class Migration(migrations.Migration):
             model_name="storesettings",
             name="wa_unpaid_cancel_hours",
             field=models.PositiveSmallIntegerField(
-                default=48,
-                help_text="0 = tidak dibatalkan otomatis.",
+                default=24,
+                help_text="0 = tidak dibatalkan otomatis. Samakan dengan batas bayar di S&K (siteConfig legal.paymentDeadline).",
                 verbose_name="Batalkan otomatis pesanan WhatsApp belum lunas setelah (jam)",
             ),
         ),

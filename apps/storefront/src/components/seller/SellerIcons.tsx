@@ -10,6 +10,7 @@ function T({ size = 18, className = '', n }: P & { n: TablerName }) {
 export const icons = {
   dashboard: (p: P) => <T {...p} n="layout-dashboard" />,
   log: (p: P) => <T {...p} n="clock" />,
+  returns: (p: P) => <T {...p} n="arrow-back-up" />,
   orders: (p: P) => <T {...p} n="clipboard-list" />,
   products: (p: P) => <T {...p} n="package" />,
   bulk: (p: P) => <T {...p} n="table-import" />,

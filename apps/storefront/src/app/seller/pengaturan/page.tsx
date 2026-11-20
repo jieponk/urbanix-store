@@ -88,13 +88,16 @@ export default function SettingsPage() {
                 onPick={(o) => setForm({ ...form, ongkir_origin_id: o.id, ongkir_origin_label: o.label })}
               />
             </Field>
-            <Field label="Titik lokasi gudang (untuk GoSend/Grab)" hint="Wajib bila kurir instan diaktifkan. Geser pin tepat di pintu gudang.">
+            {/* Bukan <Field>/<label>: klik di peta jangan ikut menekan tombol "Pakai lokasi saya" */}
+            <div>
+              <p className="mb-1.5 text-sm font-semibold text-ink">Titik lokasi gudang (untuk GoSend/Grab)</p>
+              <p className="mb-2 text-xs text-slate-500">Wajib bila kurir instan diaktifkan. Geser pin tepat di pintu gudang.</p>
               <MapPicker
                 value={form.ongkir_origin_lat != null && form.ongkir_origin_lat !== '' ? { lat: Number(form.ongkir_origin_lat), lng: Number(form.ongkir_origin_lng) } : null}
                 onChange={(p) => setForm({ ...form, ongkir_origin_lat: p.lat, ongkir_origin_lng: p.lng })}
                 height={260}
               />
-            </Field>
+            </div>
             <div>
               <p className="mb-2 text-sm font-semibold text-slate-700">Kurir yang ditampilkan</p>
               <div className="flex flex-wrap gap-2">
@@ -118,6 +121,22 @@ export default function SettingsPage() {
             <p className="text-xs text-slate-500">
               Bila aktif, pembeli melihat ongkir langsung saat checkout dan bisa bayar di web (Midtrans). GoSend/Grab (instan) muncul setelah titik gudang diisi dan pembeli menandai lokasinya di peta.
             </p>
+          </div>
+        </Card>
+        <Card title="Pesanan, notifikasi & retur">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Email admin untuk notifikasi" hint="Pesanan baru, pembayaran lunas, dan pengajuan retur dikirim ke sini." className="sm:col-span-2">
+              <input className={inputCls} type="email" value={form.notify_email} onChange={(e) => set('notify_email', e.target.value)} placeholder="mis. admin@urbanix.id" />
+            </Field>
+            <Field label="Batal otomatis pesanan WA belum lunas (jam)" hint="Samakan dengan batas bayar di S&K (sekarang 1×24 jam). 0 = tidak dibatalkan.">
+              <input className={inputCls} inputMode="numeric" value={form.wa_unpaid_cancel_hours} onChange={(e) => set('wa_unpaid_cancel_hours', e.target.value)} />
+            </Field>
+            <Field label="Batas ajukan retur setelah paket diterima (jam)" hint="Samakan dengan S&K (sekarang 2×24 jam).">
+              <input className={inputCls} inputMode="numeric" value={form.return_window_hours} onChange={(e) => set('return_window_hours', e.target.value)} />
+            </Field>
+            <Field label="Batas ukuran video unboxing (MB)" hint="Video lebih besar diminta dikirim lewat WhatsApp supaya server tidak penuh.">
+              <input className={inputCls} inputMode="numeric" value={form.return_video_max_mb} onChange={(e) => set('return_video_max_mb', e.target.value)} />
+            </Field>
           </div>
         </Card>
         <Card title="Pengirim di resi & label">

@@ -70,7 +70,7 @@ class OrderFlowTests(TestCase):
         self.assertEqual(self.cam.stock, 3)
 
     def test_auto_cancel_unpaid_whatsapp(self):
-        Order.objects.filter(pk=self.order.pk).update(created_at=timezone.now() - timedelta(hours=49))
+        Order.objects.filter(pk=self.order.pk).update(created_at=timezone.now() - timedelta(hours=25))
         from io import StringIO
 
         call_command("kirim_pengingat", stdout=StringIO())

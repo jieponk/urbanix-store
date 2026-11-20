@@ -7,6 +7,7 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
   { group: 'Penjualan', items: [
     { href: '/seller', label: 'Dashboard', icon: 'dashboard', keywords: 'beranda omzet laporan' },
     { href: '/seller/pesanan', label: 'Pesanan', icon: 'orders', keywords: 'order resi kirim' },
+    { href: '/seller/pengembalian', label: 'Pengembalian', icon: 'returns', keywords: 'retur refund dana kembali komplain' },
   ] },
   { group: 'Produk', items: [
     { href: '/seller/produk', label: 'Produk & SKU', icon: 'products', keywords: 'stok harga varian' },

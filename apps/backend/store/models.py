@@ -158,8 +158,8 @@ class StoreSettings(models.Model):
         help_text="Pesanan baru, pembayaran lunas, dan pengajuan retur dikirim ke email ini.",
     )
     wa_unpaid_cancel_hours = models.PositiveSmallIntegerField(
-        "Batalkan otomatis pesanan WhatsApp belum lunas setelah (jam)", default=48,
-        help_text="0 = tidak dibatalkan otomatis.",
+        "Batalkan otomatis pesanan WhatsApp belum lunas setelah (jam)", default=24,
+        help_text="0 = tidak dibatalkan otomatis. Samakan dengan batas bayar di S&K (siteConfig legal.paymentDeadline).",
     )
     return_window_hours = models.PositiveSmallIntegerField("Batas ajukan retur setelah diterima (jam)", default=48)
     return_video_max_mb = models.PositiveSmallIntegerField("Batas ukuran video unboxing retur (MB)", default=50)

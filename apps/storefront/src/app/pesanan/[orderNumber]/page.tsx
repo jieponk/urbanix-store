@@ -43,6 +43,13 @@ type OrderDetail = {
   payment_url: string;
   whatsapp_url: string;
   review_url?: string;
+  shipment?: {
+    status: string;
+    status_label: string;
+    history: { status: string; label: string; note: string; at: string }[];
+    delivered_at: string | null;
+  } | null;
+  return?: { can_request: boolean; deadline: string | null; status: string; status_label: string; show: boolean };
   items: {
     product_id: number | null;
     name: string;
@@ -235,6 +242,30 @@ export default async function OrderPage({
                   </div>
                   <CopyText text={order.tracking_number} label={t('Salin resi')} />
                 </div>
+                {order.shipment?.status_label && (
+                  <p className="text-slate-600">
+                    {t('Status paket:')} <b className="text-ink">{t(order.shipment.status_label)}</b>
+                  </p>
+                )}
+                {order.shipment && order.shipment.history.length > 0 && (
+                  <ol className="relative ml-2 space-y-3 border-l-2 border-slate-200 pl-4">
+                    {order.shipment.history.map((h, i) => (
+                      <li key={i} className="relative">
+                        <span
+                          aria-hidden="true"
+                          className={`absolute -left-[23px] top-1 h-3 w-3 rounded-full ring-2 ring-surface ${i === 0 ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        />
+                        <p className={`text-sm font-bold ${i === 0 ? 'text-ink' : 'text-slate-600'}`}>{t(h.label)}</p>
+                        {h.note && <p className="text-xs text-slate-500">{h.note}</p>}
+                        {h.at && (
+                          <p className="text-[11px] text-slate-400 tabular-nums">
+                            {new Date(h.at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' })}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <a
                   href={`https://cekresi.com/?noresi=${encodeURIComponent(order.tracking_number)}`}
                   target="_blank"
@@ -251,6 +282,36 @@ export default async function OrderPage({
                   : t('Nomor resi akan muncul di sini setelah paket dikirim admin.') + (order.shipping_service ? ' ' + t('Pengiriman dipilih: {s}.', { s: order.shipping_service }) : '')}
               </p>
             )}
+          </section>
+        )}
+
+        {order.return?.show && (
+          <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+            <h2 className="font-black text-ink">{t('Pengembalian barang/dana')}</h2>
+            {order.return.status ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Status pengembalian:')} <b className="text-ink">{t(order.return.status_label)}</b>
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Barang rusak, salah, atau kurang? Ajukan pengembalian dengan foto resi & video unboxing.')}
+                {order.return.deadline && (
+                  <>
+                    {' '}
+                    {t('Batas pengajuan:')}{' '}
+                    <b className="text-ink">
+                      {new Date(order.return.deadline).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' })}
+                    </b>
+                  </>
+                )}
+              </p>
+            )}
+            <Link
+              href={`/pesanan/${encodeURIComponent(order.order_number)}/retur`}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-surface"
+            >
+              {order.return.status ? t('Lihat pengembalian') : t('Ajukan pengembalian')} <ArrowRight size={14} />
+            </Link>
           </section>
         )}
 

@@ -484,6 +484,7 @@ class SettingsSerializer(serializers.ModelSerializer):
             "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers", "ongkir_origin_lat", "ongkir_origin_lng",
             "ship_sender_name", "ship_sender_phone", "ship_sender_address", "ship_sender_postal_code",
             "ship_collection_method",
+            "notify_email", "wa_unpaid_cancel_hours", "return_window_hours", "return_video_max_mb",
         ]
 
     def validate(self, attrs):
@@ -496,6 +497,12 @@ class SettingsSerializer(serializers.ModelSerializer):
             if not isinstance(layout, list) or not all(isinstance(i, dict) and isinstance(i.get("key"), str) for i in layout):
                 raise serializers.ValidationError({"home_layout": "Format tata letak tidak valid."})
             attrs["home_layout"] = [{"key": i["key"][:30], "visible": bool(i.get("visible", True))} for i in layout][:30]
+        mb = attrs.get("return_video_max_mb")
+        if mb is not None and not 5 <= mb <= 200:
+            raise serializers.ValidationError({"return_video_max_mb": "Batas video 5–200 MB."})
+        win = attrs.get("return_window_hours")
+        if win is not None and not 24 <= win <= 720:
+            raise serializers.ValidationError({"return_window_hours": "Batas retur 24–720 jam."})
         lat, lng = attrs.get("ongkir_origin_lat"), attrs.get("ongkir_origin_lng")
         if (lat is None) != (lng is None):
             raise serializers.ValidationError({"ongkir_origin_lat": "Titik gudang belum lengkap."})
