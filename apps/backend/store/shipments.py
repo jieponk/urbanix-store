@@ -242,6 +242,51 @@ def _after_change(order: Order):
     notify_shipped(order)
 
 
+SERVICE_NAMES = {
+    "reg": "Reguler", "yes": "Yakin Esok Sampai", "oke": "Ongkos Kirim Ekonomis", "best": "Besok Sampai Tujuan",
+    "ez": "Reguler (EZ)", "halu": "Hemat", "gokil": "Kargo", "sds": "Same Day", "eco": "Ekonomi", "cargo": "Kargo",
+    "jtr": "Trucking", "next_day": "Next Day", "same_day": "Same Day", "kilat": "Kilat Khusus", "nextday": "Next Day",
+    "standard": "Standar", "economy": "Ekonomi", "ons": "One Night Service", "eco_pack": "Ekonomi",
+}
+
+
+def label_data(order: Order) -> dict:
+    """Data lengkap untuk label pengiriman (dicetak dari Seller Center)."""
+    courier, _, service = (order.shipping_service or "").partition(":")
+    items, billed = [], 0
+    for item in order.items.all():
+        weight = int(item.weight_grams or ongkir.FALLBACK_ITEM_WEIGHT)
+        billed += weight * item.quantity
+        items.append({
+            "name": item.product_name, "variation": item.variation_name, "sku": item.sku,
+            "quantity": item.quantity, "weight_grams": weight,
+        })
+    from .shipping import AUTO_COURIER_NAMES
+
+    return {
+        "courier_code": courier,
+        "courier_name": AUTO_COURIER_NAMES.get(courier, order.shipping_courier or courier.upper()),
+        "service_code": service.upper(),
+        "service_name": SERVICE_NAMES.get(service.lower(), ""),
+        "weight_grams": billed if order.shipping_auto else (order.total_weight_grams or billed),
+        "item_count": sum(i["quantity"] for i in items),
+        "items": items,
+        "shipping_cost": str(order.shipping_cost) if order.shipping_cost is not None else None,
+        "etd": order.shipping_etd,
+        "cod": False,
+        "insured": False,
+        "shipment_id": order.shipment_id,
+        "method": order.shipment_method,
+        "created_at": order.shipment_created_at or order.created_at,
+        "order_created_at": order.created_at,
+        "destination": {
+            "name": order.customer_name, "phone": order.customer_phone, "address": order.shipping_address,
+            "city": order.shipping_city, "province": order.shipping_province,
+            "postal_code": order.shipping_postal_code,
+        },
+    }
+
+
 def summary(order: Order) -> dict:
     return {
         "enabled": is_enabled(),

@@ -369,6 +369,7 @@ def _order_detail(o: Order):
         "shipping_city": o.shipping_city,
         "total_weight_grams": o.total_weight_grams,
         "shipment": {**shipments.summary(o), "sender": shipments.sender(StoreSettings.load())},
+        "label": shipments.label_data(o),
     }
 
 
