@@ -10,7 +10,6 @@ import ProductCard from '@/components/ProductCard';
 import PromoCountdown from '@/components/PromoCountdown';
 import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { VoucherStrip } from '@/components/VoucherCard';
-import WhatsappPromoPopup from '@/components/WhatsappPromoPopup';
 import { EventHero } from '@/components/EventMode';
 import { getEventState } from '@/lib/event-server';
 import {
@@ -299,14 +298,6 @@ export default async function HomePage({
 
   return (
     <div className="pb-4">
-      {settings?.show_whatsapp_popup && waOrder && waNumber && (
-        <WhatsappPromoPopup
-          percent={waPercent}
-          whatsappNumber={waNumber}
-          appliesToPromo={waOnPromo}
-          voucher={settings.popup_voucher ?? null}
-        />
-      )}
 
       {/* 0. Mode Event otomatis (12.12, tanggal kembar, payday): banner event di paling atas */}
       {/* Susunan beranda mengikuti mockup Mode Event: banner → voucher → flash sale → kategori → zona hemat →
