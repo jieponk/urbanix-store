@@ -26,5 +26,8 @@ export const MENU: { group: string; items: MenuItem[] }[] = [
     { href: '/seller/ulasan-pembeli', label: 'Ulasan produk', icon: 'reviews', keywords: 'rating bintang' },
     { href: '/seller/ulasan', label: 'Ulasan Shopee', icon: 'reviews' },
   ] },
-  { group: 'Toko', items: [{ href: '/seller/pengaturan', label: 'Pengaturan', icon: 'settings', keywords: 'whatsapp shopee kategori' }] },
+  { group: 'Toko', items: [
+    { href: '/seller/pengaturan', label: 'Pengaturan', icon: 'settings', keywords: 'whatsapp shopee kategori kurir ongkir biteship' },
+    { href: '/seller/log', label: 'Log aktivitas', icon: 'log', keywords: 'riwayat aktivitas login audit histori' },
+  ] },
 ];

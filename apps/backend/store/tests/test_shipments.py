@@ -135,3 +135,32 @@ class ShipmentTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual((self.order.shipment_status, self.order.status), ("dropping_off", "SHIPPED"))
         self.assertIn("1 berubah", out.getvalue())
+
+
+@override_settings(ORDER_EMAIL_ENABLED=False)
+class ActivityLogTests(TestCase):
+    def setUp(self):
+        User.objects.create_user("admin", password="rahasia123", is_staff=True)
+        self.api = APIClient()
+        r = self.api.post("/api/v1/seller/login/", {"username": "admin", "password": "rahasia123"}, format="json")
+        self.api.credentials(HTTP_AUTHORIZATION=f"Token {r.data['token']}")
+        for i, st in enumerate(["CANCELLED", "CANCELLED", "PENDING"]):
+            Order.objects.create(order_number=f"URX-{i}", customer_name="B", customer_phone="0812",
+                                 shipping_address="-", payment_method="WHATSAPP", status=st,
+                                 total_amount=Decimal("1000"))
+
+    def test_bulk_delete_cancelled_and_log(self):
+        r = self.api.post("/api/v1/seller/orders/hapus-dibatalkan/", {}, format="json")
+        self.assertEqual(r.data["deleted"], 2)
+        self.assertEqual(list(Order.objects.values_list("order_number", flat=True)), ["URX-2"])
+        self.api.patch("/api/v1/seller/orders/URX-2/", {"status": "PROCESSING"}, format="json")
+        APIClient().post("/api/v1/seller/login/", {"username": "admin", "password": "salah"}, format="json")
+        log = self.api.get("/api/v1/seller/log/").data["results"]
+        actions = [row["action"] for row in log]
+        self.assertIn("Login gagal", actions)
+        self.assertIn("Ubah Pesanan URX-2", actions)
+        self.assertIn("Hapus semua pesanan Dibatalkan", actions)
+        self.assertIn("Login", actions)
+        self.assertTrue(all("rahasia123" not in row["details"] for row in log))
+        login_only = self.api.get("/api/v1/seller/log/?kind=login").data["results"]
+        self.assertTrue(all(row["action"].startswith("Login") for row in login_only))

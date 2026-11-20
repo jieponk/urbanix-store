@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Badge, Card, Empty, ErrorBox, ORDER_TONE, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
-import { fmtDateTime, query, rp, useSellerData } from '@/lib/seller';
+import { Badge, Card, ConfirmButton, Empty, ErrorBox, ORDER_TONE, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
+import { fmtDateTime, notify, query, rp, sellerApi, useSellerData } from '@/lib/seller';
 
 const STATUSES = [
   { value: '', label: 'Semua' },
@@ -37,7 +37,28 @@ export default function OrdersPage() {
       <PageHeader
         title="Pesanan"
         subtitle="Pesanan dari website (pesan via WhatsApp & bayar di web)."
-        actions={<a className={btn.ghost} href={`/api/seller/orders/export${query({ status, q: search, range, method })}`}>Ekspor Excel</a>}
+        actions={
+          <>
+            {counts.CANCELLED > 0 && (
+              <ConfirmButton
+                className={btn.ghost}
+                confirmText={`Hapus ${counts.CANCELLED} pesanan dibatalkan? Tidak bisa dikembalikan.`}
+                onConfirm={async () => {
+                  try {
+                    const r = await sellerApi('orders/hapus-dibatalkan', { body: {} });
+                    notify(`${r.deleted} pesanan dibatalkan dihapus.`);
+                    reload();
+                  } catch (err) {
+                    notify((err as Error).message, 'error');
+                  }
+                }}
+              >
+                Hapus yang dibatalkan ({counts.CANCELLED})
+              </ConfirmButton>
+            )}
+            <a className={btn.ghost} href={`/api/seller/orders/export${query({ status, q: search, range, method })}`}>Ekspor Excel</a>
+          </>
+        }
       />
       <Tabs
         items={STATUSES.map((s) => ({ ...s, count: s.value ? counts[s.value] || 0 : total }))}

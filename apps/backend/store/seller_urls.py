@@ -12,6 +12,8 @@ urlpatterns = [
     path("dashboard/", a.dashboard),
     path("orders/", a.orders),
     path("orders/export/", a.orders_export),
+    path("orders/hapus-dibatalkan/", a.orders_delete_cancelled),
+    path("log/", a.activity_log),
     path("orders/<str:number>/", a.order_detail),
     path("orders/<str:number>/stock/", a.order_stock),
     path("orders/<str:number>/shipment/", a.order_shipment),

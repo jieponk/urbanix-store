@@ -62,9 +62,19 @@ def staff(methods):
     """@staff(["GET"]) = endpoint khusus staf dengan token."""
 
     def deco(fn):
-        fn = permission_classes([IsStaff])(fn)
-        fn = authentication_classes([TokenAuthentication])(fn)
-        return api_view(methods)(fn)
+        from functools import wraps
+
+        @wraps(fn)
+        def logged(request, *args, **kwargs):
+            response = fn(request, *args, **kwargs)
+            from .audit import record  # menu Log aktivitas
+
+            record(request, response)
+            return response
+
+        logged = permission_classes([IsStaff])(logged)
+        logged = authentication_classes([TokenAuthentication])(logged)
+        return api_view(methods)(logged)
 
     return deco
 
@@ -156,11 +166,17 @@ def wa_link(phone: str) -> str:
 def login(request):
     username = str(request.data.get("username", "")).strip()
     password = str(request.data.get("password", ""))
+    from .audit import system
+
     user = authenticate(request, username=username, password=password)
+    ip = (request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR") or "").split(",")[0].strip()
     if not user or not user.is_active:
+        system("Login gagal", f"username={username[:60]}, ip={ip}")
         return bad("Username atau password salah.", status.HTTP_401_UNAUTHORIZED)
     if not user.is_staff:
+        system("Login ditolak (bukan admin)", f"username={username[:60]}, ip={ip}", actor=user)
         return bad("Akun ini bukan admin toko.", status.HTTP_403_FORBIDDEN)
+    system("Login", f"ip={ip}", actor=user)
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key, "user": _user(user)})
 
@@ -426,6 +442,43 @@ def order_detail(request, number):
 
             notify_shipped(order)
     return Response(_order_detail(order))
+
+
+@staff(["POST"])
+def orders_delete_cancelled(request):
+    """Hapus semua pesanan berstatus Dibatalkan (stok yang masih tertahan dikembalikan dulu)."""
+    qs = Order.objects.filter(status="CANCELLED")
+    numbers = list(qs.values_list("order_number", flat=True)[:500])
+    for order in qs.filter(order_number__in=numbers):
+        if order.stock_reserved:
+            svc.release_stock(order)
+        order.delete()
+    return Response({"deleted": len(numbers), "numbers": numbers[:50]})
+
+
+@staff(["GET"])
+def activity_log(request):
+    from .models import AuditLog
+
+    qs = AuditLog.objects.select_related("actor").order_by("-timestamp")
+    q = (request.query_params.get("q") or "").strip()
+    if q:
+        qs = qs.filter(Q(action__icontains=q) | Q(details__icontains=q) | Q(actor__username__icontains=q))
+    kind = request.query_params.get("kind") or ""
+    if kind == "login":
+        qs = qs.filter(action__startswith="Login")
+    elif kind == "orders":
+        qs = qs.filter(Q(action__icontains="Pesanan") | Q(action__startswith="SHIPMENT") | Q(action="ORDER_CREATED"))
+    elif kind == "system":
+        qs = qs.filter(actor__isnull=True).exclude(action__startswith="Login")
+    data = paginate(request, qs, lambda a: {
+        "id": a.id,
+        "time": a.timestamp,
+        "actor": (a.actor.get_full_name() or a.actor.username) if a.actor else "Sistem",
+        "action": a.action,
+        "details": a.details,
+    }, default_size=50)
+    return Response(data)
 
 
 @staff(["POST"])
