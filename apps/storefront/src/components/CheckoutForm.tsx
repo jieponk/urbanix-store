@@ -64,6 +64,7 @@ const EXTRA_COURIER_LOGOS: Record<string, string> = {
   anteraja: '/couriers/anteraja.webp',
   pos: '/couriers/pos.webp',
   lion: '/couriers/lion.webp',
+  idexpress: '/couriers/idexpress.webp',
 };
 
 const METHOD_INFO: Record<Method, { key: 'midtrans' | 'whatsapp' | 'shopee'; title: string; text: string }> = {

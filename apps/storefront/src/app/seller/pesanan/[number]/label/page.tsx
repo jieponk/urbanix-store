@@ -16,6 +16,7 @@ const COURIER_LOGOS: Record<string, string> = {
   anteraja: '/couriers/anteraja.webp',
   pos: '/couriers/pos.webp',
   lion: '/couriers/lion.webp',
+  idexpress: '/couriers/idexpress.webp',
 };
 const SIMPLE_COURIERS: Record<string, 'gojek' | 'grab'> = { gojek: 'gojek', grab: 'grab' };
 /** Hitam-putih untuk printer thermal. Lion: kotak merah bertulisan putih → kontras tinggi supaya tulisan tetap putih. */
