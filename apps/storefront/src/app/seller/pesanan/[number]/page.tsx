@@ -260,6 +260,10 @@ function ShipmentCard({ data, number, onChange }: { data: any; number: string; o
             <div><dt className="text-xs text-slate-500">Serah paket</dt><dd className="font-semibold text-ink">{s.method === 'pickup' ? 'Dijemput kurir' : 'Antar ke agen (drop off)'}</dd></div>
           </dl>
           {s.price !== null && <p className="text-xs text-slate-500">Ongkir dipotong dari saldo Biteship: <b className="text-ink">{rp(s.price)}</b></p>}
+          <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            ID pesanan Biteship: <code className="font-semibold text-ink">{s.id}</code>
+            <button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(s.id); notify('ID Biteship disalin.'); }}>Salin</button>
+          </p>
           <div className="flex flex-wrap gap-2">
             <a href={`/seller/pesanan/${encodeURIComponent(number)}/label`} className={btn.primary}>Cetak label</a>
             <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('refresh', 'Status pengiriman diperbarui.')}>
@@ -276,6 +280,12 @@ function ShipmentCard({ data, number, onChange }: { data: any; number: string; o
         <p className="text-sm text-slate-600">{s.can_create_reason}</p>
       ) : (
         <div className="space-y-3">
+          {s.id && (
+            <p className="flex flex-wrap items-center gap-2 rounded-lg bg-mist px-3 py-2 text-xs text-slate-600">
+              Resi sebelumnya {s.status_label.toLowerCase()} · ID Biteship <code className="font-semibold text-ink">{s.id}</code>
+              <button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(s.id); notify('ID Biteship disalin.'); }}>Salin</button>
+            </p>
+          )}
           <p className="text-sm text-slate-600">
             Kurir pilihan pembeli: <b className="text-ink">{data.shipping_service}</b>. Resi langsung terbit dan tersimpan di pesanan ini.
           </p>
