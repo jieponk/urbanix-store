@@ -536,6 +536,9 @@ def place_order(data: dict) -> dict:
     from .emails import notify_order_created  # impor di sini: emails.py mengimpor modul ini
 
     notify_order_created(order)
+    from .emails import notify_admin_new_order
+
+    notify_admin_new_order(order)
     return order_result(order, store)
 
 
@@ -686,4 +689,8 @@ def handle_midtrans_notification(payload: dict) -> tuple[int, str]:
         return 200, "ignored"  # pending, challenge, refund, dll.
 
     order.save(update_fields=["payment_status", "status"])
+    if order.payment_status == "PAID":
+        from .order_events import mark_paid
+
+        mark_paid(order, source="Midtrans")
     return 200, "ok"

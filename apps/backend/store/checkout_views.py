@@ -21,6 +21,7 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
 from . import ongkir
+from .shipments import STATUS_LABELS as SHIPMENT_LABELS
 from . import vouchers as voucher_engine
 from .checkout_serializers import CheckoutSerializer, OngkirRequestSerializer, QuoteRequestSerializer
 from . import news as news_engine
@@ -259,6 +260,14 @@ def order_detail(request, order_number):
             "shipping_auto": order.shipping_auto,
             "shipping_etd": order.shipping_etd,
             "billed_amount": str(order.billed_amount),
+            "shipment": {
+                "status": order.shipment_status,
+                "status_label": SHIPMENT_LABELS.get(order.shipment_status, ""),
+                "history": order.shipment_history or [],
+                "delivered_at": order.delivered_at,
+            } if order.shipment_id else None,
+            "paid_at": order.paid_at,
+            "return": _return_summary(order),
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
             # Link ulasan produk (setelah paket dikirim). Setara keamanannya dengan nomor pesanan.
@@ -413,3 +422,18 @@ def news_detail(request, pk):
         "comments": [_comment(c) for c in _comment_qs(article)],
         "reactions": REACTIONS,
     })
+
+
+
+def _return_summary(order):
+    from .returns import eligibility
+
+    ret = getattr(order, "return_request", None)
+    elig = eligibility(order)
+    return {
+        "can_request": elig["can_request"],
+        "deadline": elig["deadline"],
+        "status": ret.status if ret else "",
+        "status_label": ret.get_status_display() if ret else "",
+        "show": bool(ret) or elig["can_request"],
+    }

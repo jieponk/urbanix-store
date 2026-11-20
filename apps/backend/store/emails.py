@@ -193,7 +193,8 @@ def build_reminder(order: Order) -> EmailMultiAlternatives:
     wa = _wa(store)
     status_url = frontend_url(f"/pesanan/{order.order_number}")
     items_html, items_text = _items_table(order)
-    deadline = "1×24 jam"
+    hours = store.wa_unpaid_cancel_hours or 0
+    deadline = f"{hours // 24}×24 jam" if hours and hours % 24 == 0 else f"{hours} jam"
 
     if order.payment_method == "MIDTRANS" and order.payment_url:
         action_text = f"Selesaikan pembayaran di sini: {order.payment_url}"
@@ -207,7 +208,8 @@ def build_reminder(order: Order) -> EmailMultiAlternatives:
         f"Halo {order.customer_name},",
         "",
         "Pesananmu di Urbanix Store belum kami terima pembayarannya.",
-        f"Pesanan yang belum dibayar dalam {deadline} sejak dikonfirmasi admin dapat dibatalkan otomatis.",
+        (f"Pesanan yang belum dibayar dalam {deadline} sejak dibuat akan dibatalkan otomatis."
+         if hours else "Segera selesaikan pembayaran supaya pesananmu bisa langsung kami proses."),
         "",
         f"Nomor pesanan: {order.order_number}",
         "",
@@ -221,9 +223,10 @@ def build_reminder(order: Order) -> EmailMultiAlternatives:
     inner = (
         f"<p style='margin:0 0 12px'>Halo {escape(order.customer_name)},</p>"
         "<p style='margin:0 0 16px;color:#4b5563'>Pesananmu belum kami terima pembayarannya. "
-        f"Pesanan yang belum dibayar dalam <b>{deadline}</b> sejak dikonfirmasi admin dapat dibatalkan otomatis, "
-        "jadi stoknya bisa dilepas untuk pembeli lain.</p>"
-        f"{_number_box(order)}{items_html}"
+        + (f"Pesanan yang belum dibayar dalam <b>{deadline}</b> sejak dibuat akan dibatalkan otomatis, "
+           "jadi stoknya bisa dilepas untuk pembeli lain.</p>" if hours else
+           "Segera selesaikan pembayaran supaya pesananmu bisa langsung kami proses.</p>")
+        + f"{_number_box(order)}{items_html}"
         "<p style='margin:16px 0 8px'></p>"
         f"{action_btn}"
         f"<a href='{status_url}' style='{BTN};background:#f3f5fa;color:#1c2030'>Cek status</a>"
@@ -326,6 +329,8 @@ def _deliver(order_pk: int, kind: str) -> bool:
         "reminder": build_reminder,
         "shipped": build_shipped,
         "review": build_review_request,
+        "paid": build_paid,
+        "return": build_return_status,
     }
     try:
         order = Order.objects.prefetch_related("items").get(pk=order_pk)
@@ -337,6 +342,7 @@ def _deliver(order_pk: int, kind: str) -> bool:
         "reminder": "reminder_sent_at",
         "shipped": "shipped_email_sent_at",
         "review": "review_email_sent_at",
+        "paid": "paid_email_sent_at",
     }.get(kind)
     if stamp:
         Order.objects.filter(pk=order_pk).update(**{stamp: timezone.now()})
@@ -410,3 +416,131 @@ def send_review_requests() -> int:
         if _deliver(pk, "review"):
             sent += 1
     return sent
+
+
+
+# ---------------------------------------------------------------- pembayaran diterima
+def build_paid(order: Order) -> EmailMultiAlternatives:
+    store = StoreSettings.load()
+    status_url = frontend_url(f"/pesanan/{order.order_number}")
+    items_html, items_text = _items_table(order)
+    total = money_text(order.billed_amount)
+    text = [
+        f"Halo {order.customer_name},",
+        "",
+        f"Pembayaran pesanan {order.order_number} sebesar {total} sudah kami terima. Terima kasih!",
+        "Pesananmu kami proses maksimal 2 hari kerja. Nomor resi akan dikirim lewat email begitu paket berangkat.",
+        "",
+        *items_text,
+        "",
+        f"Cek status pesanan: {status_url}",
+    ]
+    inner = (
+        f"<p style='margin:0 0 12px'>Halo {escape(order.customer_name)},</p>"
+        f"<p style='margin:0 0 16px;color:#4b5563'>Pembayaran sebesar <b>{total}</b> sudah kami terima. Terima kasih! "
+        "Pesananmu kami proses maksimal <b>2 hari kerja</b>. Nomor resi akan dikirim lewat email begitu paket berangkat.</p>"
+        f"{_number_box(order)}{items_html}"
+        f"<p style='margin:16px 0 8px'></p><a href='{status_url}' style='{BTN};background:#cf4309;color:#fff'>Cek status pesanan</a>"
+    )
+    return _message(order, f"Pembayaran diterima - pesanan {order.order_number} - Urbanix Store", text,
+                    _layout("Pembayaran diterima ✓", inner, _wa(store)))
+
+
+def notify_paid(order: Order) -> None:
+    if not order.paid_email_sent_at:
+        _dispatch(order, "paid")
+
+
+# ---------------------------------------------------------------- status retur (ke pembeli)
+RETURN_MESSAGES = {
+    "REQUESTED": "Pengajuan pengembalianmu sudah kami terima dan akan ditinjau maksimal 1×24 jam.",
+    "APPROVED": "Pengajuan pengembalianmu DISETUJUI. Silakan kirim barang kembali ke alamat toko, lalu isi nomor resi pengiriman di halaman pesanan.",
+    "RECEIVED": "Barang retur sudah kami terima dan sedang diperiksa.",
+    "REFUNDED": "Dana pengembalian sudah kami proses.",
+    "REPLACED": "Barang pengganti sudah kami kirim.",
+    "REJECTED": "Mohon maaf, pengajuan pengembalianmu tidak dapat kami setujui.",
+}
+
+
+def build_return_status(order: Order) -> EmailMultiAlternatives:
+    store = StoreSettings.load()
+    ret = order.return_request
+    url = frontend_url(f"/pesanan/{order.order_number}/retur")
+    message = RETURN_MESSAGES.get(ret.status, "Status pengembalianmu diperbarui.")
+    lines = [f"Halo {order.customer_name},", "", message]
+    extra = []
+    if ret.status == "REFUNDED" and ret.refund_amount is not None:
+        extra.append(f"Jumlah: {money_text(ret.refund_amount)}" + (f" ({ret.refund_method})" if ret.refund_method else ""))
+    if ret.status == "REPLACED" and ret.replacement_tracking_number:
+        extra.append(f"Resi barang pengganti: {ret.replacement_tracking_number}")
+    if ret.admin_note:
+        extra.append(f"Catatan admin: {ret.admin_note}")
+    lines += extra + ["", f"Lihat detail: {url}"]
+    inner = (
+        f"<p style='margin:0 0 12px'>Halo {escape(order.customer_name)},</p>"
+        f"<p style='margin:0 0 16px;color:#4b5563'>{escape(message)}</p>{_number_box(order)}"
+        + "".join(f"<p style='margin:12px 0 0;font-size:14px'>{escape(x)}</p>" for x in extra)
+        + f"<p style='margin:16px 0 8px'></p><a href='{url}' style='{BTN};background:#cf4309;color:#fff'>Lihat pengembalian</a>"
+    )
+    return _message(order, f"Pengembalian pesanan {order.order_number}: {ret.get_status_display()} - Urbanix Store",
+                    lines, _layout("Status pengembalian", inner, _wa(store)))
+
+
+def notify_return_status(order: Order) -> None:
+    _dispatch(order, "return")
+
+
+# ---------------------------------------------------------------- notifikasi admin
+def _admin_send(subject: str, lines: list[str], link_path: str) -> None:
+    store = StoreSettings.load()
+    to = (store.notify_email or "").strip()
+    if not (settings.ORDER_EMAIL_ENABLED and to):
+        return
+    url = frontend_url(link_path)
+    body = "\n".join(lines + ["", f"Buka di Seller Center: {url}"])
+    html = _layout(subject, "".join(f"<p style='margin:0 0 8px'>{escape(x)}</p>" for x in lines)
+                   + f"<a href='{url}' style='{BTN};background:#191919;color:#fff'>Buka Seller Center</a>", "")
+
+    def send():
+        try:
+            msg = EmailMultiAlternatives(subject=f"[Urbanix] {subject}", body=body, from_email=settings.DEFAULT_FROM_EMAIL,
+                                         to=[to], headers={"Auto-Submitted": "auto-generated"})
+            msg.attach_alternative(html, "text/html")
+            msg.send()
+        except Exception:
+            logger.exception("Gagal mengirim notifikasi admin: %s", subject)
+
+    if settings.ORDER_EMAIL_SYNC:
+        send()
+    else:
+        threading.Thread(target=send, daemon=True).start()
+
+
+def _order_lines(order: Order) -> list[str]:
+    lines = [f"No. pesanan: {order.order_number}", f"Pembeli: {order.customer_name} ({order.customer_phone})",
+             f"Metode: {order.get_payment_method_display() if hasattr(order, 'get_payment_method_display') else order.payment_method}",
+             f"Total: {money_text(order.billed_amount)}"]
+    if order.shipping_service:
+        lines.append(f"Kurir: {shipping_label(order.shipping_service) or order.shipping_service}")
+    for item in order.items.all():
+        lines.append(f"- {item.quantity}× {item.product_name}" + (f" ({item.variation_name})" if item.variation_name else ""))
+    return lines
+
+
+def notify_admin_new_order(order: Order) -> None:
+    _admin_send(f"Pesanan baru {order.order_number}", ["Ada pesanan baru di urbanix.id."] + _order_lines(order),
+                f"/seller/pesanan/{order.order_number}")
+
+
+def notify_admin_paid(order: Order) -> None:
+    _admin_send(f"LUNAS {order.order_number} — siap diproses", ["Pembayaran sudah lunas. Silakan buat resi & kirim."]
+                + _order_lines(order), f"/seller/pesanan/{order.order_number}")
+
+
+def notify_admin_return(order: Order) -> None:
+    ret = order.return_request
+    _admin_send(f"Pengajuan retur {order.order_number}",
+                [f"Alasan: {ret.get_reason_display()}", f"Permintaan: {ret.get_resolution_display()}",
+                 f"Penjelasan: {ret.description[:500]}",
+                 "Video unboxing: " + ("dikirim lewat WhatsApp" if ret.video_via_whatsapp else "terlampir di Seller Center")],
+                f"/seller/pengembalian/{ret.pk}")

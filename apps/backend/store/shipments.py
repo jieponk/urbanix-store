@@ -126,6 +126,23 @@ def _payload(order: Order, store, method: str) -> dict:
     return payload
 
 
+def _history(raw) -> list[dict]:
+    """Riwayat perjalanan paket dari Biteship → [{status, label, note, at}] terbaru di atas (maks. 30)."""
+    rows = []
+    for h in raw or []:
+        if not isinstance(h, dict):
+            continue
+        status = str(h.get("status") or "")[:30]
+        rows.append({
+            "status": status,
+            "label": STATUS_LABELS.get(status, status.replace("_", " ").capitalize()),
+            "note": str(h.get("note") or "")[:300],
+            "at": str(h.get("updated_at") or h.get("eventDate") or "")[:40],
+        })
+    rows.sort(key=lambda r: r["at"], reverse=True)
+    return rows[:30]
+
+
 def _apply(order: Order, data: dict) -> list[str]:
     """Salin data pesanan Biteship ke pesanan toko. Kembalikan nama field yang berubah."""
     courier = data.get("courier") or {}
@@ -148,6 +165,11 @@ def _apply(order: Order, data: dict) -> list[str]:
         changes["status"] = "SHIPPED"
     if status == "delivered" and order.status in ("PENDING", "PROCESSING", "SHIPPED"):
         changes["status"] = "COMPLETED"
+    if status == "delivered" and order.delivered_at is None:
+        changes["delivered_at"] = timezone.now()
+    history = _history(courier.get("history"))
+    if history:
+        changes["shipment_history"] = history
     fields = []
     for name, value in changes.items():
         if getattr(order, name) != value:

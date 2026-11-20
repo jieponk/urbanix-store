@@ -412,6 +412,7 @@ def order_detail(request, number):
     if request.method == "PATCH":
         d = request.data
         fields = []
+        was_paid = order.payment_status == "PAID"
         try:
             if "status" in d:
                 if d["status"] not in STATUS_LABELS:
@@ -437,8 +438,16 @@ def order_detail(request, number):
             return bad(str(exc))
         if order.status == "CANCELLED" and order.stock_reserved:
             svc.release_stock(order)
+        if order.status == "COMPLETED":
+            from .order_events import mark_delivered
+
+            fields += mark_delivered(order)
         if fields:
             order.save(update_fields=fields + ["updated_at"])
+            if not was_paid and order.payment_status == "PAID":
+                from .order_events import mark_paid  # stok WA dipotong + email lunas
+
+                mark_paid(order, source="admin")
             from .emails import notify_shipped  # email "paket dikirim" (sekali, butuh status Dikirim + resi)
 
             notify_shipped(order)
@@ -999,3 +1008,18 @@ def products_import(request):
         if not apply:
             transaction.set_rollback(True)
     return Response({"applied": apply, "changes": changes, "errors": errors[:50], "error_count": len(errors)})
+
+
+# --------------------------------------------------------------------------- pengembalian (retur)
+@staff(["GET"])
+def returns_list(request):
+    from .returns import seller_returns
+
+    return seller_returns(request)
+
+
+@staff(["GET", "POST"])
+def return_detail(request, pk):
+    from .returns import seller_return_detail
+
+    return seller_return_detail(request, pk)

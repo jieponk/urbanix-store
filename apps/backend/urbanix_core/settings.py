@@ -105,6 +105,7 @@ REST_FRAMEWORK = {
         'checkout_quote': '120/min',
         'checkout': '10/min',
         'ongkir': '60/min',
+        'retur': '60/hour',
         'seller_login': '10/min',
         'article_comment': '5/min',
         'comment_reaction': '40/min',

@@ -152,6 +152,17 @@ class StoreSettings(models.Model):
         "Cara serah paket", max_length=10, blank=True, default="drop_off",
         choices=[("drop_off", "Antar ke agen (drop off)"), ("pickup", "Dijemput kurir (pickup)")],
     )
+    # Notifikasi & aturan pesanan
+    notify_email = models.EmailField(
+        "Email admin untuk notifikasi", blank=True,
+        help_text="Pesanan baru, pembayaran lunas, dan pengajuan retur dikirim ke email ini.",
+    )
+    wa_unpaid_cancel_hours = models.PositiveSmallIntegerField(
+        "Batalkan otomatis pesanan WhatsApp belum lunas setelah (jam)", default=48,
+        help_text="0 = tidak dibatalkan otomatis.",
+    )
+    return_window_hours = models.PositiveSmallIntegerField("Batas ajukan retur setelah diterima (jam)", default=48)
+    return_video_max_mb = models.PositiveSmallIntegerField("Batas ukuran video unboxing retur (MB)", default=50)
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
     show_whatsapp_popup = models.BooleanField(
@@ -371,6 +382,10 @@ class Order(models.Model):
     reminder_sent_at = models.DateTimeField("Email pengingat bayar terkirim", null=True, blank=True)
     shipped_email_sent_at = models.DateTimeField("Email paket dikirim terkirim", null=True, blank=True)
     review_email_sent_at = models.DateTimeField("Email minta ulasan terkirim", null=True, blank=True)
+    paid_at = models.DateTimeField("Lunas pada", null=True, blank=True)
+    paid_email_sent_at = models.DateTimeField("Email pembayaran diterima terkirim", null=True, blank=True)
+    delivered_at = models.DateTimeField("Diterima pembeli pada", null=True, blank=True)
+    shipment_history = models.JSONField("Riwayat perjalanan paket", default=list, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -1006,3 +1021,59 @@ class ShopVideo(models.Model):
         if m:
             return {"kind": "instagram", "src": f"https://www.instagram.com/reel/{m.group(1)}/embed", "thumb": ""}
         return {"kind": "link", "src": url, "thumb": ""}
+
+
+
+def _return_upload(instance, filename):
+    ext = (filename.rsplit(".", 1)[-1] if "." in filename else "bin").lower()[:5]
+    return f"retur/{uuid.uuid4().hex}.{ext}"
+
+
+class ReturnRequest(models.Model):
+    """Pengajuan pengembalian barang/dana oleh pembeli (maks. 1 per pesanan)."""
+
+    REASONS = [
+        ("DEFECT", "Barang rusak/cacat dari pabrik"),
+        ("NOT_WORKING", "Barang tidak berfungsi"),
+        ("DAMAGED_SHIPPING", "Barang rusak saat pengiriman"),
+        ("WRONG_ITEM", "Barang yang diterima salah (produk/varian/warna)"),
+        ("INCOMPLETE", "Barang atau aksesori kurang/tidak lengkap"),
+        ("NOT_AS_DESCRIBED", "Barang tidak sesuai deskripsi"),
+    ]
+    RESOLUTIONS = [("REFUND", "Pengembalian dana"), ("REPLACE", "Tukar barang")]
+    STATUSES = [
+        ("REQUESTED", "Diajukan"),
+        ("APPROVED", "Disetujui, kirim barang kembali"),
+        ("RETURN_SHIPPED", "Barang dikirim pembeli"),
+        ("RECEIVED", "Barang diterima toko"),
+        ("REFUNDED", "Dana dikembalikan"),
+        ("REPLACED", "Barang pengganti dikirim"),
+        ("REJECTED", "Ditolak"),
+        ("CANCELLED", "Dibatalkan pembeli"),
+    ]
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="return_request")
+    reason = models.CharField("Alasan", max_length=20, choices=REASONS)
+    description = models.TextField("Penjelasan pembeli")
+    item_ids = models.JSONField("Barang yang diretur", default=list, blank=True)
+    resolution = models.CharField("Permintaan", max_length=10, choices=RESOLUTIONS, default="REFUND")
+    waybill_photo = models.ImageField("Foto resi", upload_to=_return_upload)
+    unboxing_video = models.FileField("Video unboxing", upload_to=_return_upload, blank=True)
+    video_via_whatsapp = models.BooleanField("Video dikirim lewat WhatsApp", default=False)
+    status = models.CharField(max_length=20, choices=STATUSES, default="REQUESTED")
+    admin_note = models.TextField("Catatan admin untuk pembeli", blank=True)
+    return_courier = models.CharField("Kurir kirim balik", max_length=50, blank=True)
+    return_tracking_number = models.CharField("Resi kirim balik", max_length=80, blank=True)
+    refund_amount = models.DecimalField("Dana dikembalikan", max_digits=12, decimal_places=2, null=True, blank=True)
+    refund_method = models.CharField("Cara pengembalian dana", max_length=120, blank=True)
+    replacement_tracking_number = models.CharField("Resi barang pengganti", max_length=80, blank=True)
+    history = models.JSONField("Riwayat status", default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Pengembalian"
+        verbose_name_plural = "Pengembalian"
+
+    def __str__(self):
+        return f"Retur {self.order.order_number} - {self.status}"
