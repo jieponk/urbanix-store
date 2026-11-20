@@ -16,8 +16,6 @@ export const siteConfig = {
   // Bukti kepercayaan di halaman produk & beranda.
   since: 'Januari 2026',
   city: 'Jakarta Pusat',
-  // Google Customer Reviews (Merchant Center). Perkiraan sampai = maks. proses + maks. transit (sama dengan pengaturan pengiriman).
-  googleCustomerReviews: { merchantId: 5904063899, processingDaysMax: 2, transitDaysMax: 7 },
   // Deskripsi beranda untuk Google (±150 karakter)
   metaDescription:
     'Belanja kamera, lensa, drone, action cam & mic Sony, Canon, DJI, Insta360, Fujifilm. 100% original bergaransi resmi, kirim ke seluruh Indonesia.',

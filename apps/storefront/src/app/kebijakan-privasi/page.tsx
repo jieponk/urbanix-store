@@ -69,7 +69,6 @@ export default function PrivacyPage() {
               <ul>
                 <li>Biteship (agregator pengiriman) dan jasa ekspedisi yang kamu pilih: nama, nomor HP, alamat, titik lokasi (kurir instan), dan isi paket, untuk menghitung ongkir dan mengirim pesanan.</li>
                 <li>Midtrans (penyedia pembayaran): nama, nomor HP, email, alamat, dan rincian tagihan, untuk memproses pembayaran.</li>
-                <li>Google, bila kamu menyetujui survei Google Customer Reviews setelah checkout (email dan nomor pesanan).</li>
                 <li>Saat memakai peta titik lokasi, peta dimuat dari OpenStreetMap dan pencarian alamat memakai layanan Nominatim (OpenStreetMap).</li>
                 <li>Penyedia infrastruktur: server di Indonesia (Biznet Gio) dan layanan keamanan/jaringan (Cloudflare).</li>
                 <li>WhatsApp (Meta) saat kamu menghubungi atau mengirim video retur ke nomor kami.</li>
