@@ -105,11 +105,9 @@ export default function ProductBuyButtons({
   }
 
   function chatUrl() {
-    const lines = ['Halo admin URBANIX, saya mau tanya tentang produk ini:', name];
-    if (selected?.name.trim()) lines.push(`Varian: ${selected.name.trim()}`);
-    if (currentSku) lines.push(`SKU: ${currentSku}`);
-    lines.push(window.location.href, '', 'Pertanyaan saya: ');
-    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
+    // Singkat saja: sapaan + link produk (pembeli tinggal mengetik pertanyaannya sendiri).
+    const text = `Hai kak, saya mau nanya untuk link produk\n${window.location.href}`;
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
   }
 
   function openChat() {
