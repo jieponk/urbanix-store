@@ -122,6 +122,8 @@ class OngkirCheckoutTests(TestCase):
         with mock.patch("store.checkout_service.requests.post", return_value=fake) as post:
             r = self.api.post("/api/v1/checkout/", self.body("MIDTRANS", **kw), format="json")
         self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(post.call_args.kwargs["headers"]["X-Override-Notification"],
+                         "http://toko.test/api/v1/payments/midtrans-webhook/")
         return Order.objects.get(order_number=r.data["order_number"]), post.call_args.kwargs["json"]
 
     def test_rates_endpoint(self):

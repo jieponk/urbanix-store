@@ -452,6 +452,9 @@ def create_snap_transaction(order: Order) -> dict:
             "Authorization": f"Basic {auth}",
             "Accept": "application/json",
             "Content-Type": "application/json",
+            # Akun Midtrans dipakai bersama Aneka Foto: notifikasi transaksi Urbanix dikirim ke server Urbanix saja,
+            # tanpa mengubah Notification URL di dashboard (milik sistem Aneka Foto).
+            "X-Override-Notification": frontend_url("/api/v1/payments/midtrans-webhook/"),
         },
         timeout=15,
     )
