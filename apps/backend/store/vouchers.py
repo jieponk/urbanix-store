@@ -76,7 +76,15 @@ def voucher_summary(v: Voucher) -> dict:
 
 
 def public_vouchers():
-    return [v for v in Voucher.objects.filter(is_active=True, is_public=True) if v.is_running()]
+    """Voucher yang ditampilkan ke pembeli. Voucher khusus WhatsApp disembunyikan bila pesan via WA dimatikan."""
+    from .models import StoreSettings
+
+    store = StoreSettings.load()
+    wa_on = bool(store.enable_whatsapp and store.whatsapp_number)
+    return [
+        v for v in Voucher.objects.filter(is_active=True, is_public=True)
+        if v.is_running() and (v.for_midtrans or wa_on)
+    ]
 
 
 @dataclass
