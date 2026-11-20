@@ -5,6 +5,7 @@ import { siteConfig } from '@/lib/siteConfig';
 import { ArrowRight } from '@/components/inspirasi/InspoIcons';
 import { getT } from '@/lib/lang-server';
 import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 export const metadata = {
   title: 'Kontak',
@@ -171,16 +172,25 @@ export default async function ContactPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <div className="rounded-2xl bg-surface p-6 ring-1 ring-slate-200">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-mist text-ink">
                   <FeatureIcon name="shield" size={20} />
                 </span>
-                <p className="text-lg font-extrabold text-amber-900">{t('Waspada penipuan')}</p>
+                <p className="text-lg font-extrabold text-ink">{t('Belanja aman')}</p>
               </div>
-              <p className="mt-3 text-sm leading-6 text-amber-900">
-                {t('Bayar hanya lewat halaman pembayaran di urbanix.id. Kami tidak pernah meminta transfer ke rekening pribadi, kode OTP, PIN, atau data kartu lewat chat. WhatsApp resmi kami hanya {wa}. Ragu? Tanyakan dulu ke admin.', { wa: whatsapp ? displayPhone(whatsapp) : '-' })}
-              </p>
+              <ul className="mt-4 space-y-2.5 text-sm leading-6 text-slate-600">
+                {[
+                  t('Bayar hanya di halaman pembayaran urbanix.id (Midtrans).'),
+                  t('Kami tidak pernah meminta transfer ke rekening pribadi, kode OTP, PIN, atau data kartu.'),
+                  t('WhatsApp resmi kami hanya {wa}.', { wa: whatsapp ? displayPhone(whatsapp) : '-' }),
+                ].map((line) => (
+                  <li key={line} className="flex gap-2.5">
+                    <TablerIcon name="check" size={16} stroke={2.4} className="mt-1 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
