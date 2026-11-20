@@ -530,7 +530,10 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
   const shippingCost = selectedRate ? selectedRate.cost : null;
   const shippingCut = shippingCost !== null ? Math.min(shippingCost, shippingDiscount) : 0;
   const total = Number(quote.total) + (shippingCost !== null ? shippingCost - shippingCut : 0);
-  const manualGroups = SHIPPING_GROUPS.filter((g) => !ongkirAuto || (method === 'WHATSAPP' && g.name === 'Instan'));
+  // Ongkir otomatis gagal (mis. kuota harian habis): pesanan WA tetap bisa pakai pilihan biasa (ongkir dari admin).
+  const manualGroups = SHIPPING_GROUPS.filter(
+    (g) => !ongkirAuto || (method === 'WHATSAPP' && (Boolean(ongkir.error) || g.name === 'Instan'))
+  );
   const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
   return (
