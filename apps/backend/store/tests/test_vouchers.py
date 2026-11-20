@@ -59,6 +59,11 @@ class VoucherTests(TestCase):
         self.assertEqual(StoreSettings.load().voucher_combo_min_purchase, 0)
         codes = [v["code"] for v in self.api.get("/api/v1/vouchers/").data]
         self.assertEqual(codes, ["WAHEMAT5", "ONGKIR40"])
+        # Popup beranda hanya untuk voucher yang berlaku bayar di web; WAHEMAT5 khusus WA → tidak dipakai popup.
+        st = self.api.get("/api/v1/store-settings/").data
+        self.assertFalse(st["show_whatsapp_popup"])
+        self.assertIsNone(st["popup_voucher"])
+        Voucher.objects.filter(code="WAHEMAT5").update(for_midtrans=True)
         st = self.api.get("/api/v1/store-settings/").data
         self.assertTrue(st["show_whatsapp_popup"])
         self.assertEqual((st["whatsapp_discount_percent"], st["popup_voucher"]["code"]), ("5", "WAHEMAT5"))

@@ -38,7 +38,8 @@ def _public(view):
 def store_settings(request):
     store = StoreSettings.load()
     reviews = Review.objects.filter(is_published=True)
-    popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup), None)
+    # Popup beranda: voucher bercentang "Tampilkan di popup" yang berlaku untuk bayar di web.
+    popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup and v.for_midtrans), None)
     popup_percent = (
         str(Decimal(str(popup.value)).normalize()) if popup and popup.voucher_type == "PERCENT" else "0"
     )
@@ -50,7 +51,7 @@ def store_settings(request):
             # Kompatibel dengan tampilan lama: persen & popup diambil dari voucher popup.
             "whatsapp_discount_percent": popup_percent,
             "whatsapp_discount_on_promo": bool(popup and not popup.exclude_promo),
-            "show_whatsapp_popup": bool(store.show_whatsapp_popup and store.whatsapp_number and popup),
+            "show_whatsapp_popup": bool(store.show_whatsapp_popup and popup),
             "popup_voucher": voucher_engine.voucher_summary(popup) if popup else None,
             "shopee_rating": str(store.shopee_rating) if store.shopee_rating is not None else None,
             "shopee_rating_count": store.shopee_rating_count,

@@ -486,3 +486,18 @@ body {
 .seller-root ::-webkit-scrollbar { width: 10px; height: 10px; }
 .seller-root ::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
 .seller-root ::-webkit-scrollbar-track { background: transparent; }
+
+/* Popup voucher: ikon tiket bergoyang, kilau menyapu kode, bintang berkedip */
+@keyframes voucher-wiggle { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(-12deg) scale(1.06); } 82% { transform: rotate(10deg) scale(1.06); } 88% { transform: rotate(-6deg); } 94% { transform: rotate(3deg); } }
+.voucher-wiggle { animation: voucher-wiggle 3.2s ease-in-out 1s infinite; }
+.voucher-twinkle { animation: ico-twinkle 1.8s ease-in-out infinite; }
+.voucher-shine::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.65) 50%, transparent 65%);
+  transform: translateX(-120%); animation: voucher-shine 3.6s ease-in-out 1.2s infinite;
+}
+.dark .voucher-shine::after { background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.12) 50%, transparent 65%); }
+@keyframes voucher-shine { 0% { transform: translateX(-120%); } 35%, 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) {
+  .voucher-wiggle, .voucher-twinkle, .voucher-shine::after { animation: none; }
+}

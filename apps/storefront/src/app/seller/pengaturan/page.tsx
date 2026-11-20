@@ -68,6 +68,13 @@ export default function SettingsPage() {
                 <span>Bayar di web (Midtrans) {!data.midtrans_configured && <Badge tone="amber">kunci belum diisi</Badge>}</span>
                 <Toggle checked={form.enable_midtrans} onChange={(x) => set('enable_midtrans', x)} />
               </label>
+              <label className="flex items-center justify-between">
+                <span>
+                  Popup voucher di beranda
+                  <span className="block text-xs font-normal text-slate-500">Memakai voucher bercentang &quot;Tampilkan di popup&quot; yang berlaku untuk bayar di web.</span>
+                </span>
+                <Toggle checked={form.show_whatsapp_popup} onChange={(x) => set('show_whatsapp_popup', x)} />
+              </label>
             </div>
             <Field label="Min. belanja untuk gabung 2 voucher (Rp)" hint="0 = selalu bisa digabung.">
               <input className={inputCls} inputMode="numeric" value={form.voucher_combo_min_purchase} onChange={(e) => set('voucher_combo_min_purchase', e.target.value)} />
