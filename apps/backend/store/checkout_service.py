@@ -437,6 +437,11 @@ def create_snap_transaction(order: Order) -> dict:
             },
         },
         "callbacks": {"finish": frontend_url(f"/pesanan/{order.order_number}")},
+        # Label diatur di dashboard Midtrans → Settings → Custom Field (Toko / Kurir / No. HP pembeli).
+        # Membedakan transaksi Urbanix dari brand lain yang memakai akun Midtrans yang sama.
+        "custom_field1": "Urbanix Store",
+        "custom_field2": shipping_label(order.shipping_service)[:255],
+        "custom_field3": order.customer_phone[:255],
     }
     auth = base64.b64encode(f"{settings.MIDTRANS_SERVER_KEY}:".encode()).decode()
     response = requests.post(

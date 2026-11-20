@@ -142,6 +142,7 @@ class OngkirCheckoutTests(TestCase):
         self.assertEqual(sum(i["price"] * i["quantity"] for i in payload["item_details"]), 2025000)
         ongkir_line = next(i for i in payload["item_details"] if i["id"] == "ONGKIR")
         self.assertEqual(ongkir_line["name"], "Ongkir JNE REG")
+        self.assertEqual((payload["custom_field1"], payload["custom_field2"]), ("Urbanix Store", "JNE REG"))
         from store.tests.test_checkout import signed
 
         r = self.api.post("/api/v1/payments/midtrans-webhook/",
