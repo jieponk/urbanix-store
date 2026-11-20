@@ -46,7 +46,11 @@ AREA_ID_RE = re.compile(r"^[A-Za-z0-9]{4,60}$")
 
 
 class OngkirError(Exception):
-    """Pesan aman untuk pembeli."""
+    """Pesan aman untuk pembeli. `detail` = pesan asli Biteship (untuk admin, bukan pembeli)."""
+
+    def __init__(self, message, detail=""):
+        super().__init__(message)
+        self.detail = detail
 
 
 def api_key() -> str:
@@ -91,13 +95,17 @@ def _request(method: str, path: str, **kwargs) -> dict:
     if resp.status_code == 200 and body.get("success", True):
         return body
     logger.warning("Biteship %s %s: HTTP %s %s", method, path, resp.status_code, str(body)[:300])
+    detail = str(body.get("error") or body.get("message") or "")[:300]
+    code = body.get("code")
+    if code:
+        detail = f"{detail} (kode {code})".strip()
     if resp.status_code in (401, 403):
-        raise OngkirError("Kunci Biteship ditolak. Hubungi admin toko.")
+        raise OngkirError("Kunci Biteship ditolak. Hubungi admin toko.", detail)
     if resp.status_code == 402 or "balance" in str(body.get("error", "")).lower():
-        raise OngkirError("Cek ongkir otomatis sedang tidak tersedia. Silakan pesan via WhatsApp dulu.")
+        raise OngkirError("Cek ongkir otomatis sedang tidak tersedia. Silakan pesan via WhatsApp dulu.", detail)
     if resp.status_code == 429:
-        raise OngkirError("Layanan cek ongkir sedang sibuk. Coba lagi beberapa detik lagi.")
-    raise OngkirError("Ongkir untuk tujuan ini belum bisa dihitung.")
+        raise OngkirError("Layanan cek ongkir sedang sibuk. Coba lagi beberapa detik lagi.", detail)
+    raise OngkirError("Ongkir untuk tujuan ini belum bisa dihitung.", detail)
 
 
 # ---------------------------------------------------------------- tujuan

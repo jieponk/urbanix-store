@@ -162,7 +162,7 @@ def create(order: Order, method: str | None = None) -> Order:
     try:
         data = ongkir._request("POST", "orders", json=payload)
     except ongkir.OngkirError as exc:
-        raise ShipmentError(f"Biteship menolak: {exc}")
+        raise ShipmentError(f"Biteship menolak: {exc.detail or exc}")
     shipment_id = str(data.get("id") or "")
     if not shipment_id:
         raise ShipmentError("Biteship tidak mengembalikan ID pengiriman. Cek dashboard Biteship.")
@@ -188,7 +188,7 @@ def refresh(order: Order) -> Order:
     try:
         data = ongkir._request("GET", f"orders/{order.shipment_id}")
     except ongkir.OngkirError as exc:
-        raise ShipmentError(f"Gagal mengambil status dari Biteship: {exc}")
+        raise ShipmentError(f"Gagal mengambil status dari Biteship: {exc.detail or exc}")
     with transaction.atomic():
         order = Order.objects.select_for_update().get(pk=order.pk)
         fields = _apply(order, data)
@@ -207,7 +207,7 @@ def cancel(order: Order, reason: str = "") -> Order:
     try:
         ongkir._request("POST", f"orders/{order.shipment_id}/cancel", json=body)
     except ongkir.OngkirError as exc:
-        raise ShipmentError(f"Biteship menolak pembatalan: {exc}")
+        raise ShipmentError(f"Biteship menolak pembatalan: {exc.detail or exc}")
     order.shipment_status = "cancelled"
     order.tracking_number = ""
     order.save(update_fields=["shipment_status", "tracking_number", "updated_at"])
