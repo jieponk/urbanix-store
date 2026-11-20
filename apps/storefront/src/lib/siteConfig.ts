@@ -108,24 +108,27 @@ export const siteConfig = {
    * PENTING: tampilkan hanya metode yang benar-benar bisa dipakai di checkout.
    */
   paymentMethods: [
-    // Semua metode Snap Midtrans aktif. Logo resmi di public/payments; Visa/Mastercard dari Simple Icons;
-    // yang belum punya file logo tampil sebagai teks (taruh file <logo>.webp/.svg di public/payments untuk menggantinya).
+    // Semua metode Snap Midtrans aktif. Logo resmi dari koleksi Midtrans (github.com/veritrans/logo),
+    // dikonversi ke WebP di public/payments. `solid` = logo berkotak/berwarna penuh: di footer gelap
+    // tampil abu-abu (bukan siluet putih) supaya bentuknya tetap terbaca.
     { name: 'QRIS', logo: 'qris-logo' },
     { name: 'GoPay', logo: 'gopay' },
     { name: 'ShopeePay', logo: 'shopeepay' },
-    { name: 'Visa', logo: '', simple: 'visa' },
-    { name: 'Mastercard', logo: '', simple: 'mastercard' },
+    { name: 'Visa', logo: 'visa' },
+    { name: 'Mastercard', logo: 'mastercard', solid: true },
+    { name: 'JCB', logo: 'jcb', solid: true },
+    { name: 'American Express', logo: 'amex', solid: true },
     { name: 'BCA', logo: 'bca' },
     { name: 'Mandiri', logo: 'mandiri' },
     { name: 'BNI', logo: 'bni' },
     { name: 'BRI', logo: 'bri' },
-    { name: 'Permata', logo: 'permata' },
-    { name: 'CIMB Niaga', logo: 'cimb' },
-    { name: 'Indomaret', logo: 'indomaret' },
-    { name: 'Alfamart', logo: 'alfamart' },
-    { name: 'Akulaku', logo: 'akulaku' },
+    { name: 'Permata Bank', logo: 'permata' },
+    { name: 'CIMB Niaga', logo: 'cimb', solid: true },
+    { name: 'Indomaret', logo: 'indomaret', solid: true },
+    { name: 'Alfamart', logo: 'alfamart', solid: true },
+    { name: 'Akulaku PayLater', logo: 'akulaku' },
     { name: 'Kredivo', logo: 'kredivo' },
-  ] as { name: string; logo: string; showName?: boolean; simple?: 'visa' | 'mastercard' }[],
+  ] as { name: string; logo: string; showName?: boolean; solid?: boolean }[],
 
   // Teks berjalan di beranda
   highlights: [

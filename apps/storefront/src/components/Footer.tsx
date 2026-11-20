@@ -23,6 +23,9 @@ const LOGO_MONO =
 const LOGO_GRAY =
   'opacity-80 grayscale invert transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-hover/logo:invert-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0 group-focus/logo:invert-0';
 const SOLID_LOGOS = ['lion'];
+/** Logo pembayaran berkotak/berwarna penuh (JCB, Indomaret, …): abu-abu redup, berwarna saat disentuh. */
+const LOGO_SOFT =
+  'opacity-80 grayscale transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0';
 /** Kotak logo: gelap transparan menyatu dengan footer hitam, jadi putih saat disorot/disentuh agar warna logo terbaca. */
 const LOGO_BOX =
   'group/logo flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] px-2 ring-1 ring-white/15 outline-none transition duration-300 hover:bg-white hover:ring-white focus:bg-white focus:ring-white';
@@ -144,26 +147,17 @@ export default function Footer({
               {payments.map((method) => (
                 <li key={method.name}>
                   <span title={method.name} tabIndex={0} className={LOGO_BOX}>
-                    {method.simple && (
-                      <SimpleIcon
-                        name={method.simple}
-                        size={30}
-                        color="current"
-                        title={method.name}
-                        className={`text-white/75 transition ${method.simple === 'visa' ? 'group-hover/logo:text-[#1A1F71] group-focus/logo:text-[#1A1F71]' : 'group-hover/logo:text-[#EB001B] group-focus/logo:text-[#EB001B]'}`}
-                      />
-                    )}
-                    {!method.simple && method.src && (
+                    {method.src && (
                       <img
                         src={method.src}
                         alt={method.showName ? '' : method.name}
                         loading="lazy"
                         width={60}
                         height={20}
-                        className={`${method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'} ${LOGO_MONO}`}
+                        className={`${method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'} ${method.solid ? LOGO_SOFT : LOGO_MONO}`}
                       />
                     )}
-                    {!method.simple && (!method.src || method.showName) && (
+                    {(!method.src || method.showName) && (
                       <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-cobalt-900 group-focus/logo:text-cobalt-900">{method.name}</span>
                     )}
                   </span>
