@@ -188,12 +188,12 @@ export default function ProductHero({ product, variants, whatsappNumber, voucher
         <ul className="mt-5 grid grid-cols-1 gap-3 border-t border-slate-200 pt-4 text-[13px] leading-5 text-slate-600 sm:grid-cols-3">
           <li>
             <b className="block text-ink">{t('Pembayaran')}</b>
-            {siteConfig.paymentMethods.map((m) => m.name).join(', ')}.{' '}
+            {t('QRIS, virtual account bank, e-wallet, kartu kredit/debit, Indomaret/Alfamart, dan paylater lewat Midtrans.')}{' '}
             <Link href="/syarat-ketentuan#pembayaran" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
           <li>
             <b className="block text-ink">{t('Pengiriman')}</b>
-            {t('Reguler & kargo (JNE/J&T), instan (GoSend/Grab). Dikirim maks. {d} setelah bayar.', { d: t(siteConfig.legal.shipProcessing) })}{' '}
+            {t('JNE, J&T, SiCepat, AnterAja & ekspedisi lain, plus instan GoSend/Grab. Ongkir dihitung otomatis di checkout. Dikirim maks. {d} setelah bayar.', { d: t(siteConfig.legal.shipProcessing) })}{' '}
             <Link href="/syarat-ketentuan#pengiriman" className="font-semibold text-ink underline">{t('Detail')}</Link>
           </li>
           <li>

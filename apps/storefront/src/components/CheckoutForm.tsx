@@ -72,7 +72,7 @@ const METHOD_INFO: Record<Method, { key: 'midtrans' | 'whatsapp' | 'shopee'; tit
   MIDTRANS: {
     key: 'midtrans',
     title: 'Bayar di web',
-    text: 'QRIS, transfer bank (virtual account), e-wallet, atau kartu lewat Midtrans.',
+    text: 'QRIS, virtual account bank, e-wallet, kartu, gerai Indomaret/Alfamart, atau paylater lewat Midtrans.',
   },
   WHATSAPP: {
     key: 'whatsapp',

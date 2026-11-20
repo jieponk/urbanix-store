@@ -37,6 +37,7 @@ type OrderDetail = {
   shipping_service?: string;
   tracking_number?: string;
   shipping_cost?: string | null;
+  billed_amount?: string;
   customer_email_masked?: string;
   email_enabled?: boolean;
   payment_url: string;
@@ -142,6 +143,9 @@ export default async function OrderPage({
   }
 
   const info = statusInfo(order, Boolean(searchParams.transaction_status));
+  const hasShipping = order.shipping_cost !== null && order.shipping_cost !== undefined && order.shipping_cost !== '';
+  const shippingCost = hasShipping ? Number(order.shipping_cost) || 0 : 0;
+  const shippingCut = hasShipping ? Math.min(shippingCost, Number(order.shipping_discount_max) || 0) : 0;
   const created = new Date(order.created_at).toLocaleString('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -347,7 +351,7 @@ export default async function OrderPage({
               <span className="font-semibold">-{money(order.discount_amount || 0)}</span>
             </div>
           )}
-          {Number(order.shipping_discount_max) > 0 && (
+          {Number(order.shipping_discount_max) > 0 && !hasShipping && (
             <div className="mt-2 flex justify-between text-sm text-emerald-700">
               <span>{t('Potongan ongkir')}</span>
               <span className="font-semibold">s/d {money(order.shipping_discount_max || 0)}</span>
@@ -358,11 +362,29 @@ export default async function OrderPage({
           )}
           <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
             <span className="font-bold">{t('Total produk')}</span>
-            <span className="font-black">{money(order.total_amount)}</span>
+            <span className={hasShipping ? 'font-semibold' : 'font-black'}>{money(order.total_amount)}</span>
           </div>
+          {hasShipping && (
+            <>
+              <div className="mt-2 flex justify-between text-sm">
+                <span>{t('Ongkos kirim')}</span>
+                <span className="font-semibold">{money(shippingCost)}</span>
+              </div>
+              {shippingCut > 0 && (
+                <div className="mt-2 flex justify-between text-sm text-emerald-700">
+                  <span>{t('Potongan ongkir')}</span>
+                  <span className="font-semibold">-{money(shippingCut)}</span>
+                </div>
+              )}
+              <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
+                <span className="font-bold">{t('Total tagihan')}</span>
+                <span className="font-black">{money(order.billed_amount ?? Number(order.total_amount) + shippingCost - shippingCut)}</span>
+              </div>
+            </>
+          )}
           <p className="mt-1 text-right text-xs text-slate-500">
             {t(order.tax_note || 'Harga sudah termasuk PPN.')} {order.shipping_note && t(order.shipping_note)}
-            {Number(order.shipping_discount_max) > 0 && ' ' + t('Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.')}
+            {Number(order.shipping_discount_max) > 0 && !hasShipping && ' ' + t('Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.')}
           </p>
         </section>
 

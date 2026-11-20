@@ -43,7 +43,7 @@ export default function TermsPage() {
             <ul>
               <li>Produk yang dijual adalah produk original. Foto dapat berupa ilustrasi; warna dan detail mengikuti produk asli.</li>
               <li>Harga dalam Rupiah dan <b>sudah termasuk PPN</b>, <b>belum termasuk ongkos kirim</b>.</li>
-              <li>Harga, promo, dan stok dapat berubah sewaktu-waktu. Harga yang berlaku adalah harga pada saat pesanan dikonfirmasi oleh admin.</li>
+              <li>Harga, promo, dan stok dapat berubah sewaktu-waktu. Harga yang berlaku adalah harga yang tampil saat pesanan dibuat di checkout.</li>
               <li>Jika terjadi kesalahan harga atau stok yang jelas (mis. salah ketik), kami berhak membatalkan pesanan dan mengembalikan dana yang sudah dibayarkan sepenuhnya.</li>
             </ul>
           ),

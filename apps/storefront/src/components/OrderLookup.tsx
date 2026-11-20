@@ -78,7 +78,7 @@ export default function OrderLookup() {
           </p>
         )}
         <p className="mt-3 text-xs leading-5 text-slate-500">
-          {t('Boleh juga tempel link halaman pesanan. Nomor pesanan ada di chat WhatsApp pesananmu (diawali "No. pesanan") dan di email konfirmasi bila kamu mengisi email saat checkout.')}
+          {t('Boleh juga tempel link halaman pesanan. Nomor pesanan (diawali URX-) ada di halaman pesanan setelah checkout dan di email pesanan bila kamu mengisi email saat checkout.')}
         </p>
       </form>
 

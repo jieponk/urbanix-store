@@ -163,12 +163,12 @@ export default async function AboutPage() {
           <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex gap-5 rounded-2xl p-6 ring-1 ring-slate-200 transition hover:shadow-lg hover:ring-slate-300">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15">
-                <FeatureIcon name="chat" size={24} />
+                <FeatureIcon name="lock" size={24} />
               </span>
               <div>
               <h3 className="text-lg font-extrabold text-ink">{t('Langsung di website')}</h3>
               <p className="mt-2 leading-7 text-slate-600">
-                {t('Pilih produk dan varian, pakai voucher, lalu pesanan terkirim otomatis ke WhatsApp admin kami. Admin akan mengonfirmasi stok, ongkir, dan pembayaran.')}
+                {t('Pilih produk dan varian, pakai voucher, pilih kurir dengan ongkir yang dihitung otomatis, lalu bayar aman lewat QRIS, virtual account, e-wallet, kartu, gerai, atau paylater. Status pesanan dan resi bisa dicek kapan saja.')}
               </p>
               </div>
             </div>

@@ -52,7 +52,7 @@ function badge(o: Invoice) {
 }
 
 const STATUS: Record<string, string> = {
-  PENDING: 'Menunggu konfirmasi',
+  PENDING: 'Menunggu pembayaran',
   PROCESSING: 'Diproses',
   SHIPPED: 'Dikirim',
   COMPLETED: 'Selesai',

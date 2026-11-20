@@ -51,7 +51,7 @@ export default async function ContactPage() {
       brand: 'whatsapp',
       label: 'WhatsApp',
       value: displayPhone(whatsapp),
-      note: 'Cara tercepat: tanya stok, rekomendasi, dan konfirmasi pesanan.',
+      note: 'Cara tercepat: tanya stok, rekomendasi, dan bantuan seputar pesanan.',
       href: `https://wa.me/${whatsapp}`,
       cta: 'Mulai chat',
       accent: 'bg-emerald-700 text-white',
