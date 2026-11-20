@@ -14,6 +14,7 @@ urlpatterns = [
     path("orders/export/", a.orders_export),
     path("orders/<str:number>/", a.order_detail),
     path("orders/<str:number>/stock/", a.order_stock),
+    path("orders/<str:number>/shipment/", a.order_shipment),
     path("products/", a.products),
     path("products/bulk/", a.products_bulk),
     path("products/template/", a.products_template),

@@ -108,6 +108,30 @@ export default function SettingsPage() {
             </p>
           </div>
         </Card>
+        <Card title="Pengirim di resi & label">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Nama pengirim"><input className={inputCls} value={form.ship_sender_name} onChange={(e) => set('ship_sender_name', e.target.value)} /></Field>
+              <Field label="No. HP pengirim" hint="Kosong = nomor WhatsApp toko."><input className={inputCls} inputMode="tel" value={form.ship_sender_phone} onChange={(e) => set('ship_sender_phone', e.target.value)} /></Field>
+            </div>
+            <Field label="Alamat gudang (untuk pickup & label)">
+              <textarea className={inputCls} rows={2} value={form.ship_sender_address} onChange={(e) => set('ship_sender_address', e.target.value)} />
+            </Field>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Kode pos gudang"><input className={inputCls} inputMode="numeric" maxLength={5} value={form.ship_sender_postal_code} onChange={(e) => set('ship_sender_postal_code', e.target.value)} /></Field>
+              <Field label="Cara serah paket (bawaan)">
+                <select className={inputCls} value={form.ship_collection_method} onChange={(e) => set('ship_collection_method', e.target.value)}>
+                  <option value="drop_off">Antar ke agen (drop off)</option>
+                  <option value="pickup">Dijemput kurir (pickup)</option>
+                </select>
+              </Field>
+            </div>
+            <p className="text-xs text-slate-500">
+              Dipakai saat klik <b>Buat resi</b> di halaman pesanan. Ongkir resi dipotong dari saldo Biteship. Status paket ter-update otomatis lewat webhook:
+              <code className="ml-1">https://urbanix.id/api/v1/shipping/biteship-webhook/</code>
+            </p>
+          </div>
+        </Card>
         <Card title="Toko Shopee">
           <div className="space-y-4">
             <Field label="ID toko Shopee" hint="Dipakai untuk link produk otomatis: shopee.co.id/product/<ID toko>/<kode produk>/">

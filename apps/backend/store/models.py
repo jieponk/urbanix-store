@@ -136,6 +136,20 @@ class StoreSettings(models.Model):
         "Kurir ongkir otomatis", max_length=120, blank=True, default="jne:jnt:sicepat:anteraja:pos",
         help_text="Kode kurir dipisah titik dua, mis. jne:jnt:sicepat.",
     )
+    # Pengirim untuk resi otomatis (Biteship Order API)
+    ship_sender_name = models.CharField("Nama pengirim di resi", max_length=80, blank=True, default="Urbanix Store")
+    ship_sender_phone = models.CharField(
+        "No. HP pengirim di resi", max_length=20, blank=True, help_text="Kosong = nomor WhatsApp toko.",
+    )
+    ship_sender_address = models.TextField(
+        "Alamat pengirim / gudang", blank=True,
+        default="Jl. Kerekot Bundar XI No. 4, RT.8/RW.6, Pasar Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta",
+    )
+    ship_sender_postal_code = models.CharField("Kode pos gudang", max_length=5, blank=True, default="10710")
+    ship_collection_method = models.CharField(
+        "Cara serah paket", max_length=10, blank=True, default="drop_off",
+        choices=[("drop_off", "Antar ke agen (drop off)"), ("pickup", "Dijemput kurir (pickup)")],
+    )
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
     show_whatsapp_popup = models.BooleanField(
@@ -338,6 +352,11 @@ class Order(models.Model):
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
     shipping_destination_id = models.CharField("ID area tujuan (Biteship)", max_length=60, blank=True)
     shipping_etd = models.CharField("Estimasi tiba", max_length=30, blank=True)
+    shipment_id = models.CharField("ID pengiriman Biteship", max_length=60, blank=True)
+    shipment_status = models.CharField("Status pengiriman", max_length=30, blank=True)
+    shipment_method = models.CharField("Cara serah paket", max_length=10, blank=True)
+    shipment_price = models.DecimalField("Ongkir ditagih Biteship", max_digits=12, decimal_places=2, null=True, blank=True)
+    shipment_created_at = models.DateTimeField("Resi dibuat", null=True, blank=True)
     shipping_auto = models.BooleanField(
         "Ongkir otomatis", default=False, help_text="Ongkir dihitung otomatis (Biteship) saat checkout, bukan dari admin.",
     )

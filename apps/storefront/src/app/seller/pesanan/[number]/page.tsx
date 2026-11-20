@@ -134,6 +134,8 @@ export default function OrderDetailPage({ params }: { params: { number: string }
             </dl>
           </Card>
 
+          {data.shipment?.enabled && <ShipmentCard data={data} number={number} onChange={setData} />}
+
           <Card title="Pengiriman & catatan">
             <form
               className="grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -220,5 +222,82 @@ export default function OrderDetailPage({ params }: { params: { number: string }
         </div>
       </div>
     </div>
+  );
+}
+
+const SHIP_TONE: Record<string, string> = {
+  confirmed: 'blue', scheduled: 'blue', allocated: 'blue', picking_up: 'amber', picked: 'amber',
+  dropping_off: 'amber', delivered: 'green', cancelled: 'gray', rejected: 'red', courier_not_found: 'red',
+  returned: 'red', return_in_transit: 'red', on_hold: 'amber', disposed: 'red',
+};
+
+/** Resi otomatis Biteship: buat resi, cek status, batalkan, cetak label. */
+function ShipmentCard({ data, number, onChange }: { data: any; number: string; onChange: (d: any) => void }) {
+  const s = data.shipment;
+  const [method, setMethod] = useState<'drop_off' | 'pickup'>(s.method || 'drop_off');
+  const [busy, setBusy] = useState('');
+  const active = s.id && !['cancelled', 'rejected', 'courier_not_found'].includes(s.status);
+
+  async function run(action: 'create' | 'refresh' | 'cancel', message: string) {
+    setBusy(action);
+    try {
+      onChange(await sellerApi(`orders/${encodeURIComponent(number)}/shipment`, { body: { action, method } }));
+      notify(message);
+    } catch (err) {
+      notify((err as Error).message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  return (
+    <Card title="Resi otomatis (Biteship)" action={s.status ? <Badge tone={SHIP_TONE[s.status] || 'gray'}>{s.status_label}</Badge> : undefined}>
+      {active ? (
+        <div className="space-y-3">
+          <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+            <div><dt className="text-xs text-slate-500">No. resi</dt><dd className="font-bold text-ink">{data.tracking_number || 'Menunggu dari kurir…'}</dd></div>
+            <div><dt className="text-xs text-slate-500">Kurir</dt><dd className="font-semibold text-ink">{data.shipping_service}</dd></div>
+            <div><dt className="text-xs text-slate-500">Serah paket</dt><dd className="font-semibold text-ink">{s.method === 'pickup' ? 'Dijemput kurir' : 'Antar ke agen (drop off)'}</dd></div>
+          </dl>
+          {s.price !== null && <p className="text-xs text-slate-500">Ongkir dipotong dari saldo Biteship: <b className="text-ink">{rp(s.price)}</b></p>}
+          <div className="flex flex-wrap gap-2">
+            <a href={`/seller/pesanan/${encodeURIComponent(number)}/label`} className={btn.primary}>Cetak label</a>
+            <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('refresh', 'Status pengiriman diperbarui.')}>
+              {busy === 'refresh' ? 'Mengecek…' : 'Cek status'}
+            </button>
+            {s.can_cancel && (
+              <ConfirmButton className={btn.ghost} confirmText="Batalkan resi ini?" onConfirm={() => run('cancel', 'Resi dibatalkan.')}>
+                Batalkan resi
+              </ConfirmButton>
+            )}
+          </div>
+        </div>
+      ) : s.can_create_reason ? (
+        <p className="text-sm text-slate-600">{s.can_create_reason}</p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">
+            Kurir pilihan pembeli: <b className="text-ink">{data.shipping_service}</b>. Resi langsung terbit dan tersimpan di pesanan ini.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Cara serah paket">
+            {([
+              ['drop_off', 'Antar ke agen', 'Bawa paket ke agen kurir terdekat'],
+              ['pickup', 'Dijemput kurir', 'Kurir datang ke gudang'],
+            ] as const).map(([value, title, hint]) => (
+              <label key={value} className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition ${method === value ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-400'}`}>
+                <input type="radio" name="ship-method" checked={method === value} onChange={() => setMethod(value)} className="mt-0.5 accent-[#191919]" />
+                <span>
+                  <span className="block text-sm font-bold text-ink">{title}</span>
+                  <span className="block text-xs text-slate-500">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <button type="button" className={btn.primary} disabled={!!busy} onClick={() => run('create', 'Resi dibuat.')}>
+            {busy === 'create' ? 'Membuat resi…' : 'Buat resi'}
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }

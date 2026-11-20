@@ -39,4 +39,5 @@ urlpatterns = [
     path('ongkir/', checkout_views.ongkir_rates, name='ongkir_rates'),
     path('checkout/orders/<str:order_number>/', checkout_views.order_detail, name='checkout_order_detail'),
     path('payments/midtrans-webhook/', checkout_views.midtrans_webhook, name='midtrans_webhook'),
+    path('shipping/biteship-webhook/', checkout_views.biteship_webhook, name='biteship_webhook'),
 ]

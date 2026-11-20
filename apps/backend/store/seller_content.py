@@ -482,6 +482,8 @@ class SettingsSerializer(serializers.ModelSerializer):
             "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
             "home_layout", "event_title", "event_subtitle", "event_cta",
             "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers",
+            "ship_sender_name", "ship_sender_phone", "ship_sender_address", "ship_sender_postal_code",
+            "ship_collection_method",
         ]
 
     def validate(self, attrs):

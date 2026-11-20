@@ -175,6 +175,18 @@ def ongkir_rates(request):
 ongkir_rates.cls.throttle_scope = "ongkir"
 
 
+@api_view(["POST", "GET"])
+@_public
+def biteship_webhook(request):
+    """Notifikasi status paket dari Biteship (Dashboard → Integrasi → Webhook)."""
+    from . import shipments
+
+    if request.method == "GET":
+        return Response({"ok": True})
+    payload = request.data if isinstance(request.data, dict) else {}
+    return Response({"result": shipments.handle_webhook(payload)})
+
+
 def _mask_email(email: str) -> str:
     if not email or "@" not in email:
         return ""

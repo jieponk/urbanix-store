@@ -29,7 +29,8 @@ from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
 from .shipping import package_info, shipping_label
-from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation
+from . import shipments
+from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation, StoreSettings
 from .pricing import prefetch_running_promos, price_info
 from .serializers import ProductSerializer
 from .xlsx_reader import read_sheets
@@ -365,6 +366,9 @@ def _order_detail(o: Order):
         ],
         "status_choices": [{"value": k, "label": v} for k, v in STATUS_LABELS.items()],
         "payment_choices": [{"value": k, "label": v} for k, v in PAYMENT_LABELS.items()],
+        "shipping_city": o.shipping_city,
+        "total_weight_grams": o.total_weight_grams,
+        "shipment": {**shipments.summary(o), "sender": shipments.sender(StoreSettings.load())},
     }
 
 
@@ -420,6 +424,26 @@ def order_detail(request, number):
             from .emails import notify_shipped  # email "paket dikirim" (sekali, butuh status Dikirim + resi)
 
             notify_shipped(order)
+    return Response(_order_detail(order))
+
+
+@staff(["POST"])
+def order_shipment(request, number):
+    """POST {"action": "create" | "refresh" | "cancel", "method": "drop_off" | "pickup"}: resi Biteship."""
+    order = get_object_or_404(Order, order_number=number)
+    action = request.data.get("action")
+    try:
+        if action == "create":
+            order = shipments.create(order, request.data.get("method") or None)
+        elif action == "refresh":
+            order = shipments.refresh(order)
+        elif action == "cancel":
+            order = shipments.cancel(order, str(request.data.get("reason") or ""))
+        else:
+            return bad("Aksi tidak dikenal.")
+    except shipments.ShipmentError as exc:
+        return bad(str(exc))
+    order.refresh_from_db()
     return Response(_order_detail(order))
 
 

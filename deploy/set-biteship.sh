@@ -47,6 +47,9 @@ assert rows
 " </dev/null; then
   echo "BERHASIL. Lanjut: Seller Center -> Pengaturan -> Ongkir otomatis -> pilih asal pengiriman (gudang) -> Simpan."
   echo "Catatan: Biteship menagih per cek ongkir (Rp2-5/request). Pastikan saldo Biteship terisi."
+  echo "Untuk resi otomatis: Biteship -> Integrasi -> Webhook -> tambah URL"
+  echo "  https://urbanix.id/api/v1/shipping/biteship-webhook/"
+  echo "  centang event order.status, order.waybill_id, order.price."
 else
   echo "GAGAL. Kunci ditolak Biteship, saldo habis, atau server tidak bisa menghubungi api.biteship.com."
   exit 1

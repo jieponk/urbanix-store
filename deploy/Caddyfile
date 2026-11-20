@@ -42,8 +42,9 @@
 			lb_try_interval 1s
 		}
 	}
-	# Notifikasi pembayaran Midtrans (Payment Notification URL) langsung ke backend.
-	handle /api/v1/payments/midtrans-webhook/ {
+	# Notifikasi dari layanan luar langsung ke backend: pembayaran Midtrans & status paket Biteship.
+	@webhook path /api/v1/payments/midtrans-webhook/ /api/v1/shipping/biteship-webhook/
+	handle @webhook {
 		reverse_proxy backend:8000
 	}
 	handle {
