@@ -4,16 +4,38 @@ import { ErrorBox, PageHeader, Spinner, btn } from '@/components/seller/ui';
 import { code128Bars } from '@/lib/code128';
 import { rp, useSellerData } from '@/lib/seller';
 
-/** Logo kurir hitam-putih yang tersedia di public/couriers (cocok untuk printer thermal). */
-const MONO_LOGOS: Record<string, string> = { jne: '/couriers/jne-mono.webp', jnt: '/couriers/jnt-mono.webp' };
+/**
+ * Logo kurir resmi di public/couriers (berwarna, latar transparan). Dicetak hitam-putih lewat filter.
+ * Kurir lain (SiCepat, AnterAja, POS, …) tampil sebagai teks sampai file logo resminya ditambahkan.
+ */
+const COURIER_LOGOS: Record<string, string> = {
+  jne: '/couriers/jne.webp',
+  jnt: '/couriers/jnt.webp',
+  gojek: '/couriers/gosend.webp',
+  grab: '/couriers/grab.webp',
+};
+const PRINT_BW = { filter: 'grayscale(1) contrast(1.8) brightness(0.55)' };
 
 function kg(grams: number) {
   return `${(grams / 1000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} kg`;
 }
 
-function tanggal(value?: string) {
+function tgl(value?: string | Date) {
   if (!value) return '-';
-  return new Date(value).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Jakarta' });
+}
+
+/** Batas kirim = tanggal pesan + 2 hari kerja (kebijakan toko: diproses 2 hari kerja). */
+function batasKirim(value?: string) {
+  if (!value) return '-';
+  const d = new Date(value);
+  let added = 0;
+  while (added < 2) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) added += 1;
+  }
+  return tgl(d);
 }
 
 /** Label pengiriman 100×150 mm (printer thermal 4×6 / A6). Biteship tidak menyediakan API label. */
@@ -29,8 +51,9 @@ export default function ShippingLabelPage({ params }: { params: { number: string
   const L = data.label ?? {};
   const dest = L.destination ?? {};
   const waybill: string = data.tracking_number || '';
-  const logo = MONO_LOGOS[L.courier_code];
-  const ongkir = L.shipping_cost !== null && L.shipping_cost !== undefined ? rp(Number(L.shipping_cost)) : 'Dikonfirmasi admin';
+  const logo = COURIER_LOGOS[L.courier_code];
+  const ongkir = L.shipping_cost !== null && L.shipping_cost !== undefined ? rp(Number(L.shipping_cost)) : '-';
+  const side = waybill || data.order_number;
 
   return (
     <div>
@@ -42,11 +65,12 @@ export default function ShippingLabelPage({ params }: { params: { number: string
           .label-print { position: fixed; inset: 0; margin: 0 !important; box-shadow: none !important; }
         }
         .label-print { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .label-side { writing-mode: vertical-rl; }
       `}</style>
       <PageHeader
         back={{ href: `/seller/pesanan/${encodeURIComponent(number)}`, label: number }}
         title="Label pengiriman"
-        subtitle="Ukuran 100×150 mm (printer thermal 4×6). Di printer biasa, pilih kertas A6 dan skala 100%."
+        subtitle="Ukuran 100×150 mm (printer thermal 4×6). Di printer biasa pilih kertas A6, skala 100%."
         actions={<button type="button" className={btn.primary} onClick={() => window.print()}>Cetak label</button>}
       />
       {!waybill && (
@@ -56,118 +80,102 @@ export default function ShippingLabelPage({ params }: { params: { number: string
       )}
 
       <div
-        className="label-print mx-auto flex flex-col overflow-hidden bg-white text-black ring-1 ring-slate-300"
-        style={{ width: '100mm', height: '150mm', padding: '3mm', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '7.5pt', lineHeight: 1.25 }}
+        className="label-print relative mx-auto bg-white text-black ring-1 ring-slate-300"
+        style={{ width: '100mm', height: '150mm', padding: '4mm 5mm', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '7pt', lineHeight: 1.25 }}
       >
-        {/* Kepala: toko + kurir & layanan */}
-        <div className="flex items-stretch border-2 border-black">
-          <div className="flex flex-1 flex-col justify-center border-r-2 border-black px-2 py-1">
-            <p style={{ fontSize: '12pt' }} className="font-black tracking-tight">URBANIX STORE</p>
-            <p style={{ fontSize: '6.5pt' }}>urbanix.id · {sender.phone}</p>
+        {/* Nomor resi berulang di tepi (seperti label marketplace) */}
+        <p className="absolute left-0 right-0 top-[0.8mm] text-center font-bold" style={{ fontSize: '6pt' }}>{side}</p>
+        <p className="absolute bottom-[0.8mm] left-0 right-0 text-center font-bold" style={{ fontSize: '6pt' }}>{side}</p>
+        <p className="label-side absolute left-[0.6mm] top-1/2 -translate-y-1/2 rotate-180 font-bold" style={{ fontSize: '6pt' }}>{side}</p>
+        <p className="label-side absolute right-[0.6mm] top-1/2 -translate-y-1/2 font-bold" style={{ fontSize: '6pt' }}>{side}</p>
+
+        <div className="flex h-full flex-col border-2 border-black">
+          {/* Kepala: logo toko · layanan · logo kurir */}
+          <div className="flex items-center gap-2 border-b-2 border-dashed border-black px-2 py-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/urbanix-logo-dark.png" alt="Urbanix" className="h-[11mm] w-auto" />
+            <div className="min-w-0 flex-1 text-center">
+              <p style={{ fontSize: '15pt' }} className="font-black leading-none tracking-tight">{L.service_code || 'REG'}</p>
+              {L.service_name && <p style={{ fontSize: '6.5pt' }} className="font-bold uppercase">{L.service_name}</p>}
+            </div>
+            <div className="flex w-[26mm] items-center justify-end">
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt={L.courier_name} className="max-h-[9mm] w-auto max-w-full object-contain" style={PRINT_BW} />
+              ) : (
+                <span style={{ fontSize: '11pt' }} className="rounded border-2 border-black px-1.5 py-0.5 font-black leading-none">{L.courier_name || '-'}</span>
+              )}
+            </div>
           </div>
-          <div className="flex w-[40mm] flex-col items-center justify-center px-1.5 py-1 text-center">
-            {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logo} alt={L.courier_name} className="h-[7mm] w-auto object-contain grayscale" />
-            ) : (
-              <p style={{ fontSize: '12pt' }} className="font-black leading-none">{L.courier_name || data.shipping_courier}</p>
-            )}
-            <p style={{ fontSize: '10pt' }} className="mt-0.5 font-black leading-none">{L.service_code || '-'}</p>
-            {L.service_name && <p style={{ fontSize: '6.5pt' }}>{L.service_name}</p>}
+
+          {/* No. resi + barcode */}
+          <div className="border-b-2 border-black px-2 pb-1 pt-1.5">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="rounded border border-black px-1.5 font-bold" style={{ fontSize: '7pt' }}>{L.courier_name}</span>
+              <span className="rounded border border-black px-1.5 font-black" style={{ fontSize: '9pt' }}>No. Resi: {waybill || '-'}</span>
+            </div>
+            {waybill ? <Barcode value={waybill} height="16mm" /> : <div className="flex h-[16mm] items-center justify-center italic">Resi belum terbit</div>}
           </div>
-        </div>
 
-        {/* Barcode resi */}
-        <div className="border-x-2 border-b-2 border-black px-2 py-1.5 text-center">
-          {waybill ? <Barcode value={waybill} height="15mm" /> : <div className="flex h-[15mm] items-center justify-center italic">Resi belum terbit</div>}
-          <p style={{ fontSize: '11pt' }} className="font-black tracking-wider">{waybill || '—'}</p>
-        </div>
+          {/* Penerima | Pengirim */}
+          <div className="grid grid-cols-[1.35fr_1fr] border-b-2 border-black">
+            <div className="border-r border-black px-2 py-1">
+              <p><b>Penerima:</b> <b style={{ fontSize: '8.5pt' }}>{dest.name}</b></p>
+              <p className="font-bold">{dest.phone}</p>
+              <p>{dest.address}</p>
+              <p className="font-bold uppercase">
+                {[dest.city, dest.province].filter(Boolean).join(', ')}
+                {dest.postal_code ? ` ${dest.postal_code}` : ''}
+              </p>
+            </div>
+            <div className="px-2 py-1">
+              <p><b>Pengirim:</b> <b>{sender.name}</b></p>
+              <p>{sender.phone}</p>
+              <p style={{ fontSize: '6pt' }}>{sender.address}</p>
+            </div>
+          </div>
 
-        {/* Info kiriman */}
-        <div className="grid grid-cols-4 border-x-2 border-b-2 border-black text-center">
-          <Info label="Berat" value={L.weight_grams ? kg(L.weight_grams) : '-'} />
-          <Info label="Jumlah" value={`${L.item_count ?? 0} pcs`} />
-          <Info label="Ongkir" value={ongkir} />
-          <Info label="Bayar" value={L.cod ? 'COD' : 'NON-COD'} strong last />
-          <Info label="Serah paket" value={L.method === 'pickup' ? 'Pickup' : L.method === 'drop_off' ? 'Drop off' : '-'} top />
-          <Info label="Estimasi" value={L.etd ? `${L.etd} hari` : '-'} top />
-          <Info label="Asuransi" value={L.insured ? 'Ya' : 'Tidak'} top />
-          <Info label="Tgl resi" value={tanggal(L.created_at).split(',')[0]} top last />
-        </div>
+          {/* Info kiriman + no. pesanan */}
+          <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-b-2 border-black px-2 py-1">
+            <div className="space-y-0.5">
+              <p><b>Berat:</b> {L.weight_grams ? kg(L.weight_grams) : '-'} &nbsp; <b>COD:</b> {L.cod ? 'Ya' : 'Rp0'} &nbsp; <b>Ongkir:</b> {ongkir}</p>
+              <p><b>Batas kirim:</b> {batasKirim(L.order_created_at)} &nbsp; <b>Serah:</b> {L.method === 'pickup' ? 'Pickup' : 'Drop off'}{L.etd ? <> &nbsp; <b>Estimasi:</b> {L.etd} hari</> : null}</p>
+              <p><b>No. Pesanan:</b> <b style={{ fontSize: '8pt' }}>{data.order_number}</b></p>
+            </div>
+            <div className="w-[36mm]"><Barcode value={data.order_number} height="9mm" /></div>
+          </div>
 
-        {/* Penerima */}
-        <div className="border-x-2 border-b-2 border-black px-2 py-1.5">
-          <p style={{ fontSize: '6.5pt' }} className="font-bold uppercase">Penerima</p>
-          <p style={{ fontSize: '11pt' }} className="font-black leading-tight">{dest.name}</p>
-          <p className="font-bold">{dest.phone}</p>
-          <p>{dest.address}</p>
-          <p className="font-bold">
-            {[dest.city, dest.province].filter(Boolean).join(', ')}
-            {dest.postal_code && <span style={{ fontSize: '9pt' }} className="ml-1 rounded-sm border border-black px-1 font-black">{dest.postal_code}</span>}
+          {/* Isi paket */}
+          <div className="min-h-0 flex-1 overflow-hidden px-2 py-1">
+            <table className="w-full table-fixed" style={{ fontSize: '6pt' }}>
+              <thead>
+                <tr className="border-b border-black text-left">
+                  <th className="w-3 py-0.5">#</th>
+                  <th className="py-0.5">Nama Produk</th>
+                  <th className="w-[16mm] py-0.5">SKU</th>
+                  <th className="w-[14mm] py-0.5">Variasi</th>
+                  <th className="w-5 py-0.5 text-center">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(L.items ?? []).map((item: any, i: number) => (
+                  <tr key={i} className="border-b border-slate-400 align-top">
+                    <td className="py-0.5">{i + 1}</td>
+                    <td className="py-0.5 pr-1"><span className="line-clamp-3">{item.name}</span></td>
+                    <td className="break-words py-0.5 pr-1">{item.sku}</td>
+                    <td className="break-words py-0.5 pr-1">{item.variation || '-'}</td>
+                    <td className="py-0.5 text-center font-bold">{item.quantity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.notes && <p className="mt-1" style={{ fontSize: '6pt' }}><b>Pesan pembeli:</b> {data.notes}</p>}
+          </div>
+          <p className="border-t border-black py-0.5 text-center font-bold" style={{ fontSize: '5.5pt' }}>
+            Rekam video unboxing saat membuka paket · urbanix.id
           </p>
         </div>
-
-        {/* Pengirim */}
-        <div className="border-x-2 border-b-2 border-black px-2 py-1">
-          <p style={{ fontSize: '6.5pt' }} className="font-bold uppercase">Pengirim</p>
-          <p><b>{sender.name}</b> · {sender.phone}</p>
-          <p style={{ fontSize: '6.5pt' }}>{sender.address}{sender.postal_code ? `, ${sender.postal_code}` : ''}</p>
-        </div>
-
-        {/* Isi paket */}
-        <div className="min-h-0 flex-1 overflow-hidden border-x-2 border-b-2 border-black px-2 py-1">
-          <table className="w-full" style={{ fontSize: '6.5pt' }}>
-            <thead>
-              <tr className="border-b border-black text-left">
-                <th className="py-0.5 font-bold">Isi paket</th>
-                <th className="w-8 py-0.5 text-center font-bold">Qty</th>
-                <th className="w-12 py-0.5 text-right font-bold">Berat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(L.items ?? []).map((item: any, i: number) => (
-                <tr key={i} className="align-top">
-                  <td className="py-0.5 pr-1">
-                    <span className="line-clamp-2">{item.name}{item.variation ? ` (${item.variation})` : ''}</span>
-                    {item.sku && <span className="block text-[5.5pt]">SKU {item.sku}</span>}
-                  </td>
-                  <td className="py-0.5 text-center font-bold">{item.quantity}</td>
-                  <td className="py-0.5 text-right">{kg(item.weight_grams * item.quantity)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {data.notes && (
-            <p className="mt-1 border border-black px-1 py-0.5" style={{ fontSize: '6.5pt' }}>
-              <b>Catatan pembeli:</b> {data.notes}
-            </p>
-          )}
-        </div>
-
-        {/* Kaki: no. pesanan */}
-        <div className="flex items-center gap-2 border-x-2 border-b-2 border-black px-2 py-1">
-          <div className="w-[38mm] shrink-0">
-            <Barcode value={data.order_number} height="7mm" />
-          </div>
-          <div className="min-w-0 flex-1" style={{ fontSize: '6.5pt' }}>
-            <p className="font-black" style={{ fontSize: '8pt' }}>{data.order_number}</p>
-            <p>Dipesan {tanggal(L.order_created_at)}</p>
-            {L.shipment_id && <p className="truncate">Biteship {L.shipment_id}</p>}
-          </div>
-        </div>
-        <p className="pt-0.5 text-center font-bold" style={{ fontSize: '6pt' }}>
-          Rekam video unboxing saat membuka paket — wajib untuk klaim retur.
-        </p>
       </div>
-    </div>
-  );
-}
-
-function Info({ label, value, strong, last, top }: { label: string; value: string; strong?: boolean; last?: boolean; top?: boolean }) {
-  return (
-    <div className={`px-0.5 py-1 ${last ? '' : 'border-r border-black'} ${top ? 'border-t border-black' : ''}`}>
-      <p style={{ fontSize: '5.5pt' }} className="uppercase">{label}</p>
-      <p style={{ fontSize: strong ? '8.5pt' : '7.5pt' }} className="font-black leading-tight">{value}</p>
     </div>
   );
 }
@@ -176,7 +184,7 @@ function Barcode({ value, height }: { value: string; height: string }) {
   const bars = code128Bars(value);
   const width = bars.width ?? 100;
   return (
-    <svg viewBox={`0 0 ${width} 50`} preserveAspectRatio="none" style={{ height, width: '100%' }} role="img" aria-label={`Barcode ${value}`}>
+    <svg viewBox={`0 0 ${width} 50`} preserveAspectRatio="none" style={{ height, width: '100%', display: 'block' }} role="img" aria-label={`Barcode ${value}`}>
       {bars.map((b, i) => (
         <rect key={i} x={b.x} y={0} width={b.w} height={50} fill="#000" />
       ))}
