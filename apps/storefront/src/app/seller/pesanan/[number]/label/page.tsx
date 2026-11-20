@@ -2,18 +2,19 @@
 
 import { ErrorBox, PageHeader, Spinner, btn } from '@/components/seller/ui';
 import { code128Bars } from '@/lib/code128';
+import SimpleIcon from '@/components/SimpleIcon';
 import { rp, useSellerData } from '@/lib/seller';
 
 /**
- * Logo kurir resmi di public/couriers (berwarna, latar transparan). Dicetak hitam-putih lewat filter.
- * Kurir lain (SiCepat, AnterAja, POS, …) tampil sebagai teks sampai file logo resminya ditambahkan.
+ * Logo kurir: file resmi di public/couriers (JNE, J&T) dicetak hitam-putih lewat filter;
+ * Gojek & Grab dari Simple Icons (satu warna, hitam). Kurir lain (SiCepat, AnterAja, POS, …) tidak ada
+ * di Simple Icons → tampil sebagai teks sampai file logo resminya ditaruh di public/couriers.
  */
 const COURIER_LOGOS: Record<string, string> = {
   jne: '/couriers/jne.webp',
   jnt: '/couriers/jnt.webp',
-  gojek: '/couriers/gosend.webp',
-  grab: '/couriers/grab.webp',
 };
+const SIMPLE_COURIERS: Record<string, 'gojek' | 'grab'> = { gojek: 'gojek', grab: 'grab' };
 const PRINT_BW = { filter: 'grayscale(1) contrast(1.8) brightness(0.55)' };
 
 function kg(grams: number) {
@@ -99,7 +100,11 @@ export default function ShippingLabelPage({ params }: { params: { number: string
               {L.service_name && <p style={{ fontSize: '6.5pt' }} className="font-bold uppercase">{L.service_name}</p>}
             </div>
             <div className="flex w-[26mm] items-center justify-end">
-              {logo ? (
+              {SIMPLE_COURIERS[L.courier_code] ? (
+                <span className="flex items-center gap-1 font-black text-black" style={{ fontSize: '10pt' }}>
+                  <SimpleIcon name={SIMPLE_COURIERS[L.courier_code]} size={30} color="current" title={L.courier_name} />
+                </span>
+              ) : logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logo} alt={L.courier_name} className="max-h-[9mm] w-auto max-w-full object-contain" style={PRINT_BW} />
               ) : (
