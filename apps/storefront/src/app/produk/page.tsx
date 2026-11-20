@@ -80,7 +80,7 @@ export async function generateMetadata({
     if (category) {
       return {
         title: `Jual ${category.name} Original Bergaransi`,
-        description: `Belanja ${category.name} original bergaransi di Urbanix Store. Harga transparan sudah termasuk PPN, kirim dari Jakarta, pesan via WhatsApp atau Shopee.`,
+        description: `Belanja ${category.name} original bergaransi di Urbanix Store. Harga transparan sudah termasuk PPN, kirim dari Jakarta, bayar aman di web atau Shopee.`,
         alternates: { canonical: `/produk?category=${category.id}` },
       };
     }

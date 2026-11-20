@@ -26,17 +26,18 @@ export const siteConfig = {
   legal: {
     company: 'PT Koolsnap Multi Retailindo',
     address: 'Jl. Kerekot Bundar XI No. 4, RT.8/RW.6, Pasar Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta 10710',
-    updated: '11 November 2026',
+    updated: '20 November 2026',
     paymentDeadline: '1×24 jam',
     returnWindow: '2×24 jam',
     // Ketentuan pengiriman & retur (gaya Shopee). Ubah di sini bila kebijakan berubah.
     shipProcessing: '2 hari kerja', // masa pengemasan (standar Shopee): dikirim maks. sekian setelah pembayaran dikonfirmasi
     workDays: 'Senin–Sabtu, kecuali libur nasional',
     // Jenis pengiriman; ongkir mengikuti tarif resmi masing-masing ekspedisi.
+    // Kurir yang benar-benar tampil di checkout diatur di Seller Center → Pengaturan → Ongkir otomatis.
     shippingOptions: [
-      { name: 'Reguler', couriers: 'JNE / J&T Express', note: 'ke seluruh Indonesia' },
-      { name: 'Kargo', couriers: 'JNE / J&T Cargo', note: 'untuk paket besar atau berat' },
-      { name: 'Instan', couriers: 'GoSend / GrabExpress', note: 'untuk alamat yang terjangkau layanan instan dari Jakarta' },
+      { name: 'Reguler', couriers: 'JNE, J&T Express, SiCepat, AnterAja, POS Indonesia, Lion Parcel, ID Express', note: 'ke seluruh Indonesia' },
+      { name: 'Kargo', couriers: 'layanan kargo ekspedisi yang tersedia', note: 'untuk paket besar atau berat' },
+      { name: 'Instan', couriers: 'GoSend / GrabExpress', note: 'untuk alamat yang terjangkau layanan instan dari gudang kami di Jakarta (titik lokasi wajib ditandai di peta)' },
     ],
     shipArea: 'seluruh Indonesia',
     reviewTime: '1×24 jam hari kerja', // admin memeriksa pengajuan retur maks. sekian

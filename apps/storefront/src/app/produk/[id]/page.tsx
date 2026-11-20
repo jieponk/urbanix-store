@@ -75,7 +75,7 @@ export async function generateMetadata({
   const priceText = price ? `Rp${Math.round(price).toLocaleString('id-ID')}` : '';
   const name = seoProductName(product.name);
   // Nama dipendekkan agar harga selalu terlihat di cuplikan Google.
-  const lead = `Jual ${shorten(name, 70)} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, pesan via WhatsApp atau Shopee.`;
+  const lead = `Jual ${shorten(name, 70)} original bergaransi${priceText ? `, harga ${priceText}` : ''}. Kirim dari Jakarta, bayar di web (QRIS, VA, e-wallet, kartu) atau Shopee.`;
   const description = plainText(`${lead} ${plainText(product.description, 300)}`, 158);
   const title = shorten(name, 65);
   const images = product.image_url ? [{ url: product.image_url, alt: product.name }] : undefined;

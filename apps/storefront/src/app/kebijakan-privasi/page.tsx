@@ -38,10 +38,12 @@ export default function PrivacyPage() {
           title: 'Data yang kami kumpulkan',
           body: (
             <ul>
-              <li><b>Data pesanan</b> yang kamu isi saat checkout: nama, nomor HP/WhatsApp, email (opsional), alamat pengiriman, catatan, isi pesanan, dan voucher yang dipakai.</li>
+              <li><b>Data pesanan</b> yang kamu isi saat checkout: nama, nomor HP, email (opsional), alamat pengiriman, titik lokasi di peta (khusus kurir instan), catatan, isi pesanan, kurir, dan voucher yang dipakai.</li>
+              <li><b>Data pembayaran</b>: status dan metode pembayaran dari Midtrans. Data kartu, PIN, dan kredensial bank/e-wallet dimasukkan langsung di halaman Midtrans dan <b>tidak</b> disimpan oleh kami.</li>
+              <li><b>Data retur dan ulasan</b>: alasan retur, foto resi, video unboxing, serta ulasan produk yang kamu kirim.</li>
               <li><b>Data teknis</b>: alamat IP, jenis perangkat/browser, dan waktu akses yang tercatat otomatis di log server dan layanan keamanan (Cloudflare).</li>
-              <li><b>Penyimpanan di browser kamu</b> (localStorage): isi keranjang, voucher yang diklaim, dan pilihan tema terang/gelap. Data ini tetap di perangkatmu dan baru dikirim ke kami saat kamu checkout.</li>
-              <li>Kami tidak memakai cookie iklan atau pelacak pihak ketiga. Cookie hanya dipakai untuk login admin toko.</li>
+              <li><b>Penyimpanan di browser kamu</b> (localStorage): isi keranjang, voucher yang diklaim, riwayat pencarian, dan pilihan tema terang/gelap. Data ini tetap di perangkatmu dan baru dikirim ke kami saat kamu checkout.</li>
+              <li>Kami tidak memakai cookie iklan atau pelacak pihak ketiga. Cookie hanya dipakai untuk menyimpan pilihan bahasa (Indonesia/Inggris) dan login admin toko.</li>
             </ul>
           ),
         },
@@ -51,8 +53,8 @@ export default function PrivacyPage() {
           body: (
             <ul>
               <li>Memproses dan mengonfirmasi pesanan, pembayaran, dan pengiriman.</li>
-              <li>Menghubungi kamu terkait pesanan melalui WhatsApp, telepon, atau email.</li>
-              <li>Memvalidasi voucher, termasuk batas pemakaian per nomor WhatsApp.</li>
+              <li>Mengirim email terkait pesanan (pengingat bayar, pembayaran diterima, paket dikirim, status retur, dan permintaan ulasan) serta menghubungi kamu lewat WhatsApp atau telepon bila diperlukan.</li>
+              <li>Memvalidasi voucher, termasuk batas pemakaian per nomor HP.</li>
               <li>Menangani retur, garansi, dan keluhan.</li>
               <li>Menyusun laporan penjualan internal serta menjaga keamanan website dan mencegah penipuan.</li>
             </ul>
@@ -65,10 +67,12 @@ export default function PrivacyPage() {
             <>
               <p>Kami <b>tidak menjual</b> data pribadimu. Data hanya dibagikan sebatas yang diperlukan kepada:</p>
               <ul>
-                <li>Jasa ekspedisi (nama, nomor HP, alamat) untuk mengirim pesanan.</li>
-                <li>Penyedia pembayaran, jika kamu memilih pembayaran online.</li>
+                <li>Biteship (agregator pengiriman) dan jasa ekspedisi yang kamu pilih: nama, nomor HP, alamat, titik lokasi (kurir instan), dan isi paket, untuk menghitung ongkir dan mengirim pesanan.</li>
+                <li>Midtrans (penyedia pembayaran): nama, nomor HP, email, alamat, dan rincian tagihan, untuk memproses pembayaran.</li>
+                <li>Google, bila kamu menyetujui survei Google Customer Reviews setelah checkout (email dan nomor pesanan).</li>
+                <li>Saat memakai peta titik lokasi, peta dimuat dari OpenStreetMap dan pencarian alamat memakai layanan Nominatim (OpenStreetMap).</li>
                 <li>Penyedia infrastruktur: server di Indonesia (Biznet Gio) dan layanan keamanan/jaringan (Cloudflare).</li>
-                <li>WhatsApp (Meta) saat kamu mengirim pesanan atau pesan ke nomor kami.</li>
+                <li>WhatsApp (Meta) saat kamu menghubungi atau mengirim video retur ke nomor kami.</li>
                 <li>Instansi berwenang bila diwajibkan oleh hukum.</li>
               </ul>
               <p>Jika kamu memilih &quot;Beli di Shopee&quot;, transaksi berlangsung di Shopee dan tunduk pada kebijakan privasi Shopee.</p>

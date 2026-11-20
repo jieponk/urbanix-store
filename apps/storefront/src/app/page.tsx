@@ -138,7 +138,9 @@ export default async function HomePage({
     .filter((d): d is string => Boolean(d))
     .sort()[0] ?? null;
 
-  const waPercent = Number(settings?.whatsapp_discount_percent) || 0;
+  // Pesan via WhatsApp bisa dimatikan di Pengaturan: diskon & popup WA ikut disembunyikan.
+  const waOrder = settings?.methods?.whatsapp ?? false;
+  const waPercent = waOrder ? Number(settings?.whatsapp_discount_percent) || 0 : 0;
   const waNumber = settings?.whatsapp_number ?? '';
   const waOnPromo = settings?.whatsapp_discount_on_promo ?? false;
 
@@ -297,7 +299,7 @@ export default async function HomePage({
 
   return (
     <div className="pb-4">
-      {settings?.show_whatsapp_popup && waNumber && (
+      {settings?.show_whatsapp_popup && waOrder && waNumber && (
         <WhatsappPromoPopup
           percent={waPercent}
           whatsappNumber={waNumber}

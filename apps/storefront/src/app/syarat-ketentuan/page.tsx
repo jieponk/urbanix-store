@@ -19,7 +19,7 @@ export default function TermsPage() {
       highlights={[
         { icon: 'shield', title: 'Produk original', text: 'Semua produk original dengan garansi sesuai ketentuan resmi.' },
         { icon: 'tag', title: 'Harga termasuk PPN', text: 'Harga sudah termasuk PPN, belum termasuk ongkos kirim.' },
-        { icon: 'lock', title: 'Rekening resmi PT', text: `Bayar hanya ke rekening atas nama ${legal.company}.` },
+        { icon: 'lock', title: 'Bayar aman di web', text: 'Pembayaran diproses Midtrans: QRIS, virtual account, e-wallet, kartu, gerai, paylater.' },
         { icon: 'box', title: `Retur ${legal.returnWindow}`, text: 'Wajib video unboxing. Ongkir retur ditanggung toko untuk kesalahan kami.' },
       ]}
       sections={[
@@ -54,18 +54,19 @@ export default function TermsPage() {
           body: (
             <ul>
               <li>
-                <b>Pesan via WhatsApp:</b> setelah checkout, detail pesanan dikirim ke WhatsApp resmi kami ({wa}). Admin
-                akan mengonfirmasi ketersediaan stok, ongkos kirim, dan total pembayaran.
+                <b>Beli di website:</b> pilih produk, isi alamat, pilih kurir (ongkos kirim dihitung otomatis), lalu
+                bayar di halaman pembayaran. Ringkasan pesanan dan total tagihan (harga barang + ongkir − voucher)
+                tampil sebelum kamu membayar.
               </li>
-              <li>Pesanan dianggap sah setelah pembayaran kami terima dan dikonfirmasi admin.</li>
+              <li>Pesanan diproses setelah pembayaran berhasil. Status pembayaran diperbarui otomatis, tanpa perlu kirim bukti transfer.</li>
               <li>
-                Alur status pesanan: <b>Dipesan → Diproses (dikemas) → Dikirim → Selesai</b>. Statusnya bisa dipantau
-                kapan saja di halaman Cek Pesanan dengan nomor pesanan.
+                Alur status pesanan: <b>Menunggu pembayaran → Diproses (dikemas) → Dikirim → Selesai</b>. Status dan
+                riwayat perjalanan paket bisa dipantau kapan saja di halaman Cek Pesanan dengan nomor pesanan.
               </li>
-              <li>Pastikan alamat dan nomor HP benar. Perubahan alamat hanya bisa dilakukan sebelum paket dikirim.</li>
+              <li>Pastikan nama, nomor HP, dan alamat benar. Perubahan alamat hanya bisa dilakukan sebelum paket dikirim.</li>
               <li>
-                <b>Beli di Shopee:</b> transaksi terjadi di Shopee dan tunduk pada syarat, pembayaran, dan perlindungan
-                pembeli Shopee.
+                <b>Beli di Shopee:</b> transaksi terjadi di Shopee dan tunduk pada syarat, pembayaran, pengiriman, retur,
+                dan perlindungan pembeli Shopee.
               </li>
             </ul>
           ),
@@ -75,12 +76,18 @@ export default function TermsPage() {
           title: 'Pembayaran',
           body: (
             <ul>
-              <li>Pembayaran hanya ke rekening resmi atas nama {legal.company} yang diinformasikan oleh WhatsApp resmi kami ({wa}).</li>
               <li>
-                Waspada penipuan: kami tidak pernah meminta pembayaran ke rekening pribadi atau melalui nomor selain
-                nomor resmi di atas.
+                Pembayaran di website diproses oleh <b>Midtrans</b> (payment gateway). Metode yang
+                tersedia: QRIS, e-wallet (GoPay, ShopeePay), virtual account bank (BCA, Mandiri, BNI, BRI, Permata, CIMB
+                Niaga), kartu kredit/debit (Visa, Mastercard, JCB, American Express), gerai (Indomaret, Alfamart), dan
+                paylater (Akulaku, Kredivo). Metode yang tampil di halaman pembayaran adalah yang berlaku.
               </li>
-              <li>Pesanan yang belum dibayar dalam {legal.paymentDeadline} sejak konfirmasi admin dapat dibatalkan otomatis.</li>
+              <li>Tidak ada biaya tambahan dari kami di luar total tagihan. Biaya/bunga cicilan paylater atau kartu mengikuti ketentuan penyedianya.</li>
+              <li>Batas waktu pembayaran <b>{legal.paymentDeadline}</b> sejak pesanan dibuat. Lewat dari itu, pesanan dibatalkan otomatis dan stok dikembalikan.</li>
+              <li>
+                Waspada penipuan: kami tidak pernah meminta transfer ke rekening pribadi, maupun meminta kode OTP, PIN,
+                atau data kartu lewat chat. Bayar hanya melalui halaman pembayaran di urbanix.id.
+              </li>
             </ul>
           ),
         },
@@ -92,7 +99,7 @@ export default function TermsPage() {
               <li>Setiap voucher memiliki syarat masing-masing (minimal belanja, maksimal potongan, metode pembelian, periode, dan kuota) yang tertera pada voucher.</li>
               <li>Maksimal 1 voucher diskon dan 1 voucher gratis ongkir per pesanan, kecuali dinyatakan lain.</li>
               <li>Voucher tidak dapat diuangkan. Potongan ongkir maksimal sebesar nilai voucher dan tidak melebihi ongkos kirim sebenarnya.</li>
-              <li>Batas pemakaian per pembeli dihitung berdasarkan nomor WhatsApp. Kami berhak membatalkan voucher atau pesanan jika ditemukan penyalahgunaan.</li>
+              <li>Batas pemakaian per pembeli dihitung berdasarkan nomor HP. Kami berhak membatalkan voucher atau pesanan jika ditemukan penyalahgunaan.</li>
               <li>Harga promo berlaku sesuai periode promo dan kembali ke harga normal setelah promo berakhir.</li>
             </ul>
           ),
@@ -105,14 +112,15 @@ export default function TermsPage() {
               <li>Kami mengirim ke <b>{legal.shipArea}</b> dari Jakarta melalui jasa ekspedisi pilihan.</li>
               <li>
                 Pesanan dikemas dan dikirim maksimal <b>{legal.shipProcessing}</b> ({legal.workDays}) setelah pembayaran
-                dikonfirmasi. Nomor resi diinformasikan lewat WhatsApp/email dan bisa dicek di halaman Cek Pesanan.
+                berhasil. Nomor resi dikirim lewat email (bila diisi) dan bisa dicek beserta riwayat perjalanan paket di halaman Cek Pesanan.
               </li>
               <li>
                 Bila pesanan belum dikirim melewati batas tersebut, pembeli boleh membatalkan pesanan dan dana dikembalikan
                 penuh maksimal {legal.refundTime}.
               </li>
               <li>
-                Pilihan pengiriman, dengan ongkos kirim mengikuti <b>tarif resmi</b> masing-masing ekspedisi ke alamat tujuan:
+                Pilihan pengiriman, dengan ongkos kirim mengikuti <b>tarif resmi</b> masing-masing ekspedisi sesuai alamat tujuan
+                dan berat paket:
                 <ul className="mt-2">
                   {legal.shippingOptions.map((o) => (
                     <li key={o.name}>
@@ -121,8 +129,8 @@ export default function TermsPage() {
                   ))}
                 </ul>
               </li>
-              <li>Total ongkos kirim dikonfirmasi admin sebelum pembayaran, tanpa biaya tambahan tersembunyi.</li>
-              <li>Estimasi waktu sampai mengikuti layanan ekspedisi yang dipilih.</li>
+              <li>Ongkos kirim dan estimasi waktu sampai dihitung otomatis dan ditampilkan di checkout sebelum pembayaran, tanpa biaya tambahan tersembunyi.</li>
+              <li>Estimasi waktu sampai mengikuti layanan ekspedisi yang dipilih dan dapat berubah karena kondisi di luar kendali kami (cuaca, libur, kendala ekspedisi).</li>
               <li>
                 Untuk produk bernilai tinggi kami sarankan asuransi pengiriman. Kehilangan/kerusakan selama pengiriman
                 ditangani sesuai ketentuan ekspedisi dan asuransi.
@@ -136,8 +144,9 @@ export default function TermsPage() {
           body: (
             <>
               <p>
-                <b>Pembatalan:</b> pesanan dapat dibatalkan sebelum paket dikirim dengan menghubungi admin. Bila sudah
-                dibayar, dana dikembalikan penuh maksimal {legal.refundTime}.
+                <b>Pembatalan:</b> pesanan yang belum dibayar batal otomatis setelah {legal.paymentDeadline}. Pesanan yang
+                sudah dibayar dapat dibatalkan sebelum paket dikirim dengan menghubungi admin; dana dikembalikan penuh
+                maksimal {legal.refundTime}.
               </p>
               <p>
                 <b>Pengembalian (retur) diterima bila:</b>
@@ -149,21 +158,25 @@ export default function TermsPage() {
               </ul>
               <p>
                 <b>Syarat utama:</b> pengajuan maksimal <b>{legal.returnWindow} sejak paket diterima</b> (sesuai status
-                ekspedisi) dan wajib melampirkan <b>video unboxing</b> utuh tanpa jeda/potongan, dimulai dari paket
-                masih tersegel. Tanpa video unboxing, pengajuan retur tidak dapat diproses.
+                ekspedisi) dan wajib melampirkan <b>foto resi</b> serta <b>video unboxing</b> utuh tanpa jeda/potongan,
+                dimulai dari paket masih tersegel. Tanpa video unboxing, pengajuan retur tidak dapat diproses.
               </p>
               <p><b>Cara mengajukan:</b></p>
               <ol>
-                <li>Hubungi admin lewat WhatsApp resmi, sebutkan nomor pesanan, kirim video unboxing dan foto kendala.</li>
-                <li>Admin memeriksa pengajuan maksimal {legal.reviewTime}.</li>
+                <li>
+                  Buka pesananmu di halaman <b>Cek Pesanan</b>, tekan <b>Ajukan pengembalian</b>, pilih alasan dan barangnya,
+                  jelaskan kendalanya, lalu unggah foto resi dan video unboxing. Bila video terlalu besar untuk diunggah,
+                  kirim videonya ke WhatsApp admin ({wa}) dengan menyebutkan nomor pesanan.
+                </li>
+                <li>Admin memeriksa pengajuan maksimal {legal.reviewTime}. Status retur bisa dipantau di halaman pesanan yang sama.</li>
                 <li>
                   Bila disetujui, kirim barang kembali lengkap dengan kemasan, aksesori, dan kelengkapan aslinya.{' '}
                   <b>Ongkos kirim retur ditanggung Urbanix Store</b> untuk kesalahan dari pihak kami.
                 </li>
                 <li>
                   Setelah barang retur kami terima dan periksa, kamu bisa memilih <b>barang pengganti</b> (bila stok
-                  tersedia) atau <b>pengembalian dana penuh</b> sebesar harga barang, ditransfer ke rekening atas nama
-                  pembeli maksimal {legal.refundTime}.
+                  tersedia) atau <b>pengembalian dana penuh</b> sebesar harga barang, dikembalikan ke metode pembayaran
+                  asal bila didukung atau ditransfer ke rekening atas nama pembeli, maksimal {legal.refundTime}.
                 </li>
               </ol>
               <p>

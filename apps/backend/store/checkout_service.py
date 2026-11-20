@@ -438,6 +438,9 @@ def create_snap_transaction(order: Order) -> dict:
             },
         },
         "callbacks": {"finish": frontend_url(f"/pesanan/{order.order_number}")},
+        # Batas bayar sama dengan S&K (legal.paymentDeadline, default 1×24 jam); lewat batas → notifikasi
+        # "expire" → pesanan dibatalkan & stok dikembalikan.
+        "expiry": {"unit": "hour", "duration": int(StoreSettings.load().wa_unpaid_cancel_hours or 24)},
         # Label diatur di dashboard Midtrans → Settings → Custom Field (Toko / Kurir / No. HP pembeli).
         # Membedakan transaksi Urbanix dari brand lain yang memakai akun Midtrans yang sama.
         "custom_field1": "Urbanix Store",

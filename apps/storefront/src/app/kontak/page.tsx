@@ -8,7 +8,7 @@ import SimpleIcon from '@/components/SimpleIcon';
 
 export const metadata = {
   title: 'Kontak',
-  description: 'Hubungi Urbanix Store lewat WhatsApp atau email. Jam operasional, alamat kantor, dan info rekening resmi.',
+  description: 'Hubungi Urbanix Store lewat WhatsApp atau email. Jam operasional, alamat kantor, cara bayar, dan cek pesanan.',
   alternates: { canonical: '/kontak' },
 };
 
@@ -23,16 +23,16 @@ const faqs = [
     a: 'Chat admin lewat WhatsApp dengan menyebutkan nama produk atau kebutuhanmu. Admin akan membantu mengecek stok dan memberi pilihan yang cocok.',
   },
   {
-    q: 'Ke rekening mana saya membayar?',
-    a: `Hanya ke rekening resmi atas nama ${siteConfig.legal.company}, yang diinformasikan admin lewat WhatsApp resmi setelah pesanan dikonfirmasi.`,
+    q: 'Bagaimana cara membayar?',
+    a: 'Bayar langsung di website saat checkout lewat Midtrans: QRIS, virtual account bank, e-wallet, kartu kredit/debit, gerai Indomaret/Alfamart, atau paylater. Status pembayaran diperbarui otomatis, tanpa perlu kirim bukti transfer.',
   },
   {
     q: 'Bagaimana cara cek status pesanan?',
-    a: 'Buka tautan halaman pesanan yang muncul setelah checkout, atau kirim nomor pesananmu ke admin lewat WhatsApp.',
+    a: 'Buka menu Cek Pesanan dan masukkan nomor pesananmu. Di sana ada status pembayaran, nomor resi, dan riwayat perjalanan paket.',
   },
   {
     q: 'Barang yang saya terima bermasalah, harus bagaimana?',
-    a: `Hubungi admin maksimal ${siteConfig.legal.returnWindow} sejak paket diterima dan sertakan video unboxing. Ketentuan lengkapnya ada di Syarat & Ketentuan.`,
+    a: `Ajukan retur lewat tombol Ajukan pengembalian di halaman pesanan maksimal ${siteConfig.legal.returnWindow} sejak paket diterima, sertakan foto resi dan video unboxing. Ketentuan lengkapnya ada di Syarat & Ketentuan.`,
   },
 ];
 
@@ -179,8 +179,7 @@ export default async function ContactPage() {
                 <p className="text-lg font-extrabold text-amber-900">{t('Waspada penipuan')}</p>
               </div>
               <p className="mt-3 text-sm leading-6 text-amber-900">
-                {t('Info rekening hanya diberikan lewat WhatsApp resmi {wa}, atas nama', { wa: whatsapp ? displayPhone(whatsapp) : t('kami') })}{' '}
-                <b>{legal.company}</b>{t('. Kami tidak pernah meminta transfer ke rekening pribadi atau dari nomor lain. Ragu? Tanyakan dulu ke admin.')}
+                {t('Bayar hanya lewat halaman pembayaran di urbanix.id. Kami tidak pernah meminta transfer ke rekening pribadi, kode OTP, PIN, atau data kartu lewat chat. WhatsApp resmi kami hanya {wa}. Ragu? Tanyakan dulu ke admin.', { wa: whatsapp ? displayPhone(whatsapp) : '-' })}
               </p>
             </div>
           </div>

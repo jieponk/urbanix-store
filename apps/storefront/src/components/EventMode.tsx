@@ -110,11 +110,19 @@ export function EventHero({
                   <span className="text-xs text-slate-500">{t('{n} produk promo', { n: promoCount })}</span>
                 </Link>
               ) : (
-                <a key={i} href="/#cara-pesan" className="flex aspect-square flex-col justify-center gap-1 rounded-2xl bg-white p-4 text-cobalt-900">
-                  <span className="text-xs font-bold text-slate-500">{waPercent > 0 ? t('Hemat lagi') : t('Pesan mudah')}</span>
-                  <span className="text-2xl font-extrabold tracking-tight">{waPercent > 0 ? `${waPercent}%` : 'WhatsApp'}</span>
-                  <span className="text-xs text-slate-500">{t('Pesan via WhatsApp')}</span>
-                </a>
+                waPercent > 0 ? (
+                  <a key={i} href="/#cara-pesan" className="flex aspect-square flex-col justify-center gap-1 rounded-2xl bg-white p-4 text-cobalt-900">
+                    <span className="text-xs font-bold text-slate-500">{t('Hemat lagi')}</span>
+                    <span className="text-2xl font-extrabold tracking-tight">{`${waPercent}%`}</span>
+                    <span className="text-xs text-slate-500">{t('Pesan via WhatsApp')}</span>
+                  </a>
+                ) : (
+                  <a key={i} href="/syarat-ketentuan#pembayaran" className="flex aspect-square flex-col justify-center gap-1 rounded-2xl bg-white p-4 text-cobalt-900">
+                    <span className="text-xs font-bold text-slate-500">{t('Bayar mudah')}</span>
+                    <span className="text-2xl font-extrabold tracking-tight">QRIS</span>
+                    <span className="text-xs text-slate-500">{t('VA, e-wallet & kartu')}</span>
+                  </a>
+                )
               ),
             )}
           </div>

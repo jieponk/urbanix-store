@@ -128,7 +128,7 @@ export default function SettingsPage() {
             <Field label="Email admin untuk notifikasi" hint="Pesanan baru, pembayaran lunas, dan pengajuan retur dikirim ke sini." className="sm:col-span-2">
               <input className={inputCls} type="email" value={form.notify_email} onChange={(e) => set('notify_email', e.target.value)} placeholder="mis. admin@urbanix.id" />
             </Field>
-            <Field label="Batal otomatis pesanan WA belum lunas (jam)" hint="Samakan dengan batas bayar di S&K (sekarang 1×24 jam). 0 = tidak dibatalkan.">
+            <Field label="Batas bayar pesanan (jam)" hint="Dipakai untuk bayar di web (batas waktu di halaman Midtrans) dan pesanan WA lama. Samakan dengan S&K (sekarang 1×24 jam).">
               <input className={inputCls} inputMode="numeric" value={form.wa_unpaid_cancel_hours} onChange={(e) => set('wa_unpaid_cancel_hours', e.target.value)} />
             </Field>
             <Field label="Batas ajukan retur setelah paket diterima (jam)" hint="Samakan dengan S&K (sekarang 2×24 jam).">

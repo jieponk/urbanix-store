@@ -88,7 +88,7 @@ export default function Footer({
 
             <FooterGroup title={t('Bantuan')}>
               <ul className="space-y-2.5 text-sm">
-                <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cara pesan via WhatsApp')}</Link></li>
+                <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Tanya admin via WhatsApp')}</Link></li>
                 <li><Link href="/cek-pesanan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cek pesanan')}</Link></li>
                 <li><Link href="/cart" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Keranjang belanja')}</Link></li>
                 <li><Link href="/syarat-ketentuan#pembayaran" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cara pembayaran')}</Link></li>

@@ -217,8 +217,14 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           <footer className="mt-10 rounded-xl bg-[#f4f4f4] p-5 text-xs leading-5 text-[#4b5563]">
             <p className="font-bold text-[#1c2030]">Catatan pembayaran</p>
             <p className="mt-1">
-              Pembayaran hanya ke rekening resmi atas nama <b>{legal.company}</b> yang diinformasikan lewat WhatsApp
-              resmi {contact.whatsappDisplay}. Kami tidak pernah meminta transfer ke rekening pribadi.
+              {o.payment_method === 'MIDTRANS' ? (
+                <>Pembayaran diproses melalui Midtrans di urbanix.id. Kami tidak pernah meminta transfer ke rekening pribadi.</>
+              ) : (
+                <>
+                  Pembayaran hanya ke rekening resmi atas nama <b>{legal.company}</b>. Kami tidak pernah meminta transfer ke
+                  rekening pribadi.
+                </>
+              )}
             </p>
             <p className="mt-3">
               Invoice ini dibuat otomatis oleh sistem Urbanix Store dan bukan merupakan Faktur Pajak. Terima kasih
