@@ -42,6 +42,10 @@
 			lb_try_interval 1s
 		}
 	}
+	# Notifikasi pembayaran Midtrans (Payment Notification URL) langsung ke backend.
+	handle /api/v1/payments/midtrans-webhook/ {
+		reverse_proxy backend:8000
+	}
 	handle {
 		reverse_proxy storefront:3000 {
 			lb_try_duration 45s

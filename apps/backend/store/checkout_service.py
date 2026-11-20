@@ -22,6 +22,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
+from . import ongkir
 from . import vouchers as voucher_engine
 from .pricing import prefetch_running_promos, price_info, quota_left
 from .shipping import package_info, shipping_label, weight_text
@@ -65,7 +66,9 @@ def midtrans_is_configured() -> bool:
 def available_methods(store: StoreSettings | None = None) -> dict:
     store = store or StoreSettings.load()
     return {
-        "midtrans": bool(store.enable_midtrans and midtrans_is_configured()),
+        # Bayar di web butuh ongkir otomatis: total tagihan harus final saat bayar.
+        "midtrans": bool(store.enable_midtrans and midtrans_is_configured() and ongkir.is_configured(store)),
+        "ongkir_auto": ongkir.is_configured(store),
         "whatsapp": bool(store.enable_whatsapp and store.whatsapp_number),
         "shopee": bool(store.enable_shopee),
     }
@@ -215,7 +218,10 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
         "weight_complete": weight_complete,
         "vouchers": vouchers.as_dict(),
         "total": str(subtotal - vouchers.discount_amount),
-        "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
+        "shipping_note": (
+            "Ongkir dihitung otomatis setelah alamat dipilih."
+            if ongkir.is_configured(store) else "Ongkos kirim dikonfirmasi penjual."
+        ),
         "tax_note": "Harga sudah termasuk PPN.",
         "methods": available_methods(store),
         "available_vouchers": [voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()],
@@ -317,8 +323,15 @@ def whatsapp_message(order: Order) -> str:
         for part in order.discount_note.split("; "):
             if part:
                 lines.append(part)
+    if order.shipping_auto and order.shipping_cost is not None:
+        lines.append(f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}: {money_text(order.shipping_cost)}")
+        if order.shipping_discount:
+            lines.append(f"Potongan ongkir: -{money_text(order.shipping_discount)}")
+        total_line = f"Total: {money_text(order.billed_amount)} (sudah termasuk PPN & ongkir)"
+    else:
+        total_line = f"Total: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)"
     lines += [
-        f"Total: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)",
+        total_line,
         "",
         f"Nama: {order.customer_name}",
         f"No. HP: {order.customer_phone}",
@@ -338,13 +351,16 @@ def whatsapp_message(order: Order) -> str:
             if p
         )
     )
-    if order.shipping_service:
+    if order.shipping_service and not order.shipping_auto:
         lines.append(f"Pengiriman: {shipping_label(order.shipping_service)} (mohon info ongkirnya)")
     if order.total_weight_grams:
         lines.append(f"Perkiraan berat kirim: {weight_text(order.total_weight_grams)}")
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
     lines.append(f"Cek status & invoice: {frontend_url('/pesanan/' + order.order_number)}")
+    if order.shipping_auto:
+        lines += ["", "Mohon info cara pembayarannya. Terima kasih!"]
+        return "\n".join(lines)
     if order.shipping_discount_max:
         lines.append(f"(Mohon potong ongkir s/d {money_text(order.shipping_discount_max)} sesuai voucher.)")
     lines += ["", "Mohon info total dengan ongkir dan cara pembayarannya. Terima kasih!"]
@@ -380,6 +396,20 @@ def create_snap_transaction(order: Order) -> dict:
         }
         for item in order.items.all()
     ]
+    if order.shipping_cost:
+        item_details.append({
+            "id": "ONGKIR",
+            "price": int(order.shipping_cost),
+            "quantity": 1,
+            "name": f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}"[:50],
+        })
+    if order.shipping_discount:
+        item_details.append({
+            "id": "POTONGAN-ONGKIR",
+            "price": -int(order.shipping_discount),
+            "quantity": 1,
+            "name": "Potongan ongkir (voucher)",
+        })
     if order.discount_amount:
         item_details.append({
             "id": "VOUCHER",
@@ -467,8 +497,10 @@ def place_order(data: dict) -> dict:
         first = vouchers.rejected[0]
         raise CheckoutError(f"Voucher {first['code']}: {first['message']}")
 
+    rate = resolve_shipping(method, lines, data.get("shipping") or {}, store)
+
     try:
-        order = _create_order(method, lines, data, idem, vouchers)
+        order = _create_order(method, lines, data, idem, vouchers, rate)
     except IntegrityError:
         # Klik ganda: permintaan lain dengan kunci yang sama sudah lebih dulu tersimpan.
         existing = Order.objects.filter(idempotency_key=idem).first() if idem else None
@@ -501,8 +533,24 @@ def place_order(data: dict) -> dict:
     return order_result(order, store)
 
 
+def resolve_shipping(method: str, lines, shipping: dict, store) -> dict | None:
+    """Tarif otomatis yang dipilih pembeli, dihitung ulang di server. None = ongkir dari admin."""
+    service = shipping.get("service") or ""
+    if ":" not in service:
+        if method == "MIDTRANS":
+            raise CheckoutError("Pilih kurir pengiriman dulu supaya total bayar bisa dihitung.")
+        return None
+    try:
+        rate = ongkir.find_rate(shipping["destination_id"], ongkir.order_weight(lines), service, store)
+    except ongkir.OngkirError as exc:
+        raise CheckoutError(str(exc))
+    if rate is None:
+        raise CheckoutError("Tarif kurir yang dipilih sudah berubah. Pilih ulang kurirnya, ya.")
+    return rate
+
+
 @transaction.atomic
-def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, vouchers) -> Order:
+def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, vouchers, rate=None) -> Order:
     subtotal = sum((l.subtotal for l in lines), Decimal("0"))
     customer, shipping = data["customer"], data["shipping"]
     if method == "MIDTRANS":
@@ -525,6 +573,11 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         shipping_province=shipping.get("province", ""),
         shipping_postal_code=shipping.get("postal_code", ""),
         shipping_service=shipping.get("service", ""),
+        shipping_destination_id=shipping.get("destination_id") if rate else None,
+        shipping_cost=Decimal(rate["cost"]) if rate else None,
+        shipping_courier=rate["courier_name"][:50] if rate else "",
+        shipping_etd=rate["etd"][:30] if rate else "",
+        shipping_auto=bool(rate),
         notes=data.get("notes", ""),
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),
@@ -590,7 +643,7 @@ def handle_midtrans_notification(payload: dict) -> tuple[int, str]:
         return 404, "order not found"
 
     try:
-        amount_ok = Decimal(gross_amount) == order.total_amount
+        amount_ok = Decimal(gross_amount) == order.billed_amount
     except Exception:
         amount_ok = False
     if not amount_ok:

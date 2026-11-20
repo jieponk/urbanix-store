@@ -44,7 +44,7 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
       {/* Pita pengumuman: isi diambil dari promo yang sedang berjalan */}
       {preview && <EventPreviewBar preview={preview} />}
       {(event || upcoming) && <EventRibbon event={event} upcoming={upcoming} />}
-      {!event && !upcoming && (promo || whatsappDiscount > 0) && (
+      {!event && !upcoming && promo && (
         <div className="bg-cobalt-800 text-white">
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-6 px-4 py-2 text-center text-xs leading-snug sm:text-[13px]">
             {promo && (
@@ -57,11 +57,6 @@ export default async function SiteHeader({ categories, promo, whatsappNumber, wh
                   {ends && <> {t('sampai {date}', { date: ends })}</>}
                 </span>
               </Link>
-            )}
-            {whatsappDiscount > 0 && whatsappNumber && (
-              <a href="/#cara-pesan" className={`font-semibold hover:underline ${promo ? 'hidden md:inline' : ''}`}>
-                {t('Pesan via WhatsApp, hemat {n}% lagi', { n: whatsappDiscount })}
-              </a>
             )}
           </div>
         </div>

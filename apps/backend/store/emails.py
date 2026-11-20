@@ -82,23 +82,44 @@ def _items_table(order: Order) -> tuple[str, list[str]]:
             "<tr><td style='padding:6px 0;color:#047857'>Potongan</td>"
             f"<td style='padding:6px 0;text-align:right;color:#047857'>-{money_text(order.discount_amount)}</td></tr>"
         )
-    text.append(f"Total produk: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)")
-    rows += (
-        "<tr><td style='padding:10px 0;font-weight:800'>Total produk</td>"
-        f"<td style='padding:10px 0;text-align:right;font-weight:800'>{money_text(order.total_amount)}</td></tr>"
-    )
+    if order.shipping_auto and order.shipping_cost is not None:
+        label = f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}"
+        text.append(f"{label}: {money_text(order.shipping_cost)}")
+        rows += (
+            f"<tr><td style='padding:6px 0'>{escape(label)}</td>"
+            f"<td style='padding:6px 0;text-align:right'>{money_text(order.shipping_cost)}</td></tr>"
+        )
+        if order.shipping_discount:
+            text.append(f"Potongan ongkir: -{money_text(order.shipping_discount)}")
+            rows += (
+                "<tr><td style='padding:6px 0;color:#047857'>Potongan ongkir</td>"
+                f"<td style='padding:6px 0;text-align:right;color:#047857'>-{money_text(order.shipping_discount)}</td></tr>"
+            )
+        text.append(f"Total tagihan: {money_text(order.billed_amount)} (sudah termasuk PPN & ongkir)")
+        rows += (
+            "<tr><td style='padding:10px 0;font-weight:800'>Total tagihan</td>"
+            f"<td style='padding:10px 0;text-align:right;font-weight:800'>{money_text(order.billed_amount)}</td></tr>"
+        )
+        note = "Sudah termasuk PPN dan ongkos kirim."
+    else:
+        text.append(f"Total produk: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)")
+        rows += (
+            "<tr><td style='padding:10px 0;font-weight:800'>Total produk</td>"
+            f"<td style='padding:10px 0;text-align:right;font-weight:800'>{money_text(order.total_amount)}</td></tr>"
+        )
+        note = "Sudah termasuk PPN, belum termasuk ongkos kirim."
     html = (
         f"<table width='100%' cellpadding='0' cellspacing='0' style='margin-top:16px;font-size:14px'>{rows}</table>"
-        "<p style='font-size:12px;color:#6b7280;margin:0'>Sudah termasuk PPN, belum termasuk ongkos kirim.</p>"
+        f"<p style='font-size:12px;color:#6b7280;margin:0'>{note}</p>"
     )
     return html, text
 
 
 def _message(order: Order, subject: str, text_lines: list[str], html: str) -> EmailMultiAlternatives:
-    footer = [
-        "",
-        f"Info pembayaran hanya kami berikan lewat WhatsApp resmi Urbanix Store, atas nama {COMPANY}.",
-        "",
+    footer = [""]
+    if order.payment_method == "WHATSAPP":
+        footer += [f"Info pembayaran hanya kami berikan lewat WhatsApp resmi Urbanix Store, atas nama {COMPANY}.", ""]
+    footer += [
         "Salam,",
         "Urbanix Store",
     ]
@@ -127,7 +148,7 @@ def build_created(order: Order) -> EmailMultiAlternatives:
     if order.payment_method == "WHATSAPP":
         next_step = (
             "Pesananmu diproses setelah chat pesanan terkirim ke WhatsApp admin. Admin akan membalas "
-            "total dengan ongkir dan info rekening resmi."
+            + ("info rekening resmi." if order.shipping_auto else "total dengan ongkir dan info rekening resmi.")
         )
     else:
         next_step = "Selesaikan pembayaran lewat tautan pembayaran sebelum batas waktunya habis."

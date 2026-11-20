@@ -35,6 +35,8 @@ urlpatterns = [
     path('vouchers/', checkout_views.voucher_list, name='voucher_list'),
     path('checkout/quote/', checkout_views.checkout_quote, name='checkout_quote'),
     path('checkout/', checkout_views.checkout, name='checkout'),
+    path('ongkir/tujuan/', checkout_views.ongkir_destination, name='ongkir_destination'),
+    path('ongkir/', checkout_views.ongkir_rates, name='ongkir_rates'),
     path('checkout/orders/<str:order_number>/', checkout_views.order_detail, name='checkout_order_detail'),
     path('payments/midtrans-webhook/', checkout_views.midtrans_webhook, name='midtrans_webhook'),
 ]

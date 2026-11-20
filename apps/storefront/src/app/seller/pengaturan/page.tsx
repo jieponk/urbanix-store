@@ -18,7 +18,10 @@ export default function SettingsPage() {
     const body: any = { ...form };
     delete body.midtrans_configured;
     delete body.deepl_configured;
-    for (const k of ['shopee_rating', 'shopee_rating_count', 'shopee_store_url', 'shopee_reviews_url']) if (body[k] === '') body[k] = null;
+    delete body.rajaongkir_key_configured;
+    delete body.ongkir_auto;
+    delete body.courier_choices;
+    for (const k of ['rajaongkir_origin_id', 'shopee_rating', 'shopee_rating_count', 'shopee_store_url', 'shopee_reviews_url']) if (body[k] === '') body[k] = null;
     setBusy(true);
     try {
       setData(await sellerApi('settings', { method: 'PATCH', body }));
@@ -67,6 +70,44 @@ export default function SettingsPage() {
             </Field>
           </div>
         </Card>
+        <Card title="Ongkir otomatis (RajaOngkir)" action={data.ongkir_auto ? <Badge tone="green">aktif</Badge> : <Badge tone="amber">belum aktif</Badge>}>
+          <div className="space-y-4">
+            {!data.rajaongkir_key_configured && (
+              <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                Kunci API RajaOngkir belum dipasang di server. Jalankan <code>./deploy/set-rajaongkir.sh</code> dari laptop.
+              </p>
+            )}
+            <Field label="Asal pengiriman (gudang)" hint="Ketik kelurahan, kecamatan, atau kode pos gudang lalu pilih.">
+              <OriginPicker
+                label={form.rajaongkir_origin_label}
+                onPick={(o) => setForm({ ...form, rajaongkir_origin_id: o.id, rajaongkir_origin_label: o.label })}
+              />
+            </Field>
+            <div>
+              <p className="mb-2 text-sm font-semibold text-slate-700">Kurir yang ditampilkan</p>
+              <div className="flex flex-wrap gap-2">
+                {(data.courier_choices ?? []).map((c: { code: string; name: string }) => {
+                  const list = String(form.rajaongkir_couriers || '').split(':').filter(Boolean);
+                  const on = list.includes(c.code);
+                  return (
+                    <button
+                      key={c.code}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => set('rajaongkir_couriers', (on ? list.filter((x) => x !== c.code) : [...list, c.code]).join(':'))}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold ring-1 transition ${on ? 'bg-ink text-surface ring-ink' : 'bg-surface text-slate-600 ring-slate-300 hover:ring-slate-500'}`}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-xs text-slate-500">
+              Bila aktif, pembeli melihat ongkir langsung saat checkout dan bisa bayar di web (Midtrans). Kurir instan (GoSend/Grab) tetap dikonfirmasi admin lewat WhatsApp.
+            </p>
+          </div>
+        </Card>
         <Card title="Toko Shopee">
           <div className="space-y-4">
             <Field label="ID toko Shopee" hint="Dipakai untuk link produk otomatis: shopee.co.id/product/<ID toko>/<kode produk>/">
@@ -105,5 +146,62 @@ function CategoryRow({ c, onRename }: { c: any; onRename: (id: number, name: str
       <span className="w-20 shrink-0 text-right text-xs text-slate-500">{c.products} produk</span>
       <button type="button" disabled={name === c.name || !name.trim()} className={btn.small} onClick={() => onRename(c.id, name.trim())}>Simpan</button>
     </li>
+  );
+}
+
+function OriginPicker({ label, onPick }: { label: string; onPick: (o: { id: number; label: string }) => void }) {
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState<{ id: number; label: string }[]>([]);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    if (q.trim().length < 3) {
+      setResults([]);
+      setMsg('');
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/ongkir/tujuan?q=${encodeURIComponent(q.trim())}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setResults(data.results ?? []);
+        setMsg(!res.ok ? data.error || 'Gagal mencari.' : (data.results ?? []).length ? '' : 'Tidak ditemukan.');
+      } catch {
+        if (!cancelled) setMsg('Gagal mencari.');
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [q]);
+
+  return (
+    <div>
+      {label && <p className="mb-2 rounded-lg bg-mist px-3 py-2 text-sm font-semibold text-ink">{label}</p>}
+      <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={label ? 'Ganti asal pengiriman…' : 'mis. Pasar Baru atau 10710'} />
+      {msg && <p className="mt-1 text-xs text-slate-500">{msg}</p>}
+      {results.length > 0 && (
+        <ul className="mt-2 max-h-56 divide-y divide-slate-200 overflow-y-auto rounded-lg border border-slate-200">
+          {results.map((r) => (
+            <li key={r.id}>
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-mist"
+                onClick={() => {
+                  onPick(r);
+                  setQ('');
+                  setResults([]);
+                }}
+              >
+                {r.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -126,6 +126,16 @@ class StoreSettings(models.Model):
         help_text="Tetap nonaktif selama MIDTRANS_SERVER_KEY belum diisi.",
     )
     enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
+    # Ongkir otomatis (RajaOngkir). Aktif bila RAJAONGKIR_API_KEY terpasang & asal pengiriman diisi.
+    rajaongkir_origin_id = models.PositiveIntegerField(
+        "ID asal pengiriman (RajaOngkir)", null=True, blank=True,
+        help_text="Pilih kelurahan/kecamatan gudang di Seller Center → Pengaturan.",
+    )
+    rajaongkir_origin_label = models.CharField("Asal pengiriman", max_length=255, blank=True)
+    rajaongkir_couriers = models.CharField(
+        "Kurir ongkir otomatis", max_length=120, blank=True, default="jne:jnt:sicepat:anteraja:pos",
+        help_text="Kode kurir dipisah titik dua, mis. jne:jnt:sicepat.",
+    )
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
     show_whatsapp_popup = models.BooleanField(
@@ -326,6 +336,11 @@ class Order(models.Model):
         help_text="Dipilih pembeli saat checkout (mis. jne_reg). Ongkir tetap dikonfirmasi admin.",
     )
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
+    shipping_destination_id = models.PositiveIntegerField("ID tujuan (RajaOngkir)", null=True, blank=True)
+    shipping_etd = models.CharField("Estimasi tiba", max_length=30, blank=True)
+    shipping_auto = models.BooleanField(
+        "Ongkir otomatis", default=False, help_text="Ongkir dihitung RajaOngkir saat checkout (bukan dari admin).",
+    )
     tracking_number = models.CharField("No. resi", max_length=80, blank=True)
     shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)
     admin_note = models.TextField("Catatan admin (internal)", blank=True)
@@ -358,6 +373,19 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.order_number} - {self.status}"
+
+    @property
+    def shipping_discount(self):
+        if self.shipping_cost is None:
+            return 0
+        return min(self.shipping_cost, self.shipping_discount_max or 0)
+
+    @property
+    def billed_amount(self):
+        """Total yang ditagih: barang setelah voucher + ongkir setelah potongan ongkir."""
+        if self.shipping_cost is None:
+            return self.total_amount
+        return self.total_amount + max(0, self.shipping_cost - (self.shipping_discount_max or 0))
 
 
 class OrderItem(models.Model):

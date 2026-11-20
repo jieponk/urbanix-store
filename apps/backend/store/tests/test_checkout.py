@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 
 from store import checkout_service as svc
 from store.models import Category, Order, Product, ProductVariation, StoreSettings
+from store.tests.ongkir_stub import AUTO_SHIPPING, enable_ongkir
 
 SERVER_KEY = "SB-Mid-server-TESTKEY"
 
@@ -24,7 +25,7 @@ def signed(order_id, status_code, gross, **extra):
     }
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, RAJAONGKIR_API_KEY="ro-test", FRONTEND_URL="http://toko.test")
 class CheckoutTests(TestCase):
     def setUp(self):
         cache.clear()  # reset throttle
@@ -43,6 +44,7 @@ class CheckoutTests(TestCase):
         store.whatsapp_number = "6281234567890"
         store.shopee_store_url = "https://shopee.co.id/urbanix"
         store.save()
+        enable_ongkir(self)
 
     def body(self, method, **over):
         data = {
@@ -57,6 +59,8 @@ class CheckoutTests(TestCase):
             "notes": "Tolong bubble wrap",
             "idempotency_key": f"key-{method}",
         }
+        if method == "MIDTRANS":
+            data["shipping"].update(AUTO_SHIPPING)
         data.update(over)
         return data
 
@@ -67,7 +71,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(Decimal(r.data["subtotal"]), Decimal("1800000"))
         self.assertEqual(r.data["items"][0]["shopee_url"], "https://shopee.co.id/kamera-a")
-        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True})
+        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True, "ongkir_auto": True})
 
     def test_quote_rejects_inactive_product(self):
         self.mic.is_active = False
@@ -285,7 +289,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(codes[-1], 429)
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, RAJAONGKIR_API_KEY="ro-test", FRONTEND_URL="http://toko.test")
 class VariationCheckoutTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -314,12 +318,16 @@ class VariationCheckoutTests(TestCase):
         store = StoreSettings.load()
         store.whatsapp_number = "6281234567890"
         store.save()
+        enable_ongkir(self)
 
     def order(self, method, items):
+        shipping = {"address": "Jl. Mawar 1 RT 02", "city": "Bandung"}
+        if method == "MIDTRANS":
+            shipping.update(AUTO_SHIPPING)
         return self.api.post("/api/v1/checkout/", {
             "payment_method": method, "items": items,
             "customer": {"name": "Budi", "phone": "081234567890"},
-            "shipping": {"address": "Jl. Mawar 1 RT 02", "city": "Bandung"},
+            "shipping": shipping,
         }, format="json")
 
     def test_variant_required_for_multi_variant_product(self):

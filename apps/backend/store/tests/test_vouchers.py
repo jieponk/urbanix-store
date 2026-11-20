@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from store.models import Category, Order, PriceCut, PriceCutItem, Product, StoreSettings, Voucher
 
 
-@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY")
+@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY", RAJAONGKIR_API_KEY="ro-test")
 class VoucherTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -22,6 +22,9 @@ class VoucherTests(TestCase):
         self.mic = Product.objects.create(category=cat, name="Mic", slug="m", sku="M",
                                           description="-", price=Decimal("400000"), stock=5)
         s = StoreSettings.load(); s.whatsapp_number = "6281"; s.save()
+        from store.tests.ongkir_stub import enable_ongkir
+
+        enable_ongkir(self)
 
     def items(self, cam=1, mic=0):
         out = []
@@ -42,7 +45,8 @@ class VoucherTests(TestCase):
         return self.api.post("/api/v1/checkout/", {
             "payment_method": method, "items": self.items(cam, mic), "voucher_codes": codes,
             "customer": {"name": "Budi", "phone": phone},
-            "shipping": {"address": "Jl. Mawar 1 RT 2", "city": "Bandung"},
+            "shipping": {"address": "Jl. Mawar 1 RT 2", "city": "Bandung",
+                         **({"service": "jne:REG", "destination_id": 17} if method == "MIDTRANS" else {})},
         }, format="json")
 
     # ------------------------------------------------------------ voucher bawaan (migrasi)

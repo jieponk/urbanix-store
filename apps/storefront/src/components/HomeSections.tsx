@@ -161,7 +161,8 @@ const WA_QUESTIONS = [
   { label: 'Bisa dikirim hari ini?', message: 'Halo admin Urbanix, kalau aku order sekarang, apakah bisa dikirim hari ini?' },
 ];
 
-export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { percent: number; whatsappNumber: string; appliesToPromo: boolean }) {
+/** Ajakan chat admin. Potongan voucher WA tidak diiklankan di sini (tetap berlaku otomatis di checkout). */
+export function WhatsappBand({ whatsappNumber }: { percent?: number; whatsappNumber: string; appliesToPromo?: boolean }) {
   const t = getT();
   if (!whatsappNumber) return null;
   const message = encodeURIComponent('Halo admin Urbanix, aku mau tanya-tanya soal gear dulu 🙌');
@@ -191,21 +192,13 @@ export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { perc
                 <span className="text-sun-300">{t('Chat aja dulu.')}</span>
               </h2>
               <p className="mt-2 max-w-xl text-[13px] leading-6 text-white/75 sm:text-[15px]">
-                {percent > 0
-                  ? t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu. Kalau cocok, order via WhatsApp langsung hemat {n}%.', { n: percent })
-                  : t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
-                {percent > 0 && !appliesToPromo && ' ' + t('(Potongan tidak berlaku untuk produk promo.)')}
+                {t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
               </p>
               <WaTypingPrompt whatsappNumber={whatsappNumber} questions={questions} />
             </div>
           </div>
 
           <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-end">
-            {percent > 0 && (
-              <span className="wa-pop self-start rounded-full bg-white px-3 py-1 text-sm font-extrabold text-cobalt-900 lg:self-end">
-                {t('Hemat {n}%', { n: percent })}
-              </span>
-            )}
             <a
               href={`https://wa.me/${whatsappNumber}?text=${message}`}
               target="_blank"

@@ -20,8 +20,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
+from . import ongkir
 from . import vouchers as voucher_engine
-from .checkout_serializers import CheckoutSerializer, QuoteRequestSerializer
+from .checkout_serializers import CheckoutSerializer, OngkirRequestSerializer, QuoteRequestSerializer
 from . import news as news_engine
 from .models import NewsArticle, NewsSource, Order, Review, StoreSettings
 
@@ -138,6 +139,42 @@ def checkout(request):
 checkout.cls.throttle_scope = "checkout"
 
 
+@api_view(["GET"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_destination(request):
+    """Cari kelurahan/kecamatan/kode pos tujuan (RajaOngkir)."""
+    try:
+        return Response({"results": ongkir.search_destination(request.query_params.get("q", ""))})
+    except ongkir.OngkirError as exc:
+        return Response({"error": str(exc), "results": []}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+ongkir_destination.cls.throttle_scope = "ongkir"
+
+
+@api_view(["POST"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_rates(request):
+    """Tarif kurir untuk isi keranjang ke satu tujuan. Body: {items, destination_id}."""
+    serializer = OngkirRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    try:
+        lines = svc.build_lines(data["items"])
+        weight = ongkir.order_weight(lines)
+        options = ongkir.rates(data["destination_id"], weight)
+    except svc.CheckoutError as exc:
+        return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except ongkir.OngkirError as exc:
+        return Response({"error": str(exc), "options": []}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response({"weight_grams": weight, "options": options})
+
+
+ongkir_rates.cls.throttle_scope = "ongkir"
+
+
 def _mask_email(email: str) -> str:
     if not email or "@" not in email:
         return ""
@@ -191,7 +228,13 @@ def order_detail(request, order_number):
             "total_weight_grams": order.total_weight_grams,
             "updated_at": order.updated_at,
             "tax_note": "Harga sudah termasuk PPN.",
-            "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
+            "shipping_note": (
+                f"Ongkir otomatis {order.shipping_courier}" + (f", estimasi {order.shipping_etd} hari" if order.shipping_etd else "") + "."
+                if order.shipping_auto else "Ongkos kirim dikonfirmasi penjual."
+            ),
+            "shipping_auto": order.shipping_auto,
+            "shipping_etd": order.shipping_etd,
+            "billed_amount": str(order.billed_amount),
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
             # Link ulasan produk (setelah paket dikirim). Setara keamanannya dengan nomor pesanan.

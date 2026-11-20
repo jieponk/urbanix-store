@@ -16,8 +16,19 @@ SHIPPING_CHOICES = [(code, label) for code, _group, _courier, label in SHIPPING_
 SHIPPING_LABELS = dict(SHIPPING_CHOICES)
 
 
+AUTO_COURIER_NAMES = {
+    "jne": "JNE", "jnt": "J&T Express", "sicepat": "SiCepat", "anteraja": "AnterAja", "pos": "POS Indonesia",
+    "tiki": "TIKI", "ninja": "Ninja Xpress", "lion": "Lion Parcel", "ide": "ID Express", "sap": "SAP Express",
+    "wahana": "Wahana",
+}
+
+
 def shipping_label(code: str) -> str:
-    return SHIPPING_LABELS.get(code or "", "")
+    code = code or ""
+    if ":" in code:  # tarif otomatis RajaOngkir, mis. "jne:REG"
+        courier, service = code.split(":", 1)
+        return f"{AUTO_COURIER_NAMES.get(courier, courier.upper())} {service}"
+    return SHIPPING_LABELS.get(code, "")
 
 
 # ---------------------------------------------------------------- berat kirim

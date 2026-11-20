@@ -18,6 +18,7 @@ import { publicSku } from '@/lib/seo';
 import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
 import SimpleIcon from '@/components/SimpleIcon';
 import TablerIcon from '@/components/TablerIcon';
+import { useOngkir, type Rate } from '@/lib/useOngkir';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -43,7 +44,7 @@ type Quote = {
   total_weight_grams?: number;
   weight_complete?: boolean;
   shipping_note: string;
-  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean; ongkir_auto?: boolean };
   vouchers: {
     discount_amount: string;
     shipping_discount_max: string;
@@ -57,7 +58,7 @@ type Quote = {
 
 type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
 
-const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; text: string }> = {
+const METHOD_INFO: Record<Method, { key: 'midtrans' | 'whatsapp' | 'shopee'; title: string; text: string }> = {
   MIDTRANS: {
     key: 'midtrans',
     title: 'Bayar di web',
@@ -66,7 +67,7 @@ const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; 
   WHATSAPP: {
     key: 'whatsapp',
     title: 'Pesan via WhatsApp',
-    text: 'Pesanan dikirim ke admin. Ongkir dan cara bayar dikonfirmasi lewat chat.',
+    text: 'Pesanan dikirim ke admin, lalu admin membalas info pembayaran lewat chat.',
   },
   SHOPEE: {
     key: 'shopee',
@@ -150,6 +151,31 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
   const [quoteLoading, setQuoteLoading] = useState(false);
   const itemsRef = useRef<CartItem[]>([]);
   const firstLoad = useRef(true);
+
+  const ongkirAuto = Boolean(quote?.methods.ongkir_auto) && method !== 'SHOPEE' && method !== null;
+  const ongkirItems = useMemo(
+    () => (quote?.items ?? []).map((i) => ({ product_id: i.product_id, variation_id: i.variation_id, quantity: i.quantity })),
+    [quote]
+  );
+  const ongkir = useOngkir(
+    ongkirAuto,
+    { village: form.village, district: form.district, city: form.city, postal_code: form.postal_code },
+    ongkirItems
+  );
+  const selectedRate: Rate | null = ongkir.rates.find((r) => r.code === form.service) ?? null;
+
+  // Tarif berganti (alamat/keranjang berubah): pilihan lama yang tak tersedia dihapus.
+  useEffect(() => {
+    if (form.service.includes(':') && !ongkir.rates.some((r) => r.code === form.service)) {
+      setForm((f) => ({ ...f, service: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongkir.rates]);
+
+  // Bayar di web hanya dengan kurir bertarif otomatis.
+  useEffect(() => {
+    if (method === 'MIDTRANS' && form.service && !form.service.includes(':')) setForm((f) => ({ ...f, service: '' }));
+  }, [method, form.service]);
 
   const loadQuote = useCallback(async (voucherCodes: string[], paymentMethod: Method | null) => {
     const items = itemsRef.current ?? [];
@@ -313,6 +339,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
     if (!form.district.trim()) e.district = t('Kecamatan wajib diisi.');
     if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = t('Kode pos harus 5 angka.');
     if (!form.service) e.service = t('Pilih jasa pengiriman.');
+    else if (form.service.includes(':') && !selectedRate) e.service = t('Pilih ulang kurirnya, tarif sedang dimuat ulang.');
     return e;
   }
 
@@ -348,6 +375,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
               province: form.province,
               postal_code: form.postal_code,
               service: form.service,
+              ...(selectedRate && ongkir.destination && { destination_id: ongkir.destination.id }),
             },
             notes: form.notes,
             voucher_codes: appliedCodes,
@@ -499,7 +527,10 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
   const blocked = method !== 'SHOPEE' && outOfStock.length > 0;
   const voucherDiscount = Number(quote.vouchers.discount_amount) || 0;
   const shippingDiscount = Number(quote.vouchers.shipping_discount_max) || 0;
-  const total = Number(quote.total);
+  const shippingCost = selectedRate ? selectedRate.cost : null;
+  const shippingCut = shippingCost !== null ? Math.min(shippingCost, shippingDiscount) : 0;
+  const total = Number(quote.total) + (shippingCost !== null ? shippingCost - shippingCut : 0);
+  const manualGroups = SHIPPING_GROUPS.filter((g) => !ongkirAuto || (method === 'WHATSAPP' && g.name === 'Instan'));
   const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
   return (
@@ -757,11 +788,89 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
             </Section>
 
             <Section title={t('5. Pilih pengiriman')}>
+              {ongkirAuto && (
+                <div className="mb-5">
+                  {!ongkir.destination && !ongkir.error && (
+                    <p className="rounded-xl bg-mist p-3 text-sm text-slate-600">
+                      {t('Lengkapi alamat (kecamatan & kode pos) untuk melihat ongkir.')}
+                    </p>
+                  )}
+                  {ongkir.destination && (
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <TablerIcon name="map-pin" size={14} />
+                      <span>{t('Tujuan ongkir:')}</span>
+                      {ongkir.options.length > 1 ? (
+                        <select
+                          value={ongkir.destination.id}
+                          onChange={(e) => {
+                            const next = ongkir.options.find((o) => o.id === Number(e.target.value));
+                            if (next) ongkir.setDestination(next);
+                          }}
+                          aria-label={t('Tujuan ongkir')}
+                          className="min-w-0 max-w-full flex-1 truncate rounded-lg border border-slate-300 bg-surface px-2 py-1 text-xs font-semibold text-ink"
+                        >
+                          {ongkir.options.map((o) => (
+                            <option key={o.id} value={o.id}>{o.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="font-semibold text-ink">{ongkir.destination.label}</span>
+                      )}
+                    </div>
+                  )}
+                  {ongkir.loading && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-busy="true">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-[60px] animate-pulse rounded-xl bg-mist" />
+                      ))}
+                    </div>
+                  )}
+                  {!ongkir.loading && ongkir.rates.length > 0 && (
+                    <div role="radiogroup" aria-label={t('Jasa pengiriman')} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {ongkir.rates.map((r) => {
+                        const on = form.service === r.code;
+                        const known = r.courier === 'jne' || r.courier === 'jnt';
+                        return (
+                          <label
+                            key={r.code}
+                            className={`flex min-w-0 cursor-pointer items-center gap-3 rounded-xl p-3 ring-1 transition ${
+                              on ? 'bg-brand-50 ring-2 ring-brand-600 dark:bg-brand-500/10' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <input type="radio" name="service" value={r.code} checked={on} onChange={() => update('service', r.code)} className="h-4 w-4 shrink-0 accent-[#111111]" />
+                            {known ? (
+                              <CourierBadge courier={r.courier as 'jne' | 'jnt'} logo={courierLogos[r.courier as 'jne' | 'jnt']} label={r.courier_name} />
+                            ) : (
+                              <span className="inline-flex h-9 min-w-[76px] items-center justify-center rounded-lg bg-white px-2.5 text-[13px] font-black tracking-tight text-[#191919] ring-1 ring-black/5">
+                                {r.courier_name}
+                              </span>
+                            )}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-bold text-ink">{r.service}</span>
+                              <span className="block truncate text-xs text-slate-500">
+                                {r.etd ? t('Estimasi {n} hari', { n: r.etd }) : r.description}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-sm font-extrabold text-ink tabular-nums">{money(r.cost)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {!ongkir.loading && ongkir.error && (
+                    <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                      {t(ongkir.error)}
+                      {method === 'MIDTRANS' && quote.methods.whatsapp && ' ' + t('Kamu tetap bisa pesan via WhatsApp.')}
+                    </p>
+                  )}
+                </div>
+              )}
+              {manualGroups.length > 0 && (
               <div role="radiogroup" aria-label={t('Jasa pengiriman')} className="space-y-5">
-                {SHIPPING_GROUPS.map((group) => (
+                {manualGroups.map((group) => (
                   <div key={group.name}>
                     <p className="text-sm font-extrabold text-ink">
-                      {t(group.name)} <span className="font-normal text-slate-500">· {t(group.note)}</span>
+                      {t(group.name)} <span className="font-normal text-slate-500">· {t(ongkirAuto ? 'Ongkir dikonfirmasi admin' : group.note)}</span>
                     </p>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {group.options.map((o) => {
@@ -790,9 +899,12 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                   </div>
                 ))}
               </div>
+              )}
               {errors.service && <p className="mt-3 text-sm font-semibold text-red-600">{errors.service}</p>}
               <p className="mt-4 text-xs text-slate-500">
-                {t('Ongkir mengikuti tarif resmi ekspedisi dan dikonfirmasi admin lewat WhatsApp sebelum pembayaran.')}
+                {ongkirAuto
+                  ? t('Ongkir dihitung otomatis dari tarif resmi ekspedisi sesuai alamat dan berat paket.')
+                  : t('Ongkir mengikuti tarif resmi ekspedisi dan dikonfirmasi admin lewat WhatsApp sebelum pembayaran.')}
               </p>
             </Section>
 
@@ -843,8 +955,13 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
             <dd className="font-semibold">{money(quote.subtotal)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">{t('Ongkos kirim')}</dt>
-            <dd className="text-right text-slate-500">{t('Dikonfirmasi penjual')}</dd>
+            <dt className="text-slate-500">
+              {t('Ongkos kirim')}
+              {selectedRate && <span className="block text-xs">{selectedRate.courier_name} {selectedRate.service}</span>}
+            </dt>
+            <dd className={`text-right ${shippingCost !== null ? 'font-semibold' : 'text-slate-500'}`}>
+              {shippingCost !== null ? money(shippingCost) : ongkirAuto ? t('Pilih kurir') : t('Dikonfirmasi penjual')}
+            </dd>
           </div>
           {quote.total_weight_grams ? (
             <div className="flex justify-between gap-4">
@@ -866,18 +983,20 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
           {shippingDiscount > 0 && (
             <div className="flex justify-between gap-4 text-emerald-700">
               <dt>{t('Potongan ongkir')}</dt>
-              <dd className="text-right font-semibold">{t('s/d {date}', { date: money(shippingDiscount) })}</dd>
+              <dd className="text-right font-semibold">
+                {shippingCost !== null ? `-${money(shippingCut)}` : t('s/d {date}', { date: money(shippingDiscount) })}
+              </dd>
             </div>
           )}
           <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
-            <dt className="font-bold">{t('Total produk')}</dt>
+            <dt className="font-bold">{shippingCost !== null ? t('Total bayar') : t('Total produk')}</dt>
             <dd className={`font-black text-slate-900 transition-opacity ${quoteLoading ? 'opacity-50' : ''}`}>
               {money(total)}
             </dd>
           </div>
           <p className="text-xs text-slate-500">
             {t(quote.tax_note)}
-            {shippingDiscount > 0 && ' ' + t('Potongan ongkir dipotong saat admin mengonfirmasi ongkir.')}
+            {shippingDiscount > 0 && shippingCost === null && ' ' + t('Potongan ongkir dipotong saat admin mengonfirmasi ongkir.')}
             {voucherDiscount === 0 && shippingDiscount === 0 && ' ' + t('Belum ada voucher terpakai.')}
           </p>
         </dl>
@@ -896,7 +1015,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
 
         <button
           type="submit"
-          disabled={!method || submitting || blocked}
+          disabled={!method || submitting || blocked || (method === 'MIDTRANS' && !selectedRate)}
           className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting

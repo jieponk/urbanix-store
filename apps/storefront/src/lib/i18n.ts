@@ -789,6 +789,22 @@ const EN: Record<string, string> = {
   'kecamatan': 'district',
   'kota/kabupaten': 'city/regency',
   'provinsi': 'province',
+  // Ongkir otomatis (RajaOngkir)
+  'Pesanan dikirim ke admin, lalu admin membalas info pembayaran lewat chat.': 'Your order is sent to our admin, who replies with payment details in the chat.',
+  'Lengkapi alamat (kecamatan & kode pos) untuk melihat ongkir.': 'Complete the address (district & postal code) to see shipping rates.',
+  'Tujuan ongkir:': 'Shipping to:',
+  'Tujuan ongkir': 'Shipping destination',
+  'Estimasi {n} hari': 'Est. {n} days',
+  'Kamu tetap bisa pesan via WhatsApp.': 'You can still order via WhatsApp.',
+  'Ongkir dikonfirmasi admin': 'Shipping fee confirmed by admin',
+  'Ongkir dihitung otomatis dari tarif resmi ekspedisi sesuai alamat dan berat paket.': 'Shipping is calculated automatically from official courier rates based on address and parcel weight.',
+  'Pilih kurir': 'Choose a courier',
+  'Total bayar': 'Total to pay',
+  'Pilih ulang kurirnya, tarif sedang dimuat ulang.': 'Please choose the courier again; rates are reloading.',
+  'Alamat ini belum ditemukan di data ongkir. Periksa kecamatan & kode pos.': 'This address isn’t in the shipping data yet. Check the district & postal code.',
+  'Belum ada kurir yang melayani alamat ini.': 'No courier serves this address yet.',
+  'Gagal menghitung ongkir.': 'Failed to calculate shipping.',
+  'Gagal mencari tujuan.': 'Failed to look up the destination.',
 };
 /* eslint-enable quote-props */
 

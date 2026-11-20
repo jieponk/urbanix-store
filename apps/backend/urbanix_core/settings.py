@@ -104,6 +104,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'checkout_quote': '120/min',
         'checkout': '10/min',
+        'ongkir': '60/min',
         'seller_login': '10/min',
         'article_comment': '5/min',
         'comment_reaction': '40/min',
@@ -130,6 +131,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MIDTRANS_SERVER_KEY = os.environ.get('MIDTRANS_SERVER_KEY', 'SB-Mid-server-demo')
 MIDTRANS_CLIENT_KEY = os.environ.get('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-demo')
 MIDTRANS_IS_PRODUCTION = os.environ.get('MIDTRANS_IS_PRODUCTION', 'False') == 'True'
+# Ongkir otomatis (RajaOngkir V2 / Komerce). Kosong = ongkir dikonfirmasi admin.
+RAJAONGKIR_API_KEY = os.environ.get('RAJAONGKIR_API_KEY', '')
 
 # Alamat storefront (dipakai untuk tombol "kembali ke toko" setelah bayar di Midtrans).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
