@@ -22,6 +22,10 @@ export default function SettingsPage() {
     delete body.ongkir_auto;
     delete body.courier_choices;
     for (const k of ['shopee_rating', 'shopee_rating_count', 'shopee_store_url', 'shopee_reviews_url']) if (body[k] === '') body[k] = null;
+    // Kolom yang aslinya kosong (null) — mis. tanggal tema Dekor toko — dikirim balik sebagai null, bukan teks kosong.
+    for (const k of Object.keys(body)) if (body[k] === '' && data[k] === null) body[k] = null;
+    // Pengaturan Dekor toko diatur di halamannya sendiri; jangan ikut dikirim dari sini.
+    for (const k of ['event_mode', 'event_theme', 'event_until', 'event_teaser_days', 'home_layout', 'event_title', 'event_subtitle', 'event_cta']) delete body[k];
     setBusy(true);
     try {
       setData(await sellerApi('settings', { method: 'PATCH', body }));
