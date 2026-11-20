@@ -72,3 +72,15 @@ class ProductReviewTests(SellerTestBase):
         self.assertIn("/ulasan/", mail.outbox[0].body)
         self.assertEqual(send_review_requests(), 0)
         self.assertEqual(ProductReview.objects.count(), 0)
+
+
+class ReviewFeedTests(SellerTestBase):
+    def test_feed_only_visible_verified_reviews(self):
+        order = self.make_order(status="COMPLETED")
+        ProductReview.objects.create(product=self.cam, order=order, name="Rani S.", rating=5, body="Original!")
+        ProductReview.objects.create(product=self.lens, order=order, name="Rani S.", rating=3, is_visible=False)
+        data = APIClient().get("/api/v1/reviews/feed/").data
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["product_id"], self.cam.id)
+        self.assertEqual(data[0]["body"], "Original!")
+        self.assertNotIn("order", data[0])

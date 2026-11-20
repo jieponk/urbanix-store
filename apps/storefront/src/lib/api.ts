@@ -231,6 +231,27 @@ export async function getProductReviews(productId: number, page = 1): Promise<Pr
   }
 }
 
+export type FeedReview = {
+  id: number;
+  name: string;
+  rating: number;
+  body: string;
+  created_at: string;
+  product_id: number;
+  product_name: string;
+  product_sku: string;
+};
+
+/** Semua ulasan pembeli terverifikasi yang tampil (untuk feed ulasan Google Merchant Center). */
+export async function getReviewFeed(): Promise<FeedReview[]> {
+  try {
+    const response = await apiFetch(`${API}/reviews/feed/`, { next: { revalidate: 3600 } } as RequestInit);
+    return response.ok ? ((await response.json()) as FeedReview[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Ringkasan promo yang sedang berjalan, dihitung dari data produk. */
 export function promoSummary(products: Product[]) {
   const promo = products.filter((p) => (p.discount_percent ?? 0) > 0);

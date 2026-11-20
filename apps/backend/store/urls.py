@@ -16,6 +16,7 @@ urlpatterns = [
     path('store-settings/', checkout_views.store_settings, name='store_settings'),
     path('reviews/', checkout_views.review_list, name='review_list'),
     path('products/<int:product_id>/reviews/', reviews_api.product_reviews, name='product_reviews'),
+    path('reviews/feed/', reviews_api.review_feed, name='review_feed'),
     path('products/<int:product_id>/lengkapi/', extras_api.product_extras, name='product_extras'),
     path('order-reviews/<str:token>/', reviews_api.order_review, name='order_review'),
     path('seller/product-reviews/', reviews_api.seller_reviews, name='seller_product_reviews'),

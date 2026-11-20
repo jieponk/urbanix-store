@@ -95,6 +95,35 @@ def product_reviews(request, product_id):
     return Response(data)
 
 
+@api_view(["GET"])
+@_public
+def review_feed(request):
+    """Semua ulasan pembeli terverifikasi yang tampil, untuk feed ulasan produk Google Merchant Center.
+
+    Hanya ProductReview (pesanan di urbanix.id), bukan salinan ulasan Shopee.
+    """
+    qs = (
+        ProductReview.objects.filter(is_visible=True, product__is_active=True)
+        .select_related("product")
+        .order_by("-created_at")
+    )
+    return Response(
+        [
+            {
+                "id": r.id,
+                "name": r.name,
+                "rating": r.rating,
+                "body": r.body,
+                "created_at": r.created_at,
+                "product_id": r.product_id,
+                "product_name": r.product.name,
+                "product_sku": r.product.sku,
+            }
+            for r in qs
+        ]
+    )
+
+
 def _order_payload(order: Order) -> dict:
     done = {r.product_id: r for r in order.buyer_reviews.all()}
     items, seen = [], set()
