@@ -806,7 +806,7 @@ export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Par
                         <select
                           value={ongkir.destination.id}
                           onChange={(e) => {
-                            const next = ongkir.options.find((o) => o.id === Number(e.target.value));
+                            const next = ongkir.options.find((o) => o.id === e.target.value);
                             if (next) ongkir.setDestination(next);
                           }}
                           aria-label={t('Tujuan ongkir')}

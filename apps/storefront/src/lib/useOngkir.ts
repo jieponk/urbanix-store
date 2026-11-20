@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { norm } from '@/lib/wilayah';
 
 export type Destination = {
-  id: number;
+  id: string;
   label: string;
   subdistrict: string;
   district: string;
@@ -14,7 +14,7 @@ export type Destination = {
 };
 
 export type Rate = {
-  code: string; // "jne:REG"
+  code: string; // "jne:reg"
   courier: string;
   courier_name: string;
   service: string;
@@ -26,7 +26,7 @@ export type Rate = {
 type Region = { village: string; district: string; city: string; postal_code: string };
 type Item = { product_id: number; variation_id: string; quantity: number };
 
-/** Nilai kecocokan baris RajaOngkir dengan alamat yang diisi pembeli. */
+/** Nilai kecocokan area Biteship dengan alamat yang diisi pembeli. */
 function score(d: Destination, r: Region) {
   let s = 0;
   if (r.village && norm(d.subdistrict) === norm(r.village)) s += 4;
@@ -37,7 +37,7 @@ function score(d: Destination, r: Region) {
 }
 
 /**
- * Ongkir otomatis: cari ID tujuan RajaOngkir dari alamat yang sudah diisi (kode pos / kelurahan / kecamatan),
+ * Ongkir otomatis (Biteship): cari ID area tujuan dari alamat yang sudah diisi (kode pos / kelurahan / kecamatan),
  * lalu ambil tarif kurir untuk isi keranjang.
  */
 export function useOngkir(enabled: boolean, region: Region, items: Item[]) {
@@ -50,7 +50,8 @@ export function useOngkir(enabled: boolean, region: Region, items: Item[]) {
   const query = useMemo(() => {
     if (!enabled || !region.district.trim() || !region.city.trim()) return '';
     if (/^[0-9]{5}$/.test(region.postal_code)) return region.postal_code;
-    return (region.village || region.district).trim();
+    // Area Biteship setingkat kecamatan + kode pos
+    return region.district.trim();
   }, [enabled, region.district, region.city, region.postal_code, region.village]);
 
   // 1. Cari tujuan

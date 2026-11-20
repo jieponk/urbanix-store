@@ -126,13 +126,13 @@ class StoreSettings(models.Model):
         help_text="Tetap nonaktif selama MIDTRANS_SERVER_KEY belum diisi.",
     )
     enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
-    # Ongkir otomatis (RajaOngkir). Aktif bila RAJAONGKIR_API_KEY terpasang & asal pengiriman diisi.
-    rajaongkir_origin_id = models.PositiveIntegerField(
-        "ID asal pengiriman (RajaOngkir)", null=True, blank=True,
-        help_text="Pilih kelurahan/kecamatan gudang di Seller Center → Pengaturan.",
+    # Ongkir otomatis (Biteship). Aktif bila BITESHIP_API_KEY terpasang & asal pengiriman diisi.
+    ongkir_origin_id = models.CharField(
+        "ID area asal pengiriman (Biteship)", max_length=60, blank=True,
+        help_text="Pilih kecamatan/kode pos gudang di Seller Center → Pengaturan.",
     )
-    rajaongkir_origin_label = models.CharField("Asal pengiriman", max_length=255, blank=True)
-    rajaongkir_couriers = models.CharField(
+    ongkir_origin_label = models.CharField("Asal pengiriman", max_length=255, blank=True)
+    ongkir_couriers = models.CharField(
         "Kurir ongkir otomatis", max_length=120, blank=True, default="jne:jnt:sicepat:anteraja:pos",
         help_text="Kode kurir dipisah titik dua, mis. jne:jnt:sicepat.",
     )
@@ -336,10 +336,10 @@ class Order(models.Model):
         help_text="Dipilih pembeli saat checkout (mis. jne_reg). Ongkir tetap dikonfirmasi admin.",
     )
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
-    shipping_destination_id = models.PositiveIntegerField("ID tujuan (RajaOngkir)", null=True, blank=True)
+    shipping_destination_id = models.CharField("ID area tujuan (Biteship)", max_length=60, blank=True)
     shipping_etd = models.CharField("Estimasi tiba", max_length=30, blank=True)
     shipping_auto = models.BooleanField(
-        "Ongkir otomatis", default=False, help_text="Ongkir dihitung RajaOngkir saat checkout (bukan dari admin).",
+        "Ongkir otomatis", default=False, help_text="Ongkir dihitung otomatis (Biteship) saat checkout, bukan dari admin.",
     )
     tracking_number = models.CharField("No. resi", max_length=80, blank=True)
     shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)

@@ -25,7 +25,7 @@ def signed(order_id, status_code, gross, **extra):
     }
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, RAJAONGKIR_API_KEY="ro-test", FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, BITESHIP_API_KEY="biteship_test.abc", FRONTEND_URL="http://toko.test")
 class CheckoutTests(TestCase):
     def setUp(self):
         cache.clear()  # reset throttle
@@ -289,7 +289,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(codes[-1], 429)
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, RAJAONGKIR_API_KEY="ro-test", FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, BITESHIP_API_KEY="biteship_test.abc", FRONTEND_URL="http://toko.test")
 class VariationCheckoutTests(TestCase):
     def setUp(self):
         cache.clear()

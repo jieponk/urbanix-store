@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from .checkout_service import frontend_url, money_text
 from .models import Order, StoreSettings
+from .shipping import shipping_label
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ def _items_table(order: Order) -> tuple[str, list[str]]:
             f"<td style='padding:6px 0;text-align:right;color:#047857'>-{money_text(order.discount_amount)}</td></tr>"
         )
     if order.shipping_auto and order.shipping_cost is not None:
-        label = f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}"
+        label = f"Ongkir {shipping_label(order.shipping_service)}"
         text.append(f"{label}: {money_text(order.shipping_cost)}")
         rows += (
             f"<tr><td style='padding:6px 0'>{escape(label)}</td>"

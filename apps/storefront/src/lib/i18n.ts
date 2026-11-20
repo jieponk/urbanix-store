@@ -789,7 +789,7 @@ const EN: Record<string, string> = {
   'kecamatan': 'district',
   'kota/kabupaten': 'city/regency',
   'provinsi': 'province',
-  // Ongkir otomatis (RajaOngkir)
+  // Ongkir otomatis (Biteship)
   'Pesanan dikirim ke admin, lalu admin membalas info pembayaran lewat chat.': 'Your order is sent to our admin, who replies with payment details in the chat.',
   'Lengkapi alamat (kecamatan & kode pos) untuk melihat ongkir.': 'Complete the address (district & postal code) to see shipping rates.',
   'Tujuan ongkir:': 'Shipping to:',

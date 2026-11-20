@@ -18,16 +18,16 @@ SHIPPING_LABELS = dict(SHIPPING_CHOICES)
 
 AUTO_COURIER_NAMES = {
     "jne": "JNE", "jnt": "J&T Express", "sicepat": "SiCepat", "anteraja": "AnterAja", "pos": "POS Indonesia",
-    "tiki": "TIKI", "ninja": "Ninja Xpress", "lion": "Lion Parcel", "ide": "ID Express", "sap": "SAP Express",
-    "wahana": "Wahana",
+    "tiki": "TIKI", "ninja": "Ninja Xpress", "lion": "Lion Parcel", "idexpress": "ID Express", "sap": "SAP Express",
+    "wahana": "Wahana", "paxel": "Paxel", "rpx": "RPX",
 }
 
 
 def shipping_label(code: str) -> str:
     code = code or ""
-    if ":" in code:  # tarif otomatis RajaOngkir, mis. "jne:REG"
+    if ":" in code:  # tarif otomatis Biteship, mis. "jne:reg"
         courier, service = code.split(":", 1)
-        return f"{AUTO_COURIER_NAMES.get(courier, courier.upper())} {service}"
+        return f"{AUTO_COURIER_NAMES.get(courier, courier.upper())} {service.upper()}"
     return SHIPPING_LABELS.get(code, "")
 
 

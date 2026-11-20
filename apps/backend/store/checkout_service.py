@@ -324,7 +324,7 @@ def whatsapp_message(order: Order) -> str:
             if part:
                 lines.append(part)
     if order.shipping_auto and order.shipping_cost is not None:
-        lines.append(f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}: {money_text(order.shipping_cost)}")
+        lines.append(f"Ongkir {shipping_label(order.shipping_service)}: {money_text(order.shipping_cost)}")
         if order.shipping_discount:
             lines.append(f"Potongan ongkir: -{money_text(order.shipping_discount)}")
         total_line = f"Total: {money_text(order.billed_amount)} (sudah termasuk PPN & ongkir)"
@@ -401,7 +401,7 @@ def create_snap_transaction(order: Order) -> dict:
             "id": "ONGKIR",
             "price": int(order.shipping_cost),
             "quantity": 1,
-            "name": f"Ongkir {order.shipping_courier} {order.shipping_service.split(':')[-1]}"[:50],
+            "name": f"Ongkir {shipping_label(order.shipping_service)}"[:50],
         })
     if order.shipping_discount:
         item_details.append({
@@ -541,7 +541,7 @@ def resolve_shipping(method: str, lines, shipping: dict, store) -> dict | None:
             raise CheckoutError("Pilih kurir pengiriman dulu supaya total bayar bisa dihitung.")
         return None
     try:
-        rate = ongkir.find_rate(shipping["destination_id"], ongkir.order_weight(lines), service, store)
+        rate = ongkir.find_rate(shipping["destination_id"], lines, service, store)
     except ongkir.OngkirError as exc:
         raise CheckoutError(str(exc))
     if rate is None:
@@ -573,7 +573,7 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         shipping_province=shipping.get("province", ""),
         shipping_postal_code=shipping.get("postal_code", ""),
         shipping_service=shipping.get("service", ""),
-        shipping_destination_id=shipping.get("destination_id") if rate else None,
+        shipping_destination_id=shipping.get("destination_id") if rate else "",
         shipping_cost=Decimal(rate["cost"]) if rate else None,
         shipping_courier=rate["courier_name"][:50] if rate else "",
         shipping_etd=rate["etd"][:30] if rate else "",

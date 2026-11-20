@@ -64,7 +64,7 @@ services:
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
       MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-False}
-      RAJAONGKIR_API_KEY: ${RAJAONGKIR_API_KEY:-}
+      BITESHIP_API_KEY: ${BITESHIP_API_KEY:-}
     volumes:
       - static:/srv/static
       - media:/srv/media

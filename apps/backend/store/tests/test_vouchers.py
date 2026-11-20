@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from store.models import Category, Order, PriceCut, PriceCutItem, Product, StoreSettings, Voucher
 
 
-@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY", RAJAONGKIR_API_KEY="ro-test")
+@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY", BITESHIP_API_KEY="biteship_test.abc")
 class VoucherTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -46,7 +46,7 @@ class VoucherTests(TestCase):
             "payment_method": method, "items": self.items(cam, mic), "voucher_codes": codes,
             "customer": {"name": "Budi", "phone": phone},
             "shipping": {"address": "Jl. Mawar 1 RT 2", "city": "Bandung",
-                         **({"service": "jne:REG", "destination_id": 17} if method == "MIDTRANS" else {})},
+                         **({"service": "jne:reg", "destination_id": "IDNP6IDNC148IDND836IDZ12430"} if method == "MIDTRANS" else {})},
         }, format="json")
 
     # ------------------------------------------------------------ voucher bawaan (migrasi)

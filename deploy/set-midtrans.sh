@@ -62,7 +62,7 @@ assert code == '404', 'kunci ditolak'
   echo "BERHASIL. Kunci diterima Midtrans."
   echo "Lanjut di dashboard Midtrans -> Settings -> Payment -> Notification URL, isi:"
   echo "  https://urbanix.id/api/v1/payments/midtrans-webhook/"
-  echo "Metode 'Bayar di web' muncul di checkout setelah ongkir otomatis (RajaOngkir) juga aktif."
+  echo "Metode 'Bayar di web' muncul di checkout setelah ongkir otomatis (Biteship) juga aktif."
 else
   echo "GAGAL. Kunci ditolak Midtrans (cek mode Sandbox/Production) atau server tidak bisa menghubungi Midtrans."
   exit 1

@@ -481,7 +481,7 @@ class SettingsSerializer(serializers.ModelSerializer):
             "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
             "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
             "home_layout", "event_title", "event_subtitle", "event_cta",
-            "rajaongkir_origin_id", "rajaongkir_origin_label", "rajaongkir_couriers",
+            "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers",
         ]
 
     def validate(self, attrs):
@@ -494,14 +494,14 @@ class SettingsSerializer(serializers.ModelSerializer):
             if not isinstance(layout, list) or not all(isinstance(i, dict) and isinstance(i.get("key"), str) for i in layout):
                 raise serializers.ValidationError({"home_layout": "Format tata letak tidak valid."})
             attrs["home_layout"] = [{"key": i["key"][:30], "visible": bool(i.get("visible", True))} for i in layout][:30]
-        couriers = attrs.get("rajaongkir_couriers")
+        couriers = attrs.get("ongkir_couriers")
         if couriers is not None:
             from .ongkir import COURIER_CODES
 
             codes = [c.strip().lower() for c in couriers.replace(",", ":").split(":") if c.strip()]
             if not codes or any(c not in COURIER_CODES for c in codes):
-                raise serializers.ValidationError({"rajaongkir_couriers": "Pilih minimal satu kurir yang dikenal."})
-            attrs["rajaongkir_couriers"] = ":".join(dict.fromkeys(codes))
+                raise serializers.ValidationError({"ongkir_couriers": "Pilih minimal satu kurir yang dikenal."})
+            attrs["ongkir_couriers"] = ":".join(dict.fromkeys(codes))
         if attrs.get("event_teaser_days") is not None and attrs["event_teaser_days"] > 14:
             raise serializers.ValidationError({"event_teaser_days": "Maksimal 14 hari."})
         return attrs
@@ -520,7 +520,7 @@ def store_settings(request):
     from . import ongkir
 
     return Response({**SettingsSerializer(store).data, "midtrans_configured": svc.midtrans_is_configured(),
-                     "rajaongkir_key_configured": bool(ongkir.api_key()),
+                     "ongkir_key_configured": bool(ongkir.api_key()),
                      "ongkir_auto": ongkir.is_configured(store),
                      "courier_choices": [{"code": c, "name": n} for c, n in ongkir.COURIER_CHOICES],
                      "deepl_configured": bool(news_engine.deepl_key())})

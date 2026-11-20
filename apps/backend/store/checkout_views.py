@@ -143,7 +143,7 @@ checkout.cls.throttle_scope = "checkout"
 @_public
 @throttle_classes([ScopedRateThrottle])
 def ongkir_destination(request):
-    """Cari kelurahan/kecamatan/kode pos tujuan (RajaOngkir)."""
+    """Cari kecamatan/kode pos tujuan (Biteship)."""
     try:
         return Response({"results": ongkir.search_destination(request.query_params.get("q", ""))})
     except ongkir.OngkirError as exc:
@@ -164,7 +164,7 @@ def ongkir_rates(request):
     try:
         lines = svc.build_lines(data["items"])
         weight = ongkir.order_weight(lines)
-        options = ongkir.rates(data["destination_id"], weight)
+        options = ongkir.rates(data["destination_id"], lines)
     except svc.CheckoutError as exc:
         return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except ongkir.OngkirError as exc:

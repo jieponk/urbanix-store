@@ -18,10 +18,10 @@ export default function SettingsPage() {
     const body: any = { ...form };
     delete body.midtrans_configured;
     delete body.deepl_configured;
-    delete body.rajaongkir_key_configured;
+    delete body.ongkir_key_configured;
     delete body.ongkir_auto;
     delete body.courier_choices;
-    for (const k of ['rajaongkir_origin_id', 'shopee_rating', 'shopee_rating_count', 'shopee_store_url', 'shopee_reviews_url']) if (body[k] === '') body[k] = null;
+    for (const k of ['shopee_rating', 'shopee_rating_count', 'shopee_store_url', 'shopee_reviews_url']) if (body[k] === '') body[k] = null;
     setBusy(true);
     try {
       setData(await sellerApi('settings', { method: 'PATCH', body }));
@@ -70,31 +70,31 @@ export default function SettingsPage() {
             </Field>
           </div>
         </Card>
-        <Card title="Ongkir otomatis (RajaOngkir)" action={data.ongkir_auto ? <Badge tone="green">aktif</Badge> : <Badge tone="amber">belum aktif</Badge>}>
+        <Card title="Ongkir otomatis (Biteship)" action={data.ongkir_auto ? <Badge tone="green">aktif</Badge> : <Badge tone="amber">belum aktif</Badge>}>
           <div className="space-y-4">
-            {!data.rajaongkir_key_configured && (
+            {!data.ongkir_key_configured && (
               <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
-                Kunci API RajaOngkir belum dipasang di server. Jalankan <code>./deploy/set-rajaongkir.sh</code> dari laptop.
+                Kunci API Biteship belum dipasang di server. Jalankan <code>./deploy/set-biteship.sh</code> dari laptop.
               </p>
             )}
-            <Field label="Asal pengiriman (gudang)" hint="Ketik kelurahan, kecamatan, atau kode pos gudang lalu pilih.">
+            <Field label="Asal pengiriman (gudang)" hint="Ketik kecamatan atau kode pos gudang lalu pilih.">
               <OriginPicker
-                label={form.rajaongkir_origin_label}
-                onPick={(o) => setForm({ ...form, rajaongkir_origin_id: o.id, rajaongkir_origin_label: o.label })}
+                label={form.ongkir_origin_label}
+                onPick={(o) => setForm({ ...form, ongkir_origin_id: o.id, ongkir_origin_label: o.label })}
               />
             </Field>
             <div>
               <p className="mb-2 text-sm font-semibold text-slate-700">Kurir yang ditampilkan</p>
               <div className="flex flex-wrap gap-2">
                 {(data.courier_choices ?? []).map((c: { code: string; name: string }) => {
-                  const list = String(form.rajaongkir_couriers || '').split(':').filter(Boolean);
+                  const list = String(form.ongkir_couriers || '').split(':').filter(Boolean);
                   const on = list.includes(c.code);
                   return (
                     <button
                       key={c.code}
                       type="button"
                       aria-pressed={on}
-                      onClick={() => set('rajaongkir_couriers', (on ? list.filter((x) => x !== c.code) : [...list, c.code]).join(':'))}
+                      onClick={() => set('ongkir_couriers', (on ? list.filter((x) => x !== c.code) : [...list, c.code]).join(':'))}
                       className={`rounded-full px-3 py-1.5 text-xs font-bold ring-1 transition ${on ? 'bg-ink text-surface ring-ink' : 'bg-surface text-slate-600 ring-slate-300 hover:ring-slate-500'}`}
                     >
                       {c.name}
@@ -149,9 +149,9 @@ function CategoryRow({ c, onRename }: { c: any; onRename: (id: number, name: str
   );
 }
 
-function OriginPicker({ label, onPick }: { label: string; onPick: (o: { id: number; label: string }) => void }) {
+function OriginPicker({ label, onPick }: { label: string; onPick: (o: { id: string; label: string }) => void }) {
   const [q, setQ] = useState('');
-  const [results, setResults] = useState<{ id: number; label: string }[]>([]);
+  const [results, setResults] = useState<{ id: string; label: string }[]>([]);
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
@@ -181,7 +181,7 @@ function OriginPicker({ label, onPick }: { label: string; onPick: (o: { id: numb
   return (
     <div>
       {label && <p className="mb-2 rounded-lg bg-mist px-3 py-2 text-sm font-semibold text-ink">{label}</p>}
-      <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={label ? 'Ganti asal pengiriman…' : 'mis. Pasar Baru atau 10710'} />
+      <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={label ? 'Ganti asal pengiriman…' : 'mis. Sawah Besar atau 10710'} />
       {msg && <p className="mt-1 text-xs text-slate-500">{msg}</p>}
       {results.length > 0 && (
         <ul className="mt-2 max-h-56 divide-y divide-slate-200 overflow-y-auto rounded-lg border border-slate-200">
