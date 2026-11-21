@@ -2,7 +2,7 @@
  * Seller Center tinggal di subdomain sendiri: https://seller.urbanix.id (bukan urbanix.id/seller).
  *
  * Halaman tetap berada di folder app/seller; middleware me-rewrite seller.urbanix.id/pesanan → /seller/pesanan
- * dan mengalihkan urbanix.id/seller/... → seller.urbanix.id/... . Di kode, link tetap ditulis '/seller/...'
+ * dan menutup urbanix.id/seller/... (404). Di kode, link tetap ditulis '/seller/...'
  * lalu dibungkus sellerHref() supaya alamat yang tampil di browser bersih.
  *
  * Hanya aktif di build produksi (npm run build); saat `npm run dev` Seller Center tetap di localhost:3000/seller.

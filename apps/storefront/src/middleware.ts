@@ -9,7 +9,7 @@ function hostOf(request: NextRequest) {
 }
 
 /**
- * - Seller Center di subdomain: seller.urbanix.id/x → /seller/x (rewrite); urbanix.id/seller/x → seller.urbanix.id/x (redirect).
+ * - Seller Center di subdomain: seller.urbanix.id/x → /seller/x (rewrite); urbanix.id/seller/x → 404.
  * - Halaman Seller Center hanya untuk admin yang sudah login (cek cookie; token divalidasi lagi oleh backend).
  * - Semua halaman: teruskan path ke server (header x-pathname) untuk tag og:url di layout.
  */
@@ -19,10 +19,12 @@ export function middleware(request: NextRequest) {
   const subdomain = SELLER_SUBDOMAIN && host.includes('.') && !/^\d+(\.\d+){3}$/.test(host);
   const onSellerHost = subdomain && host.startsWith(SELLER_HOST_PREFIX);
 
-  // urbanix.id/seller/... → seller.urbanix.id/...
+  // urbanix.id/seller/... ditutup (404): Seller Center hanya di seller.urbanix.id, tidak diumumkan di toko.
   if (subdomain && !onSellerHost && isSellerPath(pathname)) {
-    const main = host.replace(/^www\./, '');
-    return NextResponse.redirect(`https://${SELLER_HOST_PREFIX}${main}${sellerHref(pathname)}${search}`, 308);
+    const url = request.nextUrl.clone();
+    url.pathname = '/_tidak-ada';
+    url.search = '';
+    return NextResponse.rewrite(url, { status: 404 });
   }
 
   const internal = onSellerHost ? toSellerPath(pathname) : pathname;
