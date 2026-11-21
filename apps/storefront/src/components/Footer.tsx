@@ -115,7 +115,7 @@ export default function Footer({
                 )}
                 {settings?.shopee_store_url && (
                   <li>
-                    <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" aria-label={t('Toko kami di Shopee')} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="shopee" size={15} />Shopee</a>
+                    <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" aria-label={t('Toko kami di Shopee')} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="shopee" size={15} />Urbanix Store</a>
                   </li>
                 )}
                 <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Syarat & Ketentuan')}</Link></li>
@@ -125,7 +125,6 @@ export default function Footer({
 
             <FooterGroup title={t('Kontak')}>
               <ul className="space-y-2.5 text-sm">
-                <li className="text-white">{contact.person}</li>
                 {whatsapp && (
                   <li>
                     <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${displayPhone(whatsapp)}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="whatsapp" size={15} />{displayPhone(whatsapp)}</a>
