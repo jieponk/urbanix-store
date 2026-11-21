@@ -382,6 +382,24 @@ def midtrans_base_url() -> str:
     return "https://app.sandbox.midtrans.com/snap/v1/transactions"
 
 
+def midtrans_api_base() -> str:
+    return "https://api.midtrans.com" if settings.MIDTRANS_IS_PRODUCTION else "https://api.sandbox.midtrans.com"
+
+
+def midtrans_status(order_number: str) -> dict | None:
+    """Status transaksi di Midtrans (GET /v2/<order_id>/status). None bila gagal dihubungi."""
+    auth = base64.b64encode(f"{settings.MIDTRANS_SERVER_KEY}:".encode()).decode()
+    try:
+        response = requests.get(
+            f"{midtrans_api_base()}/v2/{order_number}/status",
+            headers={"Authorization": f"Basic {auth}", "Accept": "application/json"},
+            timeout=15,
+        )
+        return response.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+
 def create_snap_transaction(order: Order) -> dict:
     item_details = [
         {

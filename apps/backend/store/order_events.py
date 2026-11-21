@@ -5,6 +5,7 @@
   Email "pembayaran diterima" ke pembeli + notifikasi ke admin.
 - mark_delivered: catat waktu paket diterima (awal hitungan batas retur).
 - cancel_unpaid_whatsapp: batalkan pesanan WhatsApp yang belum lunas melewati batas jam (cron).
+- cancel_unpaid_web: cadangan untuk bayar di web (Midtrans) bila notifikasi 'expire' tidak pernah datang.
 """
 import logging
 from datetime import timedelta
@@ -86,3 +87,61 @@ def cancel_unpaid_whatsapp(now=None) -> list[str]:
         AuditLog.objects.create(action="Batal otomatis (belum lunas)",
                                 details=f"{len(cancelled)} pesanan WhatsApp > {hours} jam: {', '.join(cancelled[:30])}")
     return cancelled
+
+
+# Bayar di web: batas bayar sudah diatur di Snap (expiry = wa_unpaid_cancel_hours) dan Midtrans mengirim "expire".
+# Tapi bila pembeli tidak pernah memilih metode bayar, Midtrans tidak membuat transaksi → tidak ada notifikasi apa pun,
+# sehingga pesanan menggantung "Menunggu pembayaran" selamanya. Ini cadangannya: cek status ke Midtrans dulu.
+WEB_GRACE_HOURS = 1
+
+
+def cancel_unpaid_web(now=None) -> dict:
+    from .checkout_service import midtrans_is_configured, midtrans_status, release_stock
+
+    store = StoreSettings.load()
+    hours = store.wa_unpaid_cancel_hours or 24
+    if not midtrans_is_configured():
+        return {"cancelled": [], "paid": []}
+    now = now or timezone.now()
+    qs = Order.objects.filter(
+        payment_method="MIDTRANS", payment_status="UNPAID", status="PENDING",
+        created_at__lt=now - timedelta(hours=hours + WEB_GRACE_HOURS),
+    )
+    cancelled, paid = [], []
+    for order in qs[:100]:
+        info = midtrans_status(order.order_number)
+        if info is None:
+            continue  # Midtrans tidak bisa dihubungi: coba lagi jam berikutnya
+        code = str(info.get("status_code", ""))
+        tx = info.get("transaction_status", "")
+        if tx in ("settlement", "capture") and info.get("fraud_status", "accept") != "deny":
+            from decimal import Decimal, InvalidOperation
+
+            try:
+                amount_ok = Decimal(str(info.get("gross_amount", "0"))) == Decimal(order.billed_amount)
+            except (InvalidOperation, TypeError):
+                amount_ok = False
+            if not amount_ok:
+                AuditLog.objects.create(action="Cek status Midtrans: nominal beda",
+                                        details=f"{order.order_number}: {info.get('gross_amount')} ≠ {order.billed_amount}")
+                continue
+            # Notifikasi lunas terlewat: tandai lunas (bukan dibatalkan)
+            order.payment_status, order.status = "PAID", "PROCESSING"
+            order.save(update_fields=["payment_status", "status", "updated_at"])
+            mark_paid(order, source="Midtrans (cek status)")
+            paid.append(order.order_number)
+        elif tx == "pending":
+            continue  # transaksi masih berjalan; Midtrans akan mengirim "expire" sendiri
+        elif code == "404" or tx in ("expire", "cancel", "deny", "failure"):
+            if order.stock_reserved:
+                release_stock(order)
+            order.status, order.payment_status = "CANCELLED", "EXPIRED"
+            order.save(update_fields=["status", "payment_status", "updated_at"])
+            cancelled.append(order.order_number)
+    if cancelled:
+        AuditLog.objects.create(action="Batal otomatis (belum lunas)",
+                                details=f"{len(cancelled)} pesanan web > {hours} jam: {', '.join(cancelled[:30])}")
+    if paid:
+        AuditLog.objects.create(action="Lunas dari cek status Midtrans",
+                                details=f"Notifikasi terlewat: {', '.join(paid[:30])}")
+    return {"cancelled": cancelled, "paid": paid}

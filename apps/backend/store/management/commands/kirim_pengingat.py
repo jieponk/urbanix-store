@@ -4,7 +4,7 @@ from store.emails import send_payment_reminders, send_review_requests
 
 
 class Command(BaseCommand):
-    help = "Pengingat bayar, minta ulasan, dan batal otomatis pesanan WhatsApp belum lunas (cron tiap jam)."
+    help = "Pengingat bayar, minta ulasan, dan batal otomatis pesanan belum lunas (WhatsApp & web) — cron tiap jam."
 
     def handle(self, *args, **options):
         sent = send_payment_reminders()
@@ -15,3 +15,7 @@ class Command(BaseCommand):
 
         cancelled = cancel_unpaid_whatsapp()
         self.stdout.write(f"Pesanan WhatsApp belum lunas dibatalkan otomatis: {len(cancelled)}")
+        from store.order_events import cancel_unpaid_web
+
+        web = cancel_unpaid_web()
+        self.stdout.write(f"Pesanan web dibatalkan: {len(web['cancelled'])}; lunas dari cek status: {len(web['paid'])}")
