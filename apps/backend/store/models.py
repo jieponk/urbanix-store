@@ -316,6 +316,7 @@ class Order(models.Model):
         ("PAID", "Paid"),
         ("FAILED", "Failed"),
         ("EXPIRED", "Expired"),
+        ("REFUNDED", "Refunded"),
     )
 
     order_number = models.CharField(
@@ -1091,3 +1092,44 @@ class ReturnRequest(models.Model):
 
     def __str__(self):
         return f"Retur {self.order.order_number} - {self.status}"
+
+
+class CancelRequest(models.Model):
+    """Pengajuan pembatalan oleh pembeli untuk pesanan yang SUDAH dibayar dan BELUM dikirim."""
+
+    REASONS = [
+        ("CHANGE_MIND", "Berubah pikiran / tidak jadi membeli"),
+        ("WRONG_ORDER", "Salah pilih produk, varian, atau jumlah"),
+        ("CHANGE_ADDRESS", "Ingin mengganti alamat pengiriman"),
+        ("CHANGE_PAYMENT", "Ingin mengganti metode pembayaran"),
+        ("FOUND_CHEAPER", "Menemukan harga lebih murah"),
+        ("TOO_LONG", "Pesanan terlalu lama diproses"),
+        ("OTHER", "Alasan lain"),
+    ]
+    STATUSES = [
+        ("REQUESTED", "Menunggu persetujuan"),
+        ("APPROVED", "Disetujui, menunggu pengembalian dana"),
+        ("REJECTED", "Ditolak"),
+        ("REFUNDED", "Dana dikembalikan"),
+        ("WITHDRAWN", "Dibatalkan pembeli"),
+    ]
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="cancel_request")
+    reason = models.CharField("Alasan", max_length=20, choices=REASONS)
+    note = models.TextField("Catatan pembeli", blank=True)
+    status = models.CharField(max_length=12, choices=STATUSES, default="REQUESTED")
+    admin_note = models.TextField("Catatan admin", blank=True)
+    refund_amount = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True)
+    refund_method = models.CharField("Metode refund", max_length=120, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)
+    history = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Pembatalan"
+        verbose_name_plural = "Pembatalan"
+
+    def __str__(self):
+        return f"Batal {self.order.order_number} - {self.status}"

@@ -16,6 +16,7 @@ urlpatterns = [
     path("log/", a.activity_log),
     path("pengembalian/", a.returns_list),
     path("pengembalian/<int:pk>/", a.return_detail),
+    path("orders/<str:number>/pembatalan/", a.order_cancel_request),
     path("orders/<str:number>/", a.order_detail),
     path("orders/<str:number>/stock/", a.order_stock),
     path("orders/<str:number>/shipment/", a.order_shipment),

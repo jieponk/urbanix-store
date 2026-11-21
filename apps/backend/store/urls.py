@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from . import extras_api, articles_api, checkout_views, reviews_api, seller_content, returns
+from . import extras_api, articles_api, checkout_views, reviews_api, seller_content, returns, cancellations
 from .views import CartViewSet, CategoryViewSet, OrderViewSet, ProductViewSet
 from . import videos
 
@@ -39,6 +39,7 @@ urlpatterns = [
     path('ongkir/tujuan/', checkout_views.ongkir_destination, name='ongkir_destination'),
     path('ongkir/titik/', checkout_views.ongkir_geocode, name='ongkir_geocode'),
     path('retur/<str:order_number>/', returns.buyer_return, name='buyer_return'),
+    path('batal/<str:order_number>/', cancellations.buyer_cancel, name='buyer_cancel'),
     path('ongkir/', checkout_views.ongkir_rates, name='ongkir_rates'),
     path('checkout/orders/<str:order_number>/', checkout_views.order_detail, name='checkout_order_detail'),
     path('payments/midtrans-webhook/', checkout_views.midtrans_webhook, name='midtrans_webhook'),

@@ -50,6 +50,7 @@ type OrderDetail = {
     delivered_at: string | null;
   } | null;
   return?: { can_request: boolean; deadline: string | null; status: string; status_label: string; show: boolean };
+  cancel?: { can_request: boolean; status: string; status_label: string; show: boolean };
   items: {
     product_id: number | null;
     name: string;
@@ -284,6 +285,25 @@ export default async function OrderPage({
                   : t('Nomor resi akan muncul di sini setelah paket dikirim admin.') + (order.shipping_service ? ' ' + t('Pengiriman dipilih: {s}.', { s: order.shipping_service }) : '')}
               </p>
             )}
+          </section>
+        )}
+
+        {order.cancel?.show && (
+          <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+            <h2 className="font-black text-ink">{t('Pembatalan pesanan')}</h2>
+            {order.cancel.status ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Status pembatalan:')} <b className="text-ink">{t(order.cancel.status_label)}</b>
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">{t('Berubah pikiran? Pembatalan bisa diajukan selama paket belum dikirim.')}</p>
+            )}
+            <Link
+              href={`/pesanan/${encodeURIComponent(order.order_number)}/batal`}
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-bold text-ink hover:border-ink"
+            >
+              {order.cancel.status ? t('Lihat pembatalan') : t('Ajukan pembatalan')} <ArrowRight size={14} />
+            </Link>
           </section>
         )}
 

@@ -145,8 +145,10 @@ export default function TermsPage() {
             <>
               <p>
                 <b>Pembatalan:</b> pesanan yang belum dibayar batal otomatis setelah {legal.paymentDeadline}. Pesanan yang
-                sudah dibayar dapat dibatalkan sebelum paket dikirim dengan menghubungi admin; dana dikembalikan penuh
-                maksimal {legal.refundTime}.
+                sudah dibayar dapat dibatalkan sebelum paket dikirim lewat tombol <b>Ajukan pembatalan</b> di halaman
+                pesanan. Admin meninjau maksimal {legal.reviewTime}; bila disetujui, dana dikembalikan penuh maksimal
+                {legal.refundTime} (ke metode pembayaran asal bila didukung, atau transfer ke rekening atas nama pembeli).
+                Paket yang sudah diserahkan ke kurir tidak dapat dibatalkan.
               </p>
               <p>
                 <b>Pengembalian (retur) diterima bila:</b>

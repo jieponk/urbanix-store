@@ -331,6 +331,7 @@ def _deliver(order_pk: int, kind: str) -> bool:
         "review": build_review_request,
         "paid": build_paid,
         "return": build_return_status,
+        "cancel": build_cancel_status,
     }
     try:
         order = Order.objects.prefetch_related("items").get(pk=order_pk)
@@ -490,6 +491,40 @@ def notify_return_status(order: Order) -> None:
     _dispatch(order, "return")
 
 
+CANCEL_MESSAGES = {
+    "REQUESTED": "Pengajuan pembatalanmu sudah kami terima. Admin akan meninjaunya maksimal 1×24 jam hari kerja; "
+                 "selama ditinjau, pesanan belum dikirim.",
+    "APPROVED": "Pembatalan pesananmu disetujui. Dana akan dikembalikan maksimal 7 hari kerja.",
+    "REJECTED": "Maaf, pengajuan pembatalanmu tidak dapat disetujui. Pesanan tetap kami proses.",
+    "REFUNDED": "Dana pesananmu sudah dikembalikan.",
+}
+
+
+def build_cancel_status(order: Order) -> EmailMultiAlternatives:
+    store = StoreSettings.load()
+    req = order.cancel_request
+    url = frontend_url(f"/pesanan/{order.order_number}")
+    message = CANCEL_MESSAGES.get(req.status, "Status pembatalan pesananmu diperbarui.")
+    extra = []
+    if req.status == "REFUNDED" and req.refund_amount is not None:
+        extra.append(f"Jumlah: {money_text(req.refund_amount)}" + (f" ({req.refund_method})" if req.refund_method else ""))
+    if req.admin_note and req.status in ("REJECTED", "APPROVED", "REFUNDED"):
+        extra.append(f"Catatan admin: {req.admin_note}")
+    lines = [f"Halo {order.customer_name},", "", message] + extra + ["", f"Lihat pesanan: {url}"]
+    inner = (
+        f"<p style='margin:0 0 12px'>Halo {escape(order.customer_name)},</p>"
+        f"<p style='margin:0 0 16px;color:#4b5563'>{escape(message)}</p>{_number_box(order)}"
+        + "".join(f"<p style='margin:12px 0 0;font-size:14px'>{escape(x)}</p>" for x in extra)
+        + f"<p style='margin:16px 0 8px'></p><a href='{url}' style='{BTN};background:#cf4309;color:#fff'>Lihat pesanan</a>"
+    )
+    return _message(order, f"Pembatalan pesanan {order.order_number}: {req.get_status_display()} - Urbanix Store",
+                    lines, _layout("Status pembatalan", inner, _wa(store)))
+
+
+def notify_cancel_status(order: Order) -> None:
+    _dispatch(order, "cancel")
+
+
 # ---------------------------------------------------------------- notifikasi admin
 def _admin_send(subject: str, lines: list[str], link_path: str) -> None:
     store = StoreSettings.load()
@@ -546,3 +581,11 @@ def notify_admin_return(order: Order) -> None:
                  f"Penjelasan: {ret.description[:500]}",
                  "Video unboxing: " + ("dikirim lewat WhatsApp" if ret.video_via_whatsapp else "terlampir di Seller Center")],
                 f"/seller/pengembalian/{ret.pk}")
+
+
+def notify_admin_cancel(order: Order) -> None:
+    req = order.cancel_request
+    _admin_send(f"Pengajuan pembatalan {order.order_number}",
+                [f"Alasan: {req.get_reason_display()}"] + ([f"Catatan: {req.note[:500]}"] if req.note else [])
+                + ["Pesanan sudah lunas; tahan pengiriman sampai pengajuan ditinjau."] + _order_lines(order),
+                f"/seller/pesanan/{order.order_number}")

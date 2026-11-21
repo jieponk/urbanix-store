@@ -135,6 +135,8 @@ export default function OrderDetailPage({ params }: { params: { number: string }
             </dl>
           </Card>
 
+          {data.cancel_request && <CancelCard req={data.cancel_request} number={number} onDone={reload} />}
+
           {data.shipment?.enabled && <ShipmentCard data={data} number={number} onChange={setData} />}
 
           <Card title="Pengiriman & catatan">
@@ -243,6 +245,94 @@ const SHIP_TONE: Record<string, string> = {
 };
 
 /** Resi otomatis Biteship: buat resi, cek status, batalkan, cetak label. */
+const CANCEL_TONE: Record<string, string> = { REQUESTED: 'amber', APPROVED: 'blue', REFUNDED: 'green', REJECTED: 'gray', WITHDRAWN: 'gray' };
+
+/** Pengajuan pembatalan dari pembeli (pesanan sudah lunas, belum dikirim). */
+function CancelCard({ req, number, onDone }: { req: any; number: string; onDone: () => void }) {
+  const [busy, setBusy] = useState('');
+  const [note, setNote] = useState('');
+  const [refund, setRefund] = useState({ amount: String(Math.round(Number(req.billed_amount) || 0)), method: req.payment_method === 'MIDTRANS' ? 'Refund lewat Midtrans' : '' });
+
+  async function run(action: string, body: Record<string, string>, message: string) {
+    setBusy(action);
+    try {
+      await sellerApi(`orders/${encodeURIComponent(number)}/pembatalan`, { body: { action, ...body } });
+      notify(message);
+      onDone();
+    } catch (err) {
+      notify((err as Error).message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  return (
+    <Card title="Pengajuan pembatalan" action={<Badge tone={CANCEL_TONE[req.status] || 'gray'}>{req.status_label}</Badge>}>
+      <div className="space-y-3 text-sm">
+        <p>
+          <span className="text-slate-500">Alasan:</span> <b className="text-ink">{req.reason_label}</b>
+          {req.note && <span className="mt-1 block rounded-lg bg-mist px-3 py-2 text-slate-600">“{req.note}”</span>}
+        </p>
+        {req.status === 'REQUESTED' && (
+          <>
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+              Tahan pengiriman sampai pengajuan ini diputuskan. Bila disetujui: pesanan dibatalkan, stok kembali
+              {req.has_shipment ? ', dan resi Biteship dibatalkan otomatis' : ''}.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <ConfirmButton className={btn.primary} confirmText="Setujui pembatalan pesanan ini?" onConfirm={() => run('approve', { admin_note: note }, 'Pembatalan disetujui.')}>
+                {busy === 'approve' ? 'Memproses…' : 'Setujui pembatalan'}
+              </ConfirmButton>
+            </div>
+            <div className="space-y-2 rounded-lg border border-dashed border-slate-300 p-3">
+              <label className="block text-xs font-semibold text-slate-600">Tolak (alasan untuk pembeli, min. 10 karakter)</label>
+              <textarea className={inputCls} rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Mis. paket sudah dikemas dan dijemput kurir hari ini." />
+              <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('reject', { admin_note: note }, 'Pengajuan ditolak.')}>
+                {busy === 'reject' ? 'Memproses…' : 'Tolak pengajuan'}
+              </button>
+            </div>
+          </>
+        )}
+        {req.status === 'APPROVED' && (
+          <form
+            className="space-y-2 rounded-lg border border-dashed border-slate-300 p-3"
+            onSubmit={(e) => { e.preventDefault(); run('refund', { refund_amount: refund.amount, refund_method: refund.method }, 'Pengembalian dana dicatat.'); }}
+          >
+            <p className="text-xs font-semibold text-slate-600">
+              Catat pengembalian dana (maks. {rp(Number(req.billed_amount))}). Kartu & e-wallet biasanya bisa di-refund dari dashboard Midtrans;
+              VA & gerai ditransfer manual ke rekening pembeli.
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Field label="Jumlah (Rp)">
+                <input className={inputCls} inputMode="numeric" value={refund.amount} onChange={(e) => setRefund({ ...refund, amount: e.target.value })} required />
+              </Field>
+              <Field label="Metode">
+                <input className={inputCls} list="refund-methods" value={refund.method} onChange={(e) => setRefund({ ...refund, method: e.target.value })} placeholder="Refund lewat Midtrans / Transfer BCA" required />
+              </Field>
+            </div>
+            <datalist id="refund-methods">
+              <option value="Refund lewat Midtrans" />
+              <option value="Transfer bank ke rekening pembeli" />
+            </datalist>
+            <button className={btn.primary} disabled={!!busy}>{busy === 'refund' ? 'Menyimpan…' : 'Tandai dana dikembalikan'}</button>
+          </form>
+        )}
+        {req.status === 'REFUNDED' && (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+            Dana {rp(Number(req.refund_amount))} dikembalikan · {req.refund_method}
+          </p>
+        )}
+        {req.admin_note && req.status !== 'REQUESTED' && <p className="text-xs text-slate-500">Catatan admin: {req.admin_note}</p>}
+        <ol className="space-y-1 border-t border-slate-200 pt-2 text-xs text-slate-500">
+          {req.history.map((h: any, i: number) => (
+            <li key={i}>{fmtDateTime(h.at)} · <b className="text-ink">{h.label}</b>{h.by ? ` · ${h.by}` : ''}{h.note ? ` — ${h.note}` : ''}</li>
+          ))}
+        </ol>
+      </div>
+    </Card>
+  );
+}
+
 function ShipmentCard({ data, number, onChange }: { data: any; number: string; onChange: (d: any) => void }) {
   const s = data.shipment;
   const [method, setMethod] = useState<'drop_off' | 'pickup'>(s.method || 'drop_off');

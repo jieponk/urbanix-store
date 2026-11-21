@@ -22,13 +22,14 @@ export default function OrdersPage() {
   const [range, setRange] = useState('');
   const [method, setMethod] = useState('');
   const [page, setPage] = useState(1);
+  const [batal, setBatal] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setStatus(params.get('status') || '');
   }, []);
 
-  const params = query({ status, q: search, range, method, page });
+  const params = query({ status, q: search, range, method, page, batal: batal ? '1' : '' });
   const { data, error, loading, reload } = useSellerData<any>(`orders${params}`);
   const counts = data?.status_counts || {};
   const total = Object.values(counts).reduce((a: number, b: any) => a + Number(b), 0);
@@ -37,7 +38,7 @@ export default function OrdersPage() {
     <div>
       <PageHeader
         title="Pesanan"
-        subtitle="Pesanan dari website (pesan via WhatsApp & bayar di web)."
+        subtitle="Pesanan dari website."
         actions={
           <>
             {counts.CANCELLED > 0 && (
@@ -61,6 +62,18 @@ export default function OrdersPage() {
           </>
         }
       />
+      {(data?.cancel_open > 0 || batal) && (
+        <button
+          type="button"
+          onClick={() => { setBatal(!batal); setPage(1); }}
+          className={`mb-3 flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold ring-1 ${
+            batal ? 'bg-ink text-surface ring-ink' : 'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30'
+          }`}
+        >
+          <span>{batal ? 'Menampilkan pesanan dengan pengajuan pembatalan' : `${data.cancel_open} pengajuan pembatalan perlu ditindaklanjuti`}</span>
+          <span className="shrink-0 underline">{batal ? 'Tampilkan semua' : 'Lihat'}</span>
+        </button>
+      )}
       <Tabs
         items={STATUSES.map((s) => ({ ...s, count: s.value ? counts[s.value] || 0 : total }))}
         value={status}
@@ -124,7 +137,11 @@ export default function OrdersPage() {
                         {o.voucher_codes && <span className="block text-[11px] font-semibold text-violet-700">{o.voucher_codes}</span>}
                       </td>
                       <td className="px-3 py-3"><Badge tone={o.payment_status === 'PAID' ? 'green' : 'gray'}>{o.payment_label}</Badge></td>
-                      <td className="px-3 py-3"><Badge tone={ORDER_TONE[o.status]}>{o.status_label}</Badge></td>
+                      <td className="px-3 py-3">
+                        <Badge tone={ORDER_TONE[o.status]}>{o.status_label}</Badge>
+                      {['REQUESTED', 'APPROVED'].includes(o.cancel_status) && <Badge tone="amber">Minta batal</Badge>}
+                        {['REQUESTED', 'APPROVED'].includes(o.cancel_status) && <span className="ml-1"><Badge tone="amber">Minta batal</Badge></span>}
+                      </td>
                       <td className="px-5 py-3 text-xs text-slate-600">{o.tracking_number || '-'}</td>
                     </tr>
                   ))}

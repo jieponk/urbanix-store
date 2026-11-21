@@ -283,6 +283,7 @@ def order_detail(request, order_number):
             } if order.shipment_id else None,
             "paid_at": order.paid_at,
             "return": _return_summary(order),
+            "cancel": _cancel_summary(order),
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
             # Link ulasan produk (setelah paket dikirim). Setara keamanannya dengan nomor pesanan.
@@ -438,6 +439,19 @@ def news_detail(request, pk):
         "reactions": REACTIONS,
     })
 
+
+
+def _cancel_summary(order):
+    from .cancellations import eligibility
+
+    req = getattr(order, "cancel_request", None)
+    elig = eligibility(order)
+    return {
+        "can_request": elig["can_request"],
+        "status": req.status if req else "",
+        "status_label": req.get_status_display() if req else "",
+        "show": (bool(req) and req.status != "WITHDRAWN") or elig["can_request"],
+    }
 
 
 def _return_summary(order):

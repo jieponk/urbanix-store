@@ -45,7 +45,7 @@ STATUS_LABELS = {
     "COMPLETED": "Selesai",
     "CANCELLED": "Dibatalkan",
 }
-PAYMENT_LABELS = {"UNPAID": "Belum bayar", "PAID": "Lunas", "FAILED": "Gagal", "EXPIRED": "Kedaluwarsa"}
+PAYMENT_LABELS = {"UNPAID": "Belum bayar", "PAID": "Lunas", "FAILED": "Gagal", "EXPIRED": "Kedaluwarsa", "REFUNDED": "Dana dikembalikan"}
 METHOD_LABELS = {"WHATSAPP": "WhatsApp", "MIDTRANS": "Bayar di web", "SHOPEE": "Shopee"}
 
 
@@ -298,7 +298,7 @@ def dashboard(request):
 
 # --------------------------------------------------------------------------- pesanan
 def _orders_filtered(request):
-    qs = Order.objects.all().order_by("-created_at")
+    qs = Order.objects.select_related("cancel_request").order_by("-created_at")
     p = request.query_params
     if p.get("q"):
         q = p["q"].strip()
@@ -313,6 +313,8 @@ def _orders_filtered(request):
         qs = qs.filter(payment_status=p["payment_status"])
     if p.get("method"):
         qs = qs.filter(payment_method=p["method"])
+    if p.get("batal") == "1":
+        qs = qs.filter(cancel_request__status__in=["REQUESTED", "APPROVED"])
     if p.get("range"):
         _, _, start_dt, end_dt = date_range(request)
         qs = qs.filter(created_at__gte=start_dt, created_at__lt=end_dt)
@@ -335,6 +337,7 @@ def _order_row(o: Order):
         "method_label": METHOD_LABELS.get(o.payment_method, o.payment_method or "-"),
         "voucher_codes": o.voucher_codes,
         "tracking_number": o.tracking_number,
+        "cancel_status": o.cancel_request.status if hasattr(o, "cancel_request") else "",
     }
 
 
@@ -346,8 +349,12 @@ def _review_link(o: Order) -> str:
 
 def _order_detail(o: Order):
     items = list(o.items.select_related("product", "variation"))
+    from .cancellations import serialize as cancel_serialize
+
+    req = getattr(o, "cancel_request", None)
     return {
         **_order_row(o),
+        "cancel_request": cancel_serialize(req, admin=True) if req else None,
         "customer_email": o.customer_email,
         "shipping_address": o.shipping_address,
         "province": o.shipping_province,
@@ -396,6 +403,9 @@ def orders(request):
     data["status_counts"] = {
         row["status"]: row["n"] for row in Order.objects.values("status").annotate(n=Count("id"))
     }
+    from .models import CancelRequest
+
+    data["cancel_open"] = CancelRequest.objects.filter(status__in=["REQUESTED", "APPROVED"]).count()
     return Response(data)
 
 
@@ -1016,6 +1026,13 @@ def returns_list(request):
     from .returns import seller_returns
 
     return seller_returns(request)
+
+
+@staff(["POST"])
+def order_cancel_request(request, number):
+    from .cancellations import seller_cancel
+
+    return seller_cancel(request, number)
 
 
 @staff(["GET", "POST"])
