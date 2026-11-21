@@ -1,5 +1,6 @@
 'use client';
 
+import { shopHref } from '@/lib/sellerUrl';
 import { useRef, useState } from 'react';
 import { Badge, Card, ConfirmButton, Empty, ErrorBox, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
 import { Emoji, EmojiPicker, GifPicker, RichText, type Gif } from '@/components/inspirasi/CommentSection';
@@ -135,7 +136,7 @@ export default function CommentsPage() {
                     {c.parent_id && <span className="text-xs text-slate-500">· balasan</span>}
                     <span className="text-xs text-slate-500">{fmtDateTime(c.created_at)}</span>
                   </div>
-                  <a href={`${c.article.url || `/inspirasi/${c.article.slug}`}#komentar`} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
+                  <a href={shopHref(`${c.article.url || `/inspirasi/${c.article.slug}`}#komentar`)} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
                     di: {c.article.title}
                   </a>
                   {c.body && (

@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -160,7 +161,7 @@ export default function ArticleEditorPage() {
       const a = await sellerApi<any>(isNew ? 'articles' : `articles/${id}`, { method: isNew ? 'POST' : 'PATCH', body: fd });
       setDirty(false);
       notify(next === 'PUBLISHED' ? 'Artikel terbit! Tampil di Inspirasi dalam ±1 menit.' : 'Draf disimpan.');
-      if (isNew) router.replace(`/seller/artikel/${a.id}`);
+      if (isNew) router.replace(sellerHref(`/seller/artikel/${a.id}`));
       else {
         setForm((f) => ({ ...f, status: a.status, slug: a.slug, published_at: toLocalInput(a.published_at) }));
         setCover(a.cover || '');
@@ -179,7 +180,7 @@ export default function ArticleEditorPage() {
     await sellerApi(`articles/${id}`, { method: 'DELETE' }).catch((e) => notify(e.message, 'error'));
     setDirty(false);
     notify('Artikel dihapus.');
-    router.replace('/seller/artikel');
+    router.replace(sellerHref('/seller/artikel'));
   }
 
   const fileUrl = useMemo(() => (coverFile ? URL.createObjectURL(coverFile) : ''), [coverFile]);
@@ -194,13 +195,13 @@ export default function ArticleEditorPage() {
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/artikel', label: 'Artikel' }}
+        back={{ href: sellerHref('/seller/artikel'), label: 'Artikel' }}
         title={isNew ? 'Tulis artikel' : 'Edit artikel'}
         subtitle={dirty ? 'Ada perubahan yang belum disimpan' : published ? 'Sudah terbit' : 'Draf'}
         actions={
           <>
             {!isNew && published && meta?.slug && (
-              <a href={`/inspirasi/${meta.slug}`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>Lihat</a>
+              <a href={shopHref(`/inspirasi/${meta.slug}`)} target="_blank" rel="noopener noreferrer" className={btn.ghost}>Lihat</a>
             )}
             <button type="button" disabled={busy} className={btn.ghost} onClick={() => save(published ? 'PUBLISHED' : 'DRAFT')}>
               {published ? 'Simpan perubahan' : 'Simpan draf'}
@@ -317,7 +318,7 @@ export default function ArticleEditorPage() {
               </p>
             )}
             {!coverPreview && form.slug && related.length > 0 && (
-              <a href={`/inspirasi/${form.slug}/sampul.png`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-bold text-brand-600 hover:underline">
+              <a href={shopHref(`/inspirasi/${form.slug}/sampul.png`)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-bold text-brand-600 hover:underline">
                 Lihat sampul otomatis (setelah disimpan & terbit) ↗
               </a>
             )}
@@ -394,7 +395,7 @@ export default function ArticleEditorPage() {
             </Card>
           )}
           <p className="text-center text-xs text-slate-500">
-            <Link href="/seller/komentar" className="underline">Kelola komentar</Link>
+            <Link href={sellerHref('/seller/komentar')} className="underline">Kelola komentar</Link>
           </p>
         </div>
       </div>

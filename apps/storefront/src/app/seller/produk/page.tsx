@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, Drawer, Empty, ErrorBox, Field, PageHeader, Pagination, Spinner, Tabs, Thumb, btn, inputCls } from '@/components/seller/ui';
@@ -54,7 +55,7 @@ export default function ProductsPage() {
       <PageHeader
         title="Produk & SKU"
         subtitle="Edit harga, stok, link Shopee, dan tampil/sembunyikan produk."
-        actions={<Link href="/seller/mass-update" className={btn.ghost}>Mass update via Excel</Link>}
+        actions={<Link href={sellerHref('/seller/mass-update')} className={btn.ghost}>Mass update via Excel</Link>}
       />
       <Tabs items={FILTERS} value={filter} onChange={(v) => { setFilter(v); setPage(1); setSelected([]); }} />
       <form className="mt-3 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); setSearch(q.trim()); setPage(1); }}>
@@ -116,7 +117,7 @@ export default function ProductsPage() {
                 <li key={p.id} className={`flex items-center gap-3 px-4 py-3 sm:px-5 ${selected.includes(p.id) ? 'bg-sky-50 dark:bg-sky-950/30' : ''}`}>
                   <input type="checkbox" aria-label={`Pilih ${p.name}`} checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-4 w-4 accent-[#111111]" />
                   <Thumb src={p.image_url} />
-                  <Link href={`/seller/produk/${p.id}`} className="min-w-0 flex-1">
+                  <Link href={sellerHref(`/seller/produk/${p.id}`)} className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-ink hover:underline">{p.name}</span>
                     <span className="block text-xs text-slate-500">
                       {p.sku} · {p.category}{p.variations > 0 && ` · ${p.variations} varian`}

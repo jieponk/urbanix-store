@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { icons } from '@/components/seller/SellerIcons';
@@ -62,7 +63,7 @@ export default function MassUpdatePage() {
           <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-slate-600">
             <li>Ubah kolom <b>Harga normal</b>, <b>Stok</b>, <b>Link Shopee</b>, atau <b>Aktif</b> (ya/tidak).</li>
             <li>Jangan ubah kolom product_id, variation_id, dan SKU.</li>
-            <li>Harga promo diatur di menu <Link href="/seller/promo" className="font-bold underline">Promo harga</Link>.</li>
+            <li>Harga promo diatur di menu <Link href={sellerHref('/seller/promo')} className="font-bold underline">Promo harga</Link>.</li>
           </ol>
         </Card>
 
@@ -121,7 +122,7 @@ export default function MassUpdatePage() {
 
       <Card className="mt-4" title="Ubah cepat tanpa Excel">
         <p className="text-sm text-slate-600">
-          Di menu <Link href="/seller/produk" className="font-bold underline">Produk & SKU</Link>, centang beberapa produk lalu pilih aksi:
+          Di menu <Link href={sellerHref('/seller/produk')} className="font-bold underline">Produk & SKU</Link>, centang beberapa produk lalu pilih aksi:
           tampilkan/sembunyikan, ubah harga %, set stok, pindah kategori, atau masukkan ke promo.
         </p>
       </Card>

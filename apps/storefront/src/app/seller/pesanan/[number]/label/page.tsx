@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import { ErrorBox, PageHeader, Spinner, btn } from '@/components/seller/ui';
 import { code128Bars } from '@/lib/code128';
 import SimpleIcon from '@/components/SimpleIcon';
@@ -77,7 +78,7 @@ export default function ShippingLabelPage({ params }: { params: { number: string
         .label-side { writing-mode: vertical-rl; }
       `}</style>
       <PageHeader
-        back={{ href: `/seller/pesanan/${encodeURIComponent(number)}`, label: number }}
+        back={{ href: sellerHref(`/seller/pesanan/${encodeURIComponent(number)}`), label: number }}
         title="Label pengiriman"
         subtitle="Ukuran 100×150 mm (printer thermal 4×6). Di printer biasa pilih kertas A6, skala 100%."
         actions={<button type="button" className={btn.primary} onClick={() => window.print()}>Cetak label</button>}

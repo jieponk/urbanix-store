@@ -137,6 +137,8 @@ BITESHIP_API_KEY = os.environ.get('BITESHIP_API_KEY', '')
 
 # Alamat storefront (dipakai untuk tombol "kembali ke toko" setelah bayar di Midtrans).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+# Seller Center di subdomain (https://seller.urbanix.id). Kosong = FRONTEND_URL + /seller (mis. saat dev lokal).
+SELLER_URL = os.environ.get('SELLER_URL', '')
 
 # Email pesanan ke pembeli (opsional). Kosongkan EMAIL_HOST untuk mematikan.
 # Contoh Gmail: EMAIL_HOST=smtp.gmail.com, EMAIL_PORT=587, EMAIL_HOST_USER=urbanixstore26@gmail.com,

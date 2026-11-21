@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import { useEffect, useRef, useState } from 'react';
 import SimpleIcon from '@/components/SimpleIcon';
 import TablerIcon from '@/components/TablerIcon';
@@ -54,7 +55,7 @@ function uploadWithProgress(path: string, method: string, form: FormData, onProg
         /* abaikan */
       }
       if (xhr.status === 401) {
-        window.location.href = `/seller/login?next=${encodeURIComponent(window.location.pathname)}`;
+        window.location.href = sellerHref(`/seller/login?next=${encodeURIComponent(window.location.pathname)}`);
         return reject(new Error('Sesi habis, silakan login lagi.'));
       }
       if (xhr.status >= 400) return reject(new Error(data.error || data.detail || 'Gagal menyimpan video.'));

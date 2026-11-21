@@ -27,9 +27,10 @@ services:
     environment:
       DEBUG: "False"
       SECRET_KEY: ${SECRET_KEY:?isi SECRET_KEY di .env}
-      ALLOWED_HOSTS: ${DOMAIN},www.${DOMAIN},backend,localhost
-      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://www.${DOMAIN}
+      ALLOWED_HOSTS: ${DOMAIN},www.${DOMAIN},seller.${DOMAIN},backend,localhost
+      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://www.${DOMAIN},https://seller.${DOMAIN}
       FRONTEND_URL: https://${DOMAIN}
+      SELLER_URL: https://seller.${DOMAIN}
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}

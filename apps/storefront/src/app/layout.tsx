@@ -85,6 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex min-h-screen flex-col font-sans">
         <LangProvider lang={lang}>
         <ShopChrome
+          seller={headers().get('x-seller') === '1'}
           header={
             <SiteHeader
               categories={categories}

@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ErrorBox, Field, PageHeader, Spinner, Thumb, Toggle, btn, inputCls } from '@/components/seller/ui';
@@ -42,12 +43,12 @@ export default function ProductEditPage({ params }: { params: { id: string } }) 
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/produk', label: 'Produk & SKU' }}
+        back={{ href: sellerHref('/seller/produk'), label: 'Produk & SKU' }}
         title={data.name}
         subtitle={<>SKU {data.sku} · {data.category} {data.promo_name && <Badge tone="red">Promo: {data.promo_name}</Badge>}</>}
         actions={
           <>
-            <Link href={`/produk/${data.id}`} target="_blank" className={btn.ghost}>Lihat di toko</Link>
+            <Link href={shopHref(`/produk/${data.id}`)} target="_blank" className={btn.ghost}>Lihat di toko</Link>
             <label className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2 text-sm font-bold text-ink ring-1 ring-slate-200">
               <Toggle checked={data.is_active} onChange={(v) => save({ is_active: v }, v ? 'Produk ditampilkan.' : 'Produk disembunyikan.')} label="Tampil di toko" />
               {data.is_active ? 'Tampil' : 'Disembunyikan'}
@@ -127,14 +128,14 @@ export default function ProductEditPage({ params }: { params: { id: string } }) 
               ))}
             </div>
           </Card>
-          <Card title="Promo produk ini" action={<Link href="/seller/promo" className="text-xs font-bold hover:underline">Kelola promo</Link>}>
+          <Card title="Promo produk ini" action={<Link href={sellerHref('/seller/promo')} className="text-xs font-bold hover:underline">Kelola promo</Link>}>
             {data.promos.length === 0 ? (
               <p className="text-sm text-slate-500">Tidak ada promo.</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {data.promos.map((p: any, i: number) => (
                   <li key={i} className="flex items-center justify-between gap-2">
-                    <Link href={`/seller/promo/${p.id}`} className="min-w-0 hover:underline">
+                    <Link href={sellerHref(`/seller/promo/${p.id}`)} className="min-w-0 hover:underline">
                       <span className="block truncate font-semibold text-ink">{p.name}</span>
                       <span className="text-xs text-slate-500">{p.variation || 'Semua varian'} · {p.promo_price ? rp(p.promo_price) : `-${p.discount_percent}%`}</span>
                     </Link>

@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import TablerIcon from '@/components/TablerIcon';
@@ -19,7 +20,7 @@ export default function SellerMenuPage() {
 
   async function logout() {
     await fetch('/api/seller/logout', { method: 'POST' }).catch(() => null);
-    window.location.href = '/seller/login';
+    window.location.href = sellerHref('/seller/login');
   }
 
   const name = me?.name || me?.username || '';
@@ -49,7 +50,7 @@ export default function SellerMenuPage() {
               const badge = item.href === '/seller/pesanan' && (me?.new_orders ?? 0) > 0 ? me!.new_orders : 0;
               return (
                 <li key={item.href}>
-                  <Link href={item.href} className="flex items-center gap-3 px-4 py-3.5 transition active:bg-mist">
+                  <Link href={sellerHref(item.href)} className="flex items-center gap-3 px-4 py-3.5 transition active:bg-mist">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-mist text-ink">
                       <Icon size={18} />
                     </span>
@@ -68,7 +69,7 @@ export default function SellerMenuPage() {
         <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Lainnya</h2>
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-surface">
           <li>
-            <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3.5 active:bg-mist">
+            <a href={shopHref('/')} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3.5 active:bg-mist">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-mist text-ink">{icons.store({ size: 18 })}</span>
               <span className="flex-1 text-[15px] font-medium text-ink">Lihat toko</span>
               <TablerIcon name="external-link" size={18} className="text-slate-400" />

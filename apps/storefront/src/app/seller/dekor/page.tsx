@@ -1,5 +1,6 @@
 'use client';
 
+import { shopHref } from '@/lib/sellerUrl';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Card, ErrorBox, Field, PageHeader, Spinner, btn, inputCls } from '@/components/seller/ui';
 import { EVENT_KEYS, EVENT_RULES, resolveEvent, upcomingSchedule, type EventConfig, type EventKey, type ShopEvent } from '@/lib/events';
@@ -167,7 +168,7 @@ export default function DekorPage() {
           </p>
           {showing && <p className="text-xs text-slate-500">Sampai {fmtDateTime(showing.endsAt)}</p>}
         </div>
-        <a href="/" target="_blank" rel="noreferrer" className={btn.ghost}>
+        <a href={shopHref('/')} target="_blank" rel="noreferrer" className={btn.ghost}>
           Lihat toko ↗
         </a>
       </div>

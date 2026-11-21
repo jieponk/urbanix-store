@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, Drawer, Empty, ErrorBox, Field, PageHeader, STATUS_TONE, Spinner, Toggle, btn, inputCls } from '@/components/seller/ui';
@@ -16,7 +17,7 @@ export default function PromosPage() {
     try {
       const p = await sellerApi('promos', { body: { ...form, starts_at: fromLocalInput(form.starts_at), ends_at: fromLocalInput(form.ends_at) } });
       notify('Promo dibuat. Sekarang tambahkan produknya.');
-      window.location.href = `/seller/promo/${p.id}`;
+      window.location.href = sellerHref(`/seller/promo/${p.id}`);
     } catch (err) {
       notify((err as Error).message, 'error');
       setBusy(false);
@@ -38,7 +39,7 @@ export default function PromosPage() {
             <ul className="divide-y divide-slate-200">
               {data.map((p) => (
                 <li key={p.id}>
-                  <Link href={`/seller/promo/${p.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-mist sm:px-5">
+                  <Link href={sellerHref(`/seller/promo/${p.id}`)} className="flex items-center gap-3 px-4 py-3.5 hover:bg-mist sm:px-5">
                     <span className="min-w-0 flex-1">
                       <span className="block font-bold text-ink">{p.is_flash_sale ? '⚡ ' : ''}{p.name}</span>
                       <span className="text-xs text-slate-500">

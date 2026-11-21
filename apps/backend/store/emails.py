@@ -496,7 +496,9 @@ def _admin_send(subject: str, lines: list[str], link_path: str) -> None:
     to = (store.notify_email or "").strip()
     if not (settings.ORDER_EMAIL_ENABLED and to):
         return
-    url = frontend_url(link_path)
+    # Link ke Seller Center: pakai subdomain seller.urbanix.id bila diatur (SELLER_URL).
+    seller_url = getattr(settings, "SELLER_URL", "").rstrip("/")
+    url = seller_url + link_path.removeprefix("/seller") if seller_url else frontend_url(link_path)
     body = "\n".join(lines + ["", f"Buka di Seller Center: {url}"])
     html = _layout(subject, "".join(f"<p style='margin:0 0 8px'>{escape(x)}</p>" for x in lines)
                    + f"<a href='{url}' style='{BTN};background:#191919;color:#fff'>Buka Seller Center</a>", "")

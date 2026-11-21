@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ConfirmButton, Drawer, Empty, ErrorBox, Field, PageHeader, STATUS_TONE, Spinner, Thumb, Toggle, btn, inputCls } from '@/components/seller/ui';
 import { fromLocalInput, notify, parseNumber, rp, sellerApi, toLocalInput, useSellerData } from '@/lib/seller';
@@ -44,7 +45,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
   async function removePromo() {
     await sellerApi(`promos/${params.id}`, { method: 'DELETE' });
     notify('Promo dihapus.');
-    window.location.href = '/seller/promo';
+    window.location.href = sellerHref('/seller/promo');
   }
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -53,7 +54,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/promo', label: 'Promo harga' }}
+        back={{ href: sellerHref('/seller/promo'), label: 'Promo harga' }}
         title={data.name}
         subtitle={<><Badge tone={STATUS_TONE[data.status]}>{data.status}</Badge> · {data.items.length} SKU</>}
         actions={<>

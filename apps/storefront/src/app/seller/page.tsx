@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import RevenueChart from '@/components/seller/RevenueChart';
@@ -95,7 +96,7 @@ export default function DashboardPage() {
           {/* Perlu tindakan: kartu putih gaya Tabler, kotak ikon menyala merah bila ada yang harus dikerjakan */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <ActionCard
-              href="/seller/pesanan?status=PENDING"
+              href={sellerHref('/seller/pesanan?status=PENDING')}
               icon="bell"
               label="Pesanan baru"
               hint="Perlu dikonfirmasi"
@@ -104,7 +105,7 @@ export default function DashboardPage() {
               ctaIcon="circle-check"
             />
             <ActionCard
-              href="/seller/pesanan?status=PROCESSING"
+              href={sellerHref('/seller/pesanan?status=PROCESSING')}
               icon="package"
               label="Siap dikirim"
               hint="Input nomor resi"
@@ -183,14 +184,14 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card title="Pesanan terbaru" className="lg:col-span-2" padded={false} action={<Link href="/seller/pesanan" className="text-xs font-bold text-ink hover:underline">Semua</Link>}>
+            <Card title="Pesanan terbaru" className="lg:col-span-2" padded={false} action={<Link href={sellerHref('/seller/pesanan')} className="text-xs font-bold text-ink hover:underline">Semua</Link>}>
               {data.recent_orders.length === 0 ? (
                 <p className="p-5 text-sm text-slate-500">Belum ada pesanan.</p>
               ) : (
                 <ul className="divide-y divide-slate-200">
                   {data.recent_orders.map((o: any) => (
                     <li key={o.order_number}>
-                      <Link href={`/seller/pesanan/${o.order_number}`} className="flex items-center gap-3 px-4 py-3 hover:bg-mist sm:px-5">
+                      <Link href={sellerHref(`/seller/pesanan/${o.order_number}`)} className="flex items-center gap-3 px-4 py-3 hover:bg-mist sm:px-5">
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-bold text-ink">{o.customer_name || '-'}</span>
                           <span className="text-xs text-slate-500">{o.order_number} · {fmtDateTime(o.created_at)}</span>
@@ -214,7 +215,7 @@ export default function DashboardPage() {
                   <ul className="divide-y divide-slate-200">
                     {data.low_stock.map((x: any, i: number) => (
                       <li key={i}>
-                        <Link href={`/seller/produk/${x.product_id}`} className="flex items-center gap-2 px-4 py-2.5 hover:bg-mist">
+                        <Link href={sellerHref(`/seller/produk/${x.product_id}`)} className="flex items-center gap-2 px-4 py-2.5 hover:bg-mist">
                           <span className="min-w-0 flex-1 text-sm">
                             <span className="block truncate font-semibold text-ink">{x.name}</span>
                             <span className="text-xs text-slate-500">{x.variation || x.sku}</span>
@@ -236,7 +237,7 @@ export default function DashboardPage() {
                     ['Disembunyikan', data.catalog.inactive, 'inactive'],
                   ].map(([label, n, f]) => (
                     <li key={String(f)}>
-                      <Link href={`/seller/produk?filter=${f}`} className="flex justify-between rounded-lg px-2 py-1 hover:bg-mist">
+                      <Link href={sellerHref(`/seller/produk?filter=${f}`)} className="flex justify-between rounded-lg px-2 py-1 hover:bg-mist">
                         <span className="text-slate-600">{label}</span>
                         <b className={Number(n) > 0 && f !== 'all' ? 'text-amber-700' : 'text-ink'}>{n}</b>
                       </Link>

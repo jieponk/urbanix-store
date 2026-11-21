@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ConfirmButton, Empty, ErrorBox, ORDER_TONE, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
@@ -111,7 +112,7 @@ export default function OrdersPage() {
                   {data.results.map((o: any) => (
                     <tr key={o.order_number} className="hover:bg-mist">
                       <td className="px-5 py-3">
-                        <Link href={`/seller/pesanan/${o.order_number}`} className="font-bold text-ink hover:underline">{o.order_number}</Link>
+                        <Link href={sellerHref(`/seller/pesanan/${o.order_number}`)} className="font-bold text-ink hover:underline">{o.order_number}</Link>
                         <span className="block text-xs text-slate-500">{fmtDateTime(o.created_at)} · {o.method_label}</span>
                       </td>
                       <td className="px-3 py-3">
@@ -134,7 +135,7 @@ export default function OrdersPage() {
             <ul className="divide-y divide-slate-200 md:hidden">
               {data.results.map((o: any) => (
                 <li key={o.order_number}>
-                  <Link href={`/seller/pesanan/${o.order_number}`} className="block px-4 py-3 active:bg-mist">
+                  <Link href={sellerHref(`/seller/pesanan/${o.order_number}`)} className="block px-4 py-3 active:bg-mist">
                     <div className="flex items-start justify-between gap-2">
                       <span className="min-w-0">
                         <span className="block truncate font-bold text-ink">{o.customer_name || '-'}</span>

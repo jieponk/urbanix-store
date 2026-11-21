@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ConfirmButton, ErrorBox, Field, ORDER_TONE, PageHeader, Spinner, Thumb, btn, inputCls } from '@/components/seller/ui';
 import { icons } from '@/components/seller/SellerIcons';
@@ -59,7 +60,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/pesanan', label: 'Pesanan' }}
+        back={{ href: sellerHref('/seller/pesanan'), label: 'Pesanan' }}
         title={data.order_number}
         subtitle={<>{fmtDateTime(data.created_at)} · {data.method_label} · <Badge tone={ORDER_TONE[data.status]}>{data.status_label}</Badge> <Badge tone={data.payment_status === 'PAID' ? 'green' : 'gray'}>{data.payment_label}</Badge></>}
         actions={
@@ -69,7 +70,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
                 {icons.chat({ size: 16 })} Chat pembeli
               </a>
             )}
-            <a href={`/pesanan/${data.order_number}/invoice`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
+            <a href={shopHref(`/pesanan/${data.order_number}/invoice`)} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
               Invoice
             </a>
             {data.review_url && data.whatsapp_customer && (
@@ -218,7 +219,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
                     try {
                       await sellerApi(`orders/${encodeURIComponent(number)}`, { method: 'DELETE' });
                       notify('Pesanan dihapus.');
-                      window.location.href = '/seller/pesanan';
+                      window.location.href = sellerHref('/seller/pesanan');
                     } catch (err) {
                       notify((err as Error).message, 'error');
                     }
@@ -275,7 +276,7 @@ function ShipmentCard({ data, number, onChange }: { data: any; number: string; o
             <button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(s.id); notify('ID Biteship disalin.'); }}>Salin</button>
           </p>
           <div className="flex flex-wrap gap-2">
-            <a href={`/seller/pesanan/${encodeURIComponent(number)}/label`} className={btn.primary}>Cetak label</a>
+            <a href={sellerHref(`/seller/pesanan/${encodeURIComponent(number)}/label`)} className={btn.primary}>Cetak label</a>
             <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('refresh', 'Status pengiriman diperbarui.')}>
               {busy === 'refresh' ? 'Mengecek…' : 'Cek status'}
             </button>

@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, ConfirmButton, ErrorBox, Field, PageHeader, Spinner, btn, inputCls } from '@/components/seller/ui';
@@ -34,10 +35,10 @@ export default function ReturnDetailPage({ params }: { params: { id: string } })
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/pengembalian', label: 'Pengembalian' }}
+        back={{ href: sellerHref('/seller/pengembalian'), label: 'Pengembalian' }}
         title={`Retur ${data.order_number}`}
         subtitle={<>{fmtDateTime(data.created_at)} · <Badge tone={RETURN_TONE[s]}>{data.status_label}</Badge></>}
-        actions={<Link href={`/seller/pesanan/${encodeURIComponent(data.order_number)}`} className={btn.ghost}>Buka pesanan</Link>}
+        actions={<Link href={sellerHref(`/seller/pesanan/${encodeURIComponent(data.order_number)}`)} className={btn.ghost}>Buka pesanan</Link>}
       />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="min-w-0 space-y-4 lg:col-span-2">

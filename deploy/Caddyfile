@@ -1,5 +1,6 @@
 # HTTPS otomatis (Let's Encrypt). {$DOMAIN} diisi dari .env server.
-{$DOMAIN}, www.{$DOMAIN} {
+# seller.{$DOMAIN} = Seller Center (DNS A record seller → IP server wajib ada).
+{$DOMAIN}, www.{$DOMAIN}, seller.{$DOMAIN} {
 	encode zstd gzip
 
 	# Tutup celah header internal Next.js (CVE-2025-29927).
@@ -20,6 +21,10 @@
 	# Data wilayah untuk saran alamat checkout: jarang berubah, simpan 7 hari di browser.
 	@wilayah path /wilayah/*
 	header @wilayah Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+
+	# Seller Center tidak boleh muncul di Google.
+	@seller host seller.{$DOMAIN}
+	header @seller X-Robots-Tag "noindex, nofollow"
 
 	@www host www.{$DOMAIN}
 	redir @www https://{$DOMAIN}{uri} permanent

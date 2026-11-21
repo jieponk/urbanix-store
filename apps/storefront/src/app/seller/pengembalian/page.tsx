@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, Empty, ErrorBox, PageHeader, Pagination, Spinner, Tabs } from '@/components/seller/ui';
@@ -40,7 +41,7 @@ export default function ReturnsPage() {
             <ul className="divide-y divide-slate-200">
               {data.results.map((r: any) => (
                 <li key={r.id}>
-                  <Link href={`/seller/pengembalian/${r.id}`} className="grid grid-cols-1 gap-1 px-4 py-3 hover:bg-mist sm:grid-cols-[1fr_auto] sm:items-center sm:px-5">
+                  <Link href={sellerHref(`/seller/pengembalian/${r.id}`)} className="grid grid-cols-1 gap-1 px-4 py-3 hover:bg-mist sm:grid-cols-[1fr_auto] sm:items-center sm:px-5">
                     <span className="min-w-0">
                       <span className="flex flex-wrap items-center gap-2">
                         <b className="text-sm text-ink">{r.order_number}</b>

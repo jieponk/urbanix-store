@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import { useCallback, useEffect, useState } from 'react';
 
 /** Panggil API Seller Center lewat proxy Next.js (/api/seller/...). Token ada di cookie httpOnly. */
@@ -17,7 +18,7 @@ export async function sellerApi<T = any>(
   const response = await fetch(`/api/seller/${path.replace(/^\/+/, '')}`, init);
   if (response.status === 401) {
     const next = window.location.pathname + window.location.search;
-    window.location.href = `/seller/login?next=${encodeURIComponent(next)}`;
+    window.location.href = `${sellerHref('/seller/login')}?next=${encodeURIComponent(next)}`;
     throw new Error('Sesi habis, silakan login lagi.');
   }
   if (response.status === 204) return undefined as T;

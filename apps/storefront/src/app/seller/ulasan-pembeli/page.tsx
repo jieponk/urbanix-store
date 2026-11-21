@@ -1,5 +1,6 @@
 'use client';
 
+import { shopHref } from '@/lib/sellerUrl';
 import { useState } from 'react';
 import { Badge, Card, ConfirmButton, Empty, ErrorBox, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
 import { fmtDateTime, notify, query, sellerApi, useSellerData } from '@/lib/seller';
@@ -72,7 +73,7 @@ export default function BuyerReviewsPage() {
                   {!r.is_visible && <Badge tone="amber">Disembunyikan</Badge>}
                   <span className="text-xs text-slate-500">{fmtDateTime(r.created_at)} · {r.order_number}</span>
                 </div>
-                <a href={`/produk/${r.product.id}#ulasan`} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
+                <a href={shopHref(`/produk/${r.product.id}#ulasan`)} target="_blank" rel="noopener noreferrer" className="mt-0.5 block text-xs font-semibold text-slate-500 hover:text-ink">
                   {r.product.name}{r.variation_name ? ` · ${r.variation_name}` : ''}
                 </a>
                 {r.body && <p className="mt-2 whitespace-pre-line break-words rounded-xl bg-mist px-3 py-2 text-sm text-ink">{r.body}</p>}

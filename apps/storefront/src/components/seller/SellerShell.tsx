@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref, toSellerPath } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -32,7 +33,8 @@ const initials = (name?: string) =>
     .join('');
 
 export default function SellerShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() || '';
+  // Di seller.urbanix.id alamatnya tanpa '/seller'; dinormalkan supaya perbandingan menu tetap '/seller/...'.
+  const pathname = toSellerPath(usePathname() || '');
   const router = useRouter();
   const [palette, setPalette] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -101,7 +103,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
 
   async function logout() {
     await fetch('/api/seller/logout', { method: 'POST' }).catch(() => null);
-    window.location.href = '/seller/login';
+    window.location.href = sellerHref('/seller/login');
   }
 
   function toggleCollapsed() {
@@ -143,7 +145,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
         }`}
       >
         <div className={`flex items-center gap-3 pb-3 pt-5 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
-          <Link href="/seller" className="flex min-w-0 items-center gap-3" aria-label="Seller Center">
+          <Link href={sellerHref('/seller')} className="flex min-w-0 items-center gap-3" aria-label="Seller Center">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white text-sm font-black text-cobalt-900">U</span>
             {!collapsed && (
               <span className="min-w-0 leading-tight">
@@ -187,7 +189,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={sellerHref(item.href)}
                     title={collapsed ? item.label : undefined}
                     aria-current={on ? 'page' : undefined}
                     className={`group relative mb-0.5 flex items-center gap-3 rounded-md py-2 text-sm font-medium transition ${
@@ -210,7 +212,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
 
         <div className="space-y-1 border-t border-white/10 p-3">
           <Link
-            href="/"
+            href={shopHref('/')}
             target="_blank"
             title="Lihat toko"
             className={`flex items-center gap-3 rounded-xl py-2 text-sm font-semibold text-white/65 hover:bg-white/5 hover:text-white ${
@@ -240,7 +242,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
             <div className="min-w-0 flex-1">
               <p className="truncate text-[17px] font-extrabold tracking-tight text-ink lg:hidden">{title}</p>
               <nav aria-label="Lokasi" className="hidden items-center gap-1.5 text-sm lg:flex">
-                <Link href="/seller" className="font-semibold text-slate-500 hover:text-ink">Seller Center</Link>
+                <Link href={sellerHref('/seller')} className="font-semibold text-slate-500 hover:text-ink">Seller Center</Link>
                 {current && current.href !== '/seller' && (
                   <>
                     {icons.chevron({ size: 14, className: 'text-slate-400' })}
@@ -261,7 +263,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
               {icons.search({ size: 19 })}
             </button>
             <Link
-              href="/seller/pesanan?status=PENDING"
+              href={sellerHref('/seller/pesanan?status=PENDING')}
               aria-label={newOrders ? `${newOrders} pesanan baru` : 'Pesanan baru'}
               className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-mist"
             >
@@ -291,7 +293,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
             return (
               <Link
                 key={tab.href}
-                href={tab.href}
+                href={sellerHref(tab.href)}
                 aria-current={on ? 'page' : undefined}
                 className={`flex flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-bold ${on ? 'text-ink' : 'text-slate-400'}`}
               >
@@ -304,7 +306,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
             );
           })}
           <Link
-            href="/seller/menu"
+            href={sellerHref('/seller/menu')}
             aria-current={pathname === '/seller/menu' ? 'page' : undefined}
             className={`flex flex-col items-center gap-1 py-2 text-[11px] font-bold ${
               !TABS.some((t) => active(t.href)) ? 'text-ink' : 'text-slate-400'
@@ -318,7 +320,7 @@ export default function SellerShell({ children }: { children: React.ReactNode })
         </div>
       </nav>
 
-      {palette && <CommandPalette onClose={() => setPalette(false)} onGo={(href) => router.push(href)} />}
+      {palette && <CommandPalette onClose={() => setPalette(false)} onGo={(href) => router.push(sellerHref(href))} />}
       {toastLayer}
     </div>
   );
@@ -348,10 +350,10 @@ function UserMenu({ name, onLogout }: { name: string; onLogout: () => void }) {
       {open && (
         <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl bg-surface py-1 shadow-2xl ring-1 ring-slate-200">
           <p className="truncate px-4 py-2 text-xs text-slate-500">Masuk sebagai <b className="text-ink">{name || '-'}</b></p>
-          <Link href="/seller/pengaturan" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-mist">
+          <Link href={sellerHref('/seller/pengaturan')} className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-mist">
             {icons.settings({ size: 16 })} Pengaturan
           </Link>
-          <Link href="/" target="_blank" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-mist">
+          <Link href={shopHref('/')} target="_blank" className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-mist">
             {icons.store({ size: 16 })} Lihat toko ↗
           </Link>
           <button type="button" onClick={onLogout} className="flex w-full items-center gap-2 border-t border-slate-200 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-mist">
