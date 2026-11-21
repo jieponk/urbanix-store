@@ -172,6 +172,9 @@ export type StoreSettings = {
   shopee_reviews_url: string;
   review_count: number;
   popup_voucher?: import('./vouchers').VoucherInfo | null;
+  /** Isi popup beranda: voucher atau banner promo/event. */
+  popup_mode?: 'voucher' | 'banner';
+  popup_banner?: import('@/components/BannerPopup').PopupBanner | null;
 };
 
 export type Review = {

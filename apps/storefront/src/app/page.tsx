@@ -12,6 +12,7 @@ import GearBackdrop from '@/components/inspirasi/GearBackdrop';
 import { VoucherStrip } from '@/components/VoucherCard';
 import { EventHero } from '@/components/EventMode';
 import VoucherPopup from '@/components/VoucherPopup';
+import BannerPopup from '@/components/BannerPopup';
 import { getEventState } from '@/lib/event-server';
 import {
   API,
@@ -299,9 +300,10 @@ export default async function HomePage({
 
   return (
     <div className="pb-4">
-      {settings?.show_whatsapp_popup && settings.popup_voucher && (
-        <VoucherPopup voucher={settings.popup_voucher} whatsappNumber={waNumber} />
-      )}
+      {settings?.show_whatsapp_popup &&
+        (settings.popup_mode === 'banner'
+          ? settings.popup_banner && <BannerPopup banner={settings.popup_banner} />
+          : settings.popup_voucher && <VoucherPopup voucher={settings.popup_voucher} extras={vouchers} />)}
 
       {/* 0. Mode Event otomatis (12.12, tanggal kembar, payday): banner event di paling atas */}
       {/* Susunan beranda mengikuti mockup Mode Event: banner → voucher → flash sale → kategori → zona hemat →

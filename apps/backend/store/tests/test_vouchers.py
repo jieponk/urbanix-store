@@ -198,3 +198,25 @@ class VoucherTests(TestCase):
     def test_shopee_rejects_vouchers_in_quote(self):
         q = self.quote(["WAHEMAT5"], method="SHOPEE")
         self.assertIn("Shopee", q["vouchers"]["rejected"][0]["message"])
+
+
+class PopupBannerTests(TestCase):
+    def test_popup_banner_mode(self):
+        from store.models import Banner
+        from rest_framework.test import APIClient
+
+        api = APIClient()
+        Banner.objects.create(title="Hero", image="banners/hero.webp")
+        Banner.objects.create(title="Promo 12.12", image="banners/popup.webp", placement=Banner.POPUP, link_url="/produk?promo=1")
+        hero = api.get("/api/v1/banners/").data
+        self.assertEqual([b["title"] for b in hero], ["Hero"])
+        store = StoreSettings.load()
+        store.popup_mode = StoreSettings.POPUP_BANNER
+        store.show_whatsapp_popup = True
+        store.save()
+        st = api.get("/api/v1/store-settings/").data
+        self.assertTrue(st["show_whatsapp_popup"])
+        self.assertEqual(st["popup_mode"], "banner")
+        self.assertEqual((st["popup_banner"]["title"], st["popup_banner"]["link_url"]), ("Promo 12.12", "/produk?promo=1"))
+        Banner.objects.filter(placement=Banner.POPUP).update(is_active=False)
+        self.assertFalse(api.get("/api/v1/store-settings/").data["show_whatsapp_popup"])

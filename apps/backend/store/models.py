@@ -170,6 +170,15 @@ class StoreSettings(models.Model):
         default=True,
         help_text="Voucher yang tampil = voucher dengan centang \"Tampilkan di popup\".",
     )
+    POPUP_VOUCHER = "voucher"
+    POPUP_BANNER = "banner"
+    popup_mode = models.CharField(
+        "Isi popup beranda",
+        max_length=10,
+        choices=[(POPUP_VOUCHER, "Voucher"), (POPUP_BANNER, "Banner promo/event")],
+        default=POPUP_VOUCHER,
+        help_text="Voucher: voucher bercentang 'Tampilkan di popup'. Banner: banner berpenempatan 'Popup' yang sedang tayang.",
+    )
     voucher_combo_min_purchase = models.DecimalField(
         "Min. belanja untuk menggabung 2 voucher (Rp)",
         max_digits=12,
@@ -809,6 +818,11 @@ class Banner(models.Model):
     mobile_image = models.FileField("Gambar HP (opsional)", upload_to="banners/", blank=True)
     link_url = models.CharField("Link tujuan", max_length=500, blank=True,
                                 help_text="Contoh: /produk?promo=1, /produk/12, atau link Shopee.")
+    HERO = "HERO"
+    POPUP = "POPUP"
+    placement = models.CharField(
+        "Tampil sebagai", max_length=10, choices=[(HERO, "Banner geser beranda"), (POPUP, "Popup beranda")], default=HERO
+    )
     sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
     starts_at = models.DateTimeField("Mulai tayang", null=True, blank=True)
     ends_at = models.DateTimeField("Selesai tayang", null=True, blank=True)

@@ -81,6 +81,24 @@ export default function SettingsPage() {
                 </span>
                 <Toggle checked={form.show_whatsapp_popup} onChange={(x) => set('show_whatsapp_popup', x)} />
               </label>
+              {form.show_whatsapp_popup && (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: 'voucher', label: 'Voucher', hint: 'Voucher bercentang "Tampilkan di popup"' },
+                    { v: 'banner', label: 'Banner promo/event', hint: 'Banner dengan "Tampil sebagai: Popup" di menu Banner' },
+                  ].map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => set('popup_mode', o.v)}
+                      className={`rounded-xl p-3 text-left ring-1 transition ${form.popup_mode === o.v ? 'bg-ink text-surface ring-ink' : 'bg-surface text-ink ring-slate-200 hover:ring-ink'}`}
+                    >
+                      <span className="block text-sm font-bold">{o.label}</span>
+                      <span className={`block text-xs ${form.popup_mode === o.v ? 'text-surface/70' : 'text-slate-500'}`}>{o.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Field label="Min. belanja untuk gabung 2 voucher (Rp)" hint="0 = selalu bisa digabung.">
               <input className={inputCls} inputMode="numeric" value={form.voucher_combo_min_purchase} onChange={(e) => set('voucher_combo_min_purchase', e.target.value)} />

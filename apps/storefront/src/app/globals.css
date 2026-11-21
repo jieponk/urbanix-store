@@ -501,3 +501,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .voucher-wiggle, .voucher-twinkle, .voucher-shine::after { animation: none; }
 }
+
+/* Popup voucher gaya kupon: dekorasi melayang, angka berdenyut, tombol memantul */
+@keyframes voucher-float { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-9px) rotate(calc(var(--r, 0deg) + 6deg)); } }
+.voucher-float { animation: voucher-float 3s ease-in-out infinite; transform: rotate(var(--r, 0deg)); }
+.voucher-float-slow { animation: voucher-float 4.2s ease-in-out 0.6s infinite; transform: rotate(var(--r, 0deg)); }
+@keyframes voucher-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.voucher-pulse { animation: voucher-pulse 2.4s ease-in-out 1s infinite; }
+@keyframes voucher-cta { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
+.voucher-cta { transform: translateX(-50%); animation: voucher-cta 1.6s ease-in-out 1.2s infinite; }
+.voucher-cta:active { animation: none; transform: translateX(-50%) translateY(4px); }
+@media (prefers-reduced-motion: reduce) {
+  .voucher-float, .voucher-float-slow, .voucher-pulse, .voucher-cta { animation: none; }
+}

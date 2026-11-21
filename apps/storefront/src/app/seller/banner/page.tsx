@@ -21,13 +21,14 @@ export default function BannersPage() {
     setImage(null);
     setMobile(null);
     setEditing(b ? { ...b, starts_at: toLocalInput(b.starts_at), ends_at: toLocalInput(b.ends_at) }
-      : { title: '', link_url: '/produk?promo=1', sort_order: String((data?.length ?? 0) + 1), starts_at: '', ends_at: '', is_active: true });
+      : { title: '', link_url: '/produk?promo=1', placement: 'HERO', sort_order: String((data?.length ?? 0) + 1), starts_at: '', ends_at: '', is_active: true });
   }
 
   async function save() {
     const form = new FormData();
     form.append('title', editing.title);
     form.append('link_url', editing.link_url || '');
+    form.append('placement', editing.placement || 'HERO');
     form.append('sort_order', String(editing.sort_order || 0));
     form.append('is_active', editing.is_active ? 'true' : 'false');
     form.append('starts_at', fromLocalInput(editing.starts_at) || '');
@@ -59,7 +60,7 @@ export default function BannersPage() {
     <div>
       <PageHeader
         title="Banner & link promo"
-        subtitle="Banner geser di beranda. Atur gambar, link tujuan, urutan, dan jadwal tayang."
+        subtitle="Banner geser di beranda atau popup promo/event. Atur gambar, link tujuan, urutan, dan jadwal tayang."
         actions={<button type="button" className={btn.brand} onClick={() => open()}>+ Tambah banner</button>}
       />
       {error ? <ErrorBox message={error} onRetry={reload} /> : loading && !data ? <Spinner /> : !data || data.length === 0 ? (
@@ -69,14 +70,17 @@ export default function BannersPage() {
           {data.map((b) => (
             <div key={b.id} className="overflow-hidden rounded-2xl bg-surface ring-1 ring-slate-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={b.image} alt={b.title} className="aspect-[21/9] w-full bg-mist object-cover" />
+              <img src={b.image} alt={b.title} className={`aspect-[21/9] w-full bg-mist ${b.placement === 'POPUP' ? 'object-contain' : 'object-cover'}`} />
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0">
                     <span className="block font-bold text-ink">{b.title}</span>
                     <span className="block truncate text-xs text-slate-500">→ {b.link_url || 'tanpa link'}</span>
                   </span>
-                  <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
+                  <span className="flex shrink-0 gap-1">
+                    {b.placement === 'POPUP' && <Badge tone="blue">Popup</Badge>}
+                    <Badge tone={STATUS_TONE[b.status]}>{b.status}</Badge>
+                  </span>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
                   Urutan {b.sort_order} · {b.starts_at ? fmtDateTime(b.starts_at) : 'langsung'} – {b.ends_at ? fmtDateTime(b.ends_at) : 'tanpa batas'}
@@ -97,13 +101,27 @@ export default function BannersPage() {
         footer={<button type="button" disabled={busy || !editing?.title || (!editing?.id && !image)} className={`${btn.primary} w-full`} onClick={save}>{busy ? 'Mengupload…' : 'Simpan banner'}</button>}>
         {editing && (
           <div className="space-y-4">
+            <Field label="Tampil sebagai">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: 'HERO', label: 'Banner geser beranda', hint: 'Rasio 21:9' },
+                  { v: 'POPUP', label: 'Popup beranda', hint: 'Rasio 4:5 atau 1:1' },
+                ].map((o) => (
+                  <button key={o.v} type="button" onClick={() => setEditing({ ...editing, placement: o.v })}
+                    className={`rounded-xl p-3 text-left ring-1 transition ${(editing.placement || 'HERO') === o.v ? 'bg-ink text-surface ring-ink' : 'bg-surface text-ink ring-slate-200 hover:ring-ink'}`}>
+                    <span className="block text-sm font-bold">{o.label}</span>
+                    <span className={`block text-xs ${(editing.placement || 'HERO') === o.v ? 'text-surface/70' : 'text-slate-500'}`}>{o.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </Field>
             <Field label="Judul" hint="Untuk admin & teks alternatif gambar."><input className={inputCls} value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></Field>
-            <Field label="Gambar desktop" hint="Disarankan 2100×900 px (rasio 21:9). JPG/PNG boleh, maks. 5 MB; otomatis diubah ke WebP.">
+            <Field label="Gambar desktop" hint={editing.placement === 'POPUP' ? 'Popup: disarankan 1080×1350 px (4:5) atau 1080×1080 px. JPG/PNG boleh, maks. 5 MB; otomatis diubah ke WebP.' : 'Disarankan 2100×900 px (rasio 21:9). JPG/PNG boleh, maks. 5 MB; otomatis diubah ke WebP.'}>
               <input type="file" accept="image/*" className={inputCls} onChange={(e) => setImage(e.target.files?.[0] ?? null)} />
             </Field>
             {(image || editing.image) && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image ? URL.createObjectURL(image) : editing.image} alt="" className="aspect-[21/9] w-full rounded-xl object-cover ring-1 ring-slate-200" />
+              <img src={image ? URL.createObjectURL(image) : editing.image} alt="" className={`w-full rounded-xl ring-1 ring-slate-200 ${editing.placement === 'POPUP' ? 'max-h-80 object-contain' : 'aspect-[21/9] object-cover'}`} />
             )}
             <Field label="Gambar HP (opsional)" hint="Disarankan 1600×900 px (16:9). Kosong = pakai gambar desktop.">
               <input type="file" accept="image/*" className={inputCls} onChange={(e) => setMobile(e.target.files?.[0] ?? null)} />

@@ -261,7 +261,7 @@ class BannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Banner
-        fields = ["id", "title", "image", "mobile_image", "link_url", "sort_order", "starts_at", "ends_at",
+        fields = ["id", "title", "image", "mobile_image", "link_url", "placement", "sort_order", "starts_at", "ends_at",
                   "is_active", "status"]
 
     def get_status(self, obj):
@@ -347,7 +347,7 @@ def banner_detail(request, pk):
 def public_banners(request):
     """Banner beranda yang sedang tayang (dipakai storefront)."""
     now = timezone.now()
-    running = [b for b in Banner.objects.filter(is_active=True) if b.is_running(now)]
+    running = [b for b in Banner.objects.filter(is_active=True, placement=Banner.HERO) if b.is_running(now)]
     return Response([
         {"id": b.id, "title": b.title, "image": b.image.url,
          "mobile_image": b.mobile_image.url if b.mobile_image else "", "link_url": b.link_url}
@@ -478,7 +478,7 @@ class SettingsSerializer(serializers.ModelSerializer):
         model = StoreSettings
         fields = [
             "whatsapp_number", "shopee_shop_id", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
-            "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
+            "enable_midtrans", "show_whatsapp_popup", "popup_mode", "voucher_combo_min_purchase", "shopee_rating",
             "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
             "home_layout", "event_title", "event_subtitle", "event_cta",
             "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers", "ongkir_origin_lat", "ongkir_origin_lng",

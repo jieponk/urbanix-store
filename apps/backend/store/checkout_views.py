@@ -25,7 +25,7 @@ from .shipments import STATUS_LABELS as SHIPMENT_LABELS
 from . import vouchers as voucher_engine
 from .checkout_serializers import CheckoutSerializer, OngkirRequestSerializer, QuoteRequestSerializer
 from . import news as news_engine
-from .models import NewsArticle, NewsSource, Order, Review, StoreSettings
+from .models import Banner, NewsArticle, NewsSource, Order, Review, StoreSettings
 
 
 def _public(view):
@@ -40,6 +40,13 @@ def store_settings(request):
     reviews = Review.objects.filter(is_published=True)
     # Popup beranda: voucher bercentang "Tampilkan di popup" yang berlaku untuk bayar di web.
     popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup and v.for_midtrans), None)
+    # Popup mode banner: banner berpenempatan "Popup" pertama yang sedang tayang.
+    banner = next((b for b in Banner.objects.filter(is_active=True, placement=Banner.POPUP) if b.is_running()), None)
+    popup_banner = (
+        {"id": banner.id, "title": banner.title, "image": banner.image.url,
+         "mobile_image": banner.mobile_image.url if banner.mobile_image else "", "link_url": banner.link_url}
+        if banner else None
+    )
     popup_percent = (
         str(Decimal(str(popup.value)).normalize()) if popup and popup.voucher_type == "PERCENT" else "0"
     )
@@ -51,7 +58,12 @@ def store_settings(request):
             # Kompatibel dengan tampilan lama: persen & popup diambil dari voucher popup.
             "whatsapp_discount_percent": popup_percent,
             "whatsapp_discount_on_promo": bool(popup and not popup.exclude_promo),
-            "show_whatsapp_popup": bool(store.show_whatsapp_popup and popup),
+            "show_whatsapp_popup": bool(
+                store.show_whatsapp_popup
+                and (popup_banner if store.popup_mode == StoreSettings.POPUP_BANNER else popup)
+            ),
+            "popup_mode": store.popup_mode,
+            "popup_banner": popup_banner,
             "popup_voucher": voucher_engine.voucher_summary(popup) if popup else None,
             "shopee_rating": str(store.shopee_rating) if store.shopee_rating is not None else None,
             "shopee_rating_count": store.shopee_rating_count,
