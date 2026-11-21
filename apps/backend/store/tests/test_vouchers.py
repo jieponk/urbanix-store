@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from store.models import Category, Order, PriceCut, PriceCutItem, Product, StoreSettings, Voucher
 
 
-@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY")
+@override_settings(MIDTRANS_SERVER_KEY="SB-Mid-server-TESTKEY", BITESHIP_API_KEY="biteship_test.abc")
 class VoucherTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -22,6 +22,9 @@ class VoucherTests(TestCase):
         self.mic = Product.objects.create(category=cat, name="Mic", slug="m", sku="M",
                                           description="-", price=Decimal("400000"), stock=5)
         s = StoreSettings.load(); s.whatsapp_number = "6281"; s.save()
+        from store.tests.ongkir_stub import enable_ongkir
+
+        enable_ongkir(self)
 
     def items(self, cam=1, mic=0):
         out = []
@@ -42,7 +45,8 @@ class VoucherTests(TestCase):
         return self.api.post("/api/v1/checkout/", {
             "payment_method": method, "items": self.items(cam, mic), "voucher_codes": codes,
             "customer": {"name": "Budi", "phone": phone},
-            "shipping": {"address": "Jl. Mawar 1 RT 2", "city": "Bandung"},
+            "shipping": {"address": "Jl. Mawar 1 RT 2", "city": "Bandung",
+                         **({"service": "jne:reg", "destination_id": "IDNP6IDNC148IDND836IDZ12430"} if method == "MIDTRANS" else {})},
         }, format="json")
 
     # ------------------------------------------------------------ voucher bawaan (migrasi)
@@ -55,6 +59,11 @@ class VoucherTests(TestCase):
         self.assertEqual(StoreSettings.load().voucher_combo_min_purchase, 0)
         codes = [v["code"] for v in self.api.get("/api/v1/vouchers/").data]
         self.assertEqual(codes, ["WAHEMAT5", "ONGKIR40"])
+        # Popup beranda hanya untuk voucher yang berlaku bayar di web; WAHEMAT5 khusus WA → tidak dipakai popup.
+        st = self.api.get("/api/v1/store-settings/").data
+        self.assertFalse(st["show_whatsapp_popup"])
+        self.assertIsNone(st["popup_voucher"])
+        Voucher.objects.filter(code="WAHEMAT5").update(for_midtrans=True)
         st = self.api.get("/api/v1/store-settings/").data
         self.assertTrue(st["show_whatsapp_popup"])
         self.assertEqual((st["whatsapp_discount_percent"], st["popup_voucher"]["code"]), ("5", "WAHEMAT5"))
@@ -189,3 +198,25 @@ class VoucherTests(TestCase):
     def test_shopee_rejects_vouchers_in_quote(self):
         q = self.quote(["WAHEMAT5"], method="SHOPEE")
         self.assertIn("Shopee", q["vouchers"]["rejected"][0]["message"])
+
+
+class PopupBannerTests(TestCase):
+    def test_popup_banner_mode(self):
+        from store.models import Banner
+        from rest_framework.test import APIClient
+
+        api = APIClient()
+        Banner.objects.create(title="Hero", image="banners/hero.webp")
+        Banner.objects.create(title="Promo 12.12", image="banners/popup.webp", placement=Banner.POPUP, link_url="/produk?promo=1")
+        hero = api.get("/api/v1/banners/").data
+        self.assertEqual([b["title"] for b in hero], ["Hero"])
+        store = StoreSettings.load()
+        store.popup_mode = StoreSettings.POPUP_BANNER
+        store.show_whatsapp_popup = True
+        store.save()
+        st = api.get("/api/v1/store-settings/").data
+        self.assertTrue(st["show_whatsapp_popup"])
+        self.assertEqual(st["popup_mode"], "banner")
+        self.assertEqual((st["popup_banner"]["title"], st["popup_banner"]["link_url"]), ("Promo 12.12", "/produk?promo=1"))
+        Banner.objects.filter(placement=Banner.POPUP).update(is_active=False)
+        self.assertFalse(api.get("/api/v1/store-settings/").data["show_whatsapp_popup"])

@@ -1,4 +1,5 @@
 import { API } from '@/lib/api';
+import { getLang } from '@/lib/lang-server';
 
 /**
  * Teruskan permintaan dari browser ke backend Django (hanya di server).
@@ -22,7 +23,10 @@ export async function proxyToBackend(
   }
 
   try {
-    const response = await fetch(`${API}/${path.replace(/^\/+/, '')}`, {
+    let url = `${API}/${path.replace(/^\/+/, '')}`;
+    // Pengunjung memilih Bahasa Inggris: minta isi versi terjemahan (hanya untuk GET).
+    if (method === 'GET' && getLang() === 'en' && !/[?&]lang=/.test(url)) url += `${url.includes('?') ? '&' : '?'}lang=en`;
+    const response = await fetch(url, {
       method,
       headers,
       body,

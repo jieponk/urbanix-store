@@ -91,10 +91,23 @@ nano ~/urbanix/.env                              # rahasia & kunci (DeepL, Midtr
 
 `~/urbanix/.env` berisi kunci rahasia: jangan dibagikan & jangan masuk GitHub.
 
-## Email konfirmasi pesanan (opsional)
+## Email pesanan (opsional)
 
-Pembeli yang mengisi email saat checkout otomatis menerima email berisi nomor pesanan + link status & invoice,
-asal SMTP diisi di `~/urbanix/.env` server:
+Pembeli yang mengisi email saat checkout otomatis menerima 3 email:
+
+1. **Pesanan diterima**: nomor pesanan, rincian, link status & invoice (saat checkout).
+2. **Pengingat bayar**: sekali saja, bila 12 jam setelah pesan belum lunas (dicek cron tiap jam, pesanan maks. 3 hari).
+3. **Paket dikirim**: kurir, no. resi, dan link lacak. Terkirim sekali saat status pesanan di Seller Center
+   jadi **Dikirim** dan **No. resi** sudah diisi.
+
+Cara termudah (dari laptop, App Password diketik saat diminta dan tidak tampil di layar):
+
+```
+./deploy/set-email.sh urbanix@IP-SERVER urbanixstore26@gmail.com
+```
+
+Skrip ini mengisi `.env` server, menyalakan ulang backend, lalu mengirim email uji.
+Atau isi manual di `~/urbanix/.env` server:
 
 ```
 EMAIL_HOST=smtp.gmail.com
@@ -106,3 +119,15 @@ EMAIL_FROM=Urbanix Store <urbanixstore26@gmail.com>
 
 App Password Gmail: aktifkan Verifikasi 2 Langkah di akun Google, lalu buat di myaccount.google.com/apppasswords.
 Setelah mengisi, jalankan deploy lagi. Kosongkan EMAIL_HOST untuk mematikan.
+
+## Terjemahan berita (DeepL)
+
+Berita kamera berbahasa Inggris diterjemahkan otomatis bila kunci DeepL terpasang. Cara termudah (dari laptop):
+
+```
+./deploy/set-deepl.sh urbanix@IP-SERVER
+```
+
+Tempel kunci dari deepl.com (Akun → API Keys) saat diminta. Skrip menyimpan kunci di `.env` server,
+menyalakan ulang backend, menguji kunci, lalu menerjemahkan semua berita yang tertunda.
+Cek ulang kapan saja: `docker compose ... exec backend python manage.py cek_deepl`.

@@ -2,6 +2,8 @@
 import re
 
 from django.conf import settings
+
+from .shipping import shipping_label
 from decimal import Decimal
 
 from django.db.models import Case, IntegerField, Value, When
@@ -18,10 +20,12 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
+from . import ongkir
+from .shipments import STATUS_LABELS as SHIPMENT_LABELS
 from . import vouchers as voucher_engine
-from .checkout_serializers import CheckoutSerializer, QuoteRequestSerializer
+from .checkout_serializers import CheckoutSerializer, OngkirRequestSerializer, QuoteRequestSerializer
 from . import news as news_engine
-from .models import NewsArticle, NewsSource, Order, Review, StoreSettings
+from .models import Banner, NewsArticle, NewsSource, Order, Review, StoreSettings
 
 
 def _public(view):
@@ -34,7 +38,15 @@ def _public(view):
 def store_settings(request):
     store = StoreSettings.load()
     reviews = Review.objects.filter(is_published=True)
-    popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup), None)
+    # Popup beranda: voucher bercentang "Tampilkan di popup" yang berlaku untuk bayar di web.
+    popup = next((v for v in voucher_engine.public_vouchers() if v.show_in_popup and v.for_midtrans), None)
+    # Popup mode banner: banner berpenempatan "Popup" pertama yang sedang tayang.
+    banner = next((b for b in Banner.objects.filter(is_active=True, placement=Banner.POPUP) if b.is_running()), None)
+    popup_banner = (
+        {"id": banner.id, "title": banner.title, "image": banner.image.url,
+         "mobile_image": banner.mobile_image.url if banner.mobile_image else "", "link_url": banner.link_url}
+        if banner else None
+    )
     popup_percent = (
         str(Decimal(str(popup.value)).normalize()) if popup and popup.voucher_type == "PERCENT" else "0"
     )
@@ -46,12 +58,29 @@ def store_settings(request):
             # Kompatibel dengan tampilan lama: persen & popup diambil dari voucher popup.
             "whatsapp_discount_percent": popup_percent,
             "whatsapp_discount_on_promo": bool(popup and not popup.exclude_promo),
-            "show_whatsapp_popup": bool(store.show_whatsapp_popup and store.whatsapp_number and popup),
+            "show_whatsapp_popup": bool(
+                store.show_whatsapp_popup
+                and (popup_banner if store.popup_mode == StoreSettings.POPUP_BANNER else popup)
+            ),
+            "popup_mode": store.popup_mode,
+            "popup_banner": popup_banner,
             "popup_voucher": voucher_engine.voucher_summary(popup) if popup else None,
             "shopee_rating": str(store.shopee_rating) if store.shopee_rating is not None else None,
             "shopee_rating_count": store.shopee_rating_count,
             "shopee_reviews_url": store.shopee_reviews_url,
             "review_count": reviews.count(),
+            "event": {
+                "mode": store.event_mode,
+                "theme": store.event_theme or None,
+                "until": store.event_until.isoformat() if store.event_until else None,
+                "teaser_days": store.event_teaser_days,
+                "title": store.event_title or None,
+                "subtitle": store.event_subtitle or None,
+                "cta": store.event_cta or None,
+            },
+            "home_layout": store.home_layout or [],
+            # Kurir yang benar-benar bisa dipilih di checkout (untuk footer). Kosong = ongkir otomatis belum aktif.
+            "couriers": (ongkir.courier_list(store) + ongkir.instant_list(store)) if ongkir.is_configured(store) else [],
         }
     )
 
@@ -126,6 +155,66 @@ def checkout(request):
 checkout.cls.throttle_scope = "checkout"
 
 
+@api_view(["GET"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_destination(request):
+    """Cari kecamatan/kode pos tujuan (Biteship)."""
+    try:
+        return Response({"results": ongkir.search_destination(request.query_params.get("q", ""))})
+    except ongkir.OngkirError as exc:
+        return Response({"error": str(exc), "results": []}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+ongkir_destination.cls.throttle_scope = "ongkir"
+
+
+@api_view(["GET"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_geocode(request):
+    """Titik awal peta untuk kecamatan/kota pembeli (bukan titik akhir)."""
+    point = ongkir.geocode(request.query_params.get("q", ""))
+    return Response({"point": point})
+
+
+ongkir_geocode.cls.throttle_scope = "ongkir"
+
+
+@api_view(["POST"])
+@_public
+@throttle_classes([ScopedRateThrottle])
+def ongkir_rates(request):
+    """Tarif kurir untuk isi keranjang ke satu tujuan. Body: {items, destination_id}."""
+    serializer = OngkirRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    try:
+        lines = svc.build_lines(data["items"])
+        weight = ongkir.order_weight(lines)
+        options = ongkir.rates(data["destination_id"], lines, lat=data.get("latitude"), lng=data.get("longitude"))
+    except svc.CheckoutError as exc:
+        return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except ongkir.OngkirError as exc:
+        return Response({"error": str(exc), "options": []}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response({"weight_grams": weight, "options": options})
+
+
+ongkir_rates.cls.throttle_scope = "ongkir"
+
+
+@api_view(["POST", "GET"])
+@_public
+def biteship_webhook(request):
+    """Notifikasi status paket dari Biteship (Dashboard → Integrasi → Webhook)."""
+    from . import shipments
+
+    if request.method == "GET":
+        return Response({"ok": True})
+    payload = request.data if isinstance(request.data, dict) else {}
+    return Response({"result": shipments.handle_webhook(payload)})
+
+
 def _mask_email(email: str) -> str:
     if not email or "@" not in email:
         return ""
@@ -138,6 +227,12 @@ def _mask_phone(phone: str) -> str:
     if len(digits) < 7:
         return ""
     return f"{digits[:4]}{'*' * (len(digits) - 7)}{digits[-3:]}"
+
+
+def _review_url(order):
+    from .reviews_api import review_url
+
+    return review_url(order)
 
 
 @api_view(["GET"])
@@ -167,13 +262,32 @@ def order_detail(request, order_number):
             "shipping_city": order.shipping_city,
             "shipping_province": order.shipping_province,
             "shipping_courier": order.shipping_courier,
+            "shipping_service": shipping_label(order.shipping_service),
             "tracking_number": order.tracking_number,
             "shipping_cost": str(order.shipping_cost) if order.shipping_cost is not None else None,
+            "total_weight_grams": order.total_weight_grams,
             "updated_at": order.updated_at,
             "tax_note": "Harga sudah termasuk PPN.",
-            "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
+            "shipping_note": (
+                f"Ongkir otomatis {order.shipping_courier}" + (f", estimasi {order.shipping_etd} hari" if order.shipping_etd else "") + "."
+                if order.shipping_auto else "Ongkos kirim dikonfirmasi penjual."
+            ),
+            "shipping_auto": order.shipping_auto,
+            "shipping_etd": order.shipping_etd,
+            "billed_amount": str(order.billed_amount),
+            "shipment": {
+                "status": order.shipment_status,
+                "status_label": SHIPMENT_LABELS.get(order.shipment_status, ""),
+                "history": order.shipment_history or [],
+                "delivered_at": order.delivered_at,
+            } if order.shipment_id else None,
+            "paid_at": order.paid_at,
+            "return": _return_summary(order),
+            "cancel": _cancel_summary(order),
             "payment_url": order.payment_url if order.payment_status == "UNPAID" else "",
             "whatsapp_url": svc.whatsapp_url(order) if order.payment_method == "WHATSAPP" else "",
+            # Link ulasan produk (setelah paket dikirim). Setara keamanannya dengan nomor pesanan.
+            "review_url": _review_url(order) if order.status in ("SHIPPED", "COMPLETED") else "",
             "items": [
                 {
                     "product_id": item.product_id,
@@ -217,7 +331,25 @@ def _article(a):
         "published_at": a.published_at,
         "is_translated": a.is_translated or a.source.language == "id",
         "is_pinned": a.is_pinned,
+        "has_ai": a.ai_status == "done",
+        "has_article": bool(a.ai_body) or (bool(a.body) and a.source.full_text_allowed),
+        "comment_count": getattr(a, "comment_count", None),
+        "updated_at": a.ai_generated_at or a.published_at,
     }
+
+
+def visible_news():
+    """Berita yang tampil: sumber aktif, tidak disembunyikan, dan tidak ditolak AI
+    (status "skip" = bukan topik kamera/foto/video atau tidak ada isi yang bisa dirangkum)."""
+    from django.db.models import Count, Q
+
+    return (
+        NewsArticle.objects.filter(is_visible=True, source__is_active=True)
+        .exclude(ai_status="skip")
+        .select_related("source")
+        .annotate(comment_count=Count("comments", filter=Q(comments__is_approved=True)))
+        .order_by("-is_pinned", "-published_at")  # Meta.ordering tidak dipakai Django pada query ber-annotate
+    )
 
 
 @api_view(["GET"])
@@ -225,7 +357,9 @@ def _article(a):
 def news_list(request):
     """Berita kamera & fotografi. ?source=<id>, ?page=<n>, ?limit=<n> (maks. 48)."""
     news_engine.refresh_in_background()
-    qs = NewsArticle.objects.filter(is_visible=True, source__is_active=True).select_related("source")
+    qs = visible_news()
+    if request.query_params.get("artikel") == "1":  # hanya yang sudah punya artikel lengkap (untuk sitemap)
+        qs = qs.exclude(ai_body="")
     source = request.query_params.get("source", "")
     if source.isdigit():
         qs = qs.filter(source_id=int(source))
@@ -236,7 +370,7 @@ def news_list(request):
         limit, page = 12, 1
     total = qs.count()
     start = (page - 1) * limit
-    sources = NewsSource.objects.filter(is_active=True, articles__is_visible=True).distinct()
+    sources = NewsSource.objects.filter(is_active=True, articles__in=visible_news()).distinct()
     return Response({
         "count": total,
         "page": page,
@@ -281,20 +415,54 @@ def related_products(article, limit=4):
 @api_view(["GET"])
 @_public
 def news_detail(request, pk):
-    article = get_object_or_404(
-        NewsArticle.objects.select_related("source"), pk=pk, is_visible=True, source__is_active=True
-    )
+    from .articles_api import REACTIONS, _comment, _comment_qs
+
+    article = get_object_or_404(visible_news(), pk=pk)
     brand, products = related_products(article)
-    more = (
-        NewsArticle.objects.filter(is_visible=True, source__is_active=True)
-        .exclude(pk=article.pk)
-        .select_related("source")[:3]
-    )
+    more = visible_news().exclude(pk=article.pk)[:3]
     return Response({
         **_article(article),
         "source_site": article.source.site_url,
         "original_title": article.original_title,
         "related_brand": brand,
         "related_products": products,
+        "ai": {
+            "points": article.ai_points,
+            "conclusion": article.ai_conclusion,
+            "opinion": article.ai_opinion,
+            "article": article.ai_body,
+            "generated_at": article.ai_generated_at,
+        } if article.ai_status == "done" else None,
+        "body": article.body if article.source.full_text_allowed else "",
         "more": [_article(a) for a in more],
+        "comments": [_comment(c) for c in _comment_qs(article)],
+        "reactions": REACTIONS,
     })
+
+
+
+def _cancel_summary(order):
+    from .cancellations import eligibility
+
+    req = getattr(order, "cancel_request", None)
+    elig = eligibility(order)
+    return {
+        "can_request": elig["can_request"],
+        "status": req.status if req else "",
+        "status_label": req.get_status_display() if req else "",
+        "show": (bool(req) and req.status != "WITHDRAWN") or elig["can_request"],
+    }
+
+
+def _return_summary(order):
+    from .returns import eligibility
+
+    ret = getattr(order, "return_request", None)
+    elig = eligibility(order)
+    return {
+        "can_request": elig["can_request"],
+        "deadline": elig["deadline"],
+        "status": ret.status if ret else "",
+        "status_label": ret.get_status_display() if ret else "",
+        "show": bool(ret) or elig["can_request"],
+    }

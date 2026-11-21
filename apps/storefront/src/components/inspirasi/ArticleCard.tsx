@@ -1,19 +1,43 @@
 import Link from 'next/link';
+import { dateLocale } from '@/lib/i18n';
+import { getLang } from '@/lib/lang-server';
 import type { ArticleCard as Card } from '@/lib/api';
 import { DEFAULT_COVER } from '@/lib/markdown';
+import { ArrowRight, Calendar, CategoryIcon, Chat, Pin } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
-export function articleDate(iso: string | null) {
+export function articleDate(iso: string | null, short = false) {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+  return new Date(iso).toLocaleDateString(dateLocale(getLang()), {
+    day: 'numeric',
+    month: short ? 'short' : 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  });
 }
 
-export function Cover({ src, alt = '', className = '', eager = false }: { src?: string; alt?: string; className?: string; eager?: boolean }) {
+/** Gambar sampul responsif: rasio dijaga wadahnya, gambar mengisi tanpa gepeng. */
+export function Cover({
+  src,
+  alt = '',
+  className = '',
+  eager = false,
+  sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
+}: {
+  src?: string;
+  alt?: string;
+  className?: string;
+  eager?: boolean;
+  sizes?: string;
+}) {
   return (
     <img
       src={src || DEFAULT_COVER}
       alt={alt}
       width={1200}
       height={630}
+      sizes={sizes}
+      decoding="async"
       loading={eager ? 'eager' : 'lazy'}
       {...(eager ? { fetchpriority: 'high' } : {})}
       className={`h-full w-full object-cover ${className}`}
@@ -21,86 +45,117 @@ export function Cover({ src, alt = '', className = '', eager = false }: { src?: 
   );
 }
 
-/** Kartu artikel Urbanix (grid). */
-export default function ArticleCard({ article }: { article: Card }) {
+/** Label kategori gaya koran: teks merah huruf kapital + ikon kecil. */
+export function CategoryBadge({ category, className = '' }: { category: Card['category']; solid?: boolean; className?: string }) {
+  if (!category) return null;
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-3xl bg-surface ring-1 ring-slate-200 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/10 hover:ring-slate-300">
-      <div className="relative aspect-[16/9] overflow-hidden bg-cobalt-900">
-        <Cover src={article.cover} className="transition duration-500 group-hover:scale-[1.04]" />
-        {article.category && (
-          <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-cobalt-900 shadow-sm backdrop-blur">
-            {article.category.name}
-          </span>
-        )}
-        {article.is_pinned && (
-          <span className="absolute right-4 top-4 rounded-full bg-sun-400 px-2.5 py-1 text-[11px] font-extrabold text-cobalt-900">
-            📌 Disematkan
-          </span>
-        )}
+    <span className={`ed-kicker inline-flex items-center gap-1.5 ${className}`}>
+      <CategoryIcon slug={category.slug} size={13} />
+      {category.name}
+    </span>
+  );
+}
+
+export function PinnedBadge() {
+  const t = getT();
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
+      <Pin size={12} /> {t('Disematkan')}
+    </span>
+  );
+}
+
+/** Baris info kartu: penulis · tanggal · jumlah komentar. */
+export function ArticleMeta({ article, className = '' }: { article: Card; className?: string }) {
+  const t = getT();
+  const comments = article.comment_count || 0;
+  return (
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-500 ${className}`}>
+      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] font-extrabold text-surface">
+          {article.author_name.slice(0, 1).toUpperCase()}
+        </span>
+        {article.author_name}
+      </span>
+      {article.published_at && (
+        <time dateTime={article.published_at} className="inline-flex items-center gap-1.5">
+          <Calendar size={13} /> {articleDate(article.published_at, true)}
+        </time>
+      )}
+      <span className="inline-flex items-center gap-1.5" title={t('{n} komentar', { n: comments })}>
+        <Chat size={13} /> {t('{n} komentar', { n: comments })}
+      </span>
+    </div>
+  );
+}
+
+/** Kartu artikel (grid): foto, label merah, judul tebal, ringkasan, info. Datar, tanpa bayangan. */
+export default function ArticleCard({ article, index = 0 }: { article: Card; index?: number }) {
+  return (
+    <article className="inspo-reveal group relative flex h-full flex-col" style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}>
+      <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
+        <Cover src={article.cover} alt="" className="transition duration-700 ease-out group-hover:scale-[1.03]" />
       </div>
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <h3 className="line-clamp-2 text-lg font-extrabold leading-snug tracking-tight text-ink sm:text-xl">
-          <Link href={`/inspirasi/${article.slug}`} className="after:absolute after:inset-0 after:rounded-3xl focus:outline-none">
+      <div className="flex flex-1 flex-col pt-4">
+        <div className="flex items-center gap-3">
+          <CategoryBadge category={article.category} />
+          {article.is_pinned && <PinnedBadge />}
+        </div>
+        <h3 className="mt-2 line-clamp-3 text-[1.15rem] font-extrabold leading-snug tracking-tight text-ink sm:text-xl">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ed">
             {article.title}
           </Link>
         </h3>
-        {article.excerpt && <p className="mt-2 line-clamp-3 text-[15px] leading-7 text-slate-600">{article.excerpt}</p>}
-        <div className="mt-auto flex items-center gap-2 pt-5 text-xs font-semibold text-slate-500">
-          <span>{articleDate(article.published_at)}</span>
-          <span aria-hidden="true">·</span>
-          <span>{article.reading_minutes} menit baca</span>
-          {!!article.comment_count && (
-            <span className="ml-auto inline-flex items-center gap-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.7A8 8 0 1 1 21 12z" />
-              </svg>
-              {article.comment_count}
-            </span>
-          )}
+        <ArticleMeta article={article} className="mt-auto pt-4" />
+      </div>
+    </article>
+  );
+}
+
+/** Artikel utama: foto besar di kiri, teks di kanan (HP: foto di atas). Teks tidak ditumpuk di atas gambar. */
+export function FeaturedArticle({ article }: { article: Card }) {
+  const t = getT();
+  return (
+    <article className="inspo-reveal group relative grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_1fr] lg:gap-8">
+      <div className="relative aspect-[1200/630] overflow-hidden rounded-md bg-mist">
+        <Cover src={article.cover} alt="" eager sizes="(min-width: 1024px) 60vw, 100vw" className="transition duration-700 ease-out group-hover:scale-[1.03]" />
+      </div>
+      <div className="flex flex-col justify-center">
+        <div className="flex items-center gap-3">
+          <CategoryBadge category={article.category} />
+          {article.is_pinned && <PinnedBadge />}
+        </div>
+        <h2 className="mt-3 text-[1.75rem] font-extrabold leading-[1.12] tracking-tight text-ink sm:text-4xl">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
+            {article.title}
+          </Link>
+        </h2>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <ArticleMeta article={article} className="text-sm" />
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-ed">
+            {t('Baca artikel')} <ArrowRight size={16} />
+          </span>
         </div>
       </div>
     </article>
   );
 }
 
-/** Kartu besar untuk artikel yang disematkan / terbaru. */
-export function FeaturedArticle({ article }: { article: Card }) {
+/** Kartu ringkas horizontal (kolom samping). */
+export function CompactArticle({ article, index = 0 }: { article: Card; index?: number }) {
   return (
-    <article className="group relative grid overflow-hidden rounded-[2rem] bg-surface shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200 lg:grid-cols-[1.25fr_1fr]">
-      <div className="relative aspect-[16/9] overflow-hidden bg-cobalt-900 lg:aspect-auto lg:min-h-[380px]">
-        <Cover src={article.cover} eager className="absolute inset-0 transition duration-700 group-hover:scale-[1.03]" />
-      </div>
-      <div className="flex flex-col justify-center p-6 sm:p-10">
-        <div className="flex flex-wrap items-center gap-2">
-          {article.is_pinned && (
-            <span className="rounded-full bg-sun-400 px-3 py-1 text-xs font-extrabold text-cobalt-900">📌 Disematkan</span>
-          )}
-          {article.category && (
-            <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-500">
-              {article.category.name}
-            </span>
-          )}
-        </div>
-        <h2 className="mt-4 text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl lg:text-[2.1rem]">
-          <Link href={`/inspirasi/${article.slug}`} className="after:absolute after:inset-0 focus:outline-none">
+    <article className="inspo-reveal group relative flex gap-4 py-4" style={{ animationDelay: `${120 + index * 80}ms` }}>
+      <div className="min-w-0 flex-1">
+        <CategoryBadge category={article.category} />
+        <h3 className="mt-1.5 line-clamp-3 text-base font-extrabold leading-snug text-ink">
+          <Link href={`/inspirasi/${article.slug}`} className="ed-title-link after:absolute after:inset-0 focus:outline-none">
             {article.title}
           </Link>
-        </h2>
-        {article.excerpt && <p className="mt-4 line-clamp-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">{article.excerpt}</p>}
-        <div className="mt-6 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cobalt-900 text-sm font-extrabold text-sun-400">
-            {article.author_name.slice(0, 1).toUpperCase()}
-          </span>
-          <div className="text-sm">
-            <p className="font-bold text-ink">{article.author_name}</p>
-            <p className="text-slate-500">
-              {articleDate(article.published_at)} · {article.reading_minutes} menit baca
-            </p>
-          </div>
-          <span className="ml-auto hidden items-center gap-1 text-sm font-bold text-brand-600 transition group-hover:gap-2 sm:inline-flex dark:text-brand-500">
-            Baca <span aria-hidden="true">→</span>
-          </span>
-        </div>
+        </h3>
+        <ArticleMeta article={article} className="mt-2" />
+      </div>
+      <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-md bg-mist sm:w-28">
+        <Cover src={article.cover} alt="" sizes="112px" className="transition duration-500 group-hover:scale-[1.05]" />
       </div>
     </article>
   );

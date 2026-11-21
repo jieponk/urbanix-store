@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDownIcon, GridIcon } from '@/components/Icons';
+import { useT } from '@/components/LangProvider';
 
 type Item = { id: number; name: string };
 
@@ -11,6 +12,7 @@ type Item = { id: number; name: string };
  * HP: panel selebar layar tepat di bawah header. Desktop: panel 2 kolom di bawah tombol.
  */
 export default function CategoryMenu({ categories, showPromo }: { categories: Item[]; showPromo: boolean }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -44,7 +46,7 @@ export default function CategoryMenu({ categories, showPromo }: { categories: It
         }`}
       >
         <GridIcon size={16} />
-        Kategori
+        {t('Kategori')}
         <ChevronDownIcon size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -60,7 +62,7 @@ export default function CategoryMenu({ categories, showPromo }: { categories: It
                 onClick={close}
                 className="rounded-xl bg-sale-600 px-3 py-3 text-sm font-bold text-white hover:bg-sale-700"
               >
-                Produk promo
+                {t('Produk promo')}
               </Link>
             )}
             <Link
@@ -68,7 +70,7 @@ export default function CategoryMenu({ categories, showPromo }: { categories: It
               onClick={close}
               className={`rounded-xl bg-mist px-3 py-3 text-sm font-bold text-ink hover:bg-slate-200 ${showPromo ? '' : 'col-span-2'}`}
             >
-              Semua produk
+              {t('Semua produk')}
             </Link>
           </div>
 

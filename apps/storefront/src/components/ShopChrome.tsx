@@ -7,13 +7,16 @@ export default function ShopChrome({
   header,
   footer,
   children,
+  seller = false,
 }: {
+  /** true di seller.urbanix.id (dari header x-seller middleware): semua halaman milik Seller Center. */
+  seller?: boolean;
   header: React.ReactNode;
   footer: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || '';
-  if (pathname === '/seller' || pathname.startsWith('/seller/')) return <>{children}</>;
+  if (seller || pathname === '/seller' || pathname.startsWith('/seller/')) return <>{children}</>;
   return (
     <>
       {/* "contents" agar header tetap sticky; disembunyikan saat mencetak (mis. invoice) */}

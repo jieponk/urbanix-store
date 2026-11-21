@@ -1,12 +1,18 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Footer from '@/components/Footer';
+import BrandMarquee, { topBrands } from '@/components/BrandMarquee';
+import HideOnHome from '@/components/HideOnHome';
 import ShopChrome from '@/components/ShopChrome';
 import SiteHeader from '@/components/SiteHeader';
+import { MobileNav } from '@/components/HeaderMenu';
+import { LangProvider } from '@/components/LangProvider';
+import { getLang } from '@/lib/lang-server';
 import { themeScript } from '@/components/ThemeToggle';
 import { getActiveProducts, getCategories, getStoreSettings, promoSummary } from '@/lib/api';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL, jsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { siteConfig } from '@/lib/siteConfig';
+import { headers } from 'next/headers';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -15,12 +21,12 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
-export const metadata = {
+const baseMetadata = {
   title: {
     default: `URBANIX STORE | ${siteConfig.tagline}`,
     template: '%s | URBANIX STORE',
   },
-  description: siteConfig.motto,
+  description: siteConfig.metaDescription,
   metadataBase: new URL(SITE_URL),
   applicationName: siteConfig.name,
   alternates: {
@@ -32,10 +38,10 @@ export const metadata = {
     locale: 'id_ID',
     siteName: siteConfig.name,
     title: `URBANIX STORE | ${siteConfig.tagline}`,
-    description: siteConfig.motto,
-    images: [{ url: '/brand/og-image.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
+    description: siteConfig.metaDescription,
+    images: [{ url: '/brand/og-urbanix-v2.png', width: 1200, height: 630, alt: 'Urbanix Store' }],
   },
-  twitter: { card: 'summary_large_image', images: ['/brand/og-image.png'] },
+  twitter: { card: 'summary_large_image', images: ['/brand/og-urbanix-v2.png'] },
   // Kode verifikasi Google Search Console (opsional). Isi GOOGLE_SITE_VERIFICATION di .env
   // bila mendaftar lewat cara "tag HTML". Kalau kosong, baris ini tidak ditampilkan.
   verification: process.env.GOOGLE_SITE_VERIFICATION
@@ -46,6 +52,14 @@ export const metadata = {
   formatDetection: { telephone: false, email: false, address: false },
 };
 
+/** og:url = alamat halaman yang sedang dibuka (dari middleware), tanpa query. Halaman lain yang punya
+ *  openGraph sendiri wajib menulis `url` juga, karena openGraph anak menggantikan milik layout. */
+export function generateMetadata() {
+  const path = headers().get('x-pathname') || '/';
+  const safe = /^\/[A-Za-z0-9\-._~/%]*$/.test(path) ? path : '/';
+  return { ...baseMetadata, openGraph: { ...baseMetadata.openGraph, url: safe } };
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [categories, settings, products] = await Promise.all([
     getCategories(),
@@ -53,14 +67,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     getActiveProducts().catch(() => []),
   ]);
   const promo = promoSummary(products);
+  const lang = getLang();
 
   return (
-    <html lang="id" className={jakarta.variable} suppressHydrationWarning>
+    <html lang={lang} className={jakarta.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Identitas toko & nama situs untuk Google */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(
+            organizationJsonLd({ whatsapp: settings?.whatsapp_number, shopeeUrl: settings?.shopee_store_url })
+          )}
+        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd())} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
+        <LangProvider lang={lang}>
         <ShopChrome
+          seller={headers().get('x-seller') === '1'}
           header={
             <SiteHeader
               categories={categories}
@@ -69,10 +94,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               whatsappDiscount={Number(settings?.whatsapp_discount_percent) || 0}
             />
           }
-          footer={<Footer categories={categories} settings={settings} />}
+          footer={
+            <>
+              <HideOnHome>
+                <BrandMarquee brands={topBrands()} />
+              </HideOnHome>
+              <Footer categories={categories} settings={settings} />
+              <MobileNav
+                categories={categories.map(({ id, name }) => ({ id, name }))}
+                whatsappNumber={settings?.whatsapp_number ?? ''}
+                showPromo={Boolean(promo)}
+              />
+            </>
+          }
         >
           {children}
         </ShopChrome>
+        </LangProvider>
       </body>
     </html>
   );

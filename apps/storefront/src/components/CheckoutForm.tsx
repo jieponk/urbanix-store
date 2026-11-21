@@ -3,12 +3,23 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { money } from '@/lib/api';
+import { money, weightText } from '@/lib/money';
 import { CartItem, cartLineId, cartProductId, clearCart, getCart, saveCart } from '@/lib/cart';
 import { ArrowLeftIcon } from '@/components/Icons';
 import { getClaimed, type VoucherInfo } from '@/lib/vouchers';
 import { productImg } from '@/lib/img';
 import { rememberOrder } from '@/lib/recentOrders';
+import { SHIPPING_GROUPS, type LogoKey } from '@/lib/shipping';
+import CourierBadge from '@/components/CourierBadge';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
+import AddressFields from '@/components/AddressFields';
+import { publicSku } from '@/lib/seo';
+import { addressLine, getSavedAddresses, removeAddress, saveAddress, type SavedAddress } from '@/lib/savedAddress';
+import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
+import { useOngkir, type Rate } from '@/lib/useOngkir';
+import MapPicker, { type LatLng } from '@/components/MapPicker';
 
 type Method = 'MIDTRANS' | 'WHATSAPP' | 'SHOPEE';
 
@@ -31,8 +42,10 @@ type QuoteItem = {
 type Quote = {
   items: QuoteItem[];
   subtotal: string;
+  total_weight_grams?: number;
+  weight_complete?: boolean;
   shipping_note: string;
-  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean };
+  methods: { midtrans: boolean; whatsapp: boolean; shopee: boolean; ongkir_auto?: boolean; ongkir_instant?: boolean };
   vouchers: {
     discount_amount: string;
     shipping_discount_max: string;
@@ -46,16 +59,25 @@ type Quote = {
 
 type ShopeeLink = { name: string; variation_name: string; quantity: number; url: string };
 
-const METHOD_INFO: Record<Method, { key: keyof Quote['methods']; title: string; text: string }> = {
+/** Logo resmi kurir ongkir otomatis (public/couriers) selain JNE & J&T. */
+const EXTRA_COURIER_LOGOS: Record<string, string> = {
+  sicepat: '/couriers/sicepat.webp',
+  anteraja: '/couriers/anteraja.webp',
+  pos: '/couriers/pos.webp',
+  lion: '/couriers/lion.webp',
+  idexpress: '/couriers/idexpress.webp',
+};
+
+const METHOD_INFO: Record<Method, { key: 'midtrans' | 'whatsapp' | 'shopee'; title: string; text: string }> = {
   MIDTRANS: {
     key: 'midtrans',
     title: 'Bayar di web',
-    text: 'QRIS, transfer bank (virtual account), e-wallet, atau kartu lewat Midtrans.',
+    text: 'QRIS, virtual account bank, e-wallet, kartu, gerai Indomaret/Alfamart, atau paylater lewat Midtrans.',
   },
   WHATSAPP: {
     key: 'whatsapp',
     title: 'Pesan via WhatsApp',
-    text: 'Pesanan dikirim ke admin. Ongkir dan cara bayar dikonfirmasi lewat chat.',
+    text: 'Pesanan dikirim ke admin, lalu admin membalas info pembayaran lewat chat.',
   },
   SHOPEE: {
     key: 'shopee',
@@ -69,9 +91,12 @@ const EMPTY_FORM = {
   phone: '',
   email: '',
   address: '',
-  city: '',
   province: '',
+  city: '',
+  district: '',
+  village: '',
   postal_code: '',
+  service: '',
   notes: '',
 };
 type FormState = typeof EMPTY_FORM;
@@ -113,7 +138,8 @@ function parseErrors(data: Record<string, unknown>): { fields: FieldErrors; gene
   return { fields, general };
 }
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ courierLogos = {} }: { courierLogos?: Partial<Record<LogoKey, string>> }) {
+  const t = useT();
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[] | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -125,6 +151,9 @@ export default function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
   const [shopeeLinks, setShopeeLinks] = useState<ShopeeLink[] | null>(null);
   const [idemKey] = useState(makeKey);
+  const [saved, setSaved] = useState<SavedAddress[]>([]);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [remember, setRemember] = useState(true);
 
   const [codes, setCodes] = useState<string[]>([]);
   const [codeInput, setCodeInput] = useState('');
@@ -132,6 +161,48 @@ export default function CheckoutForm() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const itemsRef = useRef<CartItem[]>([]);
   const firstLoad = useRef(true);
+
+  const ongkirAuto = Boolean(quote?.methods.ongkir_auto) && method !== 'SHOPEE' && method !== null;
+  const ongkirItems = useMemo(
+    () => (quote?.items ?? []).map((i) => ({ product_id: i.product_id, variation_id: i.variation_id, quantity: i.quantity })),
+    [quote]
+  );
+  // Kurir instan (GoSend/Grab): tarif dari jarak → pembeli menandai titik lokasi di peta.
+  const instantEnabled = ongkirAuto && Boolean(quote?.methods.ongkir_instant);
+  const [pin, setPin] = useState<LatLng | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
+  const ongkir = useOngkir(
+    ongkirAuto,
+    { village: form.village, district: form.district, city: form.city, postal_code: form.postal_code },
+    ongkirItems,
+    instantEnabled ? pin : null
+  );
+
+  // Posisi awal peta: tengah kecamatan pembeli
+  useEffect(() => {
+    if (!showMap || pin || !form.district || !form.city) return;
+    let cancelled = false;
+    fetch(`/api/ongkir/titik?q=${encodeURIComponent([form.village, form.district, form.city].filter(Boolean).join(', '))}`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d.point) setMapCenter(d.point); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showMap, form.district, form.city, form.village, pin]);
+  const selectedRate: Rate | null = ongkir.rates.find((r) => r.code === form.service) ?? null;
+
+  // Tarif berganti (alamat/keranjang berubah): pilihan lama yang tak tersedia dihapus.
+  useEffect(() => {
+    if (form.service.includes(':') && !ongkir.rates.some((r) => r.code === form.service)) {
+      setForm((f) => ({ ...f, service: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongkir.rates]);
+
+  // Bayar di web hanya dengan kurir bertarif otomatis.
+  useEffect(() => {
+    if (method === 'MIDTRANS' && form.service && !form.service.includes(':')) setForm((f) => ({ ...f, service: '' }));
+  }, [method, form.service]);
 
   const loadQuote = useCallback(async (voucherCodes: string[], paymentMethod: Method | null) => {
     const items = itemsRef.current ?? [];
@@ -152,7 +223,7 @@ export default function CheckoutForm() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(parseErrors(data).general || 'Gagal memuat ringkasan.');
+      if (!res.ok) throw new Error(parseErrors(data).general || t('Gagal memuat ringkasan.'));
       const q = data as Quote;
       setQuote(q);
       setQuoteError('');
@@ -185,6 +256,36 @@ export default function CheckoutForm() {
     } finally {
       setQuoteLoading(false);
     }
+  }, []);
+
+  function applySaved(a: SavedAddress) {
+    setForm((f) => ({
+      ...f,
+      name: a.name,
+      phone: a.phone,
+      email: a.email,
+      address: a.street,
+      province: a.province,
+      city: a.city,
+      district: a.district,
+      village: a.village,
+      postal_code: a.postal_code,
+    }));
+    setErrors({});
+    setSavedId(a.id);
+  }
+
+  function newAddress() {
+    setForm((f) => ({ ...EMPTY_FORM, service: f.service, notes: f.notes }));
+    setErrors({});
+    setSavedId(null);
+  }
+
+  // Alamat tersimpan di perangkat ini: yang terakhir dipakai langsung terisi.
+  useEffect(() => {
+    const list = getSavedAddresses();
+    setSaved(list);
+    if (list[0]) applySaved(list[0]);
   }, []);
 
   // 1. Baca keranjang + voucher yang sudah diklaim, 2. minta harga, stok & potongan dari server.
@@ -236,16 +337,36 @@ export default function CheckoutForm() {
     setErrors((e) => ({ ...e, [field]: undefined }));
   }
 
+  function updateMany(patch: Partial<FormState>) {
+    setForm((f) => ({ ...f, ...patch }));
+    setErrors((e) => {
+      const next = { ...e };
+      for (const k of Object.keys(patch)) delete next[k as keyof FormState];
+      return next;
+    });
+  }
+
+  /** Alamat untuk admin/kurir: jalan + kelurahan + kecamatan dalam satu baris. */
+  function fullStreet() {
+    return [form.address.trim(), form.village.trim(), form.district.trim() && `Kec. ${form.district.trim()}`]
+      .filter(Boolean)
+      .join(', ');
+  }
+
   function validate(): FieldErrors {
     const e: FieldErrors = {};
     if (!needsForm) return e;
-    if (!form.name.trim()) e.name = 'Nama wajib diisi.';
+    if (!form.name.trim()) e.name = t('Nama wajib diisi.');
     if (!/^(\+62|62|0)8[0-9]{7,12}$/.test(form.phone.replace(/[\s\-().]/g, '')))
-      e.phone = 'Nomor HP tidak valid. Contoh: 081234567890.';
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = 'Email tidak valid.';
-    if (form.address.trim().length < 10) e.address = 'Tulis alamat lengkap (jalan, nomor, RT/RW, kelurahan).';
-    if (!form.city.trim()) e.city = 'Kota/kabupaten wajib diisi.';
-    if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = 'Kode pos harus 5 angka.';
+      e.phone = t('Nomor HP tidak valid. Contoh: 081234567890.');
+    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = t('Email tidak valid.');
+    if (form.address.trim().length < 5) e.address = t('Tulis nama jalan, nomor rumah, dan RT/RW.');
+    if (!form.province.trim()) e.province = t('Provinsi wajib diisi.');
+    if (!form.city.trim()) e.city = t('Kota/kabupaten wajib diisi.');
+    if (!form.district.trim()) e.district = t('Kecamatan wajib diisi.');
+    if (form.postal_code && !/^[0-9]{5}$/.test(form.postal_code)) e.postal_code = t('Kode pos harus 5 angka.');
+    if (!form.service) e.service = t('Pilih jasa pengiriman.');
+    else if (form.service.includes(':') && !selectedRate) e.service = t('Pilih ulang kurirnya, tarif sedang dimuat ulang.');
     return e;
   }
 
@@ -257,7 +378,7 @@ export default function CheckoutForm() {
     setErrors(localErrors);
     setSubmitError('');
     if (Object.keys(localErrors).length > 0) {
-      setSubmitError('Periksa lagi kolom yang ditandai merah.');
+      setSubmitError(t('Periksa lagi kolom yang ditandai merah.'));
       return;
     }
 
@@ -276,10 +397,13 @@ export default function CheckoutForm() {
           ...(needsForm && {
             customer: { name: form.name, phone: form.phone, email: form.email },
             shipping: {
-              address: form.address,
+              address: fullStreet(),
               city: form.city,
               province: form.province,
               postal_code: form.postal_code,
+              service: form.service,
+              ...(selectedRate && ongkir.destination && { destination_id: ongkir.destination.id }),
+              ...(instantEnabled && pin && { latitude: pin.lat, longitude: pin.lng }),
             },
             notes: form.notes,
             voucher_codes: appliedCodes,
@@ -294,8 +418,8 @@ export default function CheckoutForm() {
         setErrors(parsed.fields);
         setSubmitError(
           res.status === 429
-            ? 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'
-            : parsed.general || 'Periksa lagi kolom yang ditandai merah.'
+            ? t('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.')
+            : parsed.general || t('Periksa lagi kolom yang ditandai merah.')
         );
         setSubmitting(false);
         return;
@@ -314,31 +438,44 @@ export default function CheckoutForm() {
 
       clearCart();
       rememberOrder(data.order_number);
+      if (remember) {
+        saveAddress({
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim(),
+          street: form.address.trim(),
+          province: form.province.trim(),
+          city: form.city.trim(),
+          district: form.district.trim(),
+          village: form.village.trim(),
+          postal_code: form.postal_code.trim(),
+        });
+      }
       if (method === 'MIDTRANS' && data.payment_url) {
         window.location.href = data.payment_url;
         return;
       }
       router.push(`/pesanan/${encodeURIComponent(data.order_number)}?baru=1`);
     } catch {
-      setSubmitError('Koneksi terputus. Periksa internet lalu coba lagi.');
+      setSubmitError(t('Koneksi terputus. Periksa internet lalu coba lagi.'));
       setSubmitting(false);
     }
   }
 
   // ------------------------------------------------------------ tampilan
   if (cart === null) {
-    return <p className="text-sm text-slate-500">Memuat keranjang…</p>;
+    return <p className="text-sm text-slate-500">{t('Memuat keranjang…')}</p>;
   }
 
   if (cart.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center">
-        <p className="mb-4 text-slate-500">Keranjang belanja kamu masih kosong.</p>
+        <p className="mb-4 text-slate-500">{t('Keranjang belanja kamu masih kosong.')}</p>
         <Link
           href="/produk"
           className="inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
         >
-          Mulai Belanja
+          {t('Mulai Belanja')}
         </Link>
       </div>
     );
@@ -349,23 +486,22 @@ export default function CheckoutForm() {
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
         <p className="font-semibold">{quoteError}</p>
         <Link href="/cart" className="mt-3 inline-block font-bold underline">
-          Kembali ke keranjang
+          {t('Kembali ke keranjang')}
         </Link>
       </div>
     );
   }
 
   if (!quote) {
-    return <p className="text-sm text-slate-500">Mengecek harga dan stok terbaru…</p>;
+    return <p className="text-sm text-slate-500">{t('Mengecek harga dan stok terbaru…')}</p>;
   }
 
   if (shopeeLinks) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-surface p-6">
-        <h2 className="text-lg font-black text-slate-900">Lanjut beli di Shopee</h2>
+        <h2 className="text-lg font-black text-slate-900">{t('Lanjut beli di Shopee')}</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Shopee hanya bisa membuka satu produk per klik. Buka setiap produk di bawah ini, lalu
-          masukkan ke keranjang Shopee dengan jumlah yang sama.
+          {t('Shopee hanya bisa membuka satu produk per klik. Buka setiap produk di bawah ini, lalu masukkan ke keranjang Shopee dengan jumlah yang sama.')}
         </p>
         <ul className="mt-5 divide-y divide-slate-100">
           {shopeeLinks.map((link) => (
@@ -374,7 +510,7 @@ export default function CheckoutForm() {
                 {link.name} <span className="text-slate-400">×{link.quantity}</span>
                 {link.variation_name && (
                   <span className="block text-xs text-slate-500">
-                    Pilih varian di Shopee: <b>{link.variation_name}</b>
+                    {t('Pilih varian di Shopee:')} <b>{link.variation_name}</b>
                   </span>
                 )}
               </span>
@@ -385,10 +521,10 @@ export default function CheckoutForm() {
                   rel="noopener noreferrer"
                   className="shrink-0 rounded-lg bg-ink px-4 py-2 text-xs font-bold text-surface hover:bg-slate-800"
                 >
-                  Buka di Shopee
+                  {t('Buka di Shopee')}
                 </a>
               ) : (
-                <span className="shrink-0 text-xs text-slate-400">Link belum tersedia</span>
+                <span className="shrink-0 text-xs text-slate-400">{t('Link belum tersedia')}</span>
               )}
             </li>
           ))}
@@ -399,7 +535,7 @@ export default function CheckoutForm() {
           className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-ink"
         >
           <ArrowLeftIcon size={16} />
-          Pilih metode lain
+          {t('Pilih metode lain')}
         </button>
       </div>
     );
@@ -411,20 +547,28 @@ export default function CheckoutForm() {
   const blocked = method !== 'SHOPEE' && outOfStock.length > 0;
   const voucherDiscount = Number(quote.vouchers.discount_amount) || 0;
   const shippingDiscount = Number(quote.vouchers.shipping_discount_max) || 0;
-  const total = Number(quote.total);
+  const shippingCost = selectedRate ? selectedRate.cost : null;
+  const shippingCut = shippingCost !== null ? Math.min(shippingCost, shippingDiscount) : 0;
+  const total = Number(quote.total) + (shippingCost !== null ? shippingCost - shippingCut : 0);
+  // Ongkir otomatis gagal (mis. kuota harian habis): pesanan WA tetap bisa pakai pilihan biasa (ongkir dari admin).
+  const manualGroups = SHIPPING_GROUPS.filter(
+    (g) =>
+      !ongkirAuto ||
+      (method === 'WHATSAPP' && (Boolean(ongkir.error) || (g.name === 'Instan' && !instantEnabled)))
+  );
   const rejected = quote.vouchers.rejected.filter((r) => codes.includes(r.code));
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
       <div className="space-y-6">
         {/* Metode pembayaran */}
-        <Section title="1. Metode pembayaran">
+        <Section title={t('1. Metode pembayaran')}>
           {availableMethods.length === 0 ? (
             <p className="text-sm text-red-600">
-              Belum ada metode pembayaran yang aktif. Silakan hubungi admin toko.
+              {t('Belum ada metode pembayaran yang aktif. Silakan hubungi admin toko.')}
             </p>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {availableMethods.map((m) => (
                 <label
                   key={m}
@@ -444,8 +588,12 @@ export default function CheckoutForm() {
                     className="mt-1 accent-slate-900"
                   />
                   <span>
-                    <span className="block font-bold text-slate-900">{METHOD_INFO[m].title}</span>
-                    <span className="block text-sm text-slate-500">{METHOD_INFO[m].text}</span>
+                    <span className="flex items-center gap-2 font-bold text-slate-900">
+                      {METHOD_INFO[m].key === 'whatsapp' && <SimpleIcon name="whatsapp" size={18} />}
+                      {METHOD_INFO[m].key === 'shopee' && <SimpleIcon name="shopee" size={18} />}
+                      {t(METHOD_INFO[m].title)}
+                    </span>
+                    <span className="block text-sm text-slate-500">{t(METHOD_INFO[m].text)}</span>
                   </span>
                 </label>
               ))}
@@ -454,7 +602,7 @@ export default function CheckoutForm() {
         </Section>
 
         {needsForm && (
-          <Section title="2. Voucher">
+          <Section title={t('2. Voucher')}>
             {quote.available_vouchers.length > 0 && (
               <ul className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
                 {quote.available_vouchers.map((v) => {
@@ -484,7 +632,7 @@ export default function CheckoutForm() {
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-bold text-ink">{v.headline}</span>
                           <span className="block truncate text-xs text-slate-500">
-                            {problem && selected ? problem.message : !usable ? 'Tidak berlaku untuk metode ini' : v.terms[0]}
+                            {problem && selected ? problem.message : !usable ? t('Tidak berlaku untuk metode ini') : v.terms[0]}
                           </span>
                         </span>
                         <span
@@ -502,12 +650,12 @@ export default function CheckoutForm() {
             )}
 
             {quote.available_vouchers.length > 1 && (
-              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">Geser untuk melihat voucher lain →</p>
+              <p className="mt-1 text-[11px] text-slate-500 sm:hidden">{t('Geser untuk melihat voucher lain')} <ArrowRight size={12} className="inline" /></p>
             )}
 
             {!showCodeInput ? (
               <button type="button" onClick={() => setShowCodeInput(true)} className="mt-3 text-sm font-bold text-ink underline">
-                Punya kode voucher lain?
+                {t('Punya kode voucher lain?')}
               </button>
             ) : (
             <div className="mt-3 flex gap-2">
@@ -520,9 +668,9 @@ export default function CheckoutForm() {
                     addCode();
                   }
                 }}
-                placeholder="Ketik kode voucher"
+                placeholder={t('Ketik kode voucher')}
                 autoFocus
-                aria-label="Kode voucher"
+                aria-label={t('Kode voucher')}
                 autoCapitalize="characters"
                 className={inputCls() + ' uppercase placeholder:normal-case'}
               />
@@ -531,7 +679,7 @@ export default function CheckoutForm() {
                 onClick={() => addCode()}
                 className="shrink-0 rounded-xl bg-ink px-4 text-sm font-bold text-surface hover:bg-slate-800"
               >
-                Pakai
+                {t('Pakai')}
               </button>
             </div>
             )}
@@ -544,52 +692,292 @@ export default function CheckoutForm() {
                     <b>{r.code}</b>: {r.message}
                   </span>
                   <button type="button" onClick={() => setCodes((c) => c.filter((x) => x !== r.code))} className="font-bold underline">
-                    Hapus
+                    {t('Hapus')}
                   </button>
                 </p>
               ))}
             <p className="mt-3 text-xs text-slate-500">
-              Maks. 1 voucher diskon + 1 gratis ongkir. Voucher yang sudah diklaim otomatis dipilih.
+              {t('Maks. 1 voucher diskon + 1 gratis ongkir. Voucher yang sudah diklaim otomatis dipilih.')}
             </p>
           </Section>
         )}
 
         {needsForm && (
           <>
-            <Section title="3. Data pembeli">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Nama lengkap" required error={errors.name} className="sm:col-span-2">
+            <Section title={t('3. Data pembeli')}>
+              {saved.length > 0 && (
+                <div className="mb-5">
+                  <p className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
+                    <PinIcon /> {t('Alamat tersimpan')}
+                  </p>
+                  <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {saved.map((a) => {
+                      const on = savedId === a.id;
+                      return (
+                        <li key={a.id} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => applySaved(a)}
+                            aria-pressed={on}
+                            className={`h-full w-full rounded-xl p-3 pr-9 text-left ring-1 transition ${
+                              on ? 'bg-mist ring-2 ring-ink' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <span className="block truncate text-sm font-bold text-ink">
+                              {a.name} <span className="font-normal text-slate-500">· {a.phone}</span>
+                            </span>
+                            <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-slate-500">{addressLine(a)}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              removeAddress(a.id);
+                              setSaved(getSavedAddresses());
+                              if (on) newAddress();
+                            }}
+                            aria-label={t('Hapus alamat tersimpan')}
+                            title={t('Hapus')}
+                            className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-ink"
+                          >
+                            <TablerIcon name="x" size={14} stroke={2.4} />
+                          </button>
+                        </li>
+                      );
+                    })}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={newAddress}
+                        aria-pressed={savedId === null}
+                        className={`flex h-full min-h-[64px] w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed p-3 text-sm font-bold transition ${
+                          savedId === null ? 'border-ink text-ink' : 'border-slate-300 text-slate-500 hover:border-slate-500 hover:text-ink'
+                        }`}
+                      >
+                        <span aria-hidden="true" className="text-lg leading-none">+</span> {t('Pakai alamat baru')}
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label={t('Nama lengkap')} required error={errors.name} className="sm:col-span-2">
                   <input value={form.name} onChange={(e) => update('name', e.target.value)} autoComplete="name" maxLength={120} className={inputCls(errors.name)} />
                 </Field>
-                <Field label="No. HP / WhatsApp" required error={errors.phone}>
+                <Field label={t('No. HP / WhatsApp')} required error={errors.phone}>
                   <input value={form.phone} onChange={(e) => update('phone', e.target.value)} inputMode="tel" autoComplete="tel" placeholder="081234567890" maxLength={20} className={inputCls(errors.phone)} />
                 </Field>
-                <Field label="Email (opsional)" error={errors.email}>
+                <Field label={t('Email (opsional)')} error={errors.email}>
                   <input value={form.email} onChange={(e) => update('email', e.target.value)} type="email" inputMode="email" autoComplete="email" className={inputCls(errors.email)} />
                 </Field>
               </div>
             </Section>
 
-            <Section title="4. Alamat pengiriman">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Alamat lengkap" required error={errors.address} className="sm:col-span-2">
-                  <textarea value={form.address} onChange={(e) => update('address', e.target.value)} rows={3} autoComplete="street-address" maxLength={500} placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan" className={inputCls(errors.address)} />
-                </Field>
-                <Field label="Kota / Kabupaten" required error={errors.city}>
-                  <input value={form.city} onChange={(e) => update('city', e.target.value)} autoComplete="address-level2" maxLength={100} className={inputCls(errors.city)} />
-                </Field>
-                <Field label="Provinsi" error={errors.province}>
-                  <input value={form.province} onChange={(e) => update('province', e.target.value)} autoComplete="address-level1" maxLength={100} className={inputCls(errors.province)} />
-                </Field>
-                <Field label="Kode pos" error={errors.postal_code}>
-                  <input value={form.postal_code} onChange={(e) => update('postal_code', e.target.value)} inputMode="numeric" autoComplete="postal-code" maxLength={5} className={inputCls(errors.postal_code)} />
+            <Section title={t('4. Alamat pengiriman')}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <AddressFields
+                  value={{ province: form.province, city: form.city, district: form.district, village: form.village, postal_code: form.postal_code }}
+                  onChange={(patch) => {
+                    updateMany(patch);
+                    setSavedId(null);
+                  }}
+                  errors={errors}
+                  inputClass={inputCls}
+                />
+                <Field label={t('Nama jalan, nomor rumah, RT/RW')} required error={errors.address} className="sm:col-span-2">
+                  <textarea
+                    value={form.address}
+                    onChange={(e) => {
+                      update('address', e.target.value);
+                      setSavedId(null);
+                    }}
+                    rows={2}
+                    autoComplete="street-address"
+                    maxLength={380}
+                    placeholder={t('Contoh: Jl. Melati No. 12, RT 03/RW 05, dekat masjid')}
+                    className={inputCls(errors.address)}
+                  />
                 </Field>
               </div>
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-mist p-3">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#191919]"
+                />
+                <span className="text-sm">
+                  <span className="block font-bold text-ink">{t('Simpan data & alamat untuk pembelian berikutnya')}</span>
+                  <span className="block text-xs text-slate-500">{t('Tersimpan hanya di browser perangkat ini, jadi nanti tidak perlu mengetik ulang.')}</span>
+                </span>
+              </label>
             </Section>
 
-            <Section title="5. Catatan untuk penjual (opsional)">
-              <Field label="Catatan" error={errors.notes}>
-                <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} rows={3} maxLength={1000} placeholder="Contoh: warna hitam, tolong dibungkus bubble wrap tebal" className={inputCls(errors.notes)} />
+            <Section title={t('5. Pilih pengiriman')}>
+              {ongkirAuto && (
+                <div className="mb-5">
+                  {!ongkir.destination && !ongkir.error && (
+                    <p className="rounded-xl bg-mist p-3 text-sm text-slate-600">
+                      {t('Lengkapi alamat (kecamatan & kode pos) untuk melihat ongkir.')}
+                    </p>
+                  )}
+                  {ongkir.destination && (
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <TablerIcon name="map-pin" size={14} />
+                      <span>{t('Tujuan ongkir:')}</span>
+                      {ongkir.options.length > 1 ? (
+                        <select
+                          value={ongkir.destination.id}
+                          onChange={(e) => {
+                            const next = ongkir.options.find((o) => o.id === e.target.value);
+                            if (next) ongkir.setDestination(next);
+                          }}
+                          aria-label={t('Tujuan ongkir')}
+                          className="min-w-0 max-w-full flex-1 truncate rounded-lg border border-slate-300 bg-surface px-2 py-1 text-xs font-semibold text-ink"
+                        >
+                          {ongkir.options.map((o) => (
+                            <option key={o.id} value={o.id}>{o.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="font-semibold text-ink">{ongkir.destination.label}</span>
+                      )}
+                    </div>
+                  )}
+                  {ongkir.loading && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-busy="true">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-[60px] animate-pulse rounded-xl bg-mist" />
+                      ))}
+                    </div>
+                  )}
+                  {!ongkir.loading && ongkir.rates.length > 0 && (
+                    <div role="radiogroup" aria-label={t('Jasa pengiriman')} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {ongkir.rates.map((r) => {
+                        const on = form.service === r.code;
+                        const known = r.courier === 'jne' || r.courier === 'jnt';
+                        const extraLogo = EXTRA_COURIER_LOGOS[r.courier];
+                        return (
+                          <label
+                            key={r.code}
+                            className={`flex min-w-0 cursor-pointer items-center gap-3 rounded-xl p-3 ring-1 transition ${
+                              on ? 'bg-brand-50 ring-2 ring-brand-600 dark:bg-brand-500/10' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <input type="radio" name="service" value={r.code} checked={on} onChange={() => update('service', r.code)} className="h-4 w-4 shrink-0 accent-[#111111]" />
+                            {known ? (
+                              <CourierBadge courier={r.courier as 'jne' | 'jnt'} logo={courierLogos[r.courier as 'jne' | 'jnt']} label={r.courier_name} />
+                            ) : extraLogo ? (
+                              <span className="inline-flex h-9 w-[76px] shrink-0 items-center justify-center rounded-lg bg-white px-1.5 ring-1 ring-black/5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={extraLogo} alt={r.courier_name} className="max-h-6 w-auto max-w-full object-contain" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex h-9 min-w-[76px] items-center justify-center rounded-lg bg-white px-2.5 text-[13px] font-black tracking-tight text-[#191919] ring-1 ring-black/5">
+                                {r.courier_name}
+                              </span>
+                            )}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-bold text-ink">{r.service}</span>
+                              <span className="block truncate text-xs text-slate-500">
+                                {r.instant && <b className="mr-1 text-emerald-700">{t('Instan')} ·</b>}
+                                {r.etd
+                                  ? r.etd.includes('jam')
+                                    ? t('Estimasi {n} jam', { n: r.etd.replace(' jam', '') })
+                                    : t('Estimasi {n} hari', { n: r.etd })
+                                  : r.description}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-sm font-extrabold text-ink tabular-nums">{money(r.cost)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {instantEnabled && ongkir.destination && (
+                    <div className="mt-3 rounded-xl bg-mist p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm text-ink">
+                          <b>{t('Mau sampai hari ini?')}</b>{' '}
+                          <span className="text-slate-600">
+                            {pin ? t('Titik lokasi sudah ditandai. Tarif GoSend/Grab ada di daftar di atas.') : t('Tandai titik lokasi untuk melihat tarif GoSend & GrabExpress.')}
+                          </span>
+                        </p>
+                        <button type="button" onClick={() => setShowMap((v) => !v)} className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-surface">
+                          {showMap ? t('Tutup peta') : pin ? t('Ubah titik') : t('Tandai di peta')}
+                        </button>
+                      </div>
+                      {showMap && (
+                        <div className="mt-3">
+                          <MapPicker
+                            value={pin}
+                            center={mapCenter}
+                            onChange={setPin}
+                            labels={{
+                              useMyLocation: t('Pakai lokasi saya'),
+                              hint: t('Geser pin atau ketuk peta tepat di depan rumah/gedung.'),
+                              locating: t('Mencari lokasi…'),
+                              denied: t('Izin lokasi ditolak. Geser pin secara manual.'),
+                              failed: t('Peta gagal dimuat. Coba muat ulang halaman.'),
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!ongkir.loading && ongkir.error && (
+                    <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                      {t(ongkir.error)}
+                      {method === 'MIDTRANS' && quote.methods.whatsapp && ' ' + t('Kamu tetap bisa pesan via WhatsApp.')}
+                    </p>
+                  )}
+                </div>
+              )}
+              {manualGroups.length > 0 && (
+              <div role="radiogroup" aria-label={t('Jasa pengiriman')} className="space-y-5">
+                {manualGroups.map((group) => (
+                  <div key={group.name}>
+                    <p className="text-sm font-extrabold text-ink">
+                      {t(group.name)} <span className="font-normal text-slate-500">· {t(ongkirAuto ? 'Ongkir dikonfirmasi admin' : group.note)}</span>
+                    </p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {group.options.map((o) => {
+                        const on = form.service === o.code;
+                        return (
+                          <label
+                            key={o.code}
+                            className={`flex cursor-pointer items-center gap-3 rounded-xl p-3 ring-1 transition ${
+                              on ? 'bg-brand-50 ring-2 ring-brand-600 dark:bg-brand-500/10' : 'bg-surface ring-slate-200 hover:ring-slate-400'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="service"
+                              value={o.code}
+                              checked={on}
+                              onChange={() => update('service', o.code)}
+                              className="h-4 w-4 accent-[#111111]"
+                            />
+                            <CourierBadge courier={o.courier} logo={courierLogos[o.logo]} label={o.label} />
+                            <span className="text-sm font-bold text-ink">{o.short}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              )}
+              {errors.service && <p className="mt-3 text-sm font-semibold text-red-600">{errors.service}</p>}
+              <p className="mt-4 text-xs text-slate-500">
+                {ongkirAuto
+                  ? t('Ongkir dihitung otomatis dari tarif resmi ekspedisi sesuai alamat dan berat paket.')
+                  : t('Ongkir mengikuti tarif resmi ekspedisi dan dikonfirmasi admin lewat WhatsApp sebelum pembayaran.')}
+              </p>
+            </Section>
+
+            <Section title={t('6. Catatan untuk penjual (opsional)')}>
+              <Field label={t('Catatan')} error={errors.notes}>
+                <textarea value={form.notes} onChange={(e) => update('notes', e.target.value)} rows={3} maxLength={1000} placeholder={t('Contoh: warna hitam, tolong dibungkus bubble wrap tebal')} className={inputCls(errors.notes)} />
               </Field>
             </Section>
           </>
@@ -598,7 +986,7 @@ export default function CheckoutForm() {
 
       {/* Ringkasan */}
       <aside className="h-fit rounded-2xl border border-slate-200 bg-surface p-5 lg:sticky lg:top-24">
-        <h2 className="font-black text-slate-900">Ringkasan pesanan</h2>
+        <h2 className="font-black text-slate-900">{t('Ringkasan pesanan')}</h2>
         <ul className="mt-4 divide-y divide-slate-100">
           {quote.items.map((item) => (
             <li key={`${item.product_id}:${item.variation_id}`} className="flex gap-3 py-3">
@@ -606,12 +994,12 @@ export default function CheckoutForm() {
                 <img src={productImg(item.image_url, 120)} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-slate-100 object-contain" />
               )}
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm text-slate-800">{item.name}</p>
-                {(item.variation_name || item.sku) && (
+                <Link href={`/produk/${item.product_id}`} className="line-clamp-2 text-sm text-slate-800 hover:underline">{item.name}</Link>
+                {(item.variation_name || publicSku(item.sku)) && (
                   <p className="mt-0.5 text-xs text-slate-500">
                     {item.variation_name}
-                    {item.variation_name && item.sku && ' · '}
-                    {item.sku && `SKU ${item.sku}`}
+                    {item.variation_name && publicSku(item.sku) && ' · '}
+                    {publicSku(item.sku) && `SKU ${publicSku(item.sku)}`}
                   </p>
                 )}
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -619,7 +1007,7 @@ export default function CheckoutForm() {
                 </p>
                 {!item.in_stock && (
                   <p className="mt-0.5 text-xs font-semibold text-red-600">
-                    Stok tidak cukup (tersisa {item.stock})
+                    {t('Stok tidak cukup (tersisa {n})', { n: item.stock })}
                   </p>
                 )}
               </div>
@@ -630,44 +1018,60 @@ export default function CheckoutForm() {
 
         <dl className="mt-3 space-y-2 border-t border-slate-200 pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-slate-500">Subtotal</dt>
+            <dt className="text-slate-500">{t('Subtotal')}</dt>
             <dd className="font-semibold">{money(quote.subtotal)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Ongkos kirim</dt>
-            <dd className="text-right text-slate-500">Dikonfirmasi penjual</dd>
+            <dt className="text-slate-500">
+              {t('Ongkos kirim')}
+              {selectedRate && <span className="block text-xs">{selectedRate.courier_name} {selectedRate.service}</span>}
+            </dt>
+            <dd className={`text-right ${shippingCost !== null ? 'font-semibold' : 'text-slate-500'}`}>
+              {shippingCost !== null ? money(shippingCost) : ongkirAuto ? t('Pilih kurir') : t('Dikonfirmasi penjual')}
+            </dd>
           </div>
+          {quote.total_weight_grams ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-500">{t('Perkiraan berat kirim')}</dt>
+              <dd className="text-right text-slate-500">
+                {quote.weight_complete ? '' : '± '}
+                {weightText(quote.total_weight_grams)}
+              </dd>
+            </div>
+          ) : null}
           {quote.vouchers.applied
             .filter((a) => a.kind === 'discount')
             .map((a) => (
               <div key={a.code} className="flex justify-between gap-4 text-emerald-700">
-                <dt>Voucher {a.code}</dt>
+                <dt>{t('Voucher {code}', { code: a.code })}</dt>
                 <dd className="font-semibold">-{money(a.amount)}</dd>
               </div>
             ))}
           {shippingDiscount > 0 && (
             <div className="flex justify-between gap-4 text-emerald-700">
-              <dt>Potongan ongkir</dt>
-              <dd className="text-right font-semibold">s/d {money(shippingDiscount)}</dd>
+              <dt>{t('Potongan ongkir')}</dt>
+              <dd className="text-right font-semibold">
+                {shippingCost !== null ? `-${money(shippingCut)}` : t('s/d {date}', { date: money(shippingDiscount) })}
+              </dd>
             </div>
           )}
           <div className="flex justify-between border-t border-slate-200 pt-3 text-base">
-            <dt className="font-bold">Total produk</dt>
+            <dt className="font-bold">{shippingCost !== null ? t('Total bayar') : t('Total produk')}</dt>
             <dd className={`font-black text-slate-900 transition-opacity ${quoteLoading ? 'opacity-50' : ''}`}>
               {money(total)}
             </dd>
           </div>
           <p className="text-xs text-slate-500">
-            {quote.tax_note}
-            {shippingDiscount > 0 && ' Potongan ongkir dipotong saat admin mengonfirmasi ongkir.'}
-            {voucherDiscount === 0 && shippingDiscount === 0 && ' Belum ada voucher terpakai.'}
+            {t(quote.tax_note)}
+            {shippingDiscount > 0 && shippingCost === null && ' ' + t('Potongan ongkir dipotong saat admin mengonfirmasi ongkir.')}
+            {voucherDiscount === 0 && shippingDiscount === 0 && ' ' + t('Belum ada voucher terpakai.')}
           </p>
         </dl>
 
         {blocked && (
           <p className="mt-4 rounded-lg bg-red-50 p-3 text-xs text-red-700">
-            Ada produk yang stoknya tidak cukup. Kurangi jumlahnya di{' '}
-            <Link href="/cart" className="font-bold underline">keranjang</Link>.
+            {t('Ada produk yang stoknya tidak cukup. Kurangi jumlahnya di')}{' '}
+            <Link href="/cart" className="font-bold underline">{t('keranjang')}</Link>.
           </p>
         )}
         {submitError && (
@@ -678,25 +1082,31 @@ export default function CheckoutForm() {
 
         <button
           type="submit"
-          disabled={!method || submitting || blocked}
-          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!method || submitting || blocked || (method === 'MIDTRANS' && !selectedRate)}
+          className="mt-5 w-full rounded-xl bg-brand-600 px-5 py-4 font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? 'Memproses…'
             : method === 'MIDTRANS'
-              ? 'Bayar Sekarang'
+              ? t('Bayar Sekarang')
               : method === 'WHATSAPP'
-                ? 'Buat Pesanan & Buka WhatsApp'
+                ? t('Buat Pesanan & Buka WhatsApp')
                 : method === 'SHOPEE'
-                  ? 'Lanjut ke Shopee'
-                  : 'Pilih metode pembayaran'}
+                  ? t('Lanjut ke Shopee')
+                  : t('Pilih metode pembayaran')}
         </button>
         <Link href="/cart" className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-500 hover:text-ink">
           <ArrowLeftIcon size={15} />
-          Ubah keranjang
+          {t('Ubah keranjang')}
         </Link>
       </aside>
     </form>
+  );
+}
+
+function PinIcon() {
+  return (
+    <TablerIcon name="map-pin" size={16} />
   );
 }
 

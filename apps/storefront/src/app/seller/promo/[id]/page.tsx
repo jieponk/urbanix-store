@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ConfirmButton, Drawer, Empty, ErrorBox, Field, PageHeader, STATUS_TONE, Spinner, Thumb, Toggle, btn, inputCls } from '@/components/seller/ui';
 import { fromLocalInput, notify, parseNumber, rp, sellerApi, toLocalInput, useSellerData } from '@/lib/seller';
@@ -10,7 +11,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    if (data) setHead({ name: data.name, starts_at: toLocalInput(data.starts_at), ends_at: toLocalInput(data.ends_at), is_active: data.is_active });
+    if (data) setHead({ name: data.name, starts_at: toLocalInput(data.starts_at), ends_at: toLocalInput(data.ends_at), is_active: data.is_active, is_flash_sale: data.is_flash_sale });
   }, [data]);
 
   async function saveHead(patch?: any) {
@@ -44,7 +45,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
   async function removePromo() {
     await sellerApi(`promos/${params.id}`, { method: 'DELETE' });
     notify('Promo dihapus.');
-    window.location.href = '/seller/promo';
+    window.location.href = sellerHref('/seller/promo');
   }
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
@@ -53,7 +54,7 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/promo', label: 'Promo harga' }}
+        back={{ href: sellerHref('/seller/promo'), label: 'Promo harga' }}
         title={data.name}
         subtitle={<><Badge tone={STATUS_TONE[data.status]}>{data.status}</Badge> · {data.items.length} SKU</>}
         actions={<>
@@ -63,12 +64,19 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
       />
 
       <Card title="Jadwal promo" className="mb-4">
-        <form className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto_auto] sm:items-end" onSubmit={(e) => { e.preventDefault(); saveHead(); }}>
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_1fr_1fr_auto_auto] sm:items-end" onSubmit={(e) => { e.preventDefault(); saveHead(); }}>
           <Field label="Nama promo"><input className={inputCls} value={head.name} onChange={(e) => setHead({ ...head, name: e.target.value })} /></Field>
           <Field label="Mulai"><input type="datetime-local" className={inputCls} value={head.starts_at} onChange={(e) => setHead({ ...head, starts_at: e.target.value })} /></Field>
           <Field label="Selesai"><input type="datetime-local" className={inputCls} value={head.ends_at} onChange={(e) => setHead({ ...head, ends_at: e.target.value })} /></Field>
           <label className="flex items-center gap-2 pb-2.5 text-sm font-bold text-ink"><Toggle checked={head.is_active} onChange={(v) => setHead({ ...head, is_active: v })} /> Aktif</label>
           <button type="submit" className={btn.primary}>Simpan</button>
+          <label className="flex items-start gap-3 rounded-xl bg-mist p-3 text-sm sm:col-span-5">
+            <Toggle checked={!!head.is_flash_sale} onChange={(v) => setHead({ ...head, is_flash_sale: v })} />
+            <span>
+              <b className="block text-ink">⚡ Jadikan Flash Sale</b>
+              <span className="text-xs text-slate-500">Tampil di beranda dengan hitung mundur sampai waktu Selesai, dan bar “Tersisa X” bila kuota diisi. Isi waktu Selesai supaya hitung mundurnya muncul. Klik Simpan setelah mengubah.</span>
+            </span>
+          </label>
         </form>
       </Card>
 
@@ -90,7 +98,8 @@ export default function PromoDetailPage({ params }: { params: { id: string } }) 
 function ItemRow({ item, onSave, onRemove }: { item: any; onSave: (items: any[]) => Promise<any>; onRemove: (id: number) => void }) {
   const [mode, setMode] = useState<'price' | 'percent'>(item.promo_price !== null ? 'price' : 'percent');
   const [value, setValue] = useState(String(item.promo_price ?? item.discount_percent ?? ''));
-  const save = () => onSave([{ product_id: item.product_id, variation_id: item.variation_id, ...(mode === 'price' ? { promo_price: parseNumber(value) } : { discount_percent: value.replace(',', '.') }) }]);
+  const [quota, setQuota] = useState(item.quota != null ? String(item.quota) : '');
+  const save = () => onSave([{ product_id: item.product_id, variation_id: item.variation_id, quota: quota.trim(), ...(mode === 'price' ? { promo_price: parseNumber(value) } : { discount_percent: value.replace(',', '.') }) }]);
   const pct = item.normal_price ? Math.round((1 - item.final_price / item.normal_price) * 100) : 0;
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
@@ -98,6 +107,9 @@ function ItemRow({ item, onSave, onRemove }: { item: any; onSave: (items: any[])
       <span className="min-w-[160px] flex-1">
         <span className="block text-sm font-bold text-ink">{item.name}</span>
         <span className="text-xs text-slate-500">{[item.variation, item.sku, `stok ${item.stock}`].filter(Boolean).join(' · ')}</span>
+        {item.quota != null && (
+          <span className="mt-1 block text-xs font-bold text-sale-600">Terjual {item.sold} / {item.quota} · sisa {Math.max(0, item.quota - item.sold)}</span>
+        )}
       </span>
       <span className="text-right text-sm">
         <s className="block text-xs text-slate-500">{rp(item.normal_price)}</s>
@@ -109,6 +121,7 @@ function ItemRow({ item, onSave, onRemove }: { item: any; onSave: (items: any[])
           <option value="percent">Persen %</option>
         </select>
         <input className={`${inputCls} w-28 py-2`} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Nilai promo" />
+        <input className={`${inputCls} w-20 py-2`} inputMode="numeric" value={quota} onChange={(e) => setQuota(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Kuota" title="Kuota barang dengan harga ini. Kosong = tanpa batas." aria-label="Kuota" />
         <button type="button" className={btn.small} onClick={save}>Simpan</button>
         <ConfirmButton onConfirm={() => onRemove(item.id)} confirmText="Hapus">✕</ConfirmButton>
       </span>
@@ -180,7 +193,7 @@ function AddProducts({ open, onClose, onSave }: { open: boolean; onClose: () => 
                 <span className="text-xs text-slate-500">{p.sku} · {rp(p.price)}{p.variations > 0 && ` · ${p.variations} varian`}</span>
               </span>
               {p.variations === 0 ? (
-                <input type="checkbox" className="h-5 w-5 accent-[#1b2559]" checked={Boolean(picked[`${p.id}-`])} onChange={() => expand(p)} aria-label={`Pilih ${p.name}`} />
+                <input type="checkbox" className="h-5 w-5 accent-[#111111]" checked={Boolean(picked[`${p.id}-`])} onChange={() => expand(p)} aria-label={`Pilih ${p.name}`} />
               ) : !p.variation_list ? (
                 <button type="button" className={btn.small} onClick={() => expand(p)}>Pilih varian</button>
               ) : null}
@@ -194,7 +207,7 @@ function AddProducts({ open, onClose, onSave }: { open: boolean; onClose: () => 
                   const key = `${p.id}-${v.id}`;
                   return (
                     <li key={v.id} className="flex flex-wrap items-center gap-2 text-sm">
-                      <input type="checkbox" className="h-4 w-4 accent-[#1b2559]" checked={Boolean(picked[key])}
+                      <input type="checkbox" className="h-4 w-4 accent-[#111111]" checked={Boolean(picked[key])}
                         onChange={() => togglePick(key, { product_id: p.id, variation_id: v.id, label: v.name, normal: v.price })} aria-label={`Pilih ${v.name}`} />
                       <span className="flex-1">{v.name} <span className="text-xs text-slate-500">· {rp(v.price)} · stok {v.stock}</span></span>
                       {mode === 'price' && picked[key] && (

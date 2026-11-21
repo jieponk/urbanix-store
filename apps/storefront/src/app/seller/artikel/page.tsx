@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, ConfirmButton, Drawer, Empty, ErrorBox, PageHeader, Pagination, Spinner, Tabs, Thumb, btn, inputCls } from '@/components/seller/ui';
@@ -27,7 +28,7 @@ export default function ArticlesPage() {
         actions={
           <>
             <button type="button" className={btn.ghost} onClick={() => setCatsOpen(true)}>Kategori</button>
-            <Link href="/seller/artikel/baru" className={btn.brand}>+ Tulis artikel</Link>
+            <Link href={sellerHref('/seller/artikel/baru')} className={btn.brand}>+ Tulis artikel</Link>
           </>
         }
       />
@@ -53,7 +54,7 @@ export default function ArticlesPage() {
               <li key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
                 <Thumb src={a.cover || '/inspirasi/default-cover.webp'} />
                 <div className="min-w-0 flex-1">
-                  <Link href={`/seller/artikel/${a.id}`} className="line-clamp-1 font-bold text-ink hover:underline">{a.title}</Link>
+                  <Link href={sellerHref(`/seller/artikel/${a.id}`)} className="line-clamp-1 font-bold text-ink hover:underline">{a.title}</Link>
                   <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                     <Badge tone={a.status === 'PUBLISHED' ? 'green' : 'gray'}>{a.status === 'PUBLISHED' ? 'Terbit' : 'Draf'}</Badge>
                     {a.is_pinned && <Badge tone="amber">📌 Disematkan</Badge>}
@@ -61,16 +62,16 @@ export default function ArticlesPage() {
                     <span>· {a.status === 'PUBLISHED' ? fmtDate(a.published_at) : `diubah ${fmtDate(a.updated_at)}`}</span>
                     <span>· {a.views} dibaca</span>
                     {a.pending_comments > 0 && (
-                      <Link href="/seller/komentar" className="font-bold text-amber-700">· {a.pending_comments} komentar menunggu</Link>
+                      <Link href={sellerHref('/seller/komentar')} className="font-bold text-amber-700">· {a.pending_comments} komentar menunggu</Link>
                     )}
                   </p>
                 </div>
                 <div className="flex gap-1.5">
                   <button type="button" className={btn.small} onClick={() => pin(a)}>{a.is_pinned ? 'Lepas sematan' : 'Sematkan'}</button>
                   {a.status === 'PUBLISHED' && (
-                    <a href={`/inspirasi/${a.slug}`} target="_blank" rel="noopener noreferrer" className={btn.small}>Lihat</a>
+                    <a href={shopHref(`/inspirasi/${a.slug}`)} target="_blank" rel="noopener noreferrer" className={btn.small}>Lihat</a>
                   )}
-                  <Link href={`/seller/artikel/${a.id}`} className={btn.small}>Edit</Link>
+                  <Link href={sellerHref(`/seller/artikel/${a.id}`)} className={btn.small}>Edit</Link>
                 </div>
               </li>
             ))}

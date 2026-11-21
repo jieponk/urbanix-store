@@ -6,39 +6,46 @@ module.exports = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        // Urbanix Orange: tombol utama & identitas toko
+        // Palet "Hitam keabuan + merah" (17 Nov 2026): merah #E30220, merah tua #BE0000, hitam keabuan #191919,
+        // abu #DDDDDD, putih keabuan #F3F4F6. Identitas Urbanix tetap hitam-putih (sesuai logo). "brand" = warna tombol utama:
+        // hitam di mode terang, putih di mode gelap. Teks di atasnya pakai `text-onbrand`.
         brand: {
-          50: '#fff4ed',
-          100: '#ffe4d3',
-          500: '#ff5b14',
-          600: '#cf4309', // tombol: kontras teks putih ≥ 4.5
-          700: '#b03905',
-          dark: '#1b2559',
-          accent: '#ff5b14',
+          50: 'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-50) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
+          dark: '#191919',
+          accent: 'rgb(var(--brand-500) / <alpha-value>)',
         },
-        // Cobalt Night: panel promo, footer
+        onbrand: 'rgb(var(--onbrand) / <alpha-value>)',
+        // Panel gelap (footer, header atas, kotak promo): hitam netral, sama di kedua mode
         cobalt: {
-          700: '#24307a',
-          800: '#1b2559',
-          900: '#121a42',
+          700: '#2e2e2e',
+          800: '#222222',
+          900: '#191919',
         },
-        // Shutter Yellow: angka hitung mundur & sorotan promo
+        // Sorotan (dulu kuning): merah terang, dipakai di atas panel hitam
+        // 400 = merah palet (lencana/ikon besar); 300 = versi terang untuk TEKS kecil di atas panel gelap
         sun: {
-          100: '#fff4cc',
-          300: '#ffdb6e',
-          400: '#ffc93c',
+          100: '#fdebed',
+          300: '#ff5a6e',
+          400: '#e30220',
         },
         // Sale Red: label diskon
         sale: {
-          50: '#fdecee',
-          600: '#e5243b',
-          700: '#c01a2f',
+          50: '#fdebed',
+          600: '#e30220',
+          700: '#be0000',
         },
         // Warna dasar yang berganti otomatis di mode gelap (lihat globals.css)
+        // Merah editorial (Inspirasi & Berita); di mode gelap otomatis lebih terang
+        ed: 'rgb(var(--ed) / <alpha-value>)',
         ink: 'rgb(var(--ink) / <alpha-value>)',
         mist: 'rgb(var(--mist) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',

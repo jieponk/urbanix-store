@@ -1,14 +1,35 @@
 import Link from 'next/link';
+import FooterGroup from '@/components/FooterGroup';
 import BrandLogo from '@/components/BrandLogo';
 import type { Category, StoreSettings } from '@/lib/api';
 import { findPublicImage } from '@/lib/assets';
 import { siteConfig } from '@/lib/siteConfig';
+import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
+import { FOOTER_COURIERS, FOOTER_COURIERS_FALLBACK } from '@/lib/shipping';
+import { LangLinks } from '@/components/HeaderMenu';
+import { getT } from '@/lib/lang-server';
+import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
   const local = number.replace(/\D/g, '').replace(/^62/, '0');
   return local.replace(/(\d{4})(\d{4})(\d+)/, '$1-$2-$3');
 }
+
+/** Logo pembayaran & kurir: abu-abu seragam, berwarna saat disorot (PC) atau disentuh (HP), seperti logo merek. */
+const LOGO_MONO =
+  'opacity-75 brightness-0 invert transition duration-300 group-hover/logo:opacity-100 group-hover/logo:brightness-100 group-hover/logo:invert-0 group-focus/logo:opacity-100 group-focus/logo:brightness-100 group-focus/logo:invert-0';
+/** Logo berbentuk kotak penuh bertulisan putih (Lion Parcel): siluet putih akan menghapus tulisannya, jadi pakai abu terbalik. */
+const LOGO_GRAY =
+  'opacity-80 grayscale invert transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-hover/logo:invert-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0 group-focus/logo:invert-0';
+const SOLID_LOGOS = ['lion'];
+/** Logo pembayaran berkotak/berwarna penuh (JCB, Indomaret, …): abu-abu redup, berwarna saat disentuh. */
+const LOGO_SOFT =
+  'opacity-80 grayscale transition duration-300 group-hover/logo:opacity-100 group-hover/logo:grayscale-0 group-focus/logo:opacity-100 group-focus/logo:grayscale-0';
+/** Kotak logo: gelap transparan menyatu dengan footer hitam, jadi putih saat disorot/disentuh agar warna logo terbaca. */
+const LOGO_BOX =
+  'group/logo flex h-9 items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] px-2 ring-1 ring-white/15 outline-none transition duration-300 hover:bg-white hover:ring-white focus:bg-white focus:ring-white';
 
 export default function Footer({
   categories,
@@ -17,8 +38,14 @@ export default function Footer({
   categories: Category[];
   settings: StoreSettings | null;
 }) {
+  const t = getT();
   const { contact, paymentMethods, motto, name } = siteConfig;
   const whatsapp = (settings?.whatsapp_number || contact.whatsappNumber).replace(/\D/g, '');
+  const active = settings?.couriers?.length ? settings.couriers : FOOTER_COURIERS_FALLBACK;
+  const couriers = FOOTER_COURIERS.filter((c) => active.includes(c.code)).map((c) => ({
+    ...c,
+    src: c.file ? findPublicImage('couriers', c.file) : null,
+  }));
   const payments = paymentMethods.map((method) => ({
     ...method,
     src: findPublicImage('payments', method.logo),
@@ -26,108 +53,176 @@ export default function Footer({
 
   return (
     <footer className="bg-cobalt-900 text-white/75">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:px-8">
-        <div>
-          <Link href="/" aria-label="Urbanix Store, ke beranda" className="inline-block">
-            <BrandLogo tone="light" size="lg" />
-          </Link>
-          <p className="mt-4 max-w-xs text-sm leading-6">{motto}</p>
-          {whatsapp && (
-            <a
-              href={`https://wa.me/${whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 hover:bg-sun-100"
-            >
-              Chat admin di WhatsApp
-            </a>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-sm font-bold text-white">Belanja</h2>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/produk?promo=1" className="hover:text-sun-400">Produk promo</Link></li>
-            <li><Link href="/produk" className="hover:text-sun-400">Semua produk</Link></li>
-            {categories.slice(0, 6).map((category) => (
-              <li key={category.id}>
-                <Link href={`/produk?category=${category.id}`} className="hover:text-sun-400">
-                  {category.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-bold text-white">Bantuan</h2>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link href="/#cara-pesan" className="hover:text-sun-400">Cara pesan via WhatsApp</Link></li>
-            <li><Link href="/cart" className="hover:text-sun-400">Keranjang belanja</Link></li>
-            <li><Link href="/berita" className="hover:text-sun-400">Berita kamera &amp; fotografi</Link></li>
-            <li><Link href="/tentang-kami" className="hover:text-sun-400">Tentang kami</Link></li>
-            <li><Link href="/kontak" className="hover:text-sun-400">Kontak</Link></li>
-            <li><Link href="/cek-pesanan" className="hover:text-sun-400">Cek pesanan</Link></li>
-            <li><Link href="/syarat-ketentuan" className="hover:text-sun-400">Syarat &amp; Ketentuan</Link></li>
-            <li><Link href="/kebijakan-privasi" className="hover:text-sun-400">Kebijakan Privasi</Link></li>
-            {settings?.shopee_reviews_url && (
-              <li>
-                <a href={settings.shopee_reviews_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
-                  Ulasan pembeli di Shopee
-                </a>
-              </li>
-            )}
-            {settings?.shopee_store_url && (
-              <li>
-                <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
-                  Toko kami di Shopee
-                </a>
-              </li>
-            )}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-bold text-white">Kontak</h2>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            <li className="text-white">{contact.person}</li>
+      <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 md:pt-12 lg:px-8">
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.2fr_0.9fr_0.9fr_1fr_1.45fr] md:gap-8">
+          {/* Merek toko */}
+          <div className="pb-6 md:pb-0">
+            <Link href="/" aria-label={t('Urbanix Store, ke beranda')} className="inline-block">
+              <BrandLogo tone="light" size="lg" />
+            </Link>
+            <p className="mt-3 max-w-xs text-sm leading-6">{t(motto)}</p>
             {whatsapp && (
-              <li>
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-sun-400">
-                  WhatsApp {displayPhone(whatsapp)}
-                </a>
-              </li>
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
+              >
+                <SimpleIcon name="whatsapp" size={18} />
+                {t('Chat admin di WhatsApp')}
+              </a>
             )}
-            <li>
-              <a href={`mailto:${contact.email}`} className="hover:text-sun-400">{contact.email}</a>
-            </li>
-            <li>{contact.hours}</li>
-          </ul>
+          </div>
 
-          <h2 className="mt-7 text-sm font-bold text-white">Pembayaran</h2>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {payments.map((method) => (
-              <li key={method.name}>
-                {method.src ? (
-                  <span className="flex h-9 items-center gap-2 rounded-lg bg-white px-3">
-                    <img src={method.src} alt={method.showName ? '' : method.name} loading="lazy" width={60} height={20} className="h-5 w-auto max-w-[80px] object-contain" />
-                    {method.showName && <span className="text-xs font-bold text-cobalt-900">{method.name}</span>}
-                  </span>
-                ) : (
-                  <span className="flex h-9 items-center rounded-lg border border-white/15 px-3 text-xs font-semibold text-white">
-                    {method.name}
-                  </span>
+          <div className="border-t border-white/10 md:contents md:border-0">
+            <FooterGroup title={t('Belanja')}>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/produk?promo=1" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Produk promo')}</Link></li>
+                <li><Link href="/produk" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Semua produk')}</Link></li>
+                {categories.slice(0, 6).map((category) => (
+                  <li key={category.id}>
+                    <Link href={`/produk?category=${category.id}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{category.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </FooterGroup>
+
+            <FooterGroup title={t('Bantuan')}>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/#cara-pesan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Tanya admin via WhatsApp')}</Link></li>
+                <li><Link href="/cek-pesanan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cek pesanan')}</Link></li>
+                <li><Link href="/cart" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Keranjang belanja')}</Link></li>
+                <li><Link href="/syarat-ketentuan#pembayaran" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Cara pembayaran')}</Link></li>
+                <li><Link href="/syarat-ketentuan#pengiriman" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Pengiriman')}</Link></li>
+                <li><Link href="/syarat-ketentuan#pembatalan-retur" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Pengembalian & garansi')}</Link></li>
+              </ul>
+            </FooterGroup>
+
+            <FooterGroup title={t('Tentang Urbanix')}>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/tentang-kami" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Tentang kami')}</Link></li>
+                <li><Link href="/inspirasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Inspirasi: tips & review')}</Link></li>
+                <li><Link href="/berita" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Berita kamera & fotografi')}</Link></li>
+                {(settings?.shopee_reviews_url || settings?.shopee_store_url) && (
+                  <li>
+                    <ShopeeReviewsLink
+                      reviewsUrl={settings?.shopee_reviews_url}
+                      storeUrl={settings?.shopee_store_url}
+                      className="transition-colors hover:text-white hover:underline hover:underline-offset-4"
+                      desktopLabel={t('Ulasan pembeli di Shopee')}
+                      mobileLabel={t('Ulasan pembeli di Shopee')}
+                    />
+                  </li>
                 )}
-              </li>
-            ))}
-          </ul>
+                {settings?.shopee_store_url && (
+                  <li>
+                    <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" aria-label={t('Toko kami di Shopee')} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="shopee" size={15} />Urbanix Store</a>
+                  </li>
+                )}
+                <li><Link href="/kerja-sama" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kerja sama brand')}</Link></li>
+                <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Syarat & Ketentuan')}</Link></li>
+                <li><Link href="/kebijakan-privasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kebijakan Privasi')}</Link></li>
+              </ul>
+            </FooterGroup>
+
+            <FooterGroup title={t('Kontak')}>
+              <ul className="space-y-2.5 text-sm">
+                {whatsapp && (
+                  <li>
+                    <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${displayPhone(whatsapp)}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="whatsapp" size={15} />{displayPhone(whatsapp)}</a>
+                  </li>
+                )}
+                <li>
+                  <a href={`mailto:${contact.email}`} className="inline-flex items-start gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4">
+                    <TablerIcon name="mail" size={15} className="mt-0.5 shrink-0" />
+                    <span className="[overflow-wrap:anywhere] lg:whitespace-nowrap">{contact.email}</span>
+                  </a>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <TablerIcon name="clock" size={15} className="mt-0.5 shrink-0" />
+                  {/* "Senin–Sabtu, 09.00–17.00 WIB" → dua baris rapi, tidak terpotong di tengah jam */}
+                  <span>
+                    {t(contact.hours).split(', ').map((part) => (
+                      <span key={part} className="block whitespace-nowrap">{part}</span>
+                    ))}
+                  </span>
+                </li>
+                <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kontak dukungan')}</Link></li>
+              </ul>
+            </FooterGroup>
+          </div>
+        </div>
+
+        {/* Pembayaran & pengiriman: satu baris rapi */}
+        <div className="mt-8 grid grid-cols-1 gap-6 border-t border-white/10 py-7 sm:grid-cols-2 md:mt-10">
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-white/60">{t('Pembayaran')}</h2>
+            <ul className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-5">
+              {payments.map((method) => (
+                <li key={method.name}>
+                  <span title={method.name} tabIndex={0} className={LOGO_BOX}>
+                    {method.src && (
+                      <img
+                        src={method.src}
+                        alt={method.showName ? '' : method.name}
+                        loading="lazy"
+                        width={60}
+                        height={20}
+                        className={`${method.showName ? 'h-4 w-auto' : 'h-5 w-full object-contain'} ${method.solid ? LOGO_SOFT : LOGO_MONO}`}
+                      />
+                    )}
+                    {(!method.src || method.showName) && (
+                      <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-cobalt-900 group-focus/logo:text-cobalt-900">{method.name}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white/60">{t('Pengiriman')}</h2>
+              <Link href="/syarat-ketentuan#pengiriman" className="text-xs text-white/60 hover:text-white hover:underline">
+                {t('Detail')}
+              </Link>
+            </div>
+            <ul className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-5">
+              {couriers.map((c) => (
+                <li key={c.code}>
+                  <span title={c.name} tabIndex={0} className={LOGO_BOX}>
+                    {c.simple ? (
+                      <>
+                        <SimpleIcon
+                          name={c.simple}
+                          size={c.simple === 'grab' ? 34 : 16}
+                          color="current"
+                          title={c.simple === 'grab' ? c.name : undefined}
+                          className={`text-white/75 transition ${c.simple === 'grab' ? 'group-hover/logo:text-[#00B14F] group-focus/logo:text-[#00B14F]' : 'group-hover/logo:text-[#00AA13] group-focus/logo:text-[#00AA13]'}`}
+                        />
+                        {c.simple === 'gojek' && (
+                          <span className="text-[11px] font-black text-white/75 transition group-hover/logo:text-[#00AA13] group-focus/logo:text-[#00AA13]">GoSend</span>
+                        )}
+                      </>
+                    ) : c.src ? (
+                      <img src={c.src} alt={c.name} loading="lazy" width={60} height={20} className={`h-5 w-full object-contain ${SOLID_LOGOS.includes(c.code) ? LOGO_GRAY : LOGO_MONO}`} />
+                    ) : (
+                      <span className="truncate text-[11px] font-black text-white/75 transition group-hover/logo:text-slate-700 group-focus/logo:text-slate-700">{c.name}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
       <div className="border-t border-white/10">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/65 sm:px-6 lg:px-8">
-          © {new Date().getFullYear()} {name} · {siteConfig.legal.company}. Seluruh hak cipta dilindungi.
+        <div className="mx-auto flex max-w-7xl flex-col-reverse items-start gap-3 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <p className="text-xs leading-5 text-white/65">
+          © {new Date().getFullYear()} {name} · {siteConfig.legal.company}. {t('Seluruh hak cipta dilindungi.')}
         </p>
+        <LangLinks />
+        </div>
       </div>
     </footer>
   );

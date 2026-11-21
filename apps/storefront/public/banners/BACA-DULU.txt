@@ -12,6 +12,9 @@ Contoh penamaan supaya urutannya rapi:
 Ukuran yang disarankan : 1600 x 686 piksel (rasio 21:9), ukuran file < 500 KB.
 Di HP gambar dipotong menjadi rasio 16:9, jadi letakkan tulisan dan produk
 penting di bagian TENGAH gambar.
+Zona aman (untuk gambar 1600 x 686): taruh semua tulisan & logo di antara
+piksel 340 sampai 1260 dari kiri. Di luar itu bisa terpotong (HP / samping kotak
+promo) atau tertutup tombol panah slider.
 
 Mengganti banner : hapus gambar lama, taruh gambar baru di sini, lalu refresh.
 Kalau tidak ada gambar sama sekali, beranda menampilkan banner teks bawaan.
@@ -27,5 +30,5 @@ Ganti/hapus kapan saja. Kalau kamu menghapus atau mengganti nama file, ubah juga
 barisnya di `bannerLinks`.
 
 Versi kecil untuk HP (opsional, mempercepat loading): simpan salinan banner berukuran
-lebar 640 px dan 1024 px di folder _sizes dengan nama  <nama-banner>-640.webp  dan
+lebar 640, 1024, dan 1280 px di folder _sizes dengan nama  <nama-banner>-640.webp  dan
 <nama-banner>-1024.webp  (contoh: 1-gear-terbaik-640.webp). Kalau tidak ada, banner asli yang dipakai.

@@ -28,7 +28,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from . import checkout_service as svc
-from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation
+from .shipping import package_info, shipping_label
+from . import shipments
+from .models import Category, Order, OrderItem, PriceCut, PriceCutItem, Product, ProductVariation, StoreSettings
 from .pricing import prefetch_running_promos, price_info
 from .serializers import ProductSerializer
 from .xlsx_reader import read_sheets
@@ -43,7 +45,7 @@ STATUS_LABELS = {
     "COMPLETED": "Selesai",
     "CANCELLED": "Dibatalkan",
 }
-PAYMENT_LABELS = {"UNPAID": "Belum bayar", "PAID": "Lunas", "FAILED": "Gagal", "EXPIRED": "Kedaluwarsa"}
+PAYMENT_LABELS = {"UNPAID": "Belum bayar", "PAID": "Lunas", "FAILED": "Gagal", "EXPIRED": "Kedaluwarsa", "REFUNDED": "Dana dikembalikan"}
 METHOD_LABELS = {"WHATSAPP": "WhatsApp", "MIDTRANS": "Bayar di web", "SHOPEE": "Shopee"}
 
 
@@ -60,9 +62,19 @@ def staff(methods):
     """@staff(["GET"]) = endpoint khusus staf dengan token."""
 
     def deco(fn):
-        fn = permission_classes([IsStaff])(fn)
-        fn = authentication_classes([TokenAuthentication])(fn)
-        return api_view(methods)(fn)
+        from functools import wraps
+
+        @wraps(fn)
+        def logged(request, *args, **kwargs):
+            response = fn(request, *args, **kwargs)
+            from .audit import record  # menu Log aktivitas
+
+            record(request, response)
+            return response
+
+        logged = permission_classes([IsStaff])(logged)
+        logged = authentication_classes([TokenAuthentication])(logged)
+        return api_view(methods)(logged)
 
     return deco
 
@@ -154,11 +166,17 @@ def wa_link(phone: str) -> str:
 def login(request):
     username = str(request.data.get("username", "")).strip()
     password = str(request.data.get("password", ""))
+    from .audit import system
+
     user = authenticate(request, username=username, password=password)
+    ip = (request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR") or "").split(",")[0].strip()
     if not user or not user.is_active:
+        system("Login gagal", f"username={username[:60]}, ip={ip}")
         return bad("Username atau password salah.", status.HTTP_401_UNAUTHORIZED)
     if not user.is_staff:
+        system("Login ditolak (bukan admin)", f"username={username[:60]}, ip={ip}", actor=user)
         return bad("Akun ini bukan admin toko.", status.HTTP_403_FORBIDDEN)
+    system("Login", f"ip={ip}", actor=user)
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key, "user": _user(user)})
 
@@ -280,7 +298,7 @@ def dashboard(request):
 
 # --------------------------------------------------------------------------- pesanan
 def _orders_filtered(request):
-    qs = Order.objects.all().order_by("-created_at")
+    qs = Order.objects.select_related("cancel_request").order_by("-created_at")
     p = request.query_params
     if p.get("q"):
         q = p["q"].strip()
@@ -295,6 +313,8 @@ def _orders_filtered(request):
         qs = qs.filter(payment_status=p["payment_status"])
     if p.get("method"):
         qs = qs.filter(payment_method=p["method"])
+    if p.get("batal") == "1":
+        qs = qs.filter(cancel_request__status__in=["REQUESTED", "APPROVED"])
     if p.get("range"):
         _, _, start_dt, end_dt = date_range(request)
         qs = qs.filter(created_at__gte=start_dt, created_at__lt=end_dt)
@@ -317,13 +337,24 @@ def _order_row(o: Order):
         "method_label": METHOD_LABELS.get(o.payment_method, o.payment_method or "-"),
         "voucher_codes": o.voucher_codes,
         "tracking_number": o.tracking_number,
+        "cancel_status": o.cancel_request.status if hasattr(o, "cancel_request") else "",
     }
+
+
+def _review_link(o: Order) -> str:
+    from .reviews_api import review_url
+
+    return review_url(o) if o.status in ("SHIPPED", "COMPLETED") else ""
 
 
 def _order_detail(o: Order):
     items = list(o.items.select_related("product", "variation"))
+    from .cancellations import serialize as cancel_serialize
+
+    req = getattr(o, "cancel_request", None)
     return {
         **_order_row(o),
+        "cancel_request": cancel_serialize(req, admin=True) if req else None,
         "customer_email": o.customer_email,
         "shipping_address": o.shipping_address,
         "province": o.shipping_province,
@@ -334,11 +365,14 @@ def _order_detail(o: Order):
         "discount_note": o.discount_note,
         "shipping_discount_max": rupiah(o.shipping_discount_max),
         "shipping_courier": o.shipping_courier,
+        "shipping_service": shipping_label(o.shipping_service),
         "shipping_cost": rupiah(o.shipping_cost) if o.shipping_cost is not None else None,
         "admin_note": o.admin_note,
         "stock_reserved": o.stock_reserved,
         "updated_at": o.updated_at,
         "whatsapp_customer": wa_link(o.customer_phone),
+        "review_url": _review_link(o),
+        "review_email_sent_at": o.review_email_sent_at,
         "items": [
             {
                 "product_id": i.product_id,
@@ -355,6 +389,11 @@ def _order_detail(o: Order):
         ],
         "status_choices": [{"value": k, "label": v} for k, v in STATUS_LABELS.items()],
         "payment_choices": [{"value": k, "label": v} for k, v in PAYMENT_LABELS.items()],
+        "shipping_city": o.shipping_city,
+        "shipping_pin": {"lat": o.shipping_lat, "lng": o.shipping_lng} if o.shipping_lat is not None else None,
+        "total_weight_grams": o.total_weight_grams,
+        "shipment": {**shipments.summary(o), "sender": shipments.sender(StoreSettings.load())},
+        "label": shipments.label_data(o),
     }
 
 
@@ -364,6 +403,9 @@ def orders(request):
     data["status_counts"] = {
         row["status"]: row["n"] for row in Order.objects.values("status").annotate(n=Count("id"))
     }
+    from .models import CancelRequest
+
+    data["cancel_open"] = CancelRequest.objects.filter(status__in=["REQUESTED", "APPROVED"]).count()
     return Response(data)
 
 
@@ -380,6 +422,7 @@ def order_detail(request, number):
     if request.method == "PATCH":
         d = request.data
         fields = []
+        was_paid = order.payment_status == "PAID"
         try:
             if "status" in d:
                 if d["status"] not in STATUS_LABELS:
@@ -405,8 +448,76 @@ def order_detail(request, number):
             return bad(str(exc))
         if order.status == "CANCELLED" and order.stock_reserved:
             svc.release_stock(order)
+        if order.status == "COMPLETED":
+            from .order_events import mark_delivered
+
+            fields += mark_delivered(order)
         if fields:
             order.save(update_fields=fields + ["updated_at"])
+            if not was_paid and order.payment_status == "PAID":
+                from .order_events import mark_paid  # stok WA dipotong + email lunas
+
+                mark_paid(order, source="admin")
+            from .emails import notify_shipped  # email "paket dikirim" (sekali, butuh status Dikirim + resi)
+
+            notify_shipped(order)
+    return Response(_order_detail(order))
+
+
+@staff(["POST"])
+def orders_delete_cancelled(request):
+    """Hapus semua pesanan berstatus Dibatalkan (stok yang masih tertahan dikembalikan dulu)."""
+    qs = Order.objects.filter(status="CANCELLED")
+    numbers = list(qs.values_list("order_number", flat=True)[:500])
+    for order in qs.filter(order_number__in=numbers):
+        if order.stock_reserved:
+            svc.release_stock(order)
+        order.delete()
+    return Response({"deleted": len(numbers), "numbers": numbers[:50]})
+
+
+@staff(["GET"])
+def activity_log(request):
+    from .models import AuditLog
+
+    qs = AuditLog.objects.select_related("actor").order_by("-timestamp")
+    q = (request.query_params.get("q") or "").strip()
+    if q:
+        qs = qs.filter(Q(action__icontains=q) | Q(details__icontains=q) | Q(actor__username__icontains=q))
+    kind = request.query_params.get("kind") or ""
+    if kind == "login":
+        qs = qs.filter(action__startswith="Login")
+    elif kind == "orders":
+        qs = qs.filter(Q(action__icontains="Pesanan") | Q(action__startswith="SHIPMENT") | Q(action="ORDER_CREATED"))
+    elif kind == "system":
+        qs = qs.filter(actor__isnull=True).exclude(action__startswith="Login")
+    data = paginate(request, qs, lambda a: {
+        "id": a.id,
+        "time": a.timestamp,
+        "actor": (a.actor.get_full_name() or a.actor.username) if a.actor else "Sistem",
+        "action": a.action,
+        "details": a.details,
+    }, default_size=50)
+    return Response(data)
+
+
+@staff(["POST"])
+def order_shipment(request, number):
+    """POST {"action": "create" | "refresh" | "cancel", "method": "drop_off" | "pickup"}: resi Biteship."""
+    order = get_object_or_404(Order, order_number=number)
+    action = request.data.get("action")
+    try:
+        if action == "create":
+            order = shipments.create(order, request.data.get("method") or None)
+        elif action == "refresh":
+            order = shipments.refresh(order)
+        elif action == "cancel":
+            order = shipments.cancel(order, str(request.data.get("reason") or ""))
+        else:
+            return bad("Aksi tidak dikenal.")
+    except shipments.ShipmentError as exc:
+        return bad(str(exc))
+    order.refresh_from_db()
     return Response(_order_detail(order))
 
 
@@ -486,6 +597,27 @@ def _product_row(p: Product):
     }
 
 
+PACKAGE_FIELDS = ("weight_grams", "length_cm", "width_cm", "height_cm")
+PACKAGE_LABELS = {"weight_grams": "Berat", "length_cm": "Panjang", "width_cm": "Lebar", "height_cm": "Tinggi"}
+
+
+def _set_package(obj, d) -> None:
+    """Isi berat (gram) & ukuran (cm). Kosong/0 = tidak diisi (varian ikut produk induk)."""
+    for field in PACKAGE_FIELDS:
+        if field in d:
+            raw = d[field]
+            if raw in (None, "", 0, "0"):
+                setattr(obj, field, None)
+                continue
+            value = to_int(raw, PACKAGE_LABELS[field])
+            limit = 1_000_000 if field == "weight_grams" else 1000
+            if value < 0:
+                raise ValueError(f"{PACKAGE_LABELS[field]} tidak boleh negatif.")
+            if value > limit:
+                raise ValueError(f"{PACKAGE_LABELS[field]} terlalu besar.")
+            setattr(obj, field, value or None)
+
+
 def _variation_row(p: Product, v: ProductVariation):
     v.product = p
     info = price_info(p, v)
@@ -499,6 +631,8 @@ def _variation_row(p: Product, v: ProductVariation):
         "promo_name": info.promo_name,
         "stock": v.stock,
         "image_url": v.image_url,
+        **{f: getattr(v, f) for f in PACKAGE_FIELDS},
+        "package": package_info(p, v),
     }
 
 
@@ -511,6 +645,8 @@ def _product_detail(p: Product):
         "base_price": rupiah(p.price),
         "base_final_price": rupiah(info.final) if info else None,
         "variation_list": [_variation_row(p, v) for v in p.buyable_variations()],
+        **{f: getattr(p, f) for f in PACKAGE_FIELDS},
+        "package": package_info(p),
         "promos": [
             {"id": it.price_cut_id, "name": it.price_cut.name, "variation": it.variation.name if it.variation_id else "",
              "promo_price": rupiah(it.promo_price) if it.promo_price is not None else None,
@@ -601,6 +737,7 @@ def product_detail(request, pk):
                 product.image_url = str(d["image_url"] or "").strip() or None
             if "is_active" in d:
                 product.is_active = bool(d["is_active"])
+            _set_package(product, d)
         except ValueError as exc:
             return bad(str(exc))
         product.save()
@@ -626,6 +763,7 @@ def variation_detail(request, pk):
             variation.stock = to_int(d["stock"], "Stok")
         if "image_url" in d:
             variation.image_url = str(d["image_url"] or "").strip()
+        _set_package(variation, d)
     except ValueError as exc:
         return bad(str(exc))
     variation.save()
@@ -715,7 +853,13 @@ def products_bulk(request):
 
 
 TEMPLATE_HEADER = ["product_id", "variation_id", "SKU", "Nama produk", "Varian", "Harga normal", "Stok",
-                   "Link Shopee", "Aktif (ya/tidak)"]
+                   "Link Shopee", "Aktif (ya/tidak)", "Berat (gram)", "Panjang (cm)", "Lebar (cm)", "Tinggi (cm)"]
+PACKAGE_COLUMNS = (("weight_grams", "berat (gram)", "berat"), ("length_cm", "panjang (cm)", "panjang"),
+                   ("width_cm", "lebar (cm)", "lebar"), ("height_cm", "tinggi (cm)", "tinggi"))
+
+
+def _pkg_cells(obj):
+    return [getattr(obj, f) or "" for f in PACKAGE_FIELDS]
 
 
 @staff(["GET"])
@@ -728,19 +872,22 @@ def products_template(request):
         if variations:
             for i, v in enumerate(variations):
                 rows.append([p.id, v.id, v.sku or p.sku, p.name, v.name, rupiah(v.price), v.stock,
-                             (p.shopee_url or "") if i == 0 else "", active if i == 0 else ""])
+                             (p.shopee_url or "") if i == 0 else "", active if i == 0 else "",
+                             *[getattr(v, f) or getattr(p, f) or "" for f in PACKAGE_FIELDS]])
         else:
-            rows.append([p.id, "", p.sku, p.name, "", rupiah(p.price), p.stock, p.shopee_url or "", active])
+            rows.append([p.id, "", p.sku, p.name, "", rupiah(p.price), p.stock, p.shopee_url or "", active, *_pkg_cells(p)])
     info = [
         ["Cara pakai"],
         ["1. Ubah kolom Harga normal, Stok, Link Shopee, atau Aktif. Kolom lain jangan diubah."],
         ["2. Baris yang tidak berubah boleh dibiarkan atau dihapus."],
         ["3. Link Shopee & Aktif berlaku untuk produk (diisi di baris varian pertama)."],
         ["4. Upload file ini di Seller Center > Mass update, cek pratinjau, lalu klik Terapkan."],
+        ["5. Berat dalam gram, ukuran paket dalam cm (angka bulat). Ekspedisi memakai yang lebih besar: berat asli atau P×L×T/6000."],
+        ["   Ketik - untuk mengosongkan. Di baris varian, isi hanya bila ukurannya beda dari produk."],
         ["Harga promo diatur di menu Promo, bukan di file ini."],
     ]
     stamp = timezone.now().astimezone(WIB).strftime("%Y%m%d-%H%M")
-    widths = {"Produk": [10, 12, 18, 48, 22, 14, 8, 40, 14], "Cara pakai": [90]}
+    widths = {"Produk": [10, 12, 18, 48, 22, 14, 8, 40, 14, 12, 12, 12, 12], "Cara pakai": [90]}
     return xlsx_response(build_xlsx({"Produk": rows, "Cara pakai": info}, widths), f"mass-update-produk-{stamp}.xlsx")
 
 
@@ -784,6 +931,7 @@ def products_import(request):
     c_pid, c_vid, c_sku = col("product_id"), col("variation_id"), col("sku")
     c_price, c_stock = col("harga normal", "harga"), col("stok", "stock")
     c_shopee, c_active = col("link shopee"), col("aktif (ya/tidak)", "aktif")
+    c_pkg = {field: col(*names) for field, *names in PACKAGE_COLUMNS}
     if c_pid is None and c_sku is None:
         return bad("Kolom product_id atau SKU tidak ditemukan. Pakai template dari Seller Center.")
 
@@ -842,6 +990,20 @@ def products_import(request):
                     if active != product.is_active:
                         diff["Aktif"] = ("ya" if product.is_active else "tidak", "ya" if active else "tidak")
                         product.is_active = active
+                for field, idx in c_pkg.items():
+                    text = cell(row, idx)
+                    if not text:
+                        continue
+                    if variation is not None:
+                        # baris varian: nilai sama dengan induk = ikut induk (tidak disimpan terpisah)
+                        if text != "-" and to_int(text, PACKAGE_LABELS[field]) == (getattr(product, field) or 0):
+                            text = "-"
+                    new = None if text == "-" else to_int(text, PACKAGE_LABELS[field])
+                    if new is not None and not (0 < new <= (1_000_000 if field == "weight_grams" else 1000)):
+                        raise ValueError(f"{PACKAGE_LABELS[field]} tidak masuk akal.")
+                    if new != getattr(target, field):
+                        diff[PACKAGE_LABELS[field]] = (getattr(target, field) or "-", new or "-")
+                        setattr(target, field, new)
             except ValueError as exc:
                 errors.append(f"Baris {line_no} ({label}): {exc}")
                 continue
@@ -856,3 +1018,25 @@ def products_import(request):
         if not apply:
             transaction.set_rollback(True)
     return Response({"applied": apply, "changes": changes, "errors": errors[:50], "error_count": len(errors)})
+
+
+# --------------------------------------------------------------------------- pengembalian (retur)
+@staff(["GET"])
+def returns_list(request):
+    from .returns import seller_returns
+
+    return seller_returns(request)
+
+
+@staff(["POST"])
+def order_cancel_request(request, number):
+    from .cancellations import seller_cancel
+
+    return seller_cancel(request, number)
+
+
+@staff(["GET", "POST"])
+def return_detail(request, pk):
+    from .returns import seller_return_detail
+
+    return seller_return_detail(request, pk)

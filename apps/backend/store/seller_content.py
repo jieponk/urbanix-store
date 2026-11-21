@@ -27,7 +27,8 @@ from .models import (
     StoreSettings,
     Voucher,
 )
-from .pricing import price_info
+from .images import MAX_BANNER, ImageError, to_webp
+from .pricing import price_info, sold_count
 from .seller_api import bad, paginate, rupiah, staff
 
 
@@ -86,7 +87,7 @@ class PriceCutSerializer(CleanModelSerializer):
 
     class Meta:
         model = PriceCut
-        fields = ["id", "name", "starts_at", "ends_at", "is_active", "status", "items_count", "created_at"]
+        fields = ["id", "name", "starts_at", "ends_at", "is_active", "is_flash_sale", "status", "items_count", "created_at"]
         read_only_fields = ["created_at"]
 
     def get_status(self, obj):
@@ -118,6 +119,8 @@ def _promo_item(item: PriceCutItem):
         "discount_percent": float(item.discount_percent) if item.discount_percent is not None else None,
         "final_price": rupiah(final),
         "stock": variation.stock if variation else product.stock,
+        "quota": item.quota,
+        "sold": sold_count(item),
     }
 
 
@@ -166,6 +169,15 @@ def promo_items(request, pk):
         )
         price = row.get("promo_price")
         percent = row.get("discount_percent")
+        if "quota" in row:
+            q = row.get("quota")
+            try:
+                item.quota = int(q) if q not in (None, "") else None
+            except (TypeError, ValueError):
+                errors.append(f"{product.name}: kuota harus angka.")
+                continue
+            if item.quota is not None and item.quota < 1:
+                item.quota = None
         try:
             item.promo_price = Decimal(str(price)) if price not in (None, "") else None
             item.discount_percent = Decimal(str(percent).replace(",", ".")) if percent not in (None, "") else None
@@ -249,7 +261,7 @@ class BannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Banner
-        fields = ["id", "title", "image", "mobile_image", "link_url", "sort_order", "starts_at", "ends_at",
+        fields = ["id", "title", "image", "mobile_image", "link_url", "placement", "sort_order", "starts_at", "ends_at",
                   "is_active", "status"]
 
     def get_status(self, obj):
@@ -258,7 +270,12 @@ class BannerSerializer(serializers.ModelSerializer):
     def _check(self, f):
         if f and (not f.name.lower().endswith(ALLOWED_IMAGE) or f.size > MAX_IMAGE):
             raise serializers.ValidationError("Gambar harus JPG/PNG/WebP/GIF, maks. 5 MB.")
-        return f
+        if not f:
+            return f
+        try:
+            return to_webp(f, MAX_BANNER)  # disimpan sebagai WebP agar web lebih cepat
+        except ImageError as exc:
+            raise serializers.ValidationError(str(exc)) from None
 
     def validate_image(self, f):
         return self._check(f)
@@ -330,7 +347,7 @@ def banner_detail(request, pk):
 def public_banners(request):
     """Banner beranda yang sedang tayang (dipakai storefront)."""
     now = timezone.now()
-    running = [b for b in Banner.objects.filter(is_active=True) if b.is_running(now)]
+    running = [b for b in Banner.objects.filter(is_active=True, placement=Banner.HERO) if b.is_running(now)]
     return Response([
         {"id": b.id, "title": b.title, "image": b.image.url,
          "mobile_image": b.mobile_image.url if b.mobile_image else "", "link_url": b.link_url}
@@ -461,9 +478,50 @@ class SettingsSerializer(serializers.ModelSerializer):
         model = StoreSettings
         fields = [
             "whatsapp_number", "shopee_shop_id", "shopee_store_url", "shopee_reviews_url", "enable_whatsapp", "enable_shopee",
-            "enable_midtrans", "show_whatsapp_popup", "voucher_combo_min_purchase", "shopee_rating",
-            "shopee_rating_count",
+            "enable_midtrans", "show_whatsapp_popup", "popup_mode", "voucher_combo_min_purchase", "shopee_rating",
+            "shopee_rating_count", "event_mode", "event_theme", "event_until", "event_teaser_days",
+            "home_layout", "event_title", "event_subtitle", "event_cta",
+            "ongkir_origin_id", "ongkir_origin_label", "ongkir_couriers", "ongkir_origin_lat", "ongkir_origin_lng",
+            "ship_sender_name", "ship_sender_phone", "ship_sender_address", "ship_sender_postal_code",
+            "ship_collection_method",
+            "notify_email", "wa_unpaid_cancel_hours", "return_window_hours", "return_video_max_mb",
         ]
+
+    def validate(self, attrs):
+        mode = attrs.get("event_mode", getattr(self.instance, "event_mode", "auto"))
+        theme = attrs.get("event_theme", getattr(self.instance, "event_theme", ""))
+        if mode == StoreSettings.EVENT_FORCE and not theme:
+            raise serializers.ValidationError({"event_theme": "Pilih tema yang mau dipakai."})
+        layout = attrs.get("home_layout")
+        if layout is not None:
+            if not isinstance(layout, list) or not all(isinstance(i, dict) and isinstance(i.get("key"), str) for i in layout):
+                raise serializers.ValidationError({"home_layout": "Format tata letak tidak valid."})
+            attrs["home_layout"] = [{"key": i["key"][:30], "visible": bool(i.get("visible", True))} for i in layout][:30]
+        mb = attrs.get("return_video_max_mb")
+        if mb is not None and not 5 <= mb <= 200:
+            raise serializers.ValidationError({"return_video_max_mb": "Batas video 5–200 MB."})
+        win = attrs.get("return_window_hours")
+        if win is not None and not 24 <= win <= 720:
+            raise serializers.ValidationError({"return_window_hours": "Batas retur 24–720 jam."})
+        lat, lng = attrs.get("ongkir_origin_lat"), attrs.get("ongkir_origin_lng")
+        if (lat is None) != (lng is None):
+            raise serializers.ValidationError({"ongkir_origin_lat": "Titik gudang belum lengkap."})
+        if lat is not None:
+            from .ongkir import valid_coord
+
+            if not valid_coord(lat, lng):
+                raise serializers.ValidationError({"ongkir_origin_lat": "Titik gudang harus di wilayah Indonesia."})
+        couriers = attrs.get("ongkir_couriers")
+        if couriers is not None:
+            from .ongkir import COURIER_CODES
+
+            codes = [c.strip().lower() for c in couriers.replace(",", ":").split(":") if c.strip()]
+            if not codes or any(c not in COURIER_CODES for c in codes):
+                raise serializers.ValidationError({"ongkir_couriers": "Pilih minimal satu kurir yang dikenal."})
+            attrs["ongkir_couriers"] = ":".join(dict.fromkeys(codes))
+        if attrs.get("event_teaser_days") is not None and attrs["event_teaser_days"] > 14:
+            raise serializers.ValidationError({"event_teaser_days": "Maksimal 14 hari."})
+        return attrs
 
 
 @staff(["GET", "PATCH"])
@@ -476,5 +534,10 @@ def store_settings(request):
         serializer.save()
     from . import checkout_service as svc
 
+    from . import ongkir
+
     return Response({**SettingsSerializer(store).data, "midtrans_configured": svc.midtrans_is_configured(),
+                     "ongkir_key_configured": bool(ongkir.api_key()),
+                     "ongkir_auto": ongkir.is_configured(store),
+                     "courier_choices": [{"code": c, "name": n} for c, n in ongkir.COURIER_CHOICES],
                      "deepl_configured": bool(news_engine.deepl_key())})

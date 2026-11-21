@@ -19,8 +19,16 @@ from store.models import (
 from store.xlsx_reader import read_sheets
 
 MEDIA = tempfile.mkdtemp()
-PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-       b"\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")
+def _png() -> bytes:
+    import io as _io
+
+    from PIL import Image as _Image
+    buf = _io.BytesIO()
+    _Image.new("RGB", (2, 2), (255, 91, 20)).save(buf, "PNG")
+    return buf.getvalue()
+
+
+PNG = _png()
 
 
 @override_settings(MEDIA_ROOT=MEDIA)
@@ -198,6 +206,23 @@ class ProductTests(SellerTestBase):
         self.cam.refresh_from_db(); self.lens.refresh_from_db()
         self.assertEqual((self.cam.price, self.cam.shopee_url), (Decimal("31000000"), "https://shopee.co.id/a7"))
         self.assertEqual(self.lens.stock, 11)
+
+    def test_import_and_patch_package(self):
+        csv = ("product_id;variation_id;SKU;Berat (gram);Panjang (cm);Lebar (cm);Tinggi (cm)\n"
+               f"{self.cam.id};;A7IV;900;20;15;12\n"
+               f"{self.lens.id};{self.v1.id};L50-E;650;;;\n")
+        upload = SimpleUploadedFile("berat.csv", csv.encode(), content_type="text/csv")
+        r = self.api.post("/api/v1/seller/products/import/?apply=1", {"file": upload}, format="multipart")
+        self.assertEqual(r.status_code, 200, r.content)
+        self.cam.refresh_from_db(); self.v1.refresh_from_db()
+        self.assertEqual((self.cam.weight_grams, self.cam.length_cm, self.cam.height_cm), (900, 20, 12))
+        self.assertEqual(self.v1.weight_grams, 650)
+        r = self.api.patch(f"/api/v1/seller/products/{self.cam.id}/", {"weight_grams": "", "length_cm": "40"}, format="json")
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertIsNone(r.data["weight_grams"])
+        self.assertEqual(r.data["package"]["volume_weight_grams"], 1200)  # 40*15*12/6000
+        r = self.api.patch(f"/api/v1/seller/products/{self.cam.id}/", {"weight_grams": "-5"}, format="json")
+        self.assertEqual(r.status_code, 400)
 
 
 class ContentTests(SellerTestBase):

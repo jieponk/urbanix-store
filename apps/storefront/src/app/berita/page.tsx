@@ -1,11 +1,15 @@
 import Link from 'next/link';
 import NewsCard from '@/components/NewsCard';
-import { ChevronLeftIcon, ChevronRightIcon, NewsIcon } from '@/components/Icons';
+import Pagination from '@/components/Pagination';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
+import { Globe, Newspaper } from '@/components/inspirasi/InspoIcons';
 import { getNews } from '@/lib/api';
+import { getT } from '@/lib/lang-server';
 
 export const metadata = {
   title: 'Berita Kamera & Fotografi',
   description: 'Kabar terbaru seputar kamera, lensa, dan dunia fotografi, dirangkum dalam Bahasa Indonesia.',
+  alternates: { canonical: '/berita' },
 };
 
 const PER_PAGE = 12;
@@ -25,90 +29,79 @@ export default async function NewsPage({
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
 }) {
+  const t = getT();
   const params = await searchParams;
   const source = /^\d+$/.test(params?.sumber ?? '') ? (params?.sumber as string) : '';
   const page = Math.max(1, parseInt(params?.hal || '1', 10) || 1);
   const data = await getNews({ page, limit: PER_PAGE, source });
 
-  const chip = (active: boolean) =>
-    `shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
-      active ? 'bg-ink text-surface' : 'bg-surface text-ink ring-1 ring-slate-200 hover:bg-mist'
+  const tab = (active: boolean) =>
+    `relative inline-flex shrink-0 items-center gap-2 px-1 py-3.5 text-sm font-bold transition-colors ${
+      active ? 'text-ink after:absolute after:inset-x-0 after:-bottom-px after:h-[3px] after:bg-ed' : 'text-slate-500 hover:text-ink'
     }`;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-      <header className="flex items-start gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cobalt-800 text-white">
-          <NewsIcon size={24} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Berita Kamera &amp; Fotografi</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Kabar terbaru seputar kamera, lensa, dan dunia fotografi dari berbagai media, dirangkum dalam Bahasa Indonesia.
-          </p>
-        </div>
-      </header>
-
-      {data && data.sources.length > 1 && (
-        <nav aria-label="Filter sumber berita" className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <Link href="/berita" className={chip(!source)} aria-current={!source ? 'page' : undefined}>
-            Semua
-          </Link>
-          {data.sources.map((s) => (
-            <Link
-              key={s.id}
-              href={pageHref(String(s.id), 1)}
-              className={chip(source === String(s.id))}
-              aria-current={source === String(s.id) ? 'page' : undefined}
-            >
-              {s.name}
-            </Link>
-          ))}
-        </nav>
-      )}
-
-      {!data ? (
-        <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="font-bold text-red-700">Berita gagal dimuat</p>
-          <p className="mt-2 text-sm text-slate-600">Pastikan backend Django berjalan, lalu muat ulang halaman ini.</p>
-        </div>
-      ) : data.results.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-300 px-5 py-14 text-center">
-          <p className="font-bold text-ink">Berita sedang disiapkan</p>
-          <p className="mt-2 text-sm text-slate-500">Berita terbaru sedang diambil. Coba muat ulang halaman ini 1–2 menit lagi.</p>
-        </div>
-      ) : (
-        <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.results.map((article) => (
-              <NewsCard key={article.id} article={article} />
-            ))}
+    <div className="ed px-4 pb-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="relative isolate pt-6 sm:pt-10">
+          <GearBackdrop className="bottom-[54px]" />
+          <nav aria-label={t('Breadcrumb')} className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Link href="/" className="hover:text-ink">{t('Beranda')}</Link>
+            <span aria-hidden="true">/</span>
+            <Link href="/inspirasi" className="hover:text-ink">{t('Inspirasi')}</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-ink">{t('Berita')}</span>
+          </nav>
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-3 border-b-[3px] border-ink pb-4">
+            <div>
+              <span aria-hidden="true" className="block h-1.5 w-14 bg-ed" />
+              <h1 className="mt-4 text-[2.6rem] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-6xl">{t('Berita Kamera')}</h1>
+            </div>
+            <p className="max-w-md text-[15px] leading-7 text-slate-600 sm:text-right">
+              {t('Kabar terbaru seputar kamera, lensa, dan dunia fotografi dari berbagai media, dirangkum dalam Bahasa Indonesia.')}
+            </p>
           </div>
 
-          {data.pages > 1 && (
-            <nav aria-label="Halaman berita" className="mt-8 flex items-center justify-center gap-3">
-              {page > 1 && (
-                <Link href={pageHref(source, page - 1)} className="inline-flex items-center gap-1.5 rounded-xl bg-surface px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 hover:bg-mist">
-                  <ChevronLeftIcon size={16} /> Sebelumnya
+          {data && data.sources.length > 1 && (
+            <nav aria-label={t('Filter sumber berita')} className="inspo-scroll -mx-4 flex gap-6 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:gap-8 sm:px-0">
+              <Link href="/berita" className={tab(!source)} aria-current={!source ? 'page' : undefined}>
+                <Newspaper size={15} /> {t('Semua')}
+              </Link>
+              {data.sources.map((s) => (
+                <Link key={s.id} href={pageHref(String(s.id), 1)} className={tab(source === String(s.id))} aria-current={source === String(s.id) ? 'page' : undefined}>
+                  <Globe size={14} /> {s.name}
                 </Link>
-              )}
-              <span className="text-sm font-semibold text-slate-500">
-                Halaman {data.page} dari {data.pages}
-              </span>
-              {page < data.pages && (
-                <Link href={pageHref(source, page + 1)} className="inline-flex items-center gap-1.5 rounded-xl bg-surface px-4 py-2.5 text-sm font-bold text-ink ring-1 ring-slate-200 hover:bg-mist">
-                  Berikutnya <ChevronRightIcon size={16} />
-                </Link>
-              )}
+              ))}
             </nav>
           )}
-        </>
-      )}
+        </header>
 
-      <p className="mt-10 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
-        Judul dan ringkasan diterjemahkan otomatis dari media aslinya; sumber selalu dicantumkan di tiap berita.
-        Artikel lengkap, foto, dan hak ciptanya milik masing-masing media.
-      </p>
+        {!data ? (
+          <div className="mt-8 border-l-[3px] border-ed bg-mist p-5">
+            <p className="font-bold text-ink">{t('Berita gagal dimuat')}</p>
+            <p className="mt-1 text-sm text-slate-600">{t('Coba muat ulang halaman ini sebentar lagi.')}</p>
+          </div>
+        ) : data.results.length === 0 ? (
+          <div className="mt-8 flex flex-col items-center border-y border-slate-200 px-5 py-16 text-center">
+            <span className="text-slate-400"><Newspaper size={30} /></span>
+            <p className="mt-4 font-extrabold text-ink">{t('Berita sedang disiapkan')}</p>
+            <p className="mt-1 text-sm text-slate-500">{t('Berita terbaru sedang diambil. Coba muat ulang 1–2 menit lagi.')}</p>
+          </div>
+        ) : (
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              {data.results.map((article, i) => (
+                <NewsCard key={article.id} article={article} index={i} />
+              ))}
+            </div>
+            <Pagination page={data.page} pages={data.pages} href={(p) => pageHref(source, p)} label={t('Halaman berita')} />
+          </>
+        )}
+
+        <p className="mt-12 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
+          {t('Judul dan ringkasan diterjemahkan otomatis dari media aslinya; sumber selalu dicantumkan di tiap berita. Artikel lengkap, foto, dan hak ciptanya milik masing-masing media.')}
+        </p>
+      </div>
     </div>
   );
 }

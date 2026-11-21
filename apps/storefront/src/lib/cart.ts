@@ -51,6 +51,8 @@ export function addToCart(item: CartItem) {
   }
 
   saveCart(cart);
+  // Khusus "tambah" (bukan hapus/ubah jumlah): dipakai ikon keranjang di header untuk berdenyut.
+  window.dispatchEvent(new Event('cart-added'));
 }
 
 export function clearCart() {

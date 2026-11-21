@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
 
 type Props = {
   name: string;
@@ -23,6 +25,7 @@ function remaining(endsAt: string | null) {
  * dan hitung mundur sungguhan sampai promo berakhir.
  */
 export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Props) {
+  const t = useT();
   // Dihitung setelah halaman tampil agar angka server & browser tidak bentrok.
   const [time, setTime] = useState<ReturnType<typeof remaining>>(null);
 
@@ -34,17 +37,40 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
 
   const units = time
     ? [
-        { value: time.days, label: 'hari' },
-        { value: time.hours, label: 'jam' },
-        { value: time.minutes, label: 'menit' },
-        { value: time.seconds, label: 'detik' },
+        { value: time.days, label: t('hari') },
+        { value: time.hours, label: t('jam') },
+        { value: time.minutes, label: t('menit') },
+        { value: time.seconds, label: t('detik') },
       ]
     : null;
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+
   return (
+    <>
+    {/* HP & tablet: satu baris ringkas supaya produk langsung terlihat di layar pertama */}
+    <Link
+      href="/produk?promo=1"
+      aria-label={`${name}, hemat sampai ${maxDiscount}%`}
+      className="flex items-center gap-3 rounded-xl bg-cobalt-900 px-4 py-3 text-white lg:hidden"
+    >
+      <span className="text-[1.75rem] font-extrabold leading-none tracking-tight text-sun-300">{maxDiscount}%</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[11px] font-semibold text-white/70">{name}</span>
+        <span className="block truncate text-sm font-bold">{t('{n} produk ikut promo', { n: count })}</span>
+      </span>
+      {time && (
+        <span className="shrink-0 text-right font-mono text-xs font-extrabold tabular-nums leading-tight" role="timer">
+          {time.days > 0 && <span className="block text-[10px] font-semibold text-white/70">{t('{n} hari', { n: time.days })}</span>}
+          {pad(time.hours)}:{pad(time.minutes)}:{pad(time.seconds)}
+        </span>
+      )}
+      <ArrowRight size={16} />
+    </Link>
+
     <section
       aria-label={`${name}, hemat sampai ${maxDiscount}%`}
-      className="relative flex h-full flex-col overflow-hidden rounded-[28px] bg-cobalt-800 p-5 text-white sm:p-6"
+      className="relative hidden h-full flex-col overflow-hidden rounded-xl bg-cobalt-900 p-5 text-white sm:p-6 lg:flex"
     >
       {/* Sudut jendela bidik kamera */}
       <span className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l-2 border-t-2 border-white/30" aria-hidden="true" />
@@ -52,25 +78,25 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
       <span className="pointer-events-none absolute bottom-3 left-3 h-5 w-5 border-b-2 border-l-2 border-white/30" aria-hidden="true" />
       <span className="pointer-events-none absolute bottom-3 right-3 h-5 w-5 border-b-2 border-r-2 border-white/30" aria-hidden="true" />
 
-      <p className="flex items-center gap-2 text-sm font-semibold text-sun-300">
+      <p className="flex items-center gap-2 text-sm font-semibold text-white/75">
         <span className="h-2 w-2 rounded-full bg-sale-600 shadow-[0_0_0_3px_rgba(229,36,59,0.35)]" aria-hidden="true" />
-        {name} sedang berjalan
+        {t('{name} sedang berjalan', { name })}
       </p>
 
       <p className="mt-3 leading-none">
-        <span className="block text-base font-semibold text-white/80">Hemat sampai</span>
-        <span className="mt-1 block text-[clamp(4rem,11vw,6.5rem)] font-extrabold tracking-[-0.06em] text-sun-400">
+        <span className="block text-base font-semibold text-white/80">{t('Hemat sampai')}</span>
+        <span className="mt-1 block text-[clamp(4rem,11vw,6.5rem)] font-extrabold tracking-[-0.06em] text-sun-300">
           {maxDiscount}%
         </span>
       </p>
 
       {units && (
         <div className="mt-4">
-          <p className="text-xs font-medium text-white/70">Berakhir dalam</p>
+          <p className="text-xs font-medium text-white/70">{t('Berakhir dalam')}</p>
           <div className="mt-1.5 grid grid-cols-4 gap-1.5" role="timer" aria-live="off">
             {units.map((unit) => (
-              <div key={unit.label} className="rounded-xl bg-cobalt-900 px-1 py-2 text-center ring-1 ring-white/10">
-                <span key={unit.value} className="tick block text-2xl font-extrabold tabular-nums text-sun-400 sm:text-[28px]">
+              <div key={unit.label} className="rounded-md bg-white/[0.06] px-1 py-2 text-center ring-1 ring-white/10">
+                <span key={unit.value} className="tick block text-2xl font-extrabold tabular-nums text-white sm:text-[28px]">
                   {String(unit.value).padStart(2, '0')}
                 </span>
                 <span className="block text-[11px] text-white/60">{unit.label}</span>
@@ -81,14 +107,15 @@ export default function PromoCountdown({ name, maxDiscount, count, endsAt }: Pro
       )}
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
-        <p className="text-sm text-white/80">{count} produk ikut promo</p>
+        <p className="text-sm text-white/80">{t('{n} produk ikut promo', { n: count })}</p>
         <Link
           href="/produk?promo=1"
-          className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
+          className="group inline-flex items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-bold text-cobalt-900 transition hover:bg-white/85"
         >
-          Lihat semua promo
+          {t('Lihat semua promo')} <ArrowRight size={16} />
         </Link>
       </div>
     </section>
+    </>
   );
 }

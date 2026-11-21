@@ -1,11 +1,11 @@
-import { fetchAll, getArticles, type ArticleCard, type Product } from '@/lib/api';
+import { fetchAll, getArticles, getCategories, getNews, type ArticleCard, type NewsArticle, type Product } from '@/lib/api';
 import { SITE_URL } from '@/lib/seo';
 
 export const revalidate = 3600;
 
 export default async function sitemap() {
   const now = new Date();
-  const pages = ['', '/produk', '/produk?promo=1', '/inspirasi', '/berita', '/tentang-kami', '/kontak', '/cek-pesanan', '/syarat-ketentuan', '/kebijakan-privasi'].map((path) => ({
+  const pages = ['', '/produk', '/produk?promo=1', '/inspirasi', '/berita', '/tentang-kami', '/kontak', '/kerja-sama', '/cek-pesanan', '/syarat-ketentuan', '/kebijakan-privasi'].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: now,
     changeFrequency: path === '' || path.startsWith('/produk') ? ('daily' as const) : ('monthly' as const),
@@ -27,13 +27,36 @@ export default async function sitemap() {
     if (page >= data.pages) break;
   }
 
+  // Berita: hanya yang sudah punya artikel lengkap versi Urbanix (yang lain noindex).
+  const news: NewsArticle[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const data = await getNews({ page, limit: 48, withArticle: true });
+    if (!data) break;
+    news.push(...data.results);
+    if (page >= data.pages) break;
+  }
+
+  const categories = await getCategories();
+
   return [
     ...pages,
+    ...categories.map((c) => ({
+      url: `${SITE_URL}/produk?category=${c.id}`,
+      lastModified: now,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    })),
     ...articles.map((a) => ({
       url: `${SITE_URL}/inspirasi/${a.slug}`,
       lastModified: a.published_at ? new Date(a.published_at) : now,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    })),
+    ...news.map((n) => ({
+      url: `${SITE_URL}/berita/${n.id}`,
+      lastModified: new Date(n.updated_at || n.published_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
     })),
     ...products
       .filter((p) => p.is_active !== false)

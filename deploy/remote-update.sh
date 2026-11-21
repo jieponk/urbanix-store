@@ -59,13 +59,36 @@ for K in EMAIL_HOST EMAIL_PORT EMAIL_HOST_USER EMAIL_HOST_PASSWORD EMAIL_FROM; d
   grep -q "^$K=" "$ENVF" || echo "$K=" >> "$ENVF"
 done
 
-docker compose --env-file "$ENVF" -f docker-compose.prod.yml up -d --build --remove-orphans
+DC="docker compose --env-file $ENVF -f docker-compose.prod.yml"
+# 1) Build dulu: versi lama tetap melayani pembeli selama build (±2–4 menit).
+$DC build
+# 2) Baru tukar container (jeda singkat; Caddy menahan permintaan sampai siap).
+$DC up -d --remove-orphans
+# Caddy membaca Caddyfile & halaman perawatan saat container dibuat: buat ulang hanya kalau berubah.
+if ! diff -rq "$APP.old/deploy/Caddyfile" "$APP/deploy/Caddyfile" >/dev/null 2>&1 \
+   || ! diff -rq "$APP.old/deploy/maintenance" "$APP/deploy/maintenance" >/dev/null 2>&1; then
+  echo "==> Konfigurasi Caddy berubah, memuat ulang"
+  $DC up -d --no-deps --force-recreate caddy
+fi
 docker image prune -f >/dev/null
 
-echo "==> Jadwal otomatis: berita tiap 2 jam, backup tiap hari 02:30"
+# Pemanasan sampul artikel: buat semua sampul sekali di latar belakang supaya pengunjung pertama tidak menunggu.
+SITE="${SITE_URL:-https://urbanix.id}"
+(
+  # Storefront build dulu saat start (beberapa menit): tunggu sampai benar-benar melayani (maks. 15 menit).
+  for _ in $(seq 1 90); do curl -fsS -o /dev/null "$SITE/inspirasi" && break; sleep 10; done
+  for PAGE in 1 2 3; do curl -fsS "$SITE/inspirasi?hal=$PAGE" 2>/dev/null; done \
+    | grep -oE '/inspirasi/[a-z0-9-]+/sampul\.png\?v=[a-z0-9-]+' | sort -u \
+    | while read -r U; do curl -fsS -o /dev/null "$SITE$U" || true; done
+) >/dev/null 2>&1 &
+
+echo "==> Jadwal otomatis: berita tiap 2 jam, terjemahan isi tiap 3 jam, status resi tiap jam, backup tiap hari 02:30"
 CRON_NEWS="15 */2 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py ambil_berita >> $BASE/cron.log 2>&1"
 CRON_BACKUP="30 2 * * * bash $APP/deploy/backup.sh >> $BASE/cron.log 2>&1"
-{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; } | crontab -
+CRON_REMIND="5 * * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py kirim_pengingat >> $BASE/cron.log 2>&1"
+CRON_SHIP="25 * * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py cek_pengiriman >> $BASE/cron.log 2>&1"
+CRON_I18N="40 */3 * * * cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml exec -T backend python manage.py terjemahkan_konten >> $BASE/cron.log 2>&1"
+{ crontab -l 2>/dev/null | grep -v '# urbanix' || true; echo "$CRON_NEWS # urbanix"; echo "$CRON_BACKUP # urbanix"; echo "$CRON_REMIND # urbanix"; echo "$CRON_I18N # urbanix"; echo "$CRON_SHIP # urbanix"; } | crontab -
 
 echo
 echo "Selesai. Pantau build:  cd $APP/deploy && docker compose --env-file $ENVF -f docker-compose.prod.yml logs -f storefront"

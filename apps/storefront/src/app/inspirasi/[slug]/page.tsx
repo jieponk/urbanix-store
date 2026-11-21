@@ -3,14 +3,18 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import ProductCard from '@/components/ProductCard';
 import ArticleBody from '@/components/inspirasi/ArticleBody';
-import ArticleCard, { Cover, articleDate } from '@/components/inspirasi/ArticleCard';
+import ArticleCard, { CategoryBadge, Cover, articleDate } from '@/components/inspirasi/ArticleCard';
+import TableOfContents from '@/components/inspirasi/TableOfContents';
+import GearBackdrop from '@/components/inspirasi/GearBackdrop';
+import { ArrowRight, Calendar, Chat, ChevronRight, Clock, Home, ListIcon, Tag } from '@/components/inspirasi/InspoIcons';
 import CommentSection from '@/components/inspirasi/CommentSection';
 import ArticleEnhancer from '@/components/inspirasi/ArticleEnhancer';
 import ReadingProgress from '@/components/inspirasi/ReadingProgress';
 import ShareButtons from '@/components/inspirasi/ShareButtons';
 import { getArticle } from '@/lib/api';
 import { renderMarkdown } from '@/lib/markdown';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, jsonLd as jsonLdHtml } from '@/lib/seo';
+import { getT } from '@/lib/lang-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +31,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     alternates: { canonical: `/inspirasi/${a.slug}` },
     openGraph: {
       type: 'article',
+      url: `/inspirasi/${a.slug}`,
       title: a.title,
       description: a.excerpt,
       publishedTime: a.published_at || undefined,
@@ -40,13 +45,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ArticlePage({ params }: { params: { slug: string } }) {
+  const t = getT();
   const a = await load(params.slug);
   if (!a) notFound();
   const article = a!;
 
   const { blocks, headings } = renderMarkdown(article.body);
   const url = `${SITE_URL}/inspirasi/${article.slug}`;
-  const jsonLd = {
+  const articleLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: article.title,
@@ -55,7 +61,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
     datePublished: article.published_at,
     dateModified: article.updated_at,
     author: { '@type': 'Organization', name: article.author_name },
-    publisher: { '@type': 'Organization', name: 'Urbanix Store', logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/urbanix-logo-dark.png` } },
+    publisher: { '@id': `${SITE_URL}/#toko`, '@type': 'Organization', name: 'Urbanix Store', logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/urbanix-logo-dark.png` } },
     mainEntityOfPage: url,
     articleSection: article.category?.name,
     keywords: article.tags.join(', '),
@@ -63,94 +69,124 @@ export default async function ArticlePage({ params }: { params: { slug: string }
   };
 
   return (
-    <article>
+    <article className="ed">
       <ReadingProgress targetId="isi-artikel" />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-
-      {/* Kepala artikel */}
-      <header className="relative isolate overflow-hidden bg-cobalt-900 px-4 pb-36 pt-10 text-white sm:px-6 sm:pb-48 sm:pt-14 lg:px-8">
-        {article.cover ? (
-          <>
-            {/* Ada sampul sendiri: latar diambil dari sampul (diburamkan) agar warnanya senada */}
-            <img
-              src={article.cover}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 h-full w-full scale-125 object-cover opacity-70 blur-[70px] saturate-150"
-            />
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
-          </>
-        ) : (
-          /* Sampul default (navy + oranye): latar navy Urbanix dengan cahaya oranye, senada sampul */
-          <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-[#ff5b14] opacity-25 blur-[120px]" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(articleLd)} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={jsonLdHtml(
+          breadcrumbJsonLd([
+            { name: 'Inspirasi', path: '/inspirasi' },
+            ...(article.category ? [{ name: article.category.name, path: `/inspirasi?kategori=${article.category.slug}` }] : []),
+            { name: article.title, path: `/inspirasi/${article.slug}` },
+          ])
         )}
-        <div className="relative mx-auto max-w-3xl text-center">
-          <nav aria-label="Breadcrumb" className="text-sm text-white/60">
-            <Link href="/inspirasi" className="hover:text-white">Inspirasi</Link>
+      />
+
+      {/* Kepala artikel (gaya editorial: putih, judul besar, garis tipis) */}
+      <header className="px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+        <div className="relative isolate mx-auto max-w-6xl">
+          <GearBackdrop className="bottom-[86px] opacity-70" />
+          <nav aria-label={t('Breadcrumb')} className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Link href="/" className="inline-flex items-center hover:text-ink" aria-label={t('Beranda')}>
+              <Home size={14} />
+            </Link>
+            <ChevronRight size={12} className="opacity-60" />
+            <Link href="/inspirasi" className="hover:text-ink">{t('Inspirasi')}</Link>
             {article.category && (
               <>
-                <span className="mx-2">/</span>
-                <Link href={`/inspirasi?kategori=${article.category.slug}#artikel`} className="hover:text-white">
+                <ChevronRight size={12} className="opacity-60" />
+                <Link href={`/inspirasi?kategori=${article.category.slug}#artikel`} className="hover:text-ink">
                   {article.category.name}
                 </Link>
               </>
             )}
           </nav>
-          <h1 className="mt-5 text-3xl font-extrabold leading-[1.15] tracking-tight sm:text-5xl">{article.title}</h1>
-          {article.excerpt && <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/75">{article.excerpt}</p>}
-          <div className="mt-7 flex items-center justify-center gap-3 text-sm">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sun-400 font-extrabold text-cobalt-900">
-              {article.author_name.slice(0, 1).toUpperCase()}
-            </span>
-            <div className="text-left">
-              <p className="font-bold">{article.author_name}</p>
-              <p className="text-white/65">
-                <time dateTime={article.published_at || undefined}>{articleDate(article.published_at)}</time> ·{' '}
-                {article.reading_minutes} menit baca
-              </p>
+
+          <div className="mt-8 max-w-4xl">
+            {article.category && (
+              <Link href={`/inspirasi?kategori=${article.category.slug}#artikel`} className="inline-flex border-t-[3px] border-ed pt-2">
+                <CategoryBadge category={article.category} />
+              </Link>
+            )}
+            <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.1] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.4rem]">{article.title}</h1>
+            {article.excerpt && <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl sm:leading-9">{article.excerpt}</p>}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-y border-slate-200 py-4">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink font-extrabold text-surface">
+                {article.author_name.slice(0, 1).toUpperCase()}
+              </span>
+              <div>
+                <p className="font-bold text-ink">{article.author_name}</p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500">
+                  <time dateTime={article.published_at || undefined} className="inline-flex items-center gap-1.5">
+                    <Calendar size={13} /> {articleDate(article.published_at)}
+                  </time>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock size={13} /> {t('{n} menit baca', { n: article.reading_minutes })}
+                  </span>
+                  {article.comments.length > 0 && (
+                    <a href="#komentar" className="inline-flex items-center gap-1.5 hover:text-ed">
+                      <Chat size={13} /> {t('{n} komentar', { n: article.comments.length })}
+                    </a>
+                  )}
+                </p>
+              </div>
             </div>
+            <ShareButtons url={url} title={article.title} />
           </div>
         </div>
       </header>
 
       {/* Sampul */}
-      <div className="relative -mt-28 px-4 sm:-mt-36 sm:px-6 lg:px-8">
-        <div className="mx-auto aspect-[1200/630] max-w-5xl overflow-hidden rounded-[2rem] bg-cobalt-800 shadow-2xl shadow-slate-900/25">
-          <Cover src={article.cover} alt={article.title} eager />
+      <figure className="mt-8 px-4 sm:px-6 lg:px-8">
+        <div className="inspo-reveal mx-auto aspect-[1200/630] max-w-6xl overflow-hidden rounded-md bg-mist">
+          <Cover src={article.cover} alt={article.title} eager sizes="(min-width: 1152px) 1152px, 100vw" />
         </div>
-      </div>
+      </figure>
 
       {/* Isi + daftar isi */}
       <div className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_260px]">
+        <div className="mx-auto grid grid-cols-1 max-w-6xl gap-10 lg:grid-cols-[1fr_260px]">
           <div id="isi-artikel" className="mx-auto w-full min-w-0 max-w-[720px]">
             {headings.length >= 3 && (
-              <details className="mb-8 rounded-2xl bg-mist p-5 lg:hidden">
-                <summary className="cursor-pointer font-extrabold text-ink">Daftar isi</summary>
-                <ol className="mt-3 space-y-2 text-sm">
-                  {headings.map((h) => (
-                    <li key={h.id} className={h.level === 3 ? 'pl-4' : ''}>
-                      <a href={`#${h.id}`} className="text-slate-600 hover:text-ink">{h.text}</a>
-                    </li>
-                  ))}
+              <details className="group mb-10 border-y-[3px] border-ink lg:hidden">
+                <summary className="flex cursor-pointer list-none items-center gap-2 py-3.5 text-sm font-extrabold uppercase tracking-[0.12em] text-ink [&::-webkit-details-marker]:hidden">
+                  <ListIcon size={16} /> {t('Daftar isi')}
+                  <span className="ml-auto text-xs font-semibold normal-case tracking-normal text-slate-500">{headings.filter((h) => h.level === 2).length} bagian</span>
+                  <ChevronRight size={16} className="rotate-90 transition-transform duration-300 group-open:-rotate-90" />
+                </summary>
+                <ol className="border-t border-slate-200 pb-2">
+                  {headings
+                    .filter((h) => h.level === 2)
+                    .map((h) => (
+                      <li key={h.id} className="border-b border-slate-200 last:border-0">
+                        <a href={`#${h.id}`} className="flex gap-3 py-3 text-[15px] font-semibold leading-snug text-slate-700 active:text-ed">
+                          <span aria-hidden="true" className="mt-2.5 h-1.5 w-1.5 shrink-0 bg-ed" />
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
                 </ol>
               </details>
             )}
 
-            <ArticleBody blocks={blocks} products={article.products} />
+            <ArticleBody blocks={blocks} products={article.products} t={t} />
             <ArticleEnhancer targetId="isi-artikel" />
 
             {/* Label */}
             {article.tags.length > 0 && (
               <div className="mt-12 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-6">
-                <span className="mr-1 text-sm font-bold text-slate-600">Label</span>
+                <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-bold text-slate-600"><Tag size={15} /> {t('Label')}</span>
                 {article.tags.map((t) => (
                   <Link
                     key={t}
                     href={`/inspirasi?label=${encodeURIComponent(t)}#artikel`}
-                    className="rounded-full bg-mist px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-slate-200 transition hover:bg-surface hover:ring-ink"
+                    className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-ink transition hover:border-ed hover:text-ed"
                   >
-                    #{t}
+                    <span className="text-ed">#</span>{t}
                   </Link>
                 ))}
               </div>
@@ -164,14 +200,14 @@ export default async function ArticlePage({ params }: { params: { slug: string }
             </div>
 
             {/* Penulis */}
-            <div className="mt-10 flex items-center gap-4 rounded-3xl bg-cobalt-900 p-6 text-white">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sun-400 text-xl font-extrabold text-cobalt-900">
+            <div className="mt-10 flex items-center gap-4 border-y-[3px] border-ink py-5">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-ink text-xl font-extrabold text-surface">
                 {article.author_name.slice(0, 1).toUpperCase()}
               </span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sun-400">Ditulis oleh</p>
+                <p className="ed-kicker">{t('Ditulis oleh')}</p>
                 <p className="mt-0.5 text-lg font-extrabold">{article.author_name}</p>
-                <p className="text-sm text-white/70">Tim Urbanix Store, toko gear kreator dari Jakarta.</p>
+                <p className="text-sm text-slate-500">{t('Tim Urbanix Store, toko gear kreator dari Jakarta.')}</p>
               </div>
             </div>
 
@@ -182,24 +218,12 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
           {headings.length >= 3 && (
             <aside className="hidden lg:block">
-              <nav aria-label="Daftar isi" className="sticky top-28 rounded-2xl bg-surface p-5 ring-1 ring-slate-200">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar isi</p>
-                <ol className="mt-3 space-y-1 text-sm">
-                  {headings.map((h) => (
-                    <li key={h.id}>
-                      <a
-                        href={`#${h.id}`}
-                        className={`block rounded-lg px-2 py-1.5 leading-snug text-slate-600 hover:bg-mist hover:text-ink ${h.level === 3 ? 'pl-5 text-[13px]' : 'font-semibold'}`}
-                      >
-                        {h.text}
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-                <a href="#komentar" className="mt-4 block rounded-xl bg-mist px-3 py-2 text-center text-sm font-bold text-ink hover:ring-1 hover:ring-ink">
-                  Ke komentar ↓
-                </a>
-              </nav>
+              <div className="sticky top-28 flex max-h-[calc(100vh-8.5rem)] flex-col">
+              <TableOfContents headings={headings} />
+              <a href="#komentar" className="group mt-3 flex shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 bg-surface px-3 py-2.5 text-sm font-bold text-ink transition hover:border-ed hover:text-ed">
+                <Chat size={15} /> {t('Ke komentar')}
+              </a>
+              </div>
             </aside>
           )}
         </div>
@@ -207,9 +231,10 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
       {/* Produk terkait */}
       {article.related_products.length > 0 && (
-        <section className="bg-mist px-4 py-14 sm:px-6 lg:px-8">
+        <section className="px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <h2 className="text-2xl font-extrabold tracking-tight text-ink">Produk yang dibahas</h2>
+            <div className="border-t-[3px] border-ink pt-5"><p className="ed-kicker">{t('Ada di Urbanix')}</p>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Produk yang dibahas')}</h2></div>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {article.related_products.slice(0, 8).map((p) => (
                 <ProductCard key={p.id} product={p} />
@@ -223,13 +248,13 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       {article.more.length > 0 && (
         <section className="px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <div className="flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-extrabold tracking-tight text-ink">Baca juga</h2>
-              <Link href="/inspirasi" className="text-sm font-bold text-ink hover:underline">Semua artikel →</Link>
+            <div className="flex items-end justify-between gap-4 border-t-[3px] border-ink pt-5">
+              <h2 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{t('Baca juga')}</h2>
+              <Link href="/inspirasi" className="group inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-ed">{t('Semua artikel')} <ArrowRight size={16} /></Link>
             </div>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {article.more.map((m) => (
-                <ArticleCard key={m.id} article={m} />
+            <div className="mt-7 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              {article.more.map((m, i) => (
+                <ArticleCard key={m.id} article={m} index={i} />
               ))}
             </div>
           </div>

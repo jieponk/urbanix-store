@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .pricing import price_info
+from .shipping import package_info
 from .models import Category, Product, ProductVariation, Cart, CartItem, Order, OrderItem, PaymentEvent
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,13 +14,33 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+def flash_data(info):
+    """Data flash sale untuk label & bar sisa kuota (None bila bukan flash sale)."""
+    if not info.is_flash:
+        return None
+    return {
+        'name': info.promo_name,
+        'ends_at': info.promo_ends_at.isoformat() if info.promo_ends_at else None,
+        'quota': info.quota,
+        'left': info.quota_left,
+    }
+
+
 class ProductVariationSerializer(serializers.ModelSerializer):
     final_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
+    package = serializers.SerializerMethodField()
+    flash = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductVariation
-        fields = ('variation_id', 'name', 'sku', 'price', 'final_price', 'discount_percent', 'stock', 'image_url')
+        fields = ('variation_id', 'name', 'sku', 'price', 'final_price', 'discount_percent', 'stock', 'image_url', 'package', 'flash')
+
+    def get_package(self, obj):
+        return package_info(obj.product, obj)
+
+    def get_flash(self, obj):
+        return flash_data(self._info(obj))
 
     def _info(self, obj):
         return price_info(obj.product, obj)
@@ -43,10 +64,21 @@ class ProductSerializer(serializers.ModelSerializer):
     discount_percent = serializers.SerializerMethodField()
     promo_name = serializers.SerializerMethodField()
     promo_ends_at = serializers.SerializerMethodField()
+    package = serializers.SerializerMethodField()
+    flash = serializers.SerializerMethodField()
+    sold_count = serializers.IntegerField(read_only=True, default=0)
+    review_count = serializers.IntegerField(read_only=True, default=0)
+    rating_avg = serializers.FloatField(read_only=True, default=None)
 
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_package(self, obj):
+        return package_info(obj)
+
+    def get_flash(self, obj):
+        return flash_data(self._best(obj))
 
     def _variations(self, obj):
         # Pastikan setiap varian memakai objek produk yang sama (berisi data promo yang sudah di-prefetch).

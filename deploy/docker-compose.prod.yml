@@ -27,14 +27,16 @@ services:
     environment:
       DEBUG: "False"
       SECRET_KEY: ${SECRET_KEY:?isi SECRET_KEY di .env}
-      ALLOWED_HOSTS: ${DOMAIN},www.${DOMAIN},backend,localhost
-      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://www.${DOMAIN}
+      ALLOWED_HOSTS: ${DOMAIN},www.${DOMAIN},seller.${DOMAIN},backend,localhost
+      CSRF_TRUSTED_ORIGINS: https://${DOMAIN},https://www.${DOMAIN},https://seller.${DOMAIN}
       FRONTEND_URL: https://${DOMAIN}
+      SELLER_URL: https://seller.${DOMAIN}
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_DB: urbanix
@@ -43,9 +45,27 @@ services:
       STATIC_ROOT: /srv/static
       MEDIA_ROOT: /srv/media
       DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+      GIPHY_API_KEY: ${GIPHY_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GITHUB_MODELS_TOKEN: ${GITHUB_MODELS_TOKEN:-}
+      GITHUB_MODEL: ${GITHUB_MODEL:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      GROQ_MODEL: ${GROQ_MODEL:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      NEWS_AI_PROVIDER: ${NEWS_AI_PROVIDER:-}
+      NEWS_AI_API_KEY: ${NEWS_AI_API_KEY:-}
+      NEWS_AI_DELAY: ${NEWS_AI_DELAY:-}
+      NEWS_AI_MODEL: ${NEWS_AI_MODEL:-}
+      NEWS_AI_MAX_PER_RUN: ${NEWS_AI_MAX_PER_RUN:-8}
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
       MIDTRANS_IS_PRODUCTION: ${MIDTRANS_IS_PRODUCTION:-False}
+      BITESHIP_API_KEY: ${BITESHIP_API_KEY:-}
     volumes:
       - static:/srv/static
       - media:/srv/media
@@ -69,6 +89,9 @@ services:
       SITE_URL: https://${DOMAIN}
       GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
       NODE_ENV: production
+    volumes:
+      # Sampul artikel otomatis yang sudah dibuat (supaya tidak dibuat ulang setiap deploy)
+      - sampul_cache:/app/.cache/sampul
     depends_on:
       backend:
         condition: service_healthy
@@ -84,6 +107,7 @@ services:
       DOMAIN: ${DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./maintenance:/srv/maintenance:ro
       - caddy_data:/data
       - caddy_config:/config
       - static:/srv/static:ro
@@ -93,6 +117,7 @@ services:
 
 volumes:
   pgdata:
+  sampul_cache:
   static:
   media:
   caddy_data:

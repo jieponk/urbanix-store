@@ -7,10 +7,13 @@ export default function ArticleBody({
   blocks,
   products,
   preview = false,
+  t,
 }: {
   blocks: Block[];
   products: Record<string, Product>;
   preview?: boolean;
+  /** Penerjemah dari halaman server (opsional). */
+  t?: (text: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
     <>
@@ -22,7 +25,7 @@ export default function ArticleBody({
             <div key={i} className="my-9 aspect-video overflow-hidden rounded-3xl bg-black shadow-xl">
               <iframe
                 src={`https://www.youtube-nocookie.com/embed/${b.id}`}
-                title="Video YouTube"
+                title={t ? t('Video YouTube') : 'Video YouTube'}
                 loading="lazy"
                 allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -31,7 +34,7 @@ export default function ArticleBody({
             </div>
           );
         const product = products[b.id];
-        if (product) return <ProductEmbed key={i} product={product} />;
+        if (product) return <ProductEmbed key={i} product={product} t={t} />;
         return !preview ? null : (
           <p key={i} className="my-6 rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-center text-sm text-slate-500">
             Kartu produk #{b.id} (produk tidak ditemukan / nonaktif)

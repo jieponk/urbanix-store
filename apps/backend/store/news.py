@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import threading
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -28,7 +29,7 @@ from django.utils import timezone
 
 log = logging.getLogger(__name__)
 
-USER_AGENT = "UrbanixStoreNews/1.0 (+https://urbanix.store)"
+USER_AGENT = "UrbanixStoreNews/1.0 (+https://urbanix.id)"
 MAX_BYTES = 3 * 1024 * 1024
 SUMMARY_CHARS = 300
 REFRESH_EVERY = timedelta(hours=2)
@@ -151,8 +152,8 @@ def parse_feed(data: bytes, google_news: bool = False) -> list[FeedItem]:
     return items
 
 
-def download(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/rss+xml, application/xml, */*"})
+def download(url: str, accept: str = "application/rss+xml, application/xml, */*") -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": accept})
     with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310 (URL dari admin)
         data = resp.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
@@ -185,6 +186,49 @@ def translate(texts: list[str], source_lang: str = "EN") -> list[str] | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("Terjemahan DeepL gagal: %s", exc)
         return None
+
+
+def check_key() -> tuple[bool, str]:
+    """Uji kunci DeepL dengan menerjemahkan satu kata. Mengembalikan (berhasil, pesan)."""
+    key = deepl_key()
+    if not key:
+        return False, "DEEPL_API_KEY kosong."
+    host = "api-free.deepl.com" if key.endswith(":fx") else "api.deepl.com"
+    body = json.dumps({"text": ["Camera lens"], "target_lang": "ID"}).encode()
+    req = urllib.request.Request(
+        f"https://{host}/v2/translate",
+        data=body,
+        headers={"Authorization": f"DeepL-Auth-Key {key}", "Content-Type": "application/json", "User-Agent": USER_AGENT},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:  # noqa: S310
+            text = json.loads(resp.read())["translations"][0]["text"]
+        return True, f'Kunci valid. Contoh: "Camera lens" -> "{text}"'
+    except urllib.error.HTTPError as exc:
+        reasons = {
+            403: "Kunci ditolak DeepL (salah ketik, atau kunci sudah dihapus).",
+            456: "Kuota DeepL bulan ini habis.",
+            429: "Terlalu banyak permintaan, coba lagi sebentar.",
+        }
+        return False, reasons.get(exc.code, f"DeepL menjawab HTTP {exc.code}.")
+    except Exception as exc:  # noqa: BLE001
+        return False, f"Tidak bisa terhubung ke DeepL: {exc}"
+
+
+def translate_all_pending(limit_rounds: int = 25) -> int:
+    """Terjemahkan semua berita bahasa Inggris yang belum diterjemahkan (40 per putaran)."""
+    from .models import NewsArticle
+
+    total = 0
+    for _ in range(limit_rounds):
+        batch = list(NewsArticle.objects.filter(is_translated=False, source__language="en")[:40])
+        if not batch:
+            break
+        done = translate_articles(batch)
+        if not done:
+            break
+        total += done
+    return total
 
 
 def translate_articles(articles) -> int:
@@ -227,6 +271,9 @@ def fetch_source(source) -> int:
     items.sort(key=lambda i: i.published_at, reverse=True)
     cutoff = timezone.now() - timedelta(days=KEEP_DAYS)
     created = []
+    keywords = [k.strip().lower() for k in (source.required_keywords or "").split(",") if k.strip()]
+    if keywords:
+        items = [i for i in items if any(k in f"{i.title} {i.summary}".lower() for k in keywords)]
     for item in items[: source.max_items]:
         if item.published_at < cutoff:
             continue
@@ -265,6 +312,13 @@ def refresh_all(force: bool = False) -> dict:
     # Coba lagi terjemahan yang dulu gagal (mis. kuota DeepL habis / kunci baru diisi).
     if deepl_key():
         translate_articles(list(NewsArticle.objects.filter(is_translated=False, source__language="en")[:40]))
+    # Inti berita + opini AI (dibatasi per pembaruan supaya biaya terkendali).
+    from .news_ai import process_pending
+
+    try:
+        report["_ai"] = process_pending()
+    except Exception:  # noqa: BLE001
+        log.exception("Inti berita AI gagal")
     NewsArticle.objects.filter(published_at__lt=now - timedelta(days=KEEP_DAYS), is_pinned=False).delete()
     return report
 

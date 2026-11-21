@@ -13,24 +13,45 @@ export const siteConfig = {
 
   // Deskripsi singkat toko (footer & deskripsi situs untuk Google)
   motto: 'Kamera, lensa, drone, audio, dan gear kreator original bergaransi resmi.',
+  // Bukti kepercayaan di halaman produk & beranda.
+  since: 'Januari 2026',
+  city: 'Jakarta Pusat',
+  // Deskripsi beranda untuk Google (±150 karakter)
+  metaDescription:
+    'Belanja kamera, lensa, drone, action cam & mic Sony, Canon, DJI, Insta360, Fujifilm. 100% original bergaransi resmi, kirim ke seluruh Indonesia.',
 
   // Data hukum untuk halaman Syarat & Ketentuan dan Kebijakan Privasi. WAJIB diisi sebelum dipublikasikan luas.
   legal: {
     company: 'PT Koolsnap Multi Retailindo',
     address: 'Jl. Kerekot Bundar XI No. 4, RT.8/RW.6, Pasar Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta 10710',
-    updated: '11 November 2026',
+    updated: '20 November 2026',
     paymentDeadline: '1×24 jam',
     returnWindow: '2×24 jam',
+    // Ketentuan pengiriman & retur (gaya Shopee). Ubah di sini bila kebijakan berubah.
+    shipProcessing: '2 hari kerja', // masa pengemasan (standar Shopee): dikirim maks. sekian setelah pembayaran dikonfirmasi
+    workDays: 'Senin–Sabtu, kecuali libur nasional',
+    // Jenis pengiriman; ongkir mengikuti tarif resmi masing-masing ekspedisi.
+    // Kurir yang benar-benar tampil di checkout diatur di Seller Center → Pengaturan → Ongkir otomatis.
+    shippingOptions: [
+      { name: 'Reguler', couriers: 'JNE, J&T Express, SiCepat, AnterAja, POS Indonesia, Lion Parcel, ID Express', note: 'ke seluruh Indonesia' },
+      { name: 'Kargo', couriers: 'layanan kargo ekspedisi yang tersedia', note: 'untuk paket besar atau berat' },
+      { name: 'Instan', couriers: 'GoSend / GrabExpress', note: 'untuk alamat yang terjangkau layanan instan dari gudang kami di Jakarta (titik lokasi wajib ditandai di peta)' },
+    ],
+    shipArea: 'seluruh Indonesia',
+    reviewTime: '1×24 jam hari kerja', // admin memeriksa pengajuan retur maks. sekian
+    refundTime: '7 hari kerja', // dana dikembalikan maks. sekian setelah barang retur diterima & dicek
   },
 
   // Kontak toko (tampil di footer). Nomor WhatsApp di Pengaturan toko (admin) diutamakan bila diisi.
   contact: {
-    person: 'Admin Urbanix',
     // Nomor WhatsApp format internasional tanpa + atau spasi, contoh: '6281234567890'.
     // Kalau dikosongkan, nomor tampil sebagai teks biasa (bukan tautan WhatsApp).
     whatsappNumber: '628212990180',
     whatsappDisplay: '0821-2990-180',
-    email: 'urbanixstore26@gmail.com',
+    // Email @urbanix.id (diteruskan Cloudflare Email Routing ke Gmail toko).
+    email: 'cs@urbanix.id', // layanan pelanggan umum
+    returnEmail: 'retur@urbanix.id', // retur & pengembalian dana
+    partnershipEmail: 'partnership@urbanix.id', // kerja sama brand
     hours: 'Senin–Sabtu, 09.00–17.00 WIB',
   },
 
@@ -88,10 +109,27 @@ export const siteConfig = {
    * PENTING: tampilkan hanya metode yang benar-benar bisa dipakai di checkout.
    */
   paymentMethods: [
-    { name: 'QRIS', logo: 'qris', showName: true },
-    { name: 'Transfer Bank', logo: 'transfer-bank', showName: true },
-    { name: 'E-Wallet', logo: 'e-wallet', showName: true },
-  ] as { name: string; logo: string; showName?: boolean }[],
+    // Semua metode Snap Midtrans aktif. Logo resmi dari koleksi Midtrans (github.com/veritrans/logo),
+    // dikonversi ke WebP di public/payments. `solid` = logo berkotak/berwarna penuh: di footer gelap
+    // tampil abu-abu (bukan siluet putih) supaya bentuknya tetap terbaca.
+    { name: 'QRIS', logo: 'qris-logo' },
+    { name: 'GoPay', logo: 'gopay' },
+    { name: 'ShopeePay', logo: 'shopeepay' },
+    { name: 'Visa', logo: 'visa' },
+    { name: 'Mastercard', logo: 'mastercard', solid: true },
+    { name: 'JCB', logo: 'jcb', solid: true },
+    { name: 'American Express', logo: 'amex', solid: true },
+    { name: 'BCA', logo: 'bca' },
+    { name: 'Mandiri', logo: 'mandiri' },
+    { name: 'BNI', logo: 'bni' },
+    { name: 'BRI', logo: 'bri' },
+    { name: 'Permata Bank', logo: 'permata' },
+    { name: 'CIMB Niaga', logo: 'cimb', solid: true },
+    { name: 'Indomaret', logo: 'indomaret', solid: true },
+    { name: 'Alfamart', logo: 'alfamart', solid: true },
+    { name: 'Akulaku PayLater', logo: 'akulaku' },
+    { name: 'Kredivo', logo: 'kredivo' },
+  ] as { name: string; logo: string; showName?: boolean; solid?: boolean }[],
 
   // Teks berjalan di beranda
   highlights: [

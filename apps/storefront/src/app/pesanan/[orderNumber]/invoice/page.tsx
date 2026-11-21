@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import { UrbanixLogoStacked } from '@/components/BrandSvg';
 import PrintButton from '@/components/PrintButton';
 import { API, money } from '@/lib/api';
+import { weightText } from '@/lib/money';
 import { siteConfig } from '@/lib/siteConfig';
+import { ArrowLeft } from '@/components/inspirasi/InspoIcons';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Invoice', robots: { index: false, follow: false } };
@@ -14,8 +17,10 @@ type Invoice = {
   shipping_city: string;
   shipping_province: string;
   shipping_courier: string;
+  shipping_service?: string;
   tracking_number: string;
   shipping_cost: string | null;
+  total_weight_grams?: number;
   payment_method: 'MIDTRANS' | 'WHATSAPP' | '';
   payment_status: 'UNPAID' | 'PAID' | 'FAILED' | 'EXPIRED';
   status: string;
@@ -47,7 +52,7 @@ function badge(o: Invoice) {
 }
 
 const STATUS: Record<string, string> = {
-  PENDING: 'Menunggu konfirmasi',
+  PENDING: 'Menunggu pembayaran',
   PROCESSING: 'Diproses',
   SHIPPED: 'Dikirim',
   COMPLETED: 'Selesai',
@@ -84,7 +89,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
       {/* Tombol (tidak ikut tercetak) */}
       <div className="mx-auto mb-4 flex max-w-3xl flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={`/pesanan/${o.order_number}`} className="text-sm font-bold text-ink hover:underline">
-          ← Kembali ke status pesanan
+          <ArrowLeft size={15} className="inline" /> Kembali ke status pesanan
         </Link>
         <PrintButton className="rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-surface hover:opacity-90">
           Cetak / Simpan PDF
@@ -93,12 +98,12 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
 
       {/* Lembar invoice: selalu putih, juga di mode gelap */}
       <article className="invoice-sheet mx-auto max-w-3xl overflow-hidden rounded-2xl bg-white text-[#1c2030] shadow-xl shadow-slate-900/10 print:max-w-none print:rounded-none print:shadow-none">
-        <div className="h-2 bg-[#ff5b14]" />
+        <div className="h-2 bg-[#111111]" />
         <div className="p-6 sm:p-10">
           {/* Kepala */}
           <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
-              <img src="/brand/urbanix-logo-dark.png" alt="Urbanix Store" className="h-16 w-auto" />
+              <UrbanixLogoStacked className="h-16 w-auto shrink-0 text-[#111111]" />
               <div className="text-xs leading-5 text-[#4b5563]">
                 <p className="text-sm font-extrabold text-[#1c2030]">{legal.company}</p>
                 <p className="max-w-xs">{legal.address}</p>
@@ -117,7 +122,7 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           </header>
 
           {/* Info */}
-          <section className="mt-8 grid gap-6 border-y border-[#e5e7eb] py-6 text-sm sm:grid-cols-3">
+          <section className="mt-8 grid grid-cols-1 gap-6 border-y border-[#e5e7eb] py-6 text-sm sm:grid-cols-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">Ditagihkan kepada</p>
               <p className="mt-1 font-bold">{o.customer_name || '-'}</p>
@@ -134,8 +139,11 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">Pengiriman</p>
-              <p className="mt-1 text-[#4b5563]">Kurir: <b className="text-[#1c2030]">{o.shipping_courier || 'Dikonfirmasi admin'}</b></p>
+              <p className="mt-1 text-[#4b5563]">Kurir: <b className="text-[#1c2030]">{o.shipping_courier || o.shipping_service || 'Dikonfirmasi admin'}</b></p>
               <p className="break-all text-[#4b5563]">No. resi: <b className="text-[#1c2030]">{o.tracking_number || '-'}</b></p>
+              {o.total_weight_grams ? (
+                <p className="text-[#4b5563]">Berat kirim: <b className="text-[#1c2030]">{weightText(o.total_weight_grams)}</b></p>
+              ) : null}
             </div>
           </section>
 
@@ -206,11 +214,17 @@ export default async function InvoicePage({ params }: { params: { orderNumber: s
           </div>
 
           {/* Catatan */}
-          <footer className="mt-10 rounded-xl bg-[#f3f5fa] p-5 text-xs leading-5 text-[#4b5563]">
+          <footer className="mt-10 rounded-xl bg-[#f4f4f4] p-5 text-xs leading-5 text-[#4b5563]">
             <p className="font-bold text-[#1c2030]">Catatan pembayaran</p>
             <p className="mt-1">
-              Pembayaran hanya ke rekening resmi atas nama <b>{legal.company}</b> yang diinformasikan lewat WhatsApp
-              resmi {contact.whatsappDisplay}. Kami tidak pernah meminta transfer ke rekening pribadi.
+              {o.payment_method === 'MIDTRANS' ? (
+                <>Pembayaran diproses melalui Midtrans di urbanix.id. Kami tidak pernah meminta transfer ke rekening pribadi.</>
+              ) : (
+                <>
+                  Pembayaran hanya ke rekening resmi atas nama <b>{legal.company}</b>. Kami tidak pernah meminta transfer ke
+                  rekening pribadi.
+                </>
+              )}
             </p>
             <p className="mt-3">
               Invoice ini dibuat otomatis oleh sistem Urbanix Store dan bukan merupakan Faktur Pajak. Terima kasih

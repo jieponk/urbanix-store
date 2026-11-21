@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -160,7 +161,7 @@ export default function ArticleEditorPage() {
       const a = await sellerApi<any>(isNew ? 'articles' : `articles/${id}`, { method: isNew ? 'POST' : 'PATCH', body: fd });
       setDirty(false);
       notify(next === 'PUBLISHED' ? 'Artikel terbit! Tampil di Inspirasi dalam ±1 menit.' : 'Draf disimpan.');
-      if (isNew) router.replace(`/seller/artikel/${a.id}`);
+      if (isNew) router.replace(sellerHref(`/seller/artikel/${a.id}`));
       else {
         setForm((f) => ({ ...f, status: a.status, slug: a.slug, published_at: toLocalInput(a.published_at) }));
         setCover(a.cover || '');
@@ -179,7 +180,7 @@ export default function ArticleEditorPage() {
     await sellerApi(`articles/${id}`, { method: 'DELETE' }).catch((e) => notify(e.message, 'error'));
     setDirty(false);
     notify('Artikel dihapus.');
-    router.replace('/seller/artikel');
+    router.replace(sellerHref('/seller/artikel'));
   }
 
   const fileUrl = useMemo(() => (coverFile ? URL.createObjectURL(coverFile) : ''), [coverFile]);
@@ -194,13 +195,13 @@ export default function ArticleEditorPage() {
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/artikel', label: 'Artikel' }}
+        back={{ href: sellerHref('/seller/artikel'), label: 'Artikel' }}
         title={isNew ? 'Tulis artikel' : 'Edit artikel'}
         subtitle={dirty ? 'Ada perubahan yang belum disimpan' : published ? 'Sudah terbit' : 'Draf'}
         actions={
           <>
             {!isNew && published && meta?.slug && (
-              <a href={`/inspirasi/${meta.slug}`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>Lihat</a>
+              <a href={shopHref(`/inspirasi/${meta.slug}`)} target="_blank" rel="noopener noreferrer" className={btn.ghost}>Lihat</a>
             )}
             <button type="button" disabled={busy} className={btn.ghost} onClick={() => save(published ? 'PUBLISHED' : 'DRAFT')}>
               {published ? 'Simpan perubahan' : 'Simpan draf'}
@@ -212,7 +213,7 @@ export default function ArticleEditorPage() {
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_340px]">
         {/* Kolom tulis */}
         <div className="min-w-0 space-y-4">
           <input
@@ -309,7 +310,18 @@ export default function ArticleEditorPage() {
           <Card title="Gambar sampul">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={coverPreview || DEFAULT_COVER} alt="" className="aspect-[1200/630] w-full rounded-xl bg-mist object-cover ring-1 ring-slate-200" />
-            {!coverPreview && <p className="mt-2 text-xs text-slate-500">Belum ada sampul: gambar default Urbanix yang dipakai.</p>}
+            {!coverPreview && (
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {related.length
+                  ? 'Belum upload sampul: sampul dibuat otomatis dari judul + foto produk terkait (maks. 3 produk pertama).'
+                  : 'Belum ada sampul: pilih Produk terkait untuk sampul otomatis, atau gambar default Urbanix yang dipakai.'}
+              </p>
+            )}
+            {!coverPreview && form.slug && related.length > 0 && (
+              <a href={shopHref(`/inspirasi/${form.slug}/sampul.png`)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs font-bold text-brand-600 hover:underline">
+                Lihat sampul otomatis (setelah disimpan & terbit) ↗
+              </a>
+            )}
             <div className="mt-3 flex gap-2">
               <label className={`${btn.ghost} cursor-pointer`}>
                 {coverPreview ? 'Ganti' : 'Upload sampul'}
@@ -319,7 +331,7 @@ export default function ArticleEditorPage() {
                 <button type="button" className={btn.ghost} onClick={() => { setCoverFile(null); setRemoveCover(true); setDirty(true); }}>Hapus</button>
               )}
             </div>
-            <p className="mt-2 text-xs text-slate-500">Ukuran ideal 1200×630 px (JPG/PNG/WebP, maks. 5 MB).</p>
+            <p className="mt-2 text-xs text-slate-500">Ukuran ideal 1200×630 px. JPG/PNG/GIF boleh, maks. 5 MB; otomatis diubah ke WebP.</p>
           </Card>
 
           <Card title="Kategori & label">
@@ -383,7 +395,7 @@ export default function ArticleEditorPage() {
             </Card>
           )}
           <p className="text-center text-xs text-slate-500">
-            <Link href="/seller/komentar" className="underline">Kelola komentar</Link>
+            <Link href={sellerHref('/seller/komentar')} className="underline">Kelola komentar</Link>
           </p>
         </div>
       </div>

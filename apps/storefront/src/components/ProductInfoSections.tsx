@@ -8,6 +8,9 @@ import {
   type Block,
   type Section,
 } from '@/lib/productDescription';
+import { getT } from '@/lib/lang-server';
+import { fixWarrantyBrand, publicSku } from '@/lib/seo';
+import TablerIcon from '@/components/TablerIcon';
 
 /**
  * Susunan tetap untuk semua produk:
@@ -156,9 +159,18 @@ export default function ProductInfoSections({
   description?: string | null;
   variations?: Variation[];
 }) {
+  const t = getT();
   const parsed = parseDescription(description);
 
-  const warrantySections = parsed.warranty;
+  // Kalimat garansi yang menyebut merek lain (sisa template supplier) disesuaikan dengan merek produk.
+  const fix = (text: string) => fixWarrantyBrand(text, name);
+  const warrantySections: Section[] = parsed.warranty.map((section) => ({
+    ...section,
+    title: section.title ? fix(section.title) : section.title,
+    blocks: section.blocks.map((block) =>
+      block.type === 'p' ? { ...block, text: fix(block.text) } : { ...block, items: block.items.map(fix) }
+    ),
+  }));
   const showNameWarranty =
     warrantySections.length === 0 && warrantyFromName(name);
   const warrantyText = warrantySections
@@ -169,31 +181,36 @@ export default function ProductInfoSections({
   const variantNames = parsed.variants;
   const hasVariations = variations.length > 0;
   const hasDescription = parsed.description.length > 0;
+  // Banyak deskripsi langsung mulai dari Garansi/Key Feature: kartu Deskripsi kosong tidak perlu ditampilkan.
+  const hasOtherContent =
+    parsed.warranty.length > 0 || hasContent(parsed.features) || hasContent(parsed.specs) || hasContent(parsed.included);
 
   return (
     <div className="space-y-4">
       {/* 1. Deskripsi */}
-      <Card icon="doc" title="Deskripsi Produk">
-        {hasDescription ? (
-          <Blocks blocks={parsed.description} />
-        ) : (
-          <p className="text-sm text-slate-500">
-            Deskripsi produk belum tersedia.
-          </p>
-        )}
-      </Card>
+      {(hasDescription || !hasOtherContent) && (
+        <Card icon="doc" title={t('Deskripsi Produk')}>
+          {hasDescription ? (
+            <Blocks blocks={parsed.description} />
+          ) : (
+            <p className="text-sm text-slate-500">
+              {t('Detail lengkap produk ini bisa ditanyakan langsung ke admin lewat WhatsApp.')}
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* 2. Garansi */}
       {(warrantySections.length > 0 || showNameWarranty) && (
         <Card
           icon="shield"
-          title={warrantyIsOfficial ? 'Garansi Resmi' : 'Garansi'}
+          title={warrantyIsOfficial ? t('Garansi Resmi') : t('Garansi')}
           caption="Sesuai data supplier"
         >
           {showNameWarranty ? (
             <p className="text-sm leading-7 text-slate-600">
-              Produk ini tercantum dengan Garansi Resmi pada judul produk.
-              Rincian masa garansi mengikuti informasi dari supplier.
+              {t('Produk ini tercantum dengan Garansi Resmi pada judul produk.')}
+              {t('Rincian masa garansi mengikuti informasi dari supplier.')}
             </p>
           ) : (
             warrantySections.map((section, index) => (
@@ -212,28 +229,28 @@ export default function ProductInfoSections({
 
       {/* 3. Key feature */}
       {hasContent(parsed.features) && (
-        <Card icon="bolt" title="Key Feature">
+        <Card icon="bolt" title={t('Key Feature')}>
           <Groups sections={parsed.features} />
         </Card>
       )}
 
       {/* 4. Spesifikasi */}
       {hasContent(parsed.specs) && (
-        <Card icon="list" title="Spesifikasi">
+        <Card icon="list" title={t('Spesifikasi')}>
           <Groups sections={parsed.specs} keyValue />
         </Card>
       )}
 
       {/* 5. Isi dalam paket */}
       {hasContent(parsed.included) && (
-        <Card icon="box" title="Isi dalam Paket">
+        <Card icon="box" title={t('Isi dalam Paket')}>
           <Groups sections={parsed.included} />
         </Card>
       )}
 
       {/* 6. Varian tersedia */}
       {(hasVariations || variantNames.length > 0) && (
-        <Card icon="tag" title="Varian Tersedia">
+        <Card icon="tag" title={t('Varian Tersedia')}>
           {hasVariations ? (
             <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-100">
               {variations.map((variation) => (
@@ -243,17 +260,21 @@ export default function ProductInfoSections({
                 >
                   <div className="min-w-0">
                     <p className="break-words text-sm font-bold text-slate-800">
-                      {variation.name || 'Varian standar'}
+                      {variation.name || t('Varian standar')}
                     </p>
-                    {variation.sku && (
+                    {publicSku(variation.sku) && (
                       <p className="text-xs text-slate-400">
-                        SKU: {variation.sku}
+                        SKU: {publicSku(variation.sku)}
                       </p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-extrabold text-slate-900">
-                      {money(variation.price)}
+                    {/* Harga yang dibayar (setelah promo), harga normal dicoret bila berbeda */}
+                    {Number(variation.final_price ?? variation.price) < Number(variation.price) && (
+                      <p className="text-xs text-slate-400 line-through">{money(variation.price)}</p>
+                    )}
+                    <p className={`text-sm font-extrabold ${Number(variation.final_price ?? variation.price) < Number(variation.price) ? 'text-sale-600' : 'text-slate-900'}`}>
+                      {money(variation.final_price ?? variation.price)}
                     </p>
                     <p
                       className={`text-xs font-semibold ${
@@ -263,8 +284,8 @@ export default function ProductInfoSections({
                       }`}
                     >
                       {variation.stock > 0
-                        ? `Stok tercatat ${variation.stock}`
-                        : 'Stok tercatat habis'}
+                        ? t('Stok {n}', { n: variation.stock })
+                        : t('Stok habis')}
                     </p>
                   </div>
                 </li>
@@ -289,19 +310,8 @@ export default function ProductInfoSections({
       {hasContent(parsed.extras) && (
         <details className="group rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-slate-900 sm:text-lg">
-            Informasi Lainnya
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden="true"
-              className="shrink-0 transition-transform group-open:rotate-180"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            {t('Informasi Lainnya')}
+            <TablerIcon name="chevron-down" size={18} stroke={2.5} className="shrink-0 transition-transform group-open:rotate-180" />
           </summary>
           <div className="mt-4 space-y-4">
             <Groups sections={parsed.extras} />

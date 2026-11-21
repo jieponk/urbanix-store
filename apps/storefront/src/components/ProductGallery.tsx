@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/Icons';
 import { productImg } from '@/lib/img';
+import { useT } from '@/components/LangProvider';
 
 type Props = {
   images: string[];
@@ -14,6 +15,7 @@ type Props = {
 
 /** Galeri foto produk: gambar besar, geser kiri/kanan (juga swipe di HP), dan thumbnail. */
 export default function ProductGallery({ images, alt, focusImage, badge }: Props) {
+  const t = useT();
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
   const thumbs = useRef<HTMLDivElement | null>(null);
@@ -37,8 +39,8 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
 
   if (count === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-surface">
-        <p className="text-sm text-slate-400">Gambar produk tidak tersedia</p>
+      <div className="flex aspect-square items-center justify-center rounded-2xl border border-slate-200 bg-white">
+        <p className="text-sm text-slate-400">{t('Gambar produk tidak tersedia')}</p>
       </div>
     );
   }
@@ -74,7 +76,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
             <button
               type="button"
               onClick={() => go(-1)}
-              aria-label="Gambar sebelumnya"
+              aria-label={t('Gambar sebelumnya')}
               className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#1c2030] shadow-md ring-1 ring-black/5 hover:bg-white"
             >
               <ChevronLeftIcon size={20} />
@@ -82,7 +84,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
             <button
               type="button"
               onClick={() => go(1)}
-              aria-label="Gambar berikutnya"
+              aria-label={t('Gambar berikutnya')}
               className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#1c2030] shadow-md ring-1 ring-black/5 hover:bg-white"
             >
               <ChevronRightIcon size={20} />
@@ -101,7 +103,7 @@ export default function ProductGallery({ images, alt, focusImage, badge }: Props
               key={src}
               type="button"
               onClick={() => setIndex(i)}
-              aria-label={`Lihat gambar ${i + 1}`}
+              aria-label={t('Lihat gambar {n}', { n: i + 1 })}
               aria-current={i === index}
               className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white p-1 transition sm:h-20 sm:w-20 ${
                 i === index ? 'border-ink' : 'border-slate-200 opacity-70 hover:opacity-100'

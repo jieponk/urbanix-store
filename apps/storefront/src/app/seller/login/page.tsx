@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, toSellerPath } from '@/lib/sellerUrl';
 import { useState } from 'react';
 import BrandLogo from '@/components/BrandLogo';
 import { btn, inputCls } from '@/components/seller/ui';
@@ -22,8 +23,9 @@ export default function SellerLoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.detail || 'Login gagal.');
-      const next = new URLSearchParams(window.location.search).get('next') || '/seller';
-      window.location.href = next.startsWith('/seller') ? next : '/seller';
+      const next = new URLSearchParams(window.location.search).get('next') || sellerHref('/seller');
+      const target = toSellerPath(next);
+      window.location.href = sellerHref(target.startsWith('/seller') ? target : '/seller');
     } catch (err) {
       setError((err as Error).message);
       setLoading(false);

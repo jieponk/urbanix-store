@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import { money, type Category, type Product, type Review, type StoreSettings } from '@/lib/api';
 import { productImg } from '@/lib/img';
+import ShopeeReviewsLink from '@/components/ShopeeReviewsLink';
+import { Bolt, Countdown, QuotaBar } from '@/components/FlashSale';
+import { getT } from '@/lib/lang-server';
+import WaTypingPrompt from '@/components/WaTypingPrompt';
+import SimpleIcon, { SIMPLE_ICONS, simpleIconFor } from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 /* ------------------------------------------------------------ Kategori */
 
@@ -9,6 +15,11 @@ const CATEGORY_ART = new Set([
   'lighting-studio', 'streaming-video', 'memory-gadget', 'aksesori-kamera', 'cctv-keamanan',
   'webcam-komputer', 'lainnya',
 ]);
+
+/** Ilustrasi kategori di public/categories (dipakai juga di halaman promo). */
+export function categoryArt(category: Category) {
+  return `/categories/${categorySlug(category)}.svg`;
+}
 
 /** "Audio & Mic" -> "audio-mic" (sama dengan slug kategori di backend). */
 function categorySlug(category: Category) {
@@ -19,6 +30,7 @@ function categorySlug(category: Category) {
 }
 
 export function CategoryStrip({ categories, products }: { categories: Category[]; products: Product[] }) {
+  const t = getT();
   // Sampul kategori = ilustrasi di public/categories/<slug>.svg
   const tiles = categories
     .map((category) => ({
@@ -34,7 +46,7 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
   return (
     <section aria-labelledby="judul-kategori" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
       <h2 id="judul-kategori" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-        Belanja per kategori
+        {t('Belanja per kategori')}
       </h2>
       <ul className="scroll-row -mx-4 mt-5 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-y-6 sm:overflow-visible sm:px-0 lg:grid-cols-7">
         {tiles.map((tile) => (
@@ -54,7 +66,7 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
               <span className="mt-2 text-[13px] font-bold leading-tight text-ink group-hover:underline sm:text-sm">
                 {tile.name}
               </span>
-              <span className="mt-0.5 text-[11px] text-slate-500">{tile.count} produk</span>
+              <span className="mt-0.5 text-[11px] text-slate-500">{t('{n} produk', { n: tile.count })}</span>
             </Link>
           </li>
         ))}
@@ -65,24 +77,38 @@ export function CategoryStrip({ categories, products }: { categories: Category[]
 
 /* ------------------------------------------------------------ Flash sale */
 
-export function FlashSale({ products, promoName }: { products: Product[]; promoName: string }) {
+/**
+ * Deretan produk promo. Bila ada flash sale berjalan (flash=true): judul petir + hitung mundur,
+ * dan tiap kartu punya bar sisa kuota.
+ */
+export function FlashSale({ products, promoName, flash = false, endsAt = null }: { products: Product[]; promoName: string; flash?: boolean; endsAt?: string | null }) {
+  const t = getT();
   if (products.length === 0) return null;
 
   return (
-    <section aria-labelledby="judul-flash" className="mt-10 bg-sun-400">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section aria-labelledby="judul-flash" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+      {/* Panel putih ala mockup Mode Event: petir merah, hitung mundur, kartu bergaris */}
+      <div className="rounded-3xl bg-surface p-4 ring-1 ring-slate-200 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 id="judul-flash" className="text-2xl font-extrabold tracking-tight text-cobalt-900 sm:text-3xl">
-              {promoName}
+            <h2 id="judul-flash" className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-ink sm:text-[28px]">
+              {flash ? <span className="text-sale-600"><Bolt size={26} /></span> : <span aria-hidden="true" className="h-6 w-1.5 rounded-full bg-sale-600" />}
+              {flash ? t('Flash Sale') : promoName}
             </h2>
-            <p className="mt-1 text-sm font-medium text-cobalt-800">Potongan terbesar tampil paling depan.</p>
+            {flash && endsAt ? (
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
+                {t('Berakhir dalam')}
+                <Countdown endsAt={endsAt} tone="light" />
+              </p>
+            ) : (
+              <p className="mt-1 text-sm font-medium text-slate-500">{t('Potongan terbesar tampil paling depan.')}</p>
+            )}
           </div>
           <Link
-            href="/produk?promo=1"
-            className="shrink-0 rounded-full bg-cobalt-800 px-4 py-2 text-sm font-bold text-white hover:bg-cobalt-900"
+            href={flash ? '/produk?flash=1' : '/produk?promo=1'}
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-bold text-surface transition hover:opacity-90"
           >
-            Lihat semua
+            {t('Lihat semua')}
           </Link>
         </div>
 
@@ -94,7 +120,7 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
               <li key={product.id} className="w-[46%] shrink-0 sm:w-56">
                 <Link
                   href={`/produk/${product.id}`}
-                  className="flex h-full flex-col overflow-hidden rounded-2xl bg-surface transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
                 >
                   <span className="relative block aspect-square bg-white p-3">
                     <img src={productImg(product.image_url, 300)} alt={product.name} loading="lazy" className="h-full w-full object-contain" />
@@ -106,7 +132,13 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
                     <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{product.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
                     <span className="mt-2 text-base font-extrabold text-sale-600">{money(final)}</span>
                     <span className="text-xs text-slate-400 line-through">{money(normal)}</span>
-                    <span className="mt-auto pt-2 text-xs font-bold text-cobalt-700 dark:text-sky-300">Hemat {money(normal - final)}</span>
+                    {product.flash?.quota != null ? (
+                      <span className="mt-auto block pt-2.5">
+                        <QuotaBar flash={product.flash} />
+                      </span>
+                    ) : (
+                      <span className="mt-auto pt-2 text-xs font-bold text-sale-600">{t('Hemat {x}', { x: money(normal - final) })}</span>
+                    )}
                   </span>
                 </Link>
               </li>
@@ -120,52 +152,84 @@ export function FlashSale({ products, promoName }: { products: Product[]; promoN
 
 /* ------------------------------------------------------------ Cara pesan via WhatsApp */
 
-export function WhatsappBand({ percent, whatsappNumber, appliesToPromo }: { percent: number; whatsappNumber: string; appliesToPromo: boolean }) {
+/** Pesan ke admin tetap Bahasa Indonesia; label tampilan diterjemahkan. */
+const WA_QUESTIONS = [
+  { label: 'Kamera buat vlog?', message: 'Halo admin Urbanix, aku cari kamera buat vlog. Budget-ku sekitar Rp…, ada saran?' },
+  { label: 'Lensa yang cocok?', message: 'Halo admin Urbanix, aku mau cari lensa yang cocok buat kameraku (…). Ada rekomendasi?' },
+  { label: 'Mic buat konten?', message: 'Halo admin Urbanix, aku butuh mic buat bikin konten. Yang cocok apa ya?' },
+  { label: 'Apakah stok ready?', message: 'Halo admin Urbanix, apakah stok produk … ready?' },
+  { label: 'Bisa dikirim hari ini?', message: 'Halo admin Urbanix, kalau aku order sekarang, apakah bisa dikirim hari ini?' },
+];
+
+/** Ajakan chat admin. Potongan voucher WA tidak diiklankan di sini (tetap berlaku otomatis di checkout). */
+export function WhatsappBand({ whatsappNumber }: { percent?: number; whatsappNumber: string; appliesToPromo?: boolean }) {
+  const t = getT();
   if (!whatsappNumber) return null;
-  const steps = [
-    'Masukkan produk ke keranjang.',
-    'Di checkout, pilih Pesan via WhatsApp.',
-    percent > 0 ? `Kirim chat ke admin. Total sudah dipotong ${percent}%.` : 'Kirim chat ke admin untuk konfirmasi ongkir.',
-  ];
+  const message = encodeURIComponent('Halo admin Urbanix, aku mau tanya-tanya soal gear dulu 🙌');
+  // Hal yang bisa ditanyakan; dibuat seperti chip obrolan, bukan tata cara.
+  const questions = WA_QUESTIONS.map((q) => ({ label: t(q.label), message: q.message }));
 
   return (
     <section id="cara-pesan" aria-labelledby="judul-wa" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="grid gap-6 rounded-[28px] bg-cobalt-800 p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
-        <div>
-          <h2 id="judul-wa" className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            {percent > 0 ? `Pesan via WhatsApp, hemat ${percent}%` : 'Pesan via WhatsApp'}
-          </h2>
-          <p className="mt-2 max-w-md text-sm leading-6 text-white/80">
-            Admin mengecek stok, menghitung ongkir, dan mengirim cara pembayaran langsung di chat.
-            {percent > 0 && !appliesToPromo && ' Potongan tidak berlaku untuk produk yang sedang promo.'}
-          </p>
-          <a
-            href={`https://wa.me/${whatsappNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-block rounded-full bg-white px-6 py-3 text-sm font-bold text-cobalt-900 hover:bg-sun-100"
-          >
-            Chat admin sekarang
-          </a>
-        </div>
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {steps.map((step, i) => (
-            <li key={step} className="rounded-2xl bg-cobalt-900/60 p-4 ring-1 ring-white/10">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sun-400 text-sm font-extrabold text-cobalt-900">
-                {i + 1}
+      <div className="relative isolate overflow-hidden rounded-2xl bg-cobalt-900 p-5 text-white sm:p-8 lg:p-10">
+        {/* Aksen latar: gelembung chat samar */}
+        <svg aria-hidden="true" viewBox="0 0 200 200" className="wa-float pointer-events-none absolute -right-10 -top-10 -z-10 h-48 w-48 text-white/[0.05] sm:h-72 sm:w-72">
+          <path fill="currentColor" d="M100 10a90 90 0 0 0-78 135L10 190l46-12A90 90 0 1 0 100 10z" />
+        </svg>
+
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="flex items-start gap-4">
+            <span className="relative mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
+              <span aria-hidden="true" className="wa-ring absolute inset-0 rounded-full bg-emerald-500/40" />
+              <span aria-hidden="true" className="wa-ring wa-ring-2 absolute inset-0 rounded-full bg-emerald-500/30" />
+              <span className="wa-wiggle relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-900/40 sm:h-14 sm:w-14">
+                <WaLogo />
               </span>
-              <p className="mt-3 text-sm font-semibold leading-6">{step}</p>
-            </li>
-          ))}
-        </ol>
+            </span>
+            <div className="min-w-0">
+              <h2 id="judul-wa" className="text-xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+                {t('Butuh bantuan pilih gear?')}{' '}
+                <span className="text-sun-300">{t('Chat aja dulu.')}</span>
+              </h2>
+              <p className="mt-2 max-w-xl text-[13px] leading-6 text-white/75 sm:text-[15px]">
+                {t('Ngobrol langsung sama admin, bukan bot. Kita bantu cariin yang pas sama budget & konten kamu.')}
+              </p>
+              <WaTypingPrompt whatsappNumber={whatsappNumber} questions={questions} />
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+            <a
+              href={`https://wa.me/${whatsappNumber}?text=${message}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:bg-emerald-600"
+            >
+              <WaLogo size={18} />
+              {t('Chat admin sekarang')}
+              <TablerIcon name="arrow-right" size={16} stroke={2.4} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
+/** Logo WhatsApp (Simple Icons), putih di atas lingkaran hijau. */
+function WaLogo({ size = 28 }: { size?: number }) {
+  return <SimpleIcon name="whatsapp" color="current" size={size} className="text-white" />;
+}
+
+/* Ikon langkah: bergerak halus terus-menerus (mati otomatis bila pengguna memilih kurangi gerakan) */
+const stepSvg = { width: 40, height: 40, viewBox: '0 0 48 48', fill: 'none', stroke: 'currentColor', strokeWidth: 2.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+
+
+
+
 /* ------------------------------------------------------------ Ulasan */
 
-function Stars({ value, size = 16 }: { value: number; size?: number }) {
+export function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
     <span role="img" className="flex gap-0.5" aria-label={`${value} dari 5 bintang`}>
       {[1, 2, 3, 4, 5].map((i) => (
@@ -183,15 +247,17 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
 export function ReviewsSection({
   reviews,
   settings,
-  title = 'Kata pembeli kami',
+  title: titleProp,
 }: {
   reviews: Review[];
   settings: StoreSettings | null;
   title?: string;
 }) {
+  const t = getT();
+  const title = titleProp ?? t('Kata pembeli kami');
   const rating = Number(settings?.shopee_rating) || 0;
   const url = settings?.shopee_reviews_url;
-  if (reviews.length === 0 && !rating && !url) return null;
+  if (reviews.length === 0 && !rating && !url && !settings?.shopee_store_url) return null;
 
   return (
     <section aria-labelledby="judul-ulasan" className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
@@ -203,18 +269,18 @@ export function ReviewsSection({
               <span className="text-2xl font-extrabold text-ink">{rating.toFixed(1)}</span>
               <Stars value={rating} />
               {settings?.shopee_rating_count ? (
-                <span>dari {settings.shopee_rating_count.toLocaleString('id-ID')} penilaian di Shopee</span>
+                <span>{t('dari {n} penilaian di Shopee', { n: settings.shopee_rating_count.toLocaleString('id-ID') })}</span>
               ) : (
-                <span>rating toko di Shopee</span>
+                <span>{t('rating toko di Shopee')}</span>
               )}
             </p>
           )}
         </div>
-        {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-ink hover:underline">
-            Baca semua ulasan di Shopee
-          </a>
-        )}
+        <ShopeeReviewsLink
+          reviewsUrl={url}
+          storeUrl={settings?.shopee_store_url}
+          className="text-sm font-bold text-ink hover:underline"
+        />
       </div>
 
       {reviews.length > 0 && (
@@ -243,6 +309,133 @@ export function ReviewsSection({
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+const finalPrice = (p: Product) => Number(p.final_price ?? p.discount_price ?? p.price) || 0;
+
+/* ------------------------------------------------------------ Brand Corner */
+
+const FULL_COLOR_LOGOS = new Set(['kodak']);
+
+/**
+ * Logo cadangan dari Simple Icons (merek tanpa file logo resmi). Logo berupa tulisan (Sony, Nikon, Fujifilm)
+ * ditampilkan lebar; logo berupa simbol (Insta360, Leica, Xiaomi) ditemani nama mereknya.
+ */
+export function BrandFallback({ name }: { name: string }) {
+  const icon = simpleIconFor(name)!;
+  const dark = SIMPLE_ICONS[icon].hex === '000000';
+  const tint = dark ? 'text-ink' : '';
+  if ('mark' in SIMPLE_ICONS[icon]) {
+    return (
+      <span className={`inline-flex items-center gap-2 ${tint}`}>
+        <SimpleIcon name={icon} size={26} color={dark ? 'current' : 'brand'} />
+        <span className="text-[16px] font-extrabold tracking-tight text-ink">{name}</span>
+      </span>
+    );
+  }
+  return <SimpleIcon name={icon} size={104} color={dark ? 'current' : 'brand'} className={`-my-8 ${tint} dark:brightness-125`} title={name} />;
+}
+
+/**
+ * Brand Corner: satu baris logo merek yang berjalan pelan ke kiri tanpa putus (hemat tempat).
+ * Berhenti saat disentuh/disorot. Mode terang: logo warna asli; mode gelap: logo hitam dibalik jadi putih
+ * (warna aksen tetap), kotak ikut warna tema. Kodak (logo kotak berwarna) tetap apa adanya.
+ */
+export function BrandCorner({ brands }: { brands: { name: string; count: number; logo?: string }[] }) {
+  const t = getT();
+  if (brands.length < 3) return null;
+  const row = (hidden: boolean, copy: number) => (
+    <ul key={copy} className="flex shrink-0 items-center gap-3 pr-3" aria-hidden={hidden || undefined}>
+      {brands.map((b) => (
+        <li key={b.name} className="shrink-0">
+          <Link
+            href={`/produk?merek=${encodeURIComponent(b.name)}`}
+            tabIndex={hidden ? -1 : undefined}
+            title={t('{n} produk {brand}', { n: b.count, brand: b.name })}
+            className="group flex h-16 w-40 items-center justify-center rounded-2xl bg-surface px-5 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-slate-300 sm:h-[72px] sm:w-44"
+          >
+            {b.logo ? (
+              <img
+                src={b.logo}
+                alt={hidden ? '' : b.name}
+                loading="lazy"
+                className={`object-contain transition duration-300 group-hover:scale-105 ${
+                  FULL_COLOR_LOGOS.has(b.name.toLowerCase())
+                    ? 'h-11 w-auto'
+                    : 'h-8 w-full max-w-[128px] dark:hue-rotate-180 dark:invert'
+                }`}
+              />
+            ) : simpleIconFor(b.name) ? (
+              <BrandFallback name={b.name} />
+            ) : (
+              <span className="truncate text-[15px] font-extrabold tracking-tight text-ink">{b.name}</span>
+            )}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+
+  return (
+    <section aria-labelledby="judul-brand" className="pt-10">
+      <div className="mx-auto flex max-w-7xl items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <h2 id="judul-brand" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Brand Corner')}</h2>
+        <Link href="/produk" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Semua produk')}</Link>
+      </div>
+      <div className="marquee relative mt-4 overflow-hidden py-1">
+        <div className="marquee-inner flex w-max">
+          {[0, 1, 2, 3].map((copy) => row(copy > 0, copy))}
+        </div>
+        {/* Tepi memudar ke warna latar halaman (ikut mode terang/gelap) */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-24" style={{ background: 'linear-gradient(90deg, rgb(var(--page)), transparent)' }} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-24" style={{ background: 'linear-gradient(270deg, rgb(var(--page)), transparent)' }} />
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ Paling laris */
+
+/** Produk dengan penjualan terbanyak di web (angka asli dari pesanan). Disembunyikan bila belum ada penjualan. */
+export function BestSellers({ products }: { products: Product[] }) {
+  const t = getT();
+  const best = products
+    .filter((p) => (p.sold_count ?? 0) > 0)
+    .sort((a, b) => (b.sold_count ?? 0) - (a.sold_count ?? 0))
+    .slice(0, 4);
+  if (best.length < 2) return null;
+  return (
+    <section aria-labelledby="judul-laris" className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+      <div className="flex items-end justify-between gap-4">
+        <h2 id="judul-laris" className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{t('Paling laris')}</h2>
+        <Link href="/produk?urut=terlaris" className="shrink-0 text-sm font-bold text-ink hover:underline">{t('Lihat semua')}</Link>
+      </div>
+      <ol className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {best.map((p, i) => {
+          const normal = Number(p.price) || 0;
+          const final = finalPrice(p);
+          return (
+            <li key={p.id}>
+              <Link href={`/produk/${p.id}`} className="group flex h-full gap-3 rounded-2xl border border-slate-200 bg-surface p-3 transition hover:border-slate-300 hover:shadow-lg">
+                <span className="relative shrink-0">
+                  <img src={productImg(p.image_url, 200)} alt="" loading="lazy" width={84} height={84} className="h-[84px] w-[84px] rounded-xl bg-white object-contain p-1 ring-1 ring-slate-100" />
+                  <span className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-[11px] font-extrabold text-surface">{i + 1}</span>
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink group-hover:underline">{p.name.replace(/^URBANIX\s*-\s*/i, '')}</span>
+                  <span className={`mt-1 text-[15px] font-extrabold ${final < normal ? 'text-sale-600' : 'text-ink'}`}>{money(final)}</span>
+                  <span className="mt-auto text-xs text-slate-500">
+                    {t('Terjual {n}', { n: p.sold_count ?? 0 })}
+                    {p.review_count && p.rating_avg != null ? ` · ★ ${p.rating_avg.toFixed(1)}` : ''}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

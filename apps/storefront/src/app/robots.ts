@@ -6,10 +6,10 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/seller', '/api/', '/admin', '/cart', '/checkout', '/pesanan/'],
+        disallow: ['/api/', '/admin', '/cart', '/checkout', '/pesanan/', '/ulasan/'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
+    // 'Host' sengaja tidak dipakai: hanya dikenal Yandex, Google memberi peringatan.
   };
 }

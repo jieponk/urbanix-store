@@ -22,8 +22,10 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
+from . import ongkir
 from . import vouchers as voucher_engine
-from .pricing import prefetch_running_promos, price_info
+from .pricing import prefetch_running_promos, price_info, quota_left
+from .shipping import package_info, shipping_label, weight_text
 from .models import (
     AuditLog,
     Order,
@@ -64,7 +66,10 @@ def midtrans_is_configured() -> bool:
 def available_methods(store: StoreSettings | None = None) -> dict:
     store = store or StoreSettings.load()
     return {
-        "midtrans": bool(store.enable_midtrans and midtrans_is_configured()),
+        # Bayar di web butuh ongkir otomatis: total tagihan harus final saat bayar.
+        "midtrans": bool(store.enable_midtrans and midtrans_is_configured() and ongkir.is_configured(store)),
+        "ongkir_auto": ongkir.is_configured(store),
+        "ongkir_instant": ongkir.is_configured(store) and bool(ongkir.instant_list(store)),
         "whatsapp": bool(store.enable_whatsapp and store.whatsapp_number),
         "shopee": bool(store.enable_shopee),
     }
@@ -112,6 +117,27 @@ class QuoteLine:
     def is_promo(self) -> bool:
         info = price_info(self.product, self.variation)
         return info.final < info.normal
+
+    @property
+    def info(self):
+        return price_info(self.product, self.variation)
+
+    @property
+    def ship_weight(self) -> int | None:
+        """Berat kirim per barang (gram): terbesar dari berat asli & berat volume."""
+        return package_info(self.product, self.variation)["ship_weight_grams"]
+
+
+def total_weight(lines) -> tuple[int, bool]:
+    """(total gram, semua barang sudah punya berat?)"""
+    total, complete = 0, True
+    for line in lines:
+        w = line.ship_weight
+        if w:
+            total += w * line.quantity
+        else:
+            complete = False
+    return total, complete
 
 
 def build_lines(raw_items) -> list[QuoteLine]:
@@ -166,6 +192,7 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
     lines = build_lines(raw_items)
     vouchers = voucher_engine.evaluate(voucher_codes, lines, payment_method, phone)
     subtotal = sum((l.subtotal for l in lines), Decimal("0"))
+    weight, weight_complete = total_weight(lines)
     return {
         "items": [
             {
@@ -181,18 +208,54 @@ def quote(raw_items, voucher_codes=None, payment_method=None, phone=None) -> dic
                 "stock": line.stock,
                 "in_stock": line.stock >= line.quantity,
                 "is_promo": line.is_promo,
+                "ship_weight_grams": line.ship_weight,
+                "flash_left": line.info.quota_left if line.info.is_flash else None,
                 "shopee_url": line.product.shopee_url or store.shopee_store_url,
             }
             for line in lines
         ],
         "subtotal": str(subtotal),
+        "total_weight_grams": weight,
+        "weight_complete": weight_complete,
         "vouchers": vouchers.as_dict(),
         "total": str(subtotal - vouchers.discount_amount),
-        "shipping_note": "Ongkos kirim dikonfirmasi penjual.",
+        "shipping_note": (
+            "Ongkir dihitung otomatis setelah alamat dipilih."
+            if ongkir.is_configured(store) else "Ongkos kirim dikonfirmasi penjual."
+        ),
         "tax_note": "Harga sudah termasuk PPN.",
         "methods": available_methods(store),
         "available_vouchers": [voucher_engine.voucher_summary(v) for v in voucher_engine.public_vouchers()],
     }
+
+
+# ---------------------------------------------------------------- kuota promo / flash sale
+def claim_flash_quota(lines: list[QuoteLine]) -> dict:
+    """Kunci item promo berkuota & pastikan sisa kuota cukup (aman dari pesanan bersamaan).
+
+    Dipanggil di dalam transaksi pembuatan pesanan. Kuota "terpakai" dihitung dari barang
+    di pesanan yang tidak dibatalkan, jadi pesanan batal otomatis mengembalikan kuota.
+    Hasil: {id(line): PriceCutItem}
+    """
+    from .models import PriceCutItem
+
+    used: dict[int, int] = {}
+    result = {}
+    for line in lines:
+        item = line.info.item
+        if item is None or item.quota is None:
+            continue
+        PriceCutItem.objects.select_for_update().filter(pk=item.pk).first()
+        item.quota_used = None  # hitung ulang dari database setelah dikunci
+        left = (quota_left(item) or 0) - used.get(item.pk, 0)
+        if line.quantity > left:
+            label = line.display_name
+            if left <= 0:
+                raise CheckoutError(f"Kuota promo {label} sudah habis. Muat ulang keranjang untuk harga terbaru.")
+            raise CheckoutError(f"Kuota promo {label} tinggal {left}. Kurangi jumlahnya lalu coba lagi.")
+        used[item.pk] = used.get(item.pk, 0) + line.quantity
+        result[id(line)] = item
+    return result
 
 
 # ---------------------------------------------------------------- stok
@@ -261,8 +324,15 @@ def whatsapp_message(order: Order) -> str:
         for part in order.discount_note.split("; "):
             if part:
                 lines.append(part)
+    if order.shipping_auto and order.shipping_cost is not None:
+        lines.append(f"Ongkir {shipping_label(order.shipping_service)}: {money_text(order.shipping_cost)}")
+        if order.shipping_discount:
+            lines.append(f"Potongan ongkir: -{money_text(order.shipping_discount)}")
+        total_line = f"Total: {money_text(order.billed_amount)} (sudah termasuk PPN & ongkir)"
+    else:
+        total_line = f"Total: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)"
     lines += [
-        f"Total: {money_text(order.total_amount)} (sudah termasuk PPN, belum termasuk ongkir)",
+        total_line,
         "",
         f"Nama: {order.customer_name}",
         f"No. HP: {order.customer_phone}",
@@ -282,9 +352,16 @@ def whatsapp_message(order: Order) -> str:
             if p
         )
     )
+    if order.shipping_service and not order.shipping_auto:
+        lines.append(f"Pengiriman: {shipping_label(order.shipping_service)} (mohon info ongkirnya)")
+    if order.total_weight_grams:
+        lines.append(f"Perkiraan berat kirim: {weight_text(order.total_weight_grams)}")
     if order.notes:
         lines.append(f"Catatan: {order.notes}")
     lines.append(f"Cek status & invoice: {frontend_url('/pesanan/' + order.order_number)}")
+    if order.shipping_auto:
+        lines += ["", "Mohon info cara pembayarannya. Terima kasih!"]
+        return "\n".join(lines)
     if order.shipping_discount_max:
         lines.append(f"(Mohon potong ongkir s/d {money_text(order.shipping_discount_max)} sesuai voucher.)")
     lines += ["", "Mohon info total dengan ongkir dan cara pembayarannya. Terima kasih!"]
@@ -305,6 +382,24 @@ def midtrans_base_url() -> str:
     return "https://app.sandbox.midtrans.com/snap/v1/transactions"
 
 
+def midtrans_api_base() -> str:
+    return "https://api.midtrans.com" if settings.MIDTRANS_IS_PRODUCTION else "https://api.sandbox.midtrans.com"
+
+
+def midtrans_status(order_number: str) -> dict | None:
+    """Status transaksi di Midtrans (GET /v2/<order_id>/status). None bila gagal dihubungi."""
+    auth = base64.b64encode(f"{settings.MIDTRANS_SERVER_KEY}:".encode()).decode()
+    try:
+        response = requests.get(
+            f"{midtrans_api_base()}/v2/{order_number}/status",
+            headers={"Authorization": f"Basic {auth}", "Accept": "application/json"},
+            timeout=15,
+        )
+        return response.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+
 def create_snap_transaction(order: Order) -> dict:
     item_details = [
         {
@@ -320,6 +415,20 @@ def create_snap_transaction(order: Order) -> dict:
         }
         for item in order.items.all()
     ]
+    if order.shipping_cost:
+        item_details.append({
+            "id": "ONGKIR",
+            "price": int(order.shipping_cost),
+            "quantity": 1,
+            "name": f"Ongkir {shipping_label(order.shipping_service)}"[:50],
+        })
+    if order.shipping_discount:
+        item_details.append({
+            "id": "POTONGAN-ONGKIR",
+            "price": -int(order.shipping_discount),
+            "quantity": 1,
+            "name": "Potongan ongkir (voucher)",
+        })
     if order.discount_amount:
         item_details.append({
             "id": "VOUCHER",
@@ -347,6 +456,14 @@ def create_snap_transaction(order: Order) -> dict:
             },
         },
         "callbacks": {"finish": frontend_url(f"/pesanan/{order.order_number}")},
+        # Batas bayar sama dengan S&K (legal.paymentDeadline, default 1×24 jam); lewat batas → notifikasi
+        # "expire" → pesanan dibatalkan & stok dikembalikan.
+        "expiry": {"unit": "hour", "duration": int(StoreSettings.load().wa_unpaid_cancel_hours or 24)},
+        # Label diatur di dashboard Midtrans → Settings → Custom Field (Toko / Kurir / No. HP pembeli).
+        # Membedakan transaksi Urbanix dari brand lain yang memakai akun Midtrans yang sama.
+        "custom_field1": "Urbanix Store",
+        "custom_field2": shipping_label(order.shipping_service)[:255],
+        "custom_field3": order.customer_phone[:255],
     }
     auth = base64.b64encode(f"{settings.MIDTRANS_SERVER_KEY}:".encode()).decode()
     response = requests.post(
@@ -356,6 +473,9 @@ def create_snap_transaction(order: Order) -> dict:
             "Authorization": f"Basic {auth}",
             "Accept": "application/json",
             "Content-Type": "application/json",
+            # Akun Midtrans dipakai bersama Aneka Foto: notifikasi transaksi Urbanix dikirim ke server Urbanix saja,
+            # tanpa mengubah Notification URL di dashboard (milik sistem Aneka Foto).
+            "X-Override-Notification": frontend_url("/api/v1/payments/midtrans-webhook/"),
         },
         timeout=15,
     )
@@ -407,8 +527,10 @@ def place_order(data: dict) -> dict:
         first = vouchers.rejected[0]
         raise CheckoutError(f"Voucher {first['code']}: {first['message']}")
 
+    rate = resolve_shipping(method, lines, data.get("shipping") or {}, store)
+
     try:
-        order = _create_order(method, lines, data, idem, vouchers)
+        order = _create_order(method, lines, data, idem, vouchers, rate)
     except IntegrityError:
         # Klik ganda: permintaan lain dengan kunci yang sama sudah lebih dulu tersimpan.
         existing = Order.objects.filter(idempotency_key=idem).first() if idem else None
@@ -438,11 +560,33 @@ def place_order(data: dict) -> dict:
     from .emails import notify_order_created  # impor di sini: emails.py mengimpor modul ini
 
     notify_order_created(order)
+    from .emails import notify_admin_new_order
+
+    notify_admin_new_order(order)
     return order_result(order, store)
 
 
+def resolve_shipping(method: str, lines, shipping: dict, store) -> dict | None:
+    """Tarif otomatis yang dipilih pembeli, dihitung ulang di server. None = ongkir dari admin."""
+    service = shipping.get("service") or ""
+    if ":" not in service:
+        if method == "MIDTRANS":
+            raise CheckoutError("Pilih kurir pengiriman dulu supaya total bayar bisa dihitung.")
+        return None
+    try:
+        rate = ongkir.find_rate(shipping["destination_id"], lines, service, store,
+                                shipping.get("latitude"), shipping.get("longitude"))
+    except ongkir.OngkirError as exc:
+        raise CheckoutError(str(exc))
+    if rate is None:
+        if service.split(":")[0] in ongkir.INSTANT_COURIERS and shipping.get("latitude") is None:
+            raise CheckoutError("Tandai titik lokasi di peta dulu untuk kurir instan.")
+        raise CheckoutError("Tarif kurir yang dipilih sudah berubah. Pilih ulang kurirnya, ya.")
+    return rate
+
+
 @transaction.atomic
-def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, vouchers) -> Order:
+def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, vouchers, rate=None) -> Order:
     subtotal = sum((l.subtotal for l in lines), Decimal("0"))
     customer, shipping = data["customer"], data["shipping"]
     if method == "MIDTRANS":
@@ -453,6 +597,8 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
                 raise CheckoutError(
                     f"Stok {line.display_name} tidak mencukupi (tersedia: {line.stock})."
                 )
+    flash_items = claim_flash_quota(lines)
+    weight, _complete = total_weight(lines)
     order = Order.objects.create(
         order_number=generate_order_number(),
         customer_name=customer["name"],
@@ -462,10 +608,19 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
         shipping_city=shipping["city"],
         shipping_province=shipping.get("province", ""),
         shipping_postal_code=shipping.get("postal_code", ""),
+        shipping_service=shipping.get("service", ""),
+        shipping_destination_id=shipping.get("destination_id") if rate else "",
+        shipping_lat=shipping.get("latitude"),
+        shipping_lng=shipping.get("longitude"),
+        shipping_cost=Decimal(rate["cost"]) if rate else None,
+        shipping_courier=rate["courier_name"][:50] if rate else "",
+        shipping_etd=rate["etd"][:30] if rate else "",
+        shipping_auto=bool(rate),
         notes=data.get("notes", ""),
         payment_method=method,
         stock_reserved=(method == "MIDTRANS"),
         total_amount=subtotal - vouchers.discount_amount,
+        total_weight_grams=weight,
         discount_amount=vouchers.discount_amount,
         discount_note=vouchers.note[:255],
         voucher_codes=",".join(vouchers.codes),
@@ -482,6 +637,8 @@ def _create_order(method: str, lines: list[QuoteLine], data: dict, idem, voucher
             sku=line.sku,
             price_snapshot=line.unit_price,
             quantity=line.quantity,
+            weight_grams=line.ship_weight,
+            flash_item=flash_items.get(id(line)),
         )
         for line in lines
     )
@@ -524,7 +681,7 @@ def handle_midtrans_notification(payload: dict) -> tuple[int, str]:
         return 404, "order not found"
 
     try:
-        amount_ok = Decimal(gross_amount) == order.total_amount
+        amount_ok = Decimal(gross_amount) == order.billed_amount
     except Exception:
         amount_ok = False
     if not amount_ok:
@@ -556,4 +713,8 @@ def handle_midtrans_notification(payload: dict) -> tuple[int, str]:
         return 200, "ignored"  # pending, challenge, refund, dll.
 
     order.save(update_fields=["payment_status", "status"])
+    if order.payment_status == "PAID":
+        from .order_events import mark_paid
+
+        mark_paid(order, source="Midtrans")
     return 200, "ok"

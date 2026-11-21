@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 
 from store import checkout_service as svc
 from store.models import Category, Order, Product, ProductVariation, StoreSettings
+from store.tests.ongkir_stub import AUTO_SHIPPING, enable_ongkir
 
 SERVER_KEY = "SB-Mid-server-TESTKEY"
 
@@ -24,7 +25,7 @@ def signed(order_id, status_code, gross, **extra):
     }
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, BITESHIP_API_KEY="biteship_test.abc", FRONTEND_URL="http://toko.test")
 class CheckoutTests(TestCase):
     def setUp(self):
         cache.clear()  # reset throttle
@@ -43,6 +44,7 @@ class CheckoutTests(TestCase):
         store.whatsapp_number = "6281234567890"
         store.shopee_store_url = "https://shopee.co.id/urbanix"
         store.save()
+        enable_ongkir(self)
 
     def body(self, method, **over):
         data = {
@@ -57,6 +59,8 @@ class CheckoutTests(TestCase):
             "notes": "Tolong bubble wrap",
             "idempotency_key": f"key-{method}",
         }
+        if method == "MIDTRANS":
+            data["shipping"].update(AUTO_SHIPPING)
         data.update(over)
         return data
 
@@ -67,7 +71,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(Decimal(r.data["subtotal"]), Decimal("1800000"))
         self.assertEqual(r.data["items"][0]["shopee_url"], "https://shopee.co.id/kamera-a")
-        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True})
+        self.assertEqual(r.data["methods"], {"midtrans": True, "whatsapp": True, "shopee": True, "ongkir_auto": True, "ongkir_instant": False})
 
     def test_quote_rejects_inactive_product(self):
         self.mic.is_active = False
@@ -285,7 +289,7 @@ class CheckoutTests(TestCase):
         self.assertEqual(codes[-1], 429)
 
 
-@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, FRONTEND_URL="http://toko.test")
+@override_settings(MIDTRANS_SERVER_KEY=SERVER_KEY, BITESHIP_API_KEY="biteship_test.abc", FRONTEND_URL="http://toko.test")
 class VariationCheckoutTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -314,12 +318,16 @@ class VariationCheckoutTests(TestCase):
         store = StoreSettings.load()
         store.whatsapp_number = "6281234567890"
         store.save()
+        enable_ongkir(self)
 
     def order(self, method, items):
+        shipping = {"address": "Jl. Mawar 1 RT 02", "city": "Bandung"}
+        if method == "MIDTRANS":
+            shipping.update(AUTO_SHIPPING)
         return self.api.post("/api/v1/checkout/", {
             "payment_method": method, "items": items,
             "customer": {"name": "Budi", "phone": "081234567890"},
-            "shipping": {"address": "Jl. Mawar 1 RT 02", "city": "Bandung"},
+            "shipping": shipping,
         }, format="json")
 
     def test_variant_required_for_multi_variant_product(self):
@@ -405,3 +413,83 @@ class VariationCheckoutTests(TestCase):
         call_command("isi_stok", jumlah=4, hanya_kosong=True, stdout=__import__("io").StringIO())
         self.cam_only.refresh_from_db(); self.sd64.refresh_from_db()
         self.assertEqual((self.cam_only.stock, self.sd64.stock), (4, 7))
+
+
+# ---------------------------------------------------------------- email pengingat & paket dikirim
+from datetime import timedelta as _td
+
+from django.core import mail as _mail
+from django.test import TestCase as _TestCase, override_settings as _ovr
+from django.utils import timezone as _tz
+
+_EMAIL_ON = dict(ORDER_EMAIL_ENABLED=True, ORDER_EMAIL_SYNC=True,
+                 EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+
+
+@_ovr(**_EMAIL_ON)
+class OrderEmailFlowTests(_TestCase):
+    def _order(self, hours_ago=13, email="budi@contoh.id", **extra):
+        from store.models import Order
+        order = Order.objects.create(
+            order_number=f"URX-T-{Order.objects.count() + 1}", customer_name="Budi", customer_phone="08123456789",
+            customer_email=email, shipping_address="Jl. Mawar", shipping_city="Bandung", payment_method="WHATSAPP",
+            total_amount=100000, **extra,
+        )
+        Order.objects.filter(pk=order.pk).update(created_at=_tz.now() - _td(hours=hours_ago))
+        return order
+
+    def test_reminder_sent_once_for_unpaid(self):
+        from store.emails import send_payment_reminders
+        due = self._order(hours_ago=13)
+        self._order(hours_ago=2)                              # terlalu baru
+        self._order(hours_ago=13, email="")                   # tanpa email
+        self._order(hours_ago=13, payment_status="PAID")      # sudah lunas
+        self._order(hours_ago=24 * 5)                         # terlalu lama
+        self._order(hours_ago=13, status="CANCELLED")         # dibatalkan
+        _mail.outbox.clear()
+        self.assertEqual(send_payment_reminders(), 1)
+        self.assertIn(due.order_number, _mail.outbox[0].subject)
+        self.assertIn("belum dibayar", _mail.outbox[0].subject)
+        self.assertEqual(send_payment_reminders(), 0)         # tidak dikirim dua kali
+
+    def test_shipped_email_needs_status_and_tracking(self):
+        from django.core.cache import cache
+        cache.clear()
+        from django.contrib.auth.models import User
+        from rest_framework.test import APIClient
+        order = self._order(hours_ago=1, status="PROCESSING")
+        User.objects.create_user("adm", password="rahasia123", is_staff=True)
+        api = APIClient()
+        token = api.post("/api/v1/seller/login/", {"username": "adm", "password": "rahasia123"}, format="json").data["token"]
+        api.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        url = f"/api/v1/seller/orders/{order.order_number}/"
+        _mail.outbox.clear()
+        api.patch(url, {"status": "SHIPPED"}, format="json")                    # belum ada resi
+        self.assertEqual(len(_mail.outbox), 0)
+        api.patch(url, {"shipping_courier": "JNE", "tracking_number": "JNE123"}, format="json")
+        self.assertEqual(len(_mail.outbox), 1)
+        self.assertIn("JNE123", _mail.outbox[0].body)
+        api.patch(url, {"admin_note": "cek"}, format="json")                     # tidak terkirim ulang
+        self.assertEqual(len(_mail.outbox), 1)
+
+
+class ShippingChoiceTests(CheckoutTests):
+    """Pilihan jasa kirim di checkout (subclass agar memakai data produk CheckoutTests)."""
+
+    def test_service_saved_and_in_whatsapp(self):
+        from urllib.parse import unquote
+        from store.models import Order
+        body = self.body("WHATSAPP")
+        body["shipping"]["service"] = "jne_reg"
+        r = self.api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(Order.objects.get(order_number=r.data["order_number"]).shipping_service, "jne_reg")
+        self.assertIn("Pengiriman: JNE Reguler", unquote(r.data["whatsapp_url"]))
+        d = self.api.get(f"/api/v1/checkout/orders/{r.data['order_number']}/")
+        self.assertEqual(d.data["shipping_service"], "JNE Reguler")
+
+    def test_unknown_service_rejected(self):
+        body = self.body("WHATSAPP", idempotency_key="x-salah")
+        body["shipping"]["service"] = "kapal_laut"
+        r = self.api.post("/api/v1/checkout/", body, format="json")
+        self.assertEqual(r.status_code, 400)

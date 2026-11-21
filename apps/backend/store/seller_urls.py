@@ -3,6 +3,7 @@ from django.urls import path
 from . import seller_api as a
 from . import articles_api as art
 from . import seller_content as c
+from . import videos
 
 urlpatterns = [
     path("login/", a.login),
@@ -11,8 +12,14 @@ urlpatterns = [
     path("dashboard/", a.dashboard),
     path("orders/", a.orders),
     path("orders/export/", a.orders_export),
+    path("orders/hapus-dibatalkan/", a.orders_delete_cancelled),
+    path("log/", a.activity_log),
+    path("pengembalian/", a.returns_list),
+    path("pengembalian/<int:pk>/", a.return_detail),
+    path("orders/<str:number>/pembatalan/", a.order_cancel_request),
     path("orders/<str:number>/", a.order_detail),
     path("orders/<str:number>/stock/", a.order_stock),
+    path("orders/<str:number>/shipment/", a.order_shipment),
     path("products/", a.products),
     path("products/bulk/", a.products_bulk),
     path("products/template/", a.products_template),
@@ -27,6 +34,8 @@ urlpatterns = [
     path("vouchers/<int:pk>/", c.voucher_detail),
     path("banners/", c.banners),
     path("banners/<int:pk>/", c.banner_detail),
+    path("videos/", videos.videos),
+    path("videos/<int:pk>/", videos.video_detail),
     path("articles/", art.seller_articles),
     path("articles/image/", art.seller_article_image),
     path("articles/<int:pk>/", art.seller_article_detail),

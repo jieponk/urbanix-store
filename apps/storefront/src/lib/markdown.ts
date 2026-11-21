@@ -11,7 +11,7 @@ export type Block =
 
 export type Heading = { id: string; text: string; level: 2 | 3 };
 
-export const DEFAULT_COVER = '/inspirasi/default-cover.webp';
+export const DEFAULT_COVER = '/inspirasi/default-cover.webp?v=6';
 
 /** Contekan format (nama, cara tulis). Dipakai di editor Seller Center. */
 export const FORMAT_GUIDE: { group: string; items: [string, string][] }[] = [

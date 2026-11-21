@@ -1,5 +1,6 @@
 # HTTPS otomatis (Let's Encrypt). {$DOMAIN} diisi dari .env server.
-{$DOMAIN}, www.{$DOMAIN} {
+# seller.{$DOMAIN} = Seller Center (DNS A record seller → IP server wajib ada).
+{$DOMAIN}, www.{$DOMAIN}, seller.{$DOMAIN} {
 	encode zstd gzip
 
 	# Tutup celah header internal Next.js (CVE-2025-29927).
@@ -17,6 +18,14 @@
 		-X-Powered-By
 	}
 
+	# Data wilayah untuk saran alamat checkout: jarang berubah, simpan 7 hari di browser.
+	@wilayah path /wilayah/*
+	header @wilayah Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+
+	# Seller Center tidak boleh muncul di Google.
+	@seller host seller.{$DOMAIN}
+	header @seller X-Robots-Tag "noindex, nofollow"
+
 	@www host www.{$DOMAIN}
 	redir @www https://{$DOMAIN}{uri} permanent
 
@@ -25,14 +34,38 @@
 		file_server
 	}
 	handle /media/* {
+		# Foto produk hasil salin_gambar bernama kode unik → aman disimpan lama di browser.
+		@produk path /media/products/*
+		header @produk Cache-Control "public, max-age=2592000, immutable"
 		root * /srv
 		file_server
 	}
+	# Saat deploy/restart, tahan permintaan sampai aplikasi siap lagi (bukan langsung 502).
 	handle /admin* {
+		reverse_proxy backend:8000 {
+			lb_try_duration 45s
+			lb_try_interval 1s
+		}
+	}
+	# Notifikasi dari layanan luar langsung ke backend: pembayaran Midtrans & status paket Biteship.
+	@webhook path /api/v1/payments/midtrans-webhook/ /api/v1/shipping/biteship-webhook/
+	handle @webhook {
 		reverse_proxy backend:8000
 	}
 	handle {
-		reverse_proxy storefront:3000
+		reverse_proxy storefront:3000 {
+			lb_try_duration 45s
+			lb_try_interval 1s
+		}
+	}
+
+	# Kalau tetap belum siap: tampilkan halaman "sedang diperbarui" yang memuat ulang sendiri.
+	handle_errors 502 503 504 {
+		root * /srv/maintenance
+		rewrite * /index.html
+		header Cache-Control "no-store"
+		header Retry-After "30"
+		file_server
 	}
 
 	log {

@@ -55,6 +55,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Terjemahan isi (nama/deskripsi produk, artikel) untuk ?lang=en
+    'store.content_i18n.ContentLanguageMiddleware',
 ]
 
 ROOT_URLCONF = 'urbanix_core.urls'
@@ -102,8 +104,12 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'checkout_quote': '120/min',
         'checkout': '10/min',
+        'ongkir': '60/min',
+        'retur': '60/hour',
         'seller_login': '10/min',
         'article_comment': '5/min',
+        'comment_reaction': '40/min',
+        'gif_search': '30/min',
     },
 }
 
@@ -126,9 +132,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MIDTRANS_SERVER_KEY = os.environ.get('MIDTRANS_SERVER_KEY', 'SB-Mid-server-demo')
 MIDTRANS_CLIENT_KEY = os.environ.get('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-demo')
 MIDTRANS_IS_PRODUCTION = os.environ.get('MIDTRANS_IS_PRODUCTION', 'False') == 'True'
+# Ongkir otomatis (Biteship). Kosong = ongkir dikonfirmasi admin.
+BITESHIP_API_KEY = os.environ.get('BITESHIP_API_KEY', '')
 
 # Alamat storefront (dipakai untuk tombol "kembali ke toko" setelah bayar di Midtrans).
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+# Seller Center di subdomain (https://seller.urbanix.id). Kosong = FRONTEND_URL + /seller (mis. saat dev lokal).
+SELLER_URL = os.environ.get('SELLER_URL', '')
 
 # Email pesanan ke pembeli (opsional). Kosongkan EMAIL_HOST untuk mematikan.
 # Contoh Gmail: EMAIL_HOST=smtp.gmail.com, EMAIL_PORT=587, EMAIL_HOST_USER=urbanixstore26@gmail.com,
@@ -142,5 +152,10 @@ EMAIL_TIMEOUT = 15
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', '') or (
     f'Urbanix Store <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Urbanix Store <noreply@urbanix.id>'
 )
+# Balasan pembeli diarahkan ke kotak masuk yang benar-benar dibaca admin.
+EMAIL_REPLY_TO = os.environ.get('EMAIL_REPLY_TO', '') or 'urbanixstore26@gmail.com'
 ORDER_EMAIL_ENABLED = bool(EMAIL_HOST)
 ORDER_EMAIL_SYNC = False  # True di tes: kirim langsung, bukan di thread
+
+# GIF di komentar artikel (GIPHY). Kosongkan untuk mematikan tombol GIF.
+GIPHY_API_KEY = os.environ.get('GIPHY_API_KEY', '')

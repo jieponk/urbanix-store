@@ -2,6 +2,8 @@ import re
 
 from rest_framework import serializers
 
+from .shipping import SHIPPING_CHOICES
+
 PHONE_RE = re.compile(r"^(\+62|62|0)8[0-9]{7,12}$")
 
 
@@ -32,7 +34,28 @@ class CustomerSerializer(serializers.Serializer):
         return cleaned
 
 
+SHIPPING_CODES = {code for code, _label in SHIPPING_CHOICES}
+AUTO_SERVICE_RE = re.compile(r"^[a-z]{2,12}:[A-Za-z0-9 ._/+-]{1,20}$")
+
+
 class ShippingSerializer(serializers.Serializer):
+    # Kode tetap (jne_reg, gosend_instant, ...) = ongkir dikonfirmasi admin;
+    # "kurir:layanan" (mis. jne:reg) = tarif otomatis Biteship, wajib destination_id.
+    service = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
+    destination_id = serializers.RegexField(r"^[A-Za-z0-9]{4,60}$", required=False, allow_blank=True, default="")
+    # Titik penerima di peta (wajib untuk kurir instan GoSend/Grab)
+    latitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=-11.5, max_value=6.5)
+    longitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=94.5, max_value=141.5)
+
+    def validate_service(self, value):
+        if value and value not in SHIPPING_CODES and not AUTO_SERVICE_RE.match(value):
+            raise serializers.ValidationError("Pilihan pengiriman tidak dikenal.")
+        return value
+
+    def validate(self, attrs):
+        if ":" in (attrs.get("service") or "") and not attrs.get("destination_id"):
+            raise serializers.ValidationError({"destination_id": ["Pilih kecamatan tujuan dulu."]})
+        return attrs
     address = serializers.CharField(max_length=500)
     city = serializers.CharField(max_length=100)
     province = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
@@ -43,6 +66,13 @@ class ShippingSerializer(serializers.Serializer):
         default="",
         error_messages={"invalid": "Kode pos harus 5 angka."},
     )
+
+
+class OngkirRequestSerializer(serializers.Serializer):
+    items = CheckoutItemSerializer(many=True, allow_empty=False, max_length=50)
+    destination_id = serializers.RegexField(r"^[A-Za-z0-9]{4,60}$")
+    latitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=-11.5, max_value=6.5)
+    longitude = serializers.FloatField(required=False, allow_null=True, default=None, min_value=94.5, max_value=141.5)
 
 
 class QuoteRequestSerializer(QuoteSerializer):

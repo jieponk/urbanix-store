@@ -1,5 +1,6 @@
 'use client';
 
+import { sellerHref, shopHref } from '@/lib/sellerUrl';
 import { useEffect, useState } from 'react';
 import { Badge, Card, ConfirmButton, ErrorBox, Field, ORDER_TONE, PageHeader, Spinner, Thumb, btn, inputCls } from '@/components/seller/ui';
 import { icons } from '@/components/seller/SellerIcons';
@@ -20,7 +21,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
   useEffect(() => {
     if (!data) return;
     setForm({
-      shipping_courier: data.shipping_courier || '',
+      shipping_courier: data.shipping_courier || data.shipping_service || '',
       tracking_number: data.tracking_number || '',
       shipping_cost: data.shipping_cost !== null && data.shipping_cost !== undefined ? String(data.shipping_cost) : '',
       admin_note: data.admin_note || '',
@@ -59,7 +60,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
   return (
     <div>
       <PageHeader
-        back={{ href: '/seller/pesanan', label: 'Pesanan' }}
+        back={{ href: sellerHref('/seller/pesanan'), label: 'Pesanan' }}
         title={data.order_number}
         subtitle={<>{fmtDateTime(data.created_at)} · {data.method_label} · <Badge tone={ORDER_TONE[data.status]}>{data.status_label}</Badge> <Badge tone={data.payment_status === 'PAID' ? 'green' : 'gray'}>{data.payment_label}</Badge></>}
         actions={
@@ -69,9 +70,22 @@ export default function OrderDetailPage({ params }: { params: { number: string }
                 {icons.chat({ size: 16 })} Chat pembeli
               </a>
             )}
-            <a href={`/pesanan/${data.order_number}/invoice`} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
+            <a href={shopHref(`/pesanan/${data.order_number}/invoice`)} target="_blank" rel="noopener noreferrer" className={btn.ghost}>
               Invoice
             </a>
+            {data.review_url && data.whatsapp_customer && (
+              <a
+                href={`${data.whatsapp_customer}${data.whatsapp_customer.includes('?') ? '&' : '?'}text=${encodeURIComponent(
+                  `Halo kak ${data.customer_name}, terima kasih sudah belanja di Urbanix Store 🙏 Boleh minta bantuannya beri ulasan untuk pesanan ${data.order_number}? Cukup 1 menit: ${data.review_url}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={btn.ghost}
+                title={data.review_email_sent_at ? 'Email minta ulasan sudah terkirim otomatis' : undefined}
+              >
+                ⭐ Minta ulasan via WA
+              </a>
+            )}
             {next && (
               <button type="button" disabled={saving} className={btn.primary} onClick={() => save({ status: next.to }, `Status: ${next.label.toLowerCase()}.`)}>
                 {next.label}
@@ -81,7 +95,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card title="Barang" padded={false}>
             <ul className="divide-y divide-slate-200">
@@ -121,12 +135,21 @@ export default function OrderDetailPage({ params }: { params: { number: string }
             </dl>
           </Card>
 
+          {data.cancel_request && <CancelCard req={data.cancel_request} number={number} onDone={reload} />}
+
+          {data.shipment?.enabled && <ShipmentCard data={data} number={number} onChange={setData} />}
+
           <Card title="Pengiriman & catatan">
             <form
-              className="grid gap-3 sm:grid-cols-3"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-3"
               onSubmit={(e) => { e.preventDefault(); save({ ...form, shipping_cost: form.shipping_cost === '' ? null : form.shipping_cost }); }}
             >
-              <Field label="Kurir"><input className={inputCls} value={form.shipping_courier} onChange={(e) => setForm({ ...form, shipping_courier: e.target.value })} placeholder="JNE / J&T / SiCepat" /></Field>
+              {data.shipping_service && (
+                <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-ink dark:bg-brand-500/10">
+                  Pilihan pembeli: <b>{data.shipping_service}</b>
+                </p>
+              )}
+              <Field label="Kurir"><input className={inputCls} value={form.shipping_courier} onChange={(e) => setForm({ ...form, shipping_courier: e.target.value })} placeholder="JNE Reguler / J&T Cargo / GoSend" /></Field>
               <Field label="No. resi"><input className={inputCls} value={form.tracking_number} onChange={(e) => setForm({ ...form, tracking_number: e.target.value })} /></Field>
               <Field label="Ongkir (Rp)"><input className={inputCls} inputMode="numeric" value={form.shipping_cost} onChange={(e) => setForm({ ...form, shipping_cost: e.target.value })} placeholder="mis. 25000" /></Field>
               <Field label="Catatan admin (tidak terlihat pembeli)" className="sm:col-span-3">
@@ -141,6 +164,16 @@ export default function OrderDetailPage({ params }: { params: { number: string }
           <Card title="Pembeli & alamat" action={<button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(address); notify('Alamat disalin.'); }}>Salin</button>}>
             <p className="whitespace-pre-line text-sm text-ink">{address}</p>
             {data.customer_email && <p className="mt-2 text-xs text-slate-500">{data.customer_email}</p>}
+            {data.shipping_pin && (
+              <a
+                href={`https://www.google.com/maps?q=${data.shipping_pin.lat},${data.shipping_pin.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${btn.small} mt-2`}
+              >
+                Lihat titik lokasi pembeli
+              </a>
+            )}
             {data.notes && <p className="mt-3 rounded-lg bg-sun-100 p-2.5 text-sm text-cobalt-900"><b>Catatan pembeli:</b> {data.notes}</p>}
           </Card>
 
@@ -188,7 +221,7 @@ export default function OrderDetailPage({ params }: { params: { number: string }
                     try {
                       await sellerApi(`orders/${encodeURIComponent(number)}`, { method: 'DELETE' });
                       notify('Pesanan dihapus.');
-                      window.location.href = '/seller/pesanan';
+                      window.location.href = sellerHref('/seller/pesanan');
                     } catch (err) {
                       notify((err as Error).message, 'error');
                     }
@@ -202,5 +235,180 @@ export default function OrderDetailPage({ params }: { params: { number: string }
         </div>
       </div>
     </div>
+  );
+}
+
+const SHIP_TONE: Record<string, string> = {
+  confirmed: 'blue', scheduled: 'blue', allocated: 'blue', picking_up: 'amber', picked: 'amber',
+  dropping_off: 'amber', delivered: 'green', cancelled: 'gray', rejected: 'red', courier_not_found: 'red',
+  returned: 'red', return_in_transit: 'red', on_hold: 'amber', disposed: 'red',
+};
+
+/** Resi otomatis Biteship: buat resi, cek status, batalkan, cetak label. */
+const CANCEL_TONE: Record<string, string> = { REQUESTED: 'amber', APPROVED: 'blue', REFUNDED: 'green', REJECTED: 'gray', WITHDRAWN: 'gray' };
+
+/** Pengajuan pembatalan dari pembeli (pesanan sudah lunas, belum dikirim). */
+function CancelCard({ req, number, onDone }: { req: any; number: string; onDone: () => void }) {
+  const [busy, setBusy] = useState('');
+  const [note, setNote] = useState('');
+  const [refund, setRefund] = useState({ amount: String(Math.round(Number(req.billed_amount) || 0)), method: req.payment_method === 'MIDTRANS' ? 'Refund lewat Midtrans' : '' });
+
+  async function run(action: string, body: Record<string, string>, message: string) {
+    setBusy(action);
+    try {
+      await sellerApi(`orders/${encodeURIComponent(number)}/pembatalan`, { body: { action, ...body } });
+      notify(message);
+      onDone();
+    } catch (err) {
+      notify((err as Error).message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  return (
+    <Card title="Pengajuan pembatalan" action={<Badge tone={CANCEL_TONE[req.status] || 'gray'}>{req.status_label}</Badge>}>
+      <div className="space-y-3 text-sm">
+        <p>
+          <span className="text-slate-500">Alasan:</span> <b className="text-ink">{req.reason_label}</b>
+          {req.note && <span className="mt-1 block rounded-lg bg-mist px-3 py-2 text-slate-600">“{req.note}”</span>}
+        </p>
+        {req.status === 'REQUESTED' && (
+          <>
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+              Tahan pengiriman sampai pengajuan ini diputuskan. Bila disetujui: pesanan dibatalkan, stok kembali
+              {req.has_shipment ? ', dan resi Biteship dibatalkan otomatis' : ''}.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <ConfirmButton className={btn.primary} confirmText="Setujui pembatalan pesanan ini?" onConfirm={() => run('approve', { admin_note: note }, 'Pembatalan disetujui.')}>
+                {busy === 'approve' ? 'Memproses…' : 'Setujui pembatalan'}
+              </ConfirmButton>
+            </div>
+            <div className="space-y-2 rounded-lg border border-dashed border-slate-300 p-3">
+              <label className="block text-xs font-semibold text-slate-600">Tolak (alasan untuk pembeli, min. 10 karakter)</label>
+              <textarea className={inputCls} rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Mis. paket sudah dikemas dan dijemput kurir hari ini." />
+              <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('reject', { admin_note: note }, 'Pengajuan ditolak.')}>
+                {busy === 'reject' ? 'Memproses…' : 'Tolak pengajuan'}
+              </button>
+            </div>
+          </>
+        )}
+        {req.status === 'APPROVED' && (
+          <form
+            className="space-y-2 rounded-lg border border-dashed border-slate-300 p-3"
+            onSubmit={(e) => { e.preventDefault(); run('refund', { refund_amount: refund.amount, refund_method: refund.method }, 'Pengembalian dana dicatat.'); }}
+          >
+            <p className="text-xs font-semibold text-slate-600">
+              Catat pengembalian dana (maks. {rp(Number(req.billed_amount))}). Kartu & e-wallet biasanya bisa di-refund dari dashboard Midtrans;
+              VA & gerai ditransfer manual ke rekening pembeli.
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Field label="Jumlah (Rp)">
+                <input className={inputCls} inputMode="numeric" value={refund.amount} onChange={(e) => setRefund({ ...refund, amount: e.target.value })} required />
+              </Field>
+              <Field label="Metode">
+                <input className={inputCls} list="refund-methods" value={refund.method} onChange={(e) => setRefund({ ...refund, method: e.target.value })} placeholder="Refund lewat Midtrans / Transfer BCA" required />
+              </Field>
+            </div>
+            <datalist id="refund-methods">
+              <option value="Refund lewat Midtrans" />
+              <option value="Transfer bank ke rekening pembeli" />
+            </datalist>
+            <button className={btn.primary} disabled={!!busy}>{busy === 'refund' ? 'Menyimpan…' : 'Tandai dana dikembalikan'}</button>
+          </form>
+        )}
+        {req.status === 'REFUNDED' && (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+            Dana {rp(Number(req.refund_amount))} dikembalikan · {req.refund_method}
+          </p>
+        )}
+        {req.admin_note && req.status !== 'REQUESTED' && <p className="text-xs text-slate-500">Catatan admin: {req.admin_note}</p>}
+        <ol className="space-y-1 border-t border-slate-200 pt-2 text-xs text-slate-500">
+          {req.history.map((h: any, i: number) => (
+            <li key={i}>{fmtDateTime(h.at)} · <b className="text-ink">{h.label}</b>{h.by ? ` · ${h.by}` : ''}{h.note ? ` — ${h.note}` : ''}</li>
+          ))}
+        </ol>
+      </div>
+    </Card>
+  );
+}
+
+function ShipmentCard({ data, number, onChange }: { data: any; number: string; onChange: (d: any) => void }) {
+  const s = data.shipment;
+  const [method, setMethod] = useState<'drop_off' | 'pickup'>(s.method || 'drop_off');
+  const [busy, setBusy] = useState('');
+  const active = s.id && !['cancelled', 'rejected', 'courier_not_found'].includes(s.status);
+
+  async function run(action: 'create' | 'refresh' | 'cancel', message: string) {
+    setBusy(action);
+    try {
+      onChange(await sellerApi(`orders/${encodeURIComponent(number)}/shipment`, { body: { action, method } }));
+      notify(message);
+    } catch (err) {
+      notify((err as Error).message, 'error');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  return (
+    <Card title="Resi otomatis (Biteship)" action={s.status ? <Badge tone={SHIP_TONE[s.status] || 'gray'}>{s.status_label}</Badge> : undefined}>
+      {active ? (
+        <div className="space-y-3">
+          <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+            <div><dt className="text-xs text-slate-500">No. resi</dt><dd className="font-bold text-ink">{data.tracking_number || 'Menunggu dari kurir…'}</dd></div>
+            <div><dt className="text-xs text-slate-500">Kurir</dt><dd className="font-semibold text-ink">{data.shipping_service}</dd></div>
+            <div><dt className="text-xs text-slate-500">Serah paket</dt><dd className="font-semibold text-ink">{s.method === 'pickup' ? 'Dijemput kurir' : 'Antar ke agen (drop off)'}</dd></div>
+          </dl>
+          {s.price !== null && <p className="text-xs text-slate-500">Ongkir dipotong dari saldo Biteship: <b className="text-ink">{rp(s.price)}</b></p>}
+          <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            ID pesanan Biteship: <code className="font-semibold text-ink">{s.id}</code>
+            <button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(s.id); notify('ID Biteship disalin.'); }}>Salin</button>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a href={sellerHref(`/seller/pesanan/${encodeURIComponent(number)}/label`)} className={btn.primary}>Cetak label</a>
+            <button type="button" className={btn.ghost} disabled={!!busy} onClick={() => run('refresh', 'Status pengiriman diperbarui.')}>
+              {busy === 'refresh' ? 'Mengecek…' : 'Cek status'}
+            </button>
+            {s.can_cancel && (
+              <ConfirmButton className={btn.ghost} confirmText="Batalkan resi ini?" onConfirm={() => run('cancel', 'Resi dibatalkan.')}>
+                Batalkan resi
+              </ConfirmButton>
+            )}
+          </div>
+        </div>
+      ) : s.can_create_reason ? (
+        <p className="text-sm text-slate-600">{s.can_create_reason}</p>
+      ) : (
+        <div className="space-y-3">
+          {s.id && (
+            <p className="flex flex-wrap items-center gap-2 rounded-lg bg-mist px-3 py-2 text-xs text-slate-600">
+              Resi sebelumnya {s.status_label.toLowerCase()} · ID Biteship <code className="font-semibold text-ink">{s.id}</code>
+              <button type="button" className={btn.small} onClick={() => { navigator.clipboard?.writeText(s.id); notify('ID Biteship disalin.'); }}>Salin</button>
+            </p>
+          )}
+          <p className="text-sm text-slate-600">
+            Kurir pilihan pembeli: <b className="text-ink">{data.shipping_service}</b>. Resi langsung terbit dan tersimpan di pesanan ini.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Cara serah paket">
+            {([
+              ['drop_off', 'Antar ke agen', 'Bawa paket ke agen kurir terdekat'],
+              ['pickup', 'Dijemput kurir', 'Kurir datang ke gudang'],
+            ] as const).map(([value, title, hint]) => (
+              <label key={value} className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition ${method === value ? 'border-ink bg-mist' : 'border-slate-200 hover:border-slate-400'}`}>
+                <input type="radio" name="ship-method" checked={method === value} onChange={() => setMethod(value)} className="mt-0.5 accent-[#191919]" />
+                <span>
+                  <span className="block text-sm font-bold text-ink">{title}</span>
+                  <span className="block text-xs text-slate-500">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <button type="button" className={btn.primary} disabled={!!busy} onClick={() => run('create', 'Resi dibuat.')}>
+            {busy === 'create' ? 'Membuat resi…' : 'Buat resi'}
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }

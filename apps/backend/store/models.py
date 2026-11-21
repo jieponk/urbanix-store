@@ -26,6 +26,10 @@ class Product(models.Model):
     slug = models.SlugField(unique=True)
     sku = models.CharField(max_length=50, unique=True)
     description = models.TextField()
+    description_original = models.TextField(
+        "Deskripsi asli (sebelum diterjemahkan)", blank=True,
+        help_text="Diisi otomatis oleh perintah perbaiki_deskripsi --terjemahkan; untuk memulihkan teks asli.",
+    )
     price = models.DecimalField(max_digits=12, decimal_places=2)
     discount_price = models.DecimalField(
         max_digits=12,
@@ -52,6 +56,12 @@ class Product(models.Model):
         blank=True,
         help_text="Link produk ini di Shopee. Kosongkan untuk memakai link toko di Pengaturan toko.",
     )
+    weight_grams = models.PositiveIntegerField(
+        "Berat (gram)", null=True, blank=True, help_text="Berat setelah dikemas, dalam gram."
+    )
+    length_cm = models.PositiveIntegerField("Panjang paket (cm)", null=True, blank=True)
+    width_cm = models.PositiveIntegerField("Lebar paket (cm)", null=True, blank=True)
+    height_cm = models.PositiveIntegerField("Tinggi paket (cm)", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -116,12 +126,58 @@ class StoreSettings(models.Model):
         help_text="Tetap nonaktif selama MIDTRANS_SERVER_KEY belum diisi.",
     )
     enable_whatsapp = models.BooleanField("Aktifkan pesan via WhatsApp", default=True)
+    # Ongkir otomatis (Biteship). Aktif bila BITESHIP_API_KEY terpasang & asal pengiriman diisi.
+    ongkir_origin_id = models.CharField(
+        "ID area asal pengiriman (Biteship)", max_length=60, blank=True,
+        help_text="Pilih kecamatan/kode pos gudang di Seller Center → Pengaturan.",
+    )
+    ongkir_origin_label = models.CharField("Asal pengiriman", max_length=255, blank=True)
+    ongkir_origin_lat = models.FloatField("Titik gudang (lintang)", null=True, blank=True)
+    ongkir_origin_lng = models.FloatField("Titik gudang (bujur)", null=True, blank=True)
+    ongkir_couriers = models.CharField(
+        "Kurir ongkir otomatis", max_length=120, blank=True, default="jne:jnt:sicepat:anteraja:pos",
+        help_text="Kode kurir dipisah titik dua, mis. jne:jnt:sicepat.",
+    )
+    # Pengirim untuk resi otomatis (Biteship Order API)
+    ship_sender_name = models.CharField("Nama pengirim di resi", max_length=80, blank=True, default="Urbanix Store")
+    ship_sender_phone = models.CharField(
+        "No. HP pengirim di resi", max_length=20, blank=True, help_text="Kosong = nomor WhatsApp toko.",
+    )
+    ship_sender_address = models.TextField(
+        "Alamat pengirim / gudang", blank=True,
+        default="Jl. Kerekot Bundar XI No. 4, RT.8/RW.6, Pasar Baru, Sawah Besar, Jakarta Pusat, DKI Jakarta",
+    )
+    ship_sender_postal_code = models.CharField("Kode pos gudang", max_length=5, blank=True, default="10710")
+    ship_collection_method = models.CharField(
+        "Cara serah paket", max_length=10, blank=True, default="drop_off",
+        choices=[("drop_off", "Antar ke agen (drop off)"), ("pickup", "Dijemput kurir (pickup)")],
+    )
+    # Notifikasi & aturan pesanan
+    notify_email = models.EmailField(
+        "Email admin untuk notifikasi", blank=True,
+        help_text="Pesanan baru, pembayaran lunas, dan pengajuan retur dikirim ke email ini.",
+    )
+    wa_unpaid_cancel_hours = models.PositiveSmallIntegerField(
+        "Batalkan otomatis pesanan WhatsApp belum lunas setelah (jam)", default=24,
+        help_text="0 = tidak dibatalkan otomatis. Samakan dengan batas bayar di S&K (siteConfig legal.paymentDeadline).",
+    )
+    return_window_hours = models.PositiveSmallIntegerField("Batas ajukan retur setelah diterima (jam)", default=48)
+    return_video_max_mb = models.PositiveSmallIntegerField("Batas ukuran video unboxing retur (MB)", default=50)
     enable_shopee = models.BooleanField("Aktifkan beli via Shopee", default=True)
 
     show_whatsapp_popup = models.BooleanField(
         "Tampilkan popup voucher di beranda",
         default=True,
         help_text="Voucher yang tampil = voucher dengan centang \"Tampilkan di popup\".",
+    )
+    POPUP_VOUCHER = "voucher"
+    POPUP_BANNER = "banner"
+    popup_mode = models.CharField(
+        "Isi popup beranda",
+        max_length=10,
+        choices=[(POPUP_VOUCHER, "Voucher"), (POPUP_BANNER, "Banner promo/event")],
+        default=POPUP_VOUCHER,
+        help_text="Voucher: voucher bercentang 'Tampilkan di popup'. Banner: banner berpenempatan 'Popup' yang sedang tayang.",
     )
     voucher_combo_min_purchase = models.DecimalField(
         "Min. belanja untuk menggabung 2 voucher (Rp)",
@@ -140,6 +196,26 @@ class StoreSettings(models.Model):
     shopee_reviews_url = models.URLField(
         "Link halaman penilaian Shopee", max_length=500, blank=True,
         help_text="Tombol \"Baca semua ulasan\" mengarah ke sini.",
+    )
+
+    # Dekor toko (Mode Event): tampilan pita, banner beranda & label kartu saat event
+    EVENT_AUTO, EVENT_OFF, EVENT_FORCE = "auto", "off", "force"
+    EVENT_MODES = [(EVENT_AUTO, "Otomatis sesuai kalender"), (EVENT_OFF, "Matikan dekor event"), (EVENT_FORCE, "Pakai tema pilihan")]
+    EVENT_KEYS = [("kembar", "Tanggal kembar"), ("harbolnas", "Harbolnas 12.12"), ("tengah", "Payday tengah bulan"),
+                  ("gajian", "Gajian Sale")]
+    event_mode = models.CharField("Mode dekor event", max_length=10, choices=EVENT_MODES, default=EVENT_AUTO)
+    event_theme = models.CharField("Tema dipaksa", max_length=12, choices=EVENT_KEYS, blank=True)
+    event_until = models.DateTimeField(
+        "Tema pilihan sampai", null=True, blank=True,
+        help_text="Setelah waktu ini kembali ke mode otomatis. Kosong = sampai diganti.",
+    )
+    # Tata letak beranda (Dekor toko): urutan & tampil/sembunyi bagian. Kosong = susunan bawaan.
+    home_layout = models.JSONField("Tata letak beranda", default=list, blank=True)
+    event_title = models.CharField("Judul banner event (opsional)", max_length=80, blank=True)
+    event_subtitle = models.CharField("Keterangan banner event (opsional)", max_length=200, blank=True)
+    event_cta = models.CharField("Teks tombol banner event (opsional)", max_length=40, blank=True)
+    event_teaser_days = models.PositiveSmallIntegerField(
+        "Pita \"segera hadir\" (hari sebelum event)", default=3, help_text="0 = tanpa pita hitung mundur.",
     )
 
     class Meta:
@@ -183,6 +259,13 @@ class ProductVariation(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
     image_url = models.URLField("Gambar varian", max_length=500, blank=True)
+    # Kosongkan = ikut berat & ukuran produk induk
+    weight_grams = models.PositiveIntegerField(
+        "Berat (gram)", null=True, blank=True, help_text="Berat setelah dikemas, dalam gram."
+    )
+    length_cm = models.PositiveIntegerField("Panjang paket (cm)", null=True, blank=True)
+    width_cm = models.PositiveIntegerField("Lebar paket (cm)", null=True, blank=True)
+    height_cm = models.PositiveIntegerField("Tinggi paket (cm)", null=True, blank=True)
 
     class Meta:
         verbose_name = "Varian"
@@ -233,6 +316,7 @@ class Order(models.Model):
         ("PAID", "Paid"),
         ("FAILED", "Failed"),
         ("EXPIRED", "Expired"),
+        ("REFUNDED", "Refunded"),
     )
 
     order_number = models.CharField(
@@ -279,12 +363,39 @@ class Order(models.Model):
         help_text="True bila stok pesanan ini sedang dipotong (dikembalikan otomatis saat gagal/kedaluwarsa).",
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_weight_grams = models.PositiveIntegerField(
+        "Total berat kirim (gram)", default=0,
+        help_text="Jumlah berat kirim semua barang (berat asli atau berat volume, mana yang lebih besar).",
+    )
     shipping_address = models.TextField()
+    shipping_service = models.CharField(
+        "Pilihan pengiriman pembeli", max_length=30, blank=True,
+        help_text="Dipilih pembeli saat checkout (mis. jne_reg). Ongkir tetap dikonfirmasi admin.",
+    )
     shipping_courier = models.CharField("Kurir", max_length=50, blank=True)
+    shipping_destination_id = models.CharField("ID area tujuan (Biteship)", max_length=60, blank=True)
+    shipping_lat = models.FloatField("Titik penerima (lintang)", null=True, blank=True)
+    shipping_lng = models.FloatField("Titik penerima (bujur)", null=True, blank=True)
+    shipping_etd = models.CharField("Estimasi tiba", max_length=30, blank=True)
+    shipment_id = models.CharField("ID pengiriman Biteship", max_length=60, blank=True)
+    shipment_status = models.CharField("Status pengiriman", max_length=30, blank=True)
+    shipment_method = models.CharField("Cara serah paket", max_length=10, blank=True)
+    shipment_price = models.DecimalField("Ongkir ditagih Biteship", max_digits=12, decimal_places=2, null=True, blank=True)
+    shipment_created_at = models.DateTimeField("Resi dibuat", null=True, blank=True)
+    shipping_auto = models.BooleanField(
+        "Ongkir otomatis", default=False, help_text="Ongkir dihitung otomatis (Biteship) saat checkout, bukan dari admin.",
+    )
     tracking_number = models.CharField("No. resi", max_length=80, blank=True)
     shipping_cost = models.DecimalField("Ongkir (dari admin)", max_digits=12, decimal_places=2, null=True, blank=True)
     admin_note = models.TextField("Catatan admin (internal)", blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    reminder_sent_at = models.DateTimeField("Email pengingat bayar terkirim", null=True, blank=True)
+    shipped_email_sent_at = models.DateTimeField("Email paket dikirim terkirim", null=True, blank=True)
+    review_email_sent_at = models.DateTimeField("Email minta ulasan terkirim", null=True, blank=True)
+    paid_at = models.DateTimeField("Lunas pada", null=True, blank=True)
+    paid_email_sent_at = models.DateTimeField("Email pembayaran diterima terkirim", null=True, blank=True)
+    delivered_at = models.DateTimeField("Diterima pembeli pada", null=True, blank=True)
+    shipment_history = models.JSONField("Riwayat perjalanan paket", default=list, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -311,6 +422,19 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.order_number} - {self.status}"
 
+    @property
+    def shipping_discount(self):
+        if self.shipping_cost is None:
+            return 0
+        return min(self.shipping_cost, self.shipping_discount_max or 0)
+
+    @property
+    def billed_amount(self):
+        """Total yang ditagih: barang setelah voucher + ongkir setelah potongan ongkir."""
+        if self.shipping_cost is None:
+            return self.total_amount
+        return self.total_amount + max(0, self.shipping_cost - (self.shipping_discount_max or 0))
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -334,6 +458,14 @@ class OrderItem(models.Model):
     sku = models.CharField("SKU", max_length=100, blank=True)
     price_snapshot = models.DecimalField(max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField()
+    weight_grams = models.PositiveIntegerField(
+        "Berat kirim per barang (gram)", null=True, blank=True,
+        help_text="Yang lebih besar antara berat asli dan berat volume (P×L×T/6000).",
+    )
+    flash_item = models.ForeignKey(
+        "PriceCutItem", related_name="order_items", on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name="Kuota flash sale",
+    )
 
     def __str__(self):
         return (
@@ -372,6 +504,10 @@ class PriceCut(models.Model):
     starts_at = models.DateTimeField("Mulai", null=True, blank=True, help_text="Kosongkan = langsung berlaku.")
     ends_at = models.DateTimeField("Selesai", null=True, blank=True, help_text="Kosongkan = berlaku sampai dimatikan.")
     is_active = models.BooleanField("Aktif", default=True)
+    is_flash_sale = models.BooleanField(
+        "Flash sale", default=False,
+        help_text="Tampil sebagai Flash Sale di beranda (hitung mundur + sisa kuota). Isi kuota per produk.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -420,6 +556,10 @@ class PriceCutItem(models.Model):
     )
     discount_percent = models.DecimalField(
         "Potongan (%)", max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    quota = models.PositiveIntegerField(
+        "Kuota", null=True, blank=True,
+        help_text="Jumlah barang dengan harga promo ini. Kosongkan = tanpa batas. Habis = harga kembali normal.",
     )
 
     class Meta:
@@ -615,6 +755,15 @@ class NewsSource(models.Model):
     sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
     last_fetched_at = models.DateTimeField("Terakhir diambil", null=True, blank=True)
     last_error = models.CharField("Error terakhir", max_length=255, blank=True)
+    full_text_allowed = models.BooleanField(
+        "Boleh tampilkan teks penuh", default=False,
+        help_text="Centang HANYA untuk siaran pers resmi atau media yang memberi izin tertulis.",
+    )
+    required_keywords = models.CharField(
+        "Kata kunci wajib", max_length=300, blank=True,
+        help_text="Pisahkan koma. Kalau diisi, hanya berita yang judul/cuplikannya memuat salah satu kata ini "
+                  "yang diambil (berguna untuk feed siaran pers yang campur).",
+    )
 
     class Meta:
         ordering = ["sort_order", "name"]
@@ -626,7 +775,7 @@ class NewsSource(models.Model):
 
 
 class NewsArticle(models.Model):
-    """Ringkasan berita (judul + cuplikan pendek + link). Isi artikel tetap dibaca di situs sumber."""
+    """Ringkasan berita (judul + cuplikan + link) + inti berita buatan AI. Teks penuh hanya untuk sumber berizin."""
 
     source = models.ForeignKey(NewsSource, on_delete=models.CASCADE, related_name="articles", verbose_name="Sumber")
     guid = models.CharField(max_length=500, unique=True)
@@ -641,6 +790,17 @@ class NewsArticle(models.Model):
     is_visible = models.BooleanField("Tampil", default=True)
     is_pinned = models.BooleanField("Sematkan di atas", default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Teks penuh hanya untuk sumber berizin (lihat NewsSource.full_text_allowed).
+    body = models.TextField("Teks penuh (sumber berizin)", blank=True)
+    # Inti berita buatan AI (tulisan baru, bukan salinan).
+    AI_STATUS = [("pending", "Menunggu"), ("done", "Selesai"), ("skip", "Dilewati"), ("failed", "Gagal")]
+    ai_status = models.CharField("Status AI", max_length=8, choices=AI_STATUS, default="pending", db_index=True)
+    ai_points = models.JSONField("Inti berita (AI)", default=list, blank=True)
+    ai_conclusion = models.TextField("Kesimpulan (AI)", blank=True)
+    ai_opinion = models.TextField("Pendapat Urbanix (AI)", blank=True)
+    ai_body = models.TextField("Artikel lengkap versi Urbanix (AI)", blank=True,
+                               help_text="Ditulis ulang dengan kata sendiri dari fakta berita asli (bukan salinan).")
+    ai_generated_at = models.DateTimeField("Dibuat AI pada", null=True, blank=True)
 
     class Meta:
         ordering = ["-is_pinned", "-published_at"]
@@ -659,6 +819,11 @@ class Banner(models.Model):
     mobile_image = models.FileField("Gambar HP (opsional)", upload_to="banners/", blank=True)
     link_url = models.CharField("Link tujuan", max_length=500, blank=True,
                                 help_text="Contoh: /produk?promo=1, /produk/12, atau link Shopee.")
+    HERO = "HERO"
+    POPUP = "POPUP"
+    placement = models.CharField(
+        "Tampil sebagai", max_length=10, choices=[(HERO, "Banner geser beranda"), (POPUP, "Popup beranda")], default=HERO
+    )
     sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
     starts_at = models.DateTimeField("Mulai tayang", null=True, blank=True)
     ends_at = models.DateTimeField("Selesai tayang", null=True, blank=True)
@@ -735,12 +900,17 @@ class Article(models.Model):
 
 
 class ArticleComment(models.Model):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments")
+    """Komentar ala Instagram untuk artikel Inspirasi ATAU berita (salah satu terisi)."""
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
+    news = models.ForeignKey("NewsArticle", on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
     name = models.CharField("Nama", max_length=60)
     email = models.EmailField("Email (tidak ditampilkan)", blank=True)
-    body = models.TextField("Komentar", max_length=1500)
+    body = models.TextField("Komentar", max_length=1500, blank=True)
+    gif_url = models.URLField("GIF (GIPHY)", max_length=500, blank=True)
     is_approved = models.BooleanField("Disetujui", default=False)
     is_staff_reply = models.BooleanField("Balasan admin", default=False)
+    is_pinned = models.BooleanField("Disematkan", default=False)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -748,6 +918,218 @@ class ArticleComment(models.Model):
         ordering = ["created_at"]
         verbose_name = "Komentar artikel"
         verbose_name_plural = "Komentar artikel"
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(article__isnull=False, news__isnull=True) | models.Q(article__isnull=True, news__isnull=False)),
+                name="komentar_artikel_atau_berita",
+            )
+        ]
+
+    @property
+    def target_title(self) -> str:
+        return self.article.title if self.article_id else (self.news.title if self.news_id else "")
+
+    @property
+    def target_url(self) -> str:
+        return f"/inspirasi/{self.article.slug}" if self.article_id else (f"/berita/{self.news_id}" if self.news_id else "/")
 
     def __str__(self):
         return f"{self.name}: {self.body[:40]}"
+
+
+class ArticleCommentReaction(models.Model):
+    """Reaksi emoji pada komentar. Satu pengunjung (token browser, di-hash) = satu reaksi per komentar."""
+
+    comment = models.ForeignKey(ArticleComment, on_delete=models.CASCADE, related_name="reactions")
+    emoji = models.CharField(max_length=16)
+    visitor = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["comment", "visitor"], name="satu_reaksi_per_pengunjung")]
+
+
+class ProductReview(models.Model):
+    """Ulasan produk dari pembeli terverifikasi (lewat link ulasan pesanan)."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="buyer_reviews")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="buyer_reviews")
+    variation_name = models.CharField("Varian", max_length=255, blank=True)
+    name = models.CharField("Nama tampil", max_length=60)
+    rating = models.PositiveSmallIntegerField("Bintang")
+    body = models.TextField("Ulasan", max_length=2000, blank=True)
+    photo = models.ImageField("Foto", upload_to="ulasan/%Y/%m/", blank=True)
+    is_visible = models.BooleanField("Tampil", default=True)
+    staff_reply = models.TextField("Balasan toko", blank=True)
+    staff_reply_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["order", "product"], name="satu_ulasan_per_produk_per_pesanan")]
+
+    def __str__(self):
+        return f"{self.rating}★ {self.product_id} oleh {self.name}"
+
+
+class ContentTranslation(models.Model):
+    """Cache terjemahan isi toko (nama/deskripsi produk, artikel, voucher) ke bahasa lain.
+
+    Satu teks asli cukup diterjemahkan sekali (hemat kuota DeepL). Teks baru masuk antrean
+    (status pending) saat pertama kali diminta, lalu diisi oleh perintah `terjemahkan_konten`.
+    """
+
+    STATUS = [("pending", "Menunggu"), ("done", "Selesai"), ("failed", "Gagal")]
+    key = models.CharField(max_length=64, unique=True)  # sha256(lang + teks asli)
+    lang = models.CharField(max_length=5, default="en")
+    source = models.TextField()
+    text = models.TextField(blank=True)
+    status = models.CharField(max_length=8, choices=STATUS, default="pending", db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Terjemahan isi"
+        verbose_name_plural = "Terjemahan isi"
+
+    def __str__(self):
+        return f"[{self.lang}] {self.source[:60]}"
+
+
+class ShopVideo(models.Model):
+    """Video belanja di beranda ("Lihat langsung"): file unggahan atau link TikTok/Instagram/YouTube + produk terkait."""
+
+    title = models.CharField("Judul", max_length=120)
+    video_file = models.FileField("File video", upload_to="videos/", blank=True)
+    video_url = models.URLField("Link video", max_length=500, blank=True,
+                                help_text="Link TikTok, Instagram Reels, atau YouTube Shorts.")
+    poster = models.FileField("Gambar sampul", upload_to="videos/posters/", blank=True)
+    products = models.ManyToManyField("Product", blank=True, related_name="shop_videos", verbose_name="Produk di video")
+    sort_order = models.PositiveSmallIntegerField("Urutan", default=0)
+    is_active = models.BooleanField("Tampil", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "-id"]
+        verbose_name = "Video belanja"
+        verbose_name_plural = "Video belanja"
+
+    def __str__(self):
+        return self.title
+
+    def source(self) -> dict:
+        """Jenis & alamat pemutar: file (diputar langsung) atau embed resmi platform."""
+        import re
+
+        if self.video_file:
+            return {"kind": "file", "src": self.video_file.url, "thumb": ""}
+        url = (self.video_url or "").strip()
+        m = re.search(r"(?:youtube\.com/(?:shorts/|watch\?v=|embed/)|youtu\.be/)([\w-]{6,})", url)
+        if m:
+            vid = m.group(1)
+            return {"kind": "youtube", "src": f"https://www.youtube-nocookie.com/embed/{vid}?autoplay=1&rel=0&playsinline=1",
+                    "thumb": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"}
+        m = re.search(r"tiktok\.com/.*?/video/(\d+)", url)
+        if m:
+            return {"kind": "tiktok", "src": f"https://www.tiktok.com/embed/v2/{m.group(1)}", "thumb": ""}
+        m = re.search(r"instagram\.com/(?:reel|reels|p)/([\w-]+)", url)
+        if m:
+            return {"kind": "instagram", "src": f"https://www.instagram.com/reel/{m.group(1)}/embed", "thumb": ""}
+        return {"kind": "link", "src": url, "thumb": ""}
+
+
+
+def _return_upload(instance, filename):
+    ext = (filename.rsplit(".", 1)[-1] if "." in filename else "bin").lower()[:5]
+    return f"retur/{uuid.uuid4().hex}.{ext}"
+
+
+class ReturnRequest(models.Model):
+    """Pengajuan pengembalian barang/dana oleh pembeli (maks. 1 per pesanan)."""
+
+    REASONS = [
+        ("DEFECT", "Barang rusak/cacat dari pabrik"),
+        ("NOT_WORKING", "Barang tidak berfungsi"),
+        ("DAMAGED_SHIPPING", "Barang rusak saat pengiriman"),
+        ("WRONG_ITEM", "Barang yang diterima salah (produk/varian/warna)"),
+        ("INCOMPLETE", "Barang atau aksesori kurang/tidak lengkap"),
+        ("NOT_AS_DESCRIBED", "Barang tidak sesuai deskripsi"),
+    ]
+    RESOLUTIONS = [("REFUND", "Pengembalian dana"), ("REPLACE", "Tukar barang")]
+    STATUSES = [
+        ("REQUESTED", "Diajukan"),
+        ("APPROVED", "Disetujui, kirim barang kembali"),
+        ("RETURN_SHIPPED", "Barang dikirim pembeli"),
+        ("RECEIVED", "Barang diterima toko"),
+        ("REFUNDED", "Dana dikembalikan"),
+        ("REPLACED", "Barang pengganti dikirim"),
+        ("REJECTED", "Ditolak"),
+        ("CANCELLED", "Dibatalkan pembeli"),
+    ]
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="return_request")
+    reason = models.CharField("Alasan", max_length=20, choices=REASONS)
+    description = models.TextField("Penjelasan pembeli")
+    item_ids = models.JSONField("Barang yang diretur", default=list, blank=True)
+    resolution = models.CharField("Permintaan", max_length=10, choices=RESOLUTIONS, default="REFUND")
+    waybill_photo = models.ImageField("Foto resi", upload_to=_return_upload)
+    unboxing_video = models.FileField("Video unboxing", upload_to=_return_upload, blank=True)
+    video_via_whatsapp = models.BooleanField("Video dikirim lewat WhatsApp", default=False)
+    status = models.CharField(max_length=20, choices=STATUSES, default="REQUESTED")
+    admin_note = models.TextField("Catatan admin untuk pembeli", blank=True)
+    return_courier = models.CharField("Kurir kirim balik", max_length=50, blank=True)
+    return_tracking_number = models.CharField("Resi kirim balik", max_length=80, blank=True)
+    refund_amount = models.DecimalField("Dana dikembalikan", max_digits=12, decimal_places=2, null=True, blank=True)
+    refund_method = models.CharField("Cara pengembalian dana", max_length=120, blank=True)
+    replacement_tracking_number = models.CharField("Resi barang pengganti", max_length=80, blank=True)
+    history = models.JSONField("Riwayat status", default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Pengembalian"
+        verbose_name_plural = "Pengembalian"
+
+    def __str__(self):
+        return f"Retur {self.order.order_number} - {self.status}"
+
+
+class CancelRequest(models.Model):
+    """Pengajuan pembatalan oleh pembeli untuk pesanan yang SUDAH dibayar dan BELUM dikirim."""
+
+    REASONS = [
+        ("CHANGE_MIND", "Berubah pikiran / tidak jadi membeli"),
+        ("WRONG_ORDER", "Salah pilih produk, varian, atau jumlah"),
+        ("CHANGE_ADDRESS", "Ingin mengganti alamat pengiriman"),
+        ("CHANGE_PAYMENT", "Ingin mengganti metode pembayaran"),
+        ("FOUND_CHEAPER", "Menemukan harga lebih murah"),
+        ("TOO_LONG", "Pesanan terlalu lama diproses"),
+        ("OTHER", "Alasan lain"),
+    ]
+    STATUSES = [
+        ("REQUESTED", "Menunggu persetujuan"),
+        ("APPROVED", "Disetujui, menunggu pengembalian dana"),
+        ("REJECTED", "Ditolak"),
+        ("REFUNDED", "Dana dikembalikan"),
+        ("WITHDRAWN", "Dibatalkan pembeli"),
+    ]
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="cancel_request")
+    reason = models.CharField("Alasan", max_length=20, choices=REASONS)
+    note = models.TextField("Catatan pembeli", blank=True)
+    status = models.CharField(max_length=12, choices=STATUSES, default="REQUESTED")
+    admin_note = models.TextField("Catatan admin", blank=True)
+    refund_amount = models.DecimalField(max_digits=12, decimal_places=0, null=True, blank=True)
+    refund_method = models.CharField("Metode refund", max_length=120, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)
+    history = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Pembatalan"
+        verbose_name_plural = "Pembatalan"
+
+    def __str__(self):
+        return f"Batal {self.order.order_number} - {self.status}"

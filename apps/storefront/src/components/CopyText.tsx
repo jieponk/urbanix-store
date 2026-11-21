@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { rememberOrder } from '@/lib/recentOrders';
+import { Check } from '@/components/inspirasi/InspoIcons';
 
 /** Tombol salin teks (nomor pesanan, resi). `remember` menyimpan nomor pesanan di perangkat ini. */
 export default function CopyText({ text, label = 'Salin', remember = false, className = '' }: { text: string; label?: string; remember?: boolean; className?: string }) {
@@ -23,7 +24,7 @@ export default function CopyText({ text, label = 'Salin', remember = false, clas
       }}
       className={`shrink-0 rounded-lg px-3 py-2 text-xs font-bold ring-1 transition ${done ? 'bg-emerald-700 text-white ring-emerald-700' : 'text-ink ring-slate-200 hover:ring-ink'} ${className}`}
     >
-      {done ? 'Tersalin ✓' : label}
+      {done ? <span className="inline-flex items-center gap-1">Tersalin <Check size={13} /></span> : label}
     </button>
   );
 }

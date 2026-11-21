@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { money, type Variation } from '@/lib/api';
+import type { Variation } from '@/lib/api';
+import { money } from '@/lib/money';
 import { addToCart, cartLineId, type CartItem } from '@/lib/cart';
 import { CartIcon } from '@/components/Icons';
+import { ArrowRight } from '@/components/inspirasi/InspoIcons';
+import { useT } from '@/components/LangProvider';
+import { rememberProduct } from '@/lib/lastProduct';
+import { publicSku } from '@/lib/seo';
+import SimpleIcon from '@/components/SimpleIcon';
 
 type Props = {
   id: string;
@@ -35,6 +41,7 @@ export default function ProductBuyButtons({
   onVariationChange,
   whatsappNumber,
 }: Props) {
+  const t = useT();
   const router = useRouter();
   const hasVariants = variations.length > 0;
 
@@ -42,11 +49,16 @@ export default function ProductBuyButtons({
   const [message, setMessage] = useState('');
   const [needVariant, setNeedVariant] = useState(false);
 
+  // Ingat produk ini supaya tombol "Kembali" di keranjang/checkout bisa membawa pembeli ke sini lagi.
+  useEffect(() => {
+    rememberProduct({ href: window.location.pathname + window.location.search, name });
+  }, [name]);
+
   const selected = variations.find((v) => v.variation_id === variationId) ?? null;
   // Harga yang masuk keranjang = harga akhir (termasuk promo). Server tetap menghitung ulang saat checkout.
   const currentPrice = selected ? Number(selected.final_price ?? selected.price) || 0 : price;
   const currentStock = hasVariants ? (selected ? selected.stock : 0) : stock;
-  const currentSku = selected?.sku || sku;
+  const currentSku = publicSku(selected?.sku || sku);
   const canBuy = hasVariants ? Boolean(selected) && currentStock > 0 : stock > 0;
 
   function choose(variation: Variation) {
@@ -82,7 +94,7 @@ export default function ProductBuyButtons({
     const item = buildItem();
     if (!item) return;
     addToCart(item);
-    setMessage('Produk berhasil ditambahkan ke keranjang.');
+    setMessage(t('Produk berhasil ditambahkan ke keranjang.'));
   }
 
   function buyNow() {
@@ -93,11 +105,9 @@ export default function ProductBuyButtons({
   }
 
   function chatUrl() {
-    const lines = ['Halo admin URBANIX, saya mau tanya tentang produk ini:', name];
-    if (selected?.name.trim()) lines.push(`Varian: ${selected.name.trim()}`);
-    if (currentSku) lines.push(`SKU: ${currentSku}`);
-    lines.push(window.location.href, '', 'Pertanyaan saya: ');
-    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
+    // Singkat saja: sapaan + link produk (pembeli tinggal mengetik pertanyaannya sendiri).
+    const text = `Hai kak, saya mau nanya untuk link produk\n${window.location.href}`;
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
   }
 
   function openChat() {
@@ -109,12 +119,12 @@ export default function ProductBuyButtons({
       {hasVariants && (
         <div>
           <p className={`mb-2 text-sm font-semibold ${needVariant ? 'text-red-600' : 'text-slate-700'}`}>
-            {needVariant ? 'Pilih varian dulu ya' : 'Pilih varian'}
-            <span className="font-normal text-slate-400"> ({variations.length} pilihan)</span>
+            {needVariant ? t('Pilih varian dulu ya') : t('Pilih varian')}
+            <span className="font-normal text-slate-400"> ({t('{n} pilihan', { n: variations.length })})</span>
           </p>
           <div
             role="radiogroup"
-            aria-label="Pilih varian"
+            aria-label={t('Pilih varian')}
             id="pilih-varian"
             className={`grid grid-cols-2 gap-2 ${needVariant ? 'rounded-xl ring-2 ring-red-300 ring-offset-2' : ''}`}
           >
@@ -146,7 +156,7 @@ export default function ProductBuyButtons({
                       {money(variation.final_price ?? variation.price)}
                     </span>
                     {' · '}
-                    {soldOut ? 'Habis' : `Stok ${variation.stock}`}
+                    {soldOut ? t('Habis') : t('Stok {n}', { n: variation.stock })}
                   </span>
                 </button>
               );
@@ -157,7 +167,7 @@ export default function ProductBuyButtons({
 
 
       <div className="flex items-center gap-4">
-        <span className="text-sm font-semibold text-slate-700">Jumlah</span>
+        <span className="text-sm font-semibold text-slate-700">{t('Jumlah')}</span>
 
         <div className="flex items-center rounded-xl border border-slate-300">
           <button
@@ -165,7 +175,7 @@ export default function ProductBuyButtons({
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             disabled={quantity <= 1}
             className="px-4 py-2 text-lg disabled:opacity-30"
-            aria-label="Kurangi jumlah"
+            aria-label={t('Kurangi jumlah')}
           >
             −
           </button>
@@ -175,14 +185,14 @@ export default function ProductBuyButtons({
             onClick={() => setQuantity((q) => Math.min(Math.max(1, currentStock), q + 1))}
             disabled={quantity >= currentStock}
             className="px-4 py-2 text-lg disabled:opacity-30"
-            aria-label="Tambah jumlah"
+            aria-label={t('Tambah jumlah')}
           >
             +
           </button>
         </div>
 
         <span className="text-xs text-slate-500">
-          {hasVariants && !selected ? 'Pilih varian untuk melihat stok' : `Stok: ${currentStock}`}
+          {hasVariants && !selected ? t('Pilih varian untuk melihat stok') : t('Stok: {n}', { n: currentStock })}
         </span>
       </div>
 
@@ -191,17 +201,19 @@ export default function ProductBuyButtons({
           type="button"
           onClick={addProduct}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
+          className="group inline-flex items-center justify-center gap-2 rounded-lg border-2 border-ink px-5 py-3.5 text-sm font-bold text-ink transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-50"
         >
-          + Tambah ke Keranjang
+          <CartIcon size={18} className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+          {t('Tambah ke Keranjang')}
         </button>
         <button
           type="button"
           onClick={buyNow}
           disabled={!hasVariants && !canBuy}
-          className="rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3.5 text-sm font-bold text-onbrand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Beli Sekarang
+          {t('Beli Sekarang')}
+          <ArrowRight size={18} />
         </button>
       </div>
 
@@ -209,7 +221,7 @@ export default function ProductBuyButtons({
         <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
           {message}{' '}
           <button type="button" onClick={() => router.push('/cart')} className="font-bold underline">
-            Lihat Keranjang
+            {t('Lihat Keranjang')}
           </button>
         </div>
       )}
@@ -222,14 +234,14 @@ export default function ProductBuyButtons({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600 px-5 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
           >
             <ChatIcon />
-            Tanya produk ini ke admin (WhatsApp)
+            {t('Tanya produk ini ke admin (WhatsApp)')}
           </button>
 
           {/* Tombol chat melayang: selalu terlihat saat pembeli menggulir deskripsi */}
           <button
             type="button"
             onClick={openChat}
-            aria-label="Chat admin lewat WhatsApp"
+            aria-label={t('Chat admin lewat WhatsApp')}
             className="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-emerald-600 sm:flex px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700"
           >
             <span className="relative flex h-2.5 w-2.5">
@@ -237,7 +249,7 @@ export default function ProductBuyButtons({
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
             </span>
             <ChatIcon />
-            <span>Chat Admin</span>
+            <span>{t('Chat Admin')}</span>
           </button>
         </>
       )}
@@ -247,7 +259,7 @@ export default function ProductBuyButtons({
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] text-slate-500">
-              {hasVariants ? (selected ? selected.name.trim() || 'Standar' : 'Pilih varian dulu') : 'Harga'}
+              {hasVariants ? (selected ? selected.name.trim() || t('Standar') : t('Pilih varian dulu')) : t('Harga')}
             </p>
             <p className="truncate text-base font-extrabold text-ink">{money(currentPrice)}</p>
           </div>
@@ -255,7 +267,7 @@ export default function ProductBuyButtons({
             <button
               type="button"
               onClick={openChat}
-              aria-label="Tanya admin lewat WhatsApp"
+              aria-label={t('Tanya admin lewat WhatsApp')}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-600 text-emerald-700"
             >
               <ChatIcon />
@@ -265,7 +277,7 @@ export default function ProductBuyButtons({
             type="button"
             onClick={addProduct}
             disabled={!hasVariants && !canBuy}
-            aria-label="Tambah ke keranjang"
+            aria-label={t('Tambah ke keranjang')}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-ink text-ink disabled:opacity-40"
           >
             <CartIcon size={20} />
@@ -274,16 +286,16 @@ export default function ProductBuyButtons({
             type="button"
             onClick={buyNow}
             disabled={!hasVariants && !canBuy}
-            className="h-11 shrink-0 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white disabled:opacity-50"
+            className="h-11 shrink-0 rounded-xl bg-brand-600 px-4 text-sm font-bold text-onbrand disabled:opacity-50"
           >
-            {!hasVariants && !canBuy ? 'Stok habis' : 'Beli Sekarang'}
+            {!hasVariants && !canBuy ? t('Stok habis') : t('Beli Sekarang')}
           </button>
         </div>
         {message && (
           <p className="mt-1.5 text-center text-xs font-semibold text-emerald-700">
-            Masuk keranjang.{' '}
+            {t('Masuk keranjang.')}{' '}
             <button type="button" onClick={() => router.push('/cart')} className="underline">
-              Lihat
+              {t('Lihat')}
             </button>
           </p>
         )}
@@ -292,11 +304,7 @@ export default function ProductBuyButtons({
   );
 }
 
-/** Ikon gelembung chat generik (bukan logo merek). */
+/** Logo WhatsApp (Simple Icons), ikut warna teks tombol. */
 function ChatIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />
-    </svg>
-  );
+  return <SimpleIcon name="whatsapp" color="current" size={18} />;
 }

@@ -1,9 +1,23 @@
 import Link from 'next/link';
 import CopyText from '@/components/CopyText';
 import { API, money } from '@/lib/api';
+import { ArrowRight, Check } from '@/components/inspirasi/InspoIcons';
+import { getT } from '@/lib/lang-server';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Status Pesanan', robots: { index: false, follow: false } };
+/** Judul & deskripsi pratinjau link (WhatsApp). Tanpa data pribadi; gambar dari opengraph-image.tsx. */
+export function generateMetadata({ params }: { params: { orderNumber: string } }) {
+  const no = decodeURIComponent(params.orderNumber || '').toUpperCase();
+  const title = `Pesanan ${no} · Urbanix Store`;
+  const description = 'Cek status pesanan, total, dan invoice belanjamu di Urbanix Store.';
+  return {
+    title: `Pesanan ${no}`,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: { title, description, type: 'website', siteName: 'Urbanix Store', url: `/pesanan/${encodeURIComponent(no)}` },
+    twitter: { card: 'summary_large_image', title, description },
+  };
+}
 
 type OrderDetail = {
   order_number: string;
@@ -20,12 +34,23 @@ type OrderDetail = {
   tax_note?: string;
   shipping_note: string;
   shipping_courier?: string;
+  shipping_service?: string;
   tracking_number?: string;
   shipping_cost?: string | null;
+  billed_amount?: string;
   customer_email_masked?: string;
   email_enabled?: boolean;
   payment_url: string;
   whatsapp_url: string;
+  review_url?: string;
+  shipment?: {
+    status: string;
+    status_label: string;
+    history: { status: string; label: string; note: string; at: string }[];
+    delivered_at: string | null;
+  } | null;
+  return?: { can_request: boolean; deadline: string | null; status: string; status_label: string; show: boolean };
+  cancel?: { can_request: boolean; status: string; status_label: string; show: boolean };
   items: {
     product_id: number | null;
     name: string;
@@ -99,18 +124,19 @@ export default async function OrderPage({
   params: { orderNumber: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = getT();
   const order = await getOrder(params.orderNumber);
 
   if (!order) {
     return (
       <div className="bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-surface p-8 text-center">
-          <h1 className="text-xl font-black text-slate-900">Pesanan tidak ditemukan</h1>
+          <h1 className="text-xl font-black text-slate-900">{t('Pesanan tidak ditemukan')}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Periksa kembali nomor pesanan, atau server toko sedang tidak dapat diakses.
+            {t('Periksa kembali nomor pesanan, atau server toko sedang tidak dapat diakses.')}
           </p>
           <Link href="/" className="mt-6 inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800">
-            Kembali ke beranda
+            {t('Kembali ke beranda')}
           </Link>
         </div>
       </div>
@@ -118,6 +144,9 @@ export default async function OrderPage({
   }
 
   const info = statusInfo(order, Boolean(searchParams.transaction_status));
+  const hasShipping = order.shipping_cost !== null && order.shipping_cost !== undefined && order.shipping_cost !== '';
+  const shippingCost = hasShipping ? Number(order.shipping_cost) || 0 : 0;
+  const shippingCut = hasShipping ? Math.min(shippingCost, Number(order.shipping_discount_max) || 0) : 0;
   const created = new Date(order.created_at).toLocaleString('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -128,7 +157,7 @@ export default async function OrderPage({
     <div className="px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="rounded-2xl border border-dashed border-brand-500 bg-surface p-5">
-          <p className="text-sm text-slate-500">Nomor pesanan</p>
+          <p className="text-sm text-slate-500">{t('Nomor pesanan')}</p>
           <div className="mt-1 flex items-center gap-3">
             <h1 className="min-w-0 flex-1 break-all font-mono text-xl font-black text-ink sm:text-2xl">{order.order_number}</h1>
             <CopyText text={order.order_number} remember />
@@ -137,39 +166,51 @@ export default async function OrderPage({
             {created} · a.n. {order.customer_name}
           </p>
           <p className="mt-3 text-xs leading-5 text-slate-600">
-            Simpan nomor ini untuk <Link href="/cek-pesanan" className="font-bold text-ink underline">cek pesanan</Link> dan
-            invoice.
+            {t('Simpan nomor ini untuk')} <Link href="/cek-pesanan" className="font-bold text-ink underline">{t('cek pesanan')}</Link> {t('dan invoice.')}
             {order.email_enabled && order.customer_email_masked
-              ? ` Salinannya juga kami kirim ke email ${order.customer_email_masked}.`
-              : ' Nomor ini juga tercantum di chat WhatsApp pesananmu.'}
+              ? ' ' + t('Salinannya juga kami kirim ke email {e}.', { e: order.customer_email_masked })
+              : ' ' + t('Nomor ini juga tercantum di chat WhatsApp pesananmu.')}
           </p>
         </div>
 
         <div className={`rounded-2xl border p-5 ${TONES[info.tone]}`}>
-          <p className="font-bold">{info.title}</p>
-          <p className="mt-1 text-sm">{info.text}</p>
+          <p className="font-bold">{t(info.title)}</p>
+          <p className="mt-1 text-sm">{t(info.text)}</p>
 
           {order.payment_method === 'WHATSAPP' && order.whatsapp_url && order.status === 'PENDING' && (
             <a
               href={order.whatsapp_url}
               className="mt-4 block rounded-xl bg-emerald-600 px-5 py-4 text-center font-bold text-white hover:bg-emerald-700"
             >
-              Kirim Pesanan ke WhatsApp
+              {t('Kirim Pesanan ke WhatsApp')}
             </a>
           )}
           {order.payment_method === 'MIDTRANS' && order.payment_url && order.payment_status === 'UNPAID' && (
             <a
               href={order.payment_url}
-              className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
+              className="mt-4 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-onbrand hover:bg-brand-700"
             >
-              Lanjutkan Pembayaran
+              {t('Lanjutkan Pembayaran')}
             </a>
           )}
         </div>
 
+        {order.review_url && (
+          <a
+            href={order.review_url}
+            className="flex items-center justify-between gap-4 rounded-2xl bg-cobalt-900 p-5 text-white shadow-sm transition hover:brightness-105"
+          >
+            <span>
+              <span className="block font-extrabold">{t('Barang sudah sampai? Beri ulasan ⭐')}</span>
+              <span className="mt-0.5 block text-sm text-white/90">{t('Bantu pembeli lain, hanya 1 menit.')}</span>
+            </span>
+            <ArrowRight size={24} />
+          </a>
+        )}
+
         {order.status !== 'CANCELLED' && (
           <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-            <h2 className="font-black text-ink">Lacak pesanan</h2>
+            <h2 className="font-black text-ink">{t('Lacak pesanan')}</h2>
             <ol className="mt-4 grid grid-cols-4 gap-1 text-center text-[11px] font-semibold sm:text-xs">
               {STEPS.map((step, i) => {
                 const current = Math.max(0, STEPS.findIndex((x) => x.key === order.status));
@@ -184,9 +225,9 @@ export default async function OrderPage({
                         done ? 'bg-emerald-700 text-white' : 'bg-mist text-slate-500 ring-1 ring-slate-200'
                       }`}
                     >
-                      {done ? '✓' : i + 1}
+                      {done ? <Check size={14} /> : i + 1}
                     </span>
-                    <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{step.label}</span>
+                    <span className={`mt-1.5 block ${done ? 'text-ink' : 'text-slate-500'}`}>{t(step.label)}</span>
                   </li>
                 );
               })}
@@ -195,36 +236,109 @@ export default async function OrderPage({
             {order.tracking_number ? (
               <div className="space-y-3 text-sm">
                 <p className="text-slate-600">
-                  Kurir: <b className="text-ink">{order.shipping_courier || '-'}</b>
+                  {t('Kurir:')} <b className="text-ink">{order.shipping_courier || '-'}</b>
                 </p>
                 <div className="flex items-center gap-3 rounded-xl bg-mist p-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-slate-500">No. resi</p>
+                    <p className="text-xs text-slate-500">{t('No. resi')}</p>
                     <p className="break-all font-mono font-bold text-ink">{order.tracking_number}</p>
                   </div>
-                  <CopyText text={order.tracking_number} label="Salin resi" />
+                  <CopyText text={order.tracking_number} label={t('Salin resi')} />
                 </div>
+                {order.shipment?.status_label && (
+                  <p className="text-slate-600">
+                    {t('Status paket:')} <b className="text-ink">{t(order.shipment.status_label)}</b>
+                  </p>
+                )}
+                {order.shipment && order.shipment.history.length > 0 && (
+                  <ol className="relative ml-2 space-y-3 border-l-2 border-slate-200 pl-4">
+                    {order.shipment.history.map((h, i) => (
+                      <li key={i} className="relative">
+                        <span
+                          aria-hidden="true"
+                          className={`absolute -left-[23px] top-1 h-3 w-3 rounded-full ring-2 ring-surface ${i === 0 ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        />
+                        <p className={`text-sm font-bold ${i === 0 ? 'text-ink' : 'text-slate-600'}`}>{t(h.label)}</p>
+                        {h.note && <p className="text-xs text-slate-500">{h.note}</p>}
+                        {h.at && (
+                          <p className="text-[11px] text-slate-400 tabular-nums">
+                            {new Date(h.at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' })}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <a
                   href={`https://cekresi.com/?noresi=${encodeURIComponent(order.tracking_number)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block font-bold text-ink underline"
                 >
-                  Lacak paket di cekresi.com →
+                  {t('Lacak paket di cekresi.com')} <ArrowRight size={14} className="inline" />
                 </a>
               </div>
             ) : (
               <p className="text-sm text-slate-600">
                 {order.status === 'COMPLETED'
-                  ? 'Pesanan sudah selesai.'
-                  : 'Nomor resi akan muncul di sini setelah paket dikirim admin.'}
+                  ? t('Pesanan sudah selesai.')
+                  : t('Nomor resi akan muncul di sini setelah paket dikirim admin.') + (order.shipping_service ? ' ' + t('Pengiriman dipilih: {s}.', { s: order.shipping_service }) : '')}
               </p>
             )}
           </section>
         )}
 
+        {order.cancel?.show && (
+          <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+            <h2 className="font-black text-ink">{t('Pembatalan pesanan')}</h2>
+            {order.cancel.status ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Status pembatalan:')} <b className="text-ink">{t(order.cancel.status_label)}</b>
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">{t('Berubah pikiran? Pembatalan bisa diajukan selama paket belum dikirim.')}</p>
+            )}
+            <Link
+              href={`/pesanan/${encodeURIComponent(order.order_number)}/batal`}
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-bold text-ink hover:border-ink"
+            >
+              {order.cancel.status ? t('Lihat pembatalan') : t('Ajukan pembatalan')} <ArrowRight size={14} />
+            </Link>
+          </section>
+        )}
+
+        {order.return?.show && (
+          <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+            <h2 className="font-black text-ink">{t('Pengembalian barang/dana')}</h2>
+            {order.return.status ? (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Status pengembalian:')} <b className="text-ink">{t(order.return.status_label)}</b>
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-600">
+                {t('Barang rusak, salah, atau kurang? Ajukan pengembalian dengan foto resi & video unboxing.')}
+                {order.return.deadline && (
+                  <>
+                    {' '}
+                    {t('Batas pengajuan:')}{' '}
+                    <b className="text-ink">
+                      {new Date(order.return.deadline).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' })}
+                    </b>
+                  </>
+                )}
+              </p>
+            )}
+            <Link
+              href={`/pesanan/${encodeURIComponent(order.order_number)}/retur`}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-surface"
+            >
+              {order.return.status ? t('Lihat pengembalian') : t('Ajukan pengembalian')} <ArrowRight size={14} />
+            </Link>
+          </section>
+        )}
+
         <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-          <h2 className="font-black text-slate-900">Rincian</h2>
+          <h2 className="font-black text-slate-900">{t('Rincian')}</h2>
           <ul className="mt-3 divide-y divide-slate-100">
             {order.items.map((item, i) => (
               <li key={i} className="flex justify-between gap-4 py-3 text-sm">
@@ -253,13 +367,13 @@ export default async function OrderPage({
           </ul>
           {Number(order.discount_amount) > 0 && (
             <div className="mt-2 flex justify-between border-t border-slate-200 pt-3 text-sm text-emerald-700">
-              <span>{order.discount_note || 'Potongan'}</span>
+              <span>{order.discount_note || t('Potongan')}</span>
               <span className="font-semibold">-{money(order.discount_amount || 0)}</span>
             </div>
           )}
-          {Number(order.shipping_discount_max) > 0 && (
+          {Number(order.shipping_discount_max) > 0 && !hasShipping && (
             <div className="mt-2 flex justify-between text-sm text-emerald-700">
-              <span>Potongan ongkir</span>
+              <span>{t('Potongan ongkir')}</span>
               <span className="font-semibold">s/d {money(order.shipping_discount_max || 0)}</span>
             </div>
           )}
@@ -267,12 +381,30 @@ export default async function OrderPage({
             <p className="mt-1 text-xs text-slate-500">Voucher: {order.voucher_codes.split(',').join(', ')}</p>
           )}
           <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
-            <span className="font-bold">Total produk</span>
-            <span className="font-black">{money(order.total_amount)}</span>
+            <span className="font-bold">{t('Total produk')}</span>
+            <span className={hasShipping ? 'font-semibold' : 'font-black'}>{money(order.total_amount)}</span>
           </div>
+          {hasShipping && (
+            <>
+              <div className="mt-2 flex justify-between text-sm">
+                <span>{t('Ongkos kirim')}</span>
+                <span className="font-semibold">{money(shippingCost)}</span>
+              </div>
+              {shippingCut > 0 && (
+                <div className="mt-2 flex justify-between text-sm text-emerald-700">
+                  <span>{t('Potongan ongkir')}</span>
+                  <span className="font-semibold">-{money(shippingCut)}</span>
+                </div>
+              )}
+              <div className="mt-2 flex justify-between border-t border-slate-200 pt-3">
+                <span className="font-bold">{t('Total tagihan')}</span>
+                <span className="font-black">{money(order.billed_amount ?? Number(order.total_amount) + shippingCost - shippingCut)}</span>
+              </div>
+            </>
+          )}
           <p className="mt-1 text-right text-xs text-slate-500">
-            {order.tax_note || 'Harga sudah termasuk PPN.'} {order.shipping_note}
-            {Number(order.shipping_discount_max) > 0 && ' Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.'}
+            {t(order.tax_note || 'Harga sudah termasuk PPN.')} {order.shipping_note && t(order.shipping_note)}
+            {Number(order.shipping_discount_max) > 0 && !hasShipping && ' ' + t('Potongan ongkir dikurangi saat admin mengonfirmasi ongkir.')}
           </p>
         </section>
 
@@ -281,12 +413,12 @@ export default async function OrderPage({
             href={`/pesanan/${order.order_number}/invoice`}
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-surface px-5 py-3.5 text-sm font-bold text-ink hover:border-ink"
           >
-            Lihat / unduh invoice
+            {t('Lihat / unduh invoice')}
           </Link>
         )}
 
         <Link href="/produk" className="block text-center text-sm font-semibold text-ink hover:underline">
-          Lanjut belanja
+          {t('Lanjut belanja')}
         </Link>
       </div>
     </div>

@@ -42,8 +42,9 @@ def voucher_summary(v: Voucher) -> dict:
     else:
         headline = f"Gratis ongkir s/d {money(v.value)}"
 
+    store = StoreSettings.load()
     methods = []
-    if v.for_whatsapp:
+    if v.for_whatsapp and store.enable_whatsapp and store.whatsapp_number:
         methods.append("pesan via WhatsApp")
     if v.for_midtrans:
         methods.append("bayar di web")
@@ -52,11 +53,13 @@ def voucher_summary(v: Voucher) -> dict:
         auto_terms.append(f"Min. belanja {money(v.min_purchase)} (harga barang, belum termasuk ongkir)")
     else:
         auto_terms.append("Dihitung dari harga barang, belum termasuk ongkir")
-    auto_terms.append("Berlaku untuk " + " & ".join(methods))
+    # Cukup disebut bila voucher juga berlaku di luar website (mis. pesan via WhatsApp).
+    if len(methods) > 1 or (methods and methods != ["bayar di web"]):
+        auto_terms.append("Berlaku untuk " + " & ".join(methods))
     if v.exclude_promo and not v.is_shipping:
         auto_terms.append("Tidak berlaku untuk produk yang sedang promo")
     if v.per_customer_limit:
-        auto_terms.append(f"Maks. {v.per_customer_limit}x per pembeli (nomor WhatsApp)")
+        auto_terms.append(f"Maks. {v.per_customer_limit}x per pembeli (nomor HP)")
     extra = [line.strip() for line in v.terms.splitlines() if line.strip()]
 
     return {
@@ -76,7 +79,15 @@ def voucher_summary(v: Voucher) -> dict:
 
 
 def public_vouchers():
-    return [v for v in Voucher.objects.filter(is_active=True, is_public=True) if v.is_running()]
+    """Voucher yang ditampilkan ke pembeli. Voucher khusus WhatsApp disembunyikan bila pesan via WA dimatikan."""
+    from .models import StoreSettings
+
+    store = StoreSettings.load()
+    wa_on = bool(store.enable_whatsapp and store.whatsapp_number)
+    return [
+        v for v in Voucher.objects.filter(is_active=True, is_public=True)
+        if v.is_running() and (v.for_midtrans or wa_on)
+    ]
 
 
 @dataclass

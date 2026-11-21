@@ -1,15 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { BackLink } from '@/components/Icons';
+import SmartBack from '@/components/SmartBack';
+import { publicSku } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CartItem,
+  cartProductId,
   getCart,
   removeFromCart,
   updateCartQuantity,
 } from '@/lib/cart';
 import { productImg } from '@/lib/img';
+import { useT } from '@/components/LangProvider';
 
 const money = (value: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -19,6 +22,7 @@ const money = (value: number) =>
   }).format(value);
 
 export default function CartPage() {
+  const t = useT();
   const [items, setItems] = useState<CartItem[]>([]);
 
   const refreshCart = useCallback(() => {
@@ -45,22 +49,22 @@ export default function CartPage() {
   return (
     <div className="px-4 py-6 sm:py-10">
       <div className="mx-auto max-w-4xl">
-        <BackLink href="/">Kembali ke toko</BackLink>
+        <SmartBack />
 
         <h1 className="mb-5 mt-4 text-2xl font-extrabold tracking-tight text-ink">
-          Keranjang Belanja
+          {t('Keranjang Belanja')}
         </h1>
 
         {items.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-surface p-8 text-center">
             <p className="mb-4 text-slate-500">
-              Keranjang belanja kamu masih kosong.
+              {t('Keranjang belanja kamu masih kosong.')}
             </p>
             <Link
               href="/produk"
               className="inline-block rounded-xl bg-ink px-5 py-3 text-sm font-bold text-surface hover:bg-slate-800"
             >
-              Mulai Belanja
+              {t('Mulai Belanja')}
             </Link>
           </div>
         ) : (
@@ -76,18 +80,20 @@ export default function CartPage() {
                     />
                   ) : (
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-center text-[11px] text-slate-400 sm:h-24 sm:w-24">
-                      Tanpa gambar
+                      {t('Tanpa gambar')}
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink sm:text-base">{item.name}</h2>
-                    {(item.variationName || item.sku) && (
+                    <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink sm:text-base">
+                      <Link href={`/produk/${cartProductId(item)}`} className="hover:underline">{item.name}</Link>
+                    </h2>
+                    {(item.variationName || publicSku(item.sku)) && (
                       <p className="mt-1 text-xs text-slate-500">
                         {item.variationName && <span className="font-semibold text-slate-700">{item.variationName}</span>}
-                        {item.variationName && item.sku && <br className="sm:hidden" />}
-                        {item.variationName && item.sku && <span className="hidden sm:inline"> · </span>}
-                        {item.sku && <>SKU {item.sku}</>}
+                        {item.variationName && publicSku(item.sku) && <br className="sm:hidden" />}
+                        {item.variationName && publicSku(item.sku) && <span className="hidden sm:inline"> · </span>}
+                        {publicSku(item.sku) && <>SKU {publicSku(item.sku)}</>}
                       </p>
                     )}
                     <p className="mt-1.5 text-sm font-extrabold text-ink">{money(item.price)}</p>
@@ -101,7 +107,7 @@ export default function CartPage() {
                             refreshCart();
                           }}
                           disabled={item.quantity <= 1}
-                          aria-label="Kurangi jumlah"
+                          aria-label={t('Kurangi jumlah')}
                           className="h-10 w-10 text-lg disabled:opacity-30"
                         >
                           −
@@ -114,7 +120,7 @@ export default function CartPage() {
                             refreshCart();
                           }}
                           disabled={item.quantity >= item.stock}
-                          aria-label="Tambah jumlah"
+                          aria-label={t('Tambah jumlah')}
                           className="h-10 w-10 text-lg disabled:opacity-30"
                         >
                           +
@@ -129,7 +135,7 @@ export default function CartPage() {
                         }}
                         className="h-10 rounded-lg px-2 text-sm font-semibold text-red-600 hover:bg-red-50"
                       >
-                        Hapus
+                        {t('Hapus')}
                       </button>
                     </div>
                   </div>
@@ -140,7 +146,7 @@ export default function CartPage() {
             <div className="rounded-2xl border border-slate-200 bg-surface p-5 sm:p-6">
               <div className="flex items-center justify-between gap-4">
                 <span className="font-semibold text-slate-600">
-                  Total Belanja
+                  {t('Total Belanja')}
                 </span>
                 <span className="text-xl font-black text-slate-900">
                   {money(total)}
@@ -149,9 +155,9 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="mt-5 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-white hover:bg-brand-700"
+                className="mt-5 block rounded-xl bg-brand-600 px-5 py-4 text-center font-bold text-onbrand hover:bg-brand-700"
               >
-                Lanjut ke Checkout
+                {t('Lanjut ke Checkout')}
               </Link>
             </div>
           </div>

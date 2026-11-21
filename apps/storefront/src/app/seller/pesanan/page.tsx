@@ -1,9 +1,10 @@
 'use client';
 
+import { sellerHref } from '@/lib/sellerUrl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Badge, Card, Empty, ErrorBox, ORDER_TONE, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
-import { fmtDateTime, query, rp, useSellerData } from '@/lib/seller';
+import { Badge, Card, ConfirmButton, Empty, ErrorBox, ORDER_TONE, PageHeader, Pagination, Spinner, Tabs, btn, inputCls } from '@/components/seller/ui';
+import { fmtDateTime, notify, query, rp, sellerApi, useSellerData } from '@/lib/seller';
 
 const STATUSES = [
   { value: '', label: 'Semua' },
@@ -21,13 +22,14 @@ export default function OrdersPage() {
   const [range, setRange] = useState('');
   const [method, setMethod] = useState('');
   const [page, setPage] = useState(1);
+  const [batal, setBatal] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setStatus(params.get('status') || '');
   }, []);
 
-  const params = query({ status, q: search, range, method, page });
+  const params = query({ status, q: search, range, method, page, batal: batal ? '1' : '' });
   const { data, error, loading, reload } = useSellerData<any>(`orders${params}`);
   const counts = data?.status_counts || {};
   const total = Object.values(counts).reduce((a: number, b: any) => a + Number(b), 0);
@@ -36,9 +38,42 @@ export default function OrdersPage() {
     <div>
       <PageHeader
         title="Pesanan"
-        subtitle="Pesanan dari website (pesan via WhatsApp & bayar di web)."
-        actions={<a className={btn.ghost} href={`/api/seller/orders/export${query({ status, q: search, range, method })}`}>Ekspor Excel</a>}
+        subtitle="Pesanan dari website."
+        actions={
+          <>
+            {counts.CANCELLED > 0 && (
+              <ConfirmButton
+                className={btn.ghost}
+                confirmText={`Hapus ${counts.CANCELLED} pesanan dibatalkan? Tidak bisa dikembalikan.`}
+                onConfirm={async () => {
+                  try {
+                    const r = await sellerApi('orders/hapus-dibatalkan', { body: {} });
+                    notify(`${r.deleted} pesanan dibatalkan dihapus.`);
+                    reload();
+                  } catch (err) {
+                    notify((err as Error).message, 'error');
+                  }
+                }}
+              >
+                Hapus yang dibatalkan ({counts.CANCELLED})
+              </ConfirmButton>
+            )}
+            <a className={btn.ghost} href={`/api/seller/orders/export${query({ status, q: search, range, method })}`}>Ekspor Excel</a>
+          </>
+        }
       />
+      {(data?.cancel_open > 0 || batal) && (
+        <button
+          type="button"
+          onClick={() => { setBatal(!batal); setPage(1); }}
+          className={`mb-3 flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold ring-1 ${
+            batal ? 'bg-ink text-surface ring-ink' : 'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30'
+          }`}
+        >
+          <span>{batal ? 'Menampilkan pesanan dengan pengajuan pembatalan' : `${data.cancel_open} pengajuan pembatalan perlu ditindaklanjuti`}</span>
+          <span className="shrink-0 underline">{batal ? 'Tampilkan semua' : 'Lihat'}</span>
+        </button>
+      )}
       <Tabs
         items={STATUSES.map((s) => ({ ...s, count: s.value ? counts[s.value] || 0 : total }))}
         value={status}
@@ -90,7 +125,7 @@ export default function OrdersPage() {
                   {data.results.map((o: any) => (
                     <tr key={o.order_number} className="hover:bg-mist">
                       <td className="px-5 py-3">
-                        <Link href={`/seller/pesanan/${o.order_number}`} className="font-bold text-ink hover:underline">{o.order_number}</Link>
+                        <Link href={sellerHref(`/seller/pesanan/${o.order_number}`)} className="font-bold text-ink hover:underline">{o.order_number}</Link>
                         <span className="block text-xs text-slate-500">{fmtDateTime(o.created_at)} · {o.method_label}</span>
                       </td>
                       <td className="px-3 py-3">
@@ -102,7 +137,11 @@ export default function OrdersPage() {
                         {o.voucher_codes && <span className="block text-[11px] font-semibold text-violet-700">{o.voucher_codes}</span>}
                       </td>
                       <td className="px-3 py-3"><Badge tone={o.payment_status === 'PAID' ? 'green' : 'gray'}>{o.payment_label}</Badge></td>
-                      <td className="px-3 py-3"><Badge tone={ORDER_TONE[o.status]}>{o.status_label}</Badge></td>
+                      <td className="px-3 py-3">
+                        <Badge tone={ORDER_TONE[o.status]}>{o.status_label}</Badge>
+                      {['REQUESTED', 'APPROVED'].includes(o.cancel_status) && <Badge tone="amber">Minta batal</Badge>}
+                        {['REQUESTED', 'APPROVED'].includes(o.cancel_status) && <span className="ml-1"><Badge tone="amber">Minta batal</Badge></span>}
+                      </td>
                       <td className="px-5 py-3 text-xs text-slate-600">{o.tracking_number || '-'}</td>
                     </tr>
                   ))}
@@ -113,7 +152,7 @@ export default function OrdersPage() {
             <ul className="divide-y divide-slate-200 md:hidden">
               {data.results.map((o: any) => (
                 <li key={o.order_number}>
-                  <Link href={`/seller/pesanan/${o.order_number}`} className="block px-4 py-3 active:bg-mist">
+                  <Link href={sellerHref(`/seller/pesanan/${o.order_number}`)} className="block px-4 py-3 active:bg-mist">
                     <div className="flex items-start justify-between gap-2">
                       <span className="min-w-0">
                         <span className="block truncate font-bold text-ink">{o.customer_name || '-'}</span>
