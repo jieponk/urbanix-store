@@ -192,10 +192,10 @@ export default function VoucherPopup({ voucher, whatsappNumber }: { voucher: Vou
     : '';
   const unitLabel =
     voucher.type === 'PERCENT' ? t('diskon') : voucher.type === 'FIXED' ? t('potongan') : t('gratis ongkir');
-  const steps: { icon: 'shopping-cart' | 'ticket' | 'shield-check'; text: string }[] = [
-    { icon: 'shopping-cart', text: t('Pilih produk') },
-    { icon: 'ticket', text: t('Voucher terpasang di checkout') },
-    { icon: 'shield-check', text: t('Bayar aman di web') },
+  const steps: { icon: 'shopping-cart' | 'ticket' | 'discount'; text: string }[] = [
+    { icon: 'shopping-cart', text: t('Pilih barang incaran') },
+    { icon: 'ticket', text: t('Pakai kodenya di checkout') },
+    { icon: 'discount', text: t('Langsung hemat!') },
   ];
   const chatText = encodeURIComponent(`Hai kak, saya mau nanya soal voucher ${voucher.code}`);
 
@@ -234,7 +234,7 @@ export default function VoucherPopup({ voucher, whatsappNumber }: { voucher: Vou
 
           <p className="relative inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/80 ring-1 ring-white/15">
             <TablerIcon name="sparkles" size={14} stroke={2} className="voucher-twinkle" />
-            {t('Khusus belanja di urbanix.id')}
+            {t('Voucher spesial buat kamu')}
           </p>
 
           <div className="relative mt-4 flex items-end justify-between gap-3">
@@ -335,7 +335,7 @@ export default function VoucherPopup({ voucher, whatsappNumber }: { voucher: Vou
               </>
             ) : (
               <>
-                {t('Klaim & mulai belanja')}
+                {t('Klaim & belanja sekarang')}
                 <TablerIcon name="arrow-right" size={17} stroke={2.4} className="transition-transform group-hover:translate-x-1" />
               </>
             )}

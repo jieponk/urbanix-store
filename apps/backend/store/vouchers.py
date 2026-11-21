@@ -53,7 +53,8 @@ def voucher_summary(v: Voucher) -> dict:
         auto_terms.append(f"Min. belanja {money(v.min_purchase)} (harga barang, belum termasuk ongkir)")
     else:
         auto_terms.append("Dihitung dari harga barang, belum termasuk ongkir")
-    if methods:
+    # Cukup disebut bila voucher juga berlaku di luar website (mis. pesan via WhatsApp).
+    if len(methods) > 1 or (methods and methods != ["bayar di web"]):
         auto_terms.append("Berlaku untuk " + " & ".join(methods))
     if v.exclude_promo and not v.is_shipping:
         auto_terms.append("Tidak berlaku untuk produk yang sedang promo")
