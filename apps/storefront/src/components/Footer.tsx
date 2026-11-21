@@ -146,7 +146,7 @@ export default function Footer({
                     ))}
                   </span>
                 </li>
-                <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Semua kontak & alamat')}</Link></li>
+                <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kontak dukungan')}</Link></li>
               </ul>
             </FooterGroup>
           </div>

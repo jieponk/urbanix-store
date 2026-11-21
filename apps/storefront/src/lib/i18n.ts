@@ -637,7 +637,7 @@ const EN: Record<string, string> = {
   'Baca semua ulasan di Shopee': 'Read all reviews on Shopee',
   'Lihat ulasan di toko Shopee': 'See reviews on our Shopee store',
   // ---------- Navigasi & lain-lain ----------
-  'Semua kontak & alamat': 'All contacts & address',
+  'Kontak dukungan': 'Contact support',
   'Terakhir dicari': 'Recent searches',
   'Hapus semua': 'Clear all',
   'Hapus dari riwayat': 'Remove from history',
