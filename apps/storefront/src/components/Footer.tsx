@@ -9,6 +9,7 @@ import { FOOTER_COURIERS, FOOTER_COURIERS_FALLBACK } from '@/lib/shipping';
 import { LangLinks } from '@/components/HeaderMenu';
 import { getT } from '@/lib/lang-server';
 import SimpleIcon from '@/components/SimpleIcon';
+import TablerIcon from '@/components/TablerIcon';
 
 /** 6281234567890 -> 0812-3456-7890 */
 function displayPhone(number: string) {
@@ -53,7 +54,7 @@ export default function Footer({
   return (
     <footer className="bg-cobalt-900 text-white/75">
       <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 md:pt-12 lg:px-8">
-        <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.3fr_1fr_1fr_1fr_1.1fr] md:gap-8">
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.2fr_0.9fr_0.9fr_1fr_1.45fr] md:gap-8">
           {/* Merek toko */}
           <div className="pb-6 md:pb-0">
             <Link href="/" aria-label={t('Urbanix Store, ke beranda')} className="inline-block">
@@ -130,8 +131,21 @@ export default function Footer({
                     <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${displayPhone(whatsapp)}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="whatsapp" size={15} />{displayPhone(whatsapp)}</a>
                   </li>
                 )}
-                <li><a href={`mailto:${contact.email}`} className="transition-colors hover:text-white hover:underline hover:underline-offset-4 break-all">{contact.email}</a></li>
-                <li>{t(contact.hours)}</li>
+                <li>
+                  <a href={`mailto:${contact.email}`} className="inline-flex items-start gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4">
+                    <TablerIcon name="mail" size={15} className="mt-0.5 shrink-0" />
+                    <span className="[overflow-wrap:anywhere] lg:whitespace-nowrap">{contact.email}</span>
+                  </a>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <TablerIcon name="clock" size={15} className="mt-0.5 shrink-0" />
+                  {/* "Senin–Sabtu, 09.00–17.00 WIB" → dua baris rapi, tidak terpotong di tengah jam */}
+                  <span>
+                    {t(contact.hours).split(', ').map((part) => (
+                      <span key={part} className="block whitespace-nowrap">{part}</span>
+                    ))}
+                  </span>
+                </li>
                 <li><Link href="/kontak" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Semua kontak & alamat')}</Link></li>
               </ul>
             </FooterGroup>

@@ -6,6 +6,7 @@
  */
 const ICONS = {
   'arrow-left': ['M5 12l14 0', 'M5 12l6 6', 'M5 12l6 -6'],
+  mail: ['M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z', 'M3 7l9 6l9 -6'],
   'arrow-right': ['M5 12l14 0', 'M13 18l6 -6', 'M13 6l6 6'],
   'arrows-left-right': ['M21 17l-18 0', 'M6 10l-3 -3l3 -3', 'M3 7l18 0', 'M18 20l3 -3l-3 -3'],
   'chevron-left': ['M15 6l-6 6l6 6'],
