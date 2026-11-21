@@ -62,7 +62,13 @@ export default function SettingsPage() {
               <input className={inputCls} inputMode="tel" value={form.whatsapp_number} onChange={(e) => set('whatsapp_number', e.target.value)} />
             </Field>
             <div className="space-y-2.5 rounded-xl bg-mist p-3 text-sm font-semibold text-ink">
-              <label className="flex items-center justify-between">Pesan via WhatsApp <Toggle checked={form.enable_whatsapp} onChange={(x) => set('enable_whatsapp', x)} /></label>
+              <label className="flex items-center justify-between">
+                <span>
+                  Pembelian via WhatsApp (checkout)
+                  <span className="block text-xs font-normal text-slate-500">Pilihan &quot;Pesan via WhatsApp&quot; di checkout. Tombol chat admin tidak terpengaruh.</span>
+                </span>
+                <Toggle checked={form.enable_whatsapp} onChange={(x) => set('enable_whatsapp', x)} />
+              </label>
               <label className="flex items-center justify-between">Beli via Shopee <Toggle checked={form.enable_shopee} onChange={(x) => set('enable_shopee', x)} /></label>
               <label className="flex items-center justify-between">
                 <span>Bayar di web (Midtrans) {!data.midtrans_configured && <Badge tone="amber">kunci belum diisi</Badge>}</span>
