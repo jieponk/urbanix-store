@@ -9,7 +9,7 @@ import TablerIcon from '@/components/TablerIcon';
 
 export const metadata = {
   title: 'Kontak',
-  description: 'Hubungi Urbanix Store lewat WhatsApp atau email. Jam operasional, alamat kantor, cara bayar, dan cek pesanan.',
+  description: 'Hubungi Urbanix Store lewat WhatsApp atau email cs@urbanix.id. Jam operasional, alamat kantor, retur, dan kerja sama brand.',
   alternates: { canonical: '/kontak' },
 };
 
@@ -60,9 +60,9 @@ export default async function ContactPage() {
   }
   channels.push({
     icon: 'doc',
-    label: 'Email',
+    label: 'Email layanan pelanggan',
     value: contact.email,
-    note: 'Untuk kerja sama, penawaran, dan pertanyaan yang lebih panjang.',
+    note: 'Untuk pertanyaan produk, pesanan, dan hal yang lebih panjang dari chat.',
     href: `mailto:${contact.email}`,
     cta: 'Kirim email',
     accent: 'bg-cobalt-800 text-white',
@@ -127,6 +127,46 @@ export default async function ContactPage() {
               </span>
             </a>
           ))}
+        </div>
+      </section>
+
+      {/* Email khusus: retur & kerja sama brand */}
+      <section className="px-4 pt-10 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-2">
+          <a
+            href={`mailto:${contact.returnEmail}`}
+            className="group flex items-start gap-4 rounded-2xl bg-surface p-5 ring-1 ring-slate-200 transition hover:ring-ink"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mist text-ink">
+              <TablerIcon name="arrow-back-up" size={22} stroke={2} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold uppercase tracking-wider text-slate-500">{t('Retur & pengembalian dana')}</span>
+              <span className="mt-0.5 block text-lg font-extrabold text-ink">{contact.returnEmail}</span>
+              <span className="mt-1 block text-sm leading-6 text-slate-600">
+                {t('Ajukan retur dari halaman pesanan. Email ini untuk mengirim video unboxing yang terlalu besar atau menanyakan status retur.')}
+              </span>
+            </span>
+          </a>
+          <Link
+            href="/kerja-sama"
+            className="group flex items-start gap-4 rounded-2xl bg-cobalt-900 p-5 text-white ring-1 ring-cobalt-900 transition hover:-translate-y-0.5"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-cobalt-900">
+              <TablerIcon name="heart-handshake" size={22} stroke={2} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold uppercase tracking-wider text-white/60">{t('Kerja sama brand')}</span>
+              <span className="mt-0.5 block text-lg font-extrabold">{contact.partnershipEmail}</span>
+              <span className="mt-1 block text-sm leading-6 text-white/75">
+                {t('Brand, distributor, atau kreator yang ingin berkolaborasi dengan Urbanix.')}
+              </span>
+              <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold">
+                {t('Lihat bentuk kerja sama')}
+                <ArrowRight size={16} />
+              </span>
+            </span>
+          </Link>
         </div>
       </section>
 

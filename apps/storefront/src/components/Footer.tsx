@@ -119,6 +119,7 @@ export default function Footer({
                     <a href={settings.shopee_store_url} target="_blank" rel="noopener noreferrer" aria-label={t('Toko kami di Shopee')} className="inline-flex items-center gap-1.5 transition-colors hover:text-white hover:underline hover:underline-offset-4"><SimpleIcon name="shopee" size={15} />Urbanix Store</a>
                   </li>
                 )}
+                <li><Link href="/kerja-sama" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kerja sama brand')}</Link></li>
                 <li><Link href="/syarat-ketentuan" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Syarat & Ketentuan')}</Link></li>
                 <li><Link href="/kebijakan-privasi" className="transition-colors hover:text-white hover:underline hover:underline-offset-4">{t('Kebijakan Privasi')}</Link></li>
               </ul>

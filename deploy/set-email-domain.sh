@@ -6,7 +6,7 @@
 set -e
 SERVER="$1"
 FROM="${2:-pesanan@urbanix.id}"
-REPLY="urbanixstore26@gmail.com"   # balasan pembeli masuk ke sini
+REPLY="cs@urbanix.id"   # balasan pembeli (diteruskan Cloudflare ke Gmail toko)
 TEST_TO="urbanixstore26@gmail.com"
 if [ -z "$SERVER" ]; then
   echo "Cara pakai: ./deploy/set-email-domain.sh urbanix@IP-SERVER [pesanan@urbanix.id]"

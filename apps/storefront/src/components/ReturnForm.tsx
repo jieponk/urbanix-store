@@ -160,6 +160,11 @@ export default function ReturnForm({ orderNumber }: { orderNumber: string }) {
               {t('Kirim video unboxing ke WhatsApp admin')}
             </a>
           )}
+          {sentWa && (
+            <p className="text-center text-xs text-slate-500">
+              {t('Atau kirim lewat email ke {email} dengan subjek nomor pesanan.', { email: siteConfig.contact.returnEmail })}
+            </p>
+          )}
           {ret.admin_note && (
             <p className="rounded-xl bg-mist p-3 text-sm text-ink"><b>{t('Catatan admin:')}</b> {ret.admin_note}</p>
           )}

@@ -166,7 +166,7 @@ export default function TermsPage() {
                 <li>
                   Buka pesananmu di halaman <b>Cek Pesanan</b>, tekan <b>Ajukan pengembalian</b>, pilih alasan dan barangnya,
                   jelaskan kendalanya, lalu unggah foto resi dan video unboxing. Bila video terlalu besar untuk diunggah,
-                  kirim videonya ke WhatsApp admin ({wa}) dengan menyebutkan nomor pesanan.
+                  kirim videonya ke WhatsApp admin ({wa}) atau email {contact.returnEmail} dengan menyebutkan nomor pesanan.
                 </li>
                 <li>Admin memeriksa pengajuan maksimal {legal.reviewTime}. Status retur bisa dipantau di halaman pesanan yang sama.</li>
                 <li>

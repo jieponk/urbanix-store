@@ -44,12 +44,14 @@ export const siteConfig = {
 
   // Kontak toko (tampil di footer). Nomor WhatsApp di Pengaturan toko (admin) diutamakan bila diisi.
   contact: {
-    person: 'Admin Urbanix',
     // Nomor WhatsApp format internasional tanpa + atau spasi, contoh: '6281234567890'.
     // Kalau dikosongkan, nomor tampil sebagai teks biasa (bukan tautan WhatsApp).
     whatsappNumber: '628212990180',
     whatsappDisplay: '0821-2990-180',
-    email: 'urbanixstore26@gmail.com',
+    // Email @urbanix.id (diteruskan Cloudflare Email Routing ke Gmail toko).
+    email: 'cs@urbanix.id', // layanan pelanggan umum
+    returnEmail: 'retur@urbanix.id', // retur & pengembalian dana
+    partnershipEmail: 'partnership@urbanix.id', // kerja sama brand
     hours: 'Senin–Sabtu, 09.00–17.00 WIB',
   },
 
